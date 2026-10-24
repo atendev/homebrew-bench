@@ -64,6 +64,14 @@ _Avoid_: Edition, rules version
 A rule the user adds beyond the ruleset, either to fill a gap or to change how a ruleset rule works. It persists across runs, the agent applies it, and the log names it when used.
 _Avoid_: Homebrew rule, custom rule
 
+**Pending prompt**:
+A pause in a live encounter where the engine waits for a decision or a die roll before it finishes the current action. Nothing else changes the encounter until it is answered.
+_Avoid_: Interrupt, callback
+
+**Reaction window**:
+A pending prompt that offers one combatant a chance to use a reaction, such as Shield or an Opportunity Attack, or a legendary action between turns.
+_Avoid_: Trigger, interrupt
+
 **Log**:
 The human-readable record of every action the engine takes, including overrides with their stated reasons. The log cannot be overridden.
 _Avoid_: History, trace
