@@ -19,26 +19,31 @@ Both modes ship in phase 1. Everything the engine can't model is labeled agent j
 
 - [Destination and phase 1 scope](closed/001-destination-and-phase-1-scope.md): monsters only, batch and live both ship, one engine plus an agnostic skill, agent can override nearly anything, everything logged.
 - [Rules baseline](closed/002-rules-baseline.md): 2024 rules from SRD 5.2 only, everything imported into our own format, user-added house rules kept as local files the agent applies.
+- [Engine language and runtime](closed/003-engine-language.md): Rust workspace (core library plus thin binary), shipped as prebuilt binaries via cargo-dist, mlua leads for later scripting but is undecided. See `docs/adr/0001-rust-engine-shipped-as-binaries.md`.
+- [How the agent talks to the engine](closed/004-agent-engine-interface.md): one-shot `bench` CLI with JSON on stdout, a state file per encounter with a tamper check, one `bench batch` call per report, everything under `~/.bench/` with encounters optionally in `./.bench/`, install script pulls the release binary. See `docs/adr/0002-one-shot-cli-with-state-files.md`.
 
 ## Not yet specified
 
 - How a standard party is built for monster tests: classes, gear, tactics, levels.
-- Who chooses each creature's actions in batch mode versus live mode, and how the engine takes those choices as input.
-- The contract between the agent-as-DM and the engine in live mode: who rolls dice, how the agent stays honest to the engine's state.
-- Randomness: seeds, replay, and how a live fight is saved and resumed.
+- The tactics the engine uses to pick creature actions in batch mode. Batch is one engine call, so the agent doesn't choose per-turn actions there.
+- Randomness: seeds and replay. Live encounters already persist as state files, so this is about reproducing rolls.
 - Override mechanics and the log format, so the log reads well to a human in both modes.
 - The CR baseline that monster results are compared against.
 - Which mechanics are prose-only and can't be modeled directly, and the vocabulary for the ones that can.
 - Report format.
-- House rule template and folder: the sections, the folder name, and how the agent finds and reads them.
+- House rule template and folder: the sections, the folder name, and how the agent finds and reads them. Includes whether house rules ever run as scripts (Lua through mlua is the leading candidate).
+- Whether the SRD data is embedded in the binary or shipped as files next to it.
+- How the skill files get installed into each agent (Claude Code, Codex, Cursor and others keep skills in different places), and whether `install.sh` handles it.
 
 ## Out of scope
 
 - Non-combat play (story, social, exploration): the tool tests combats and numbers only.
 - Items, spells, classes, subclasses, and the prose rules reference: separate future maps. The design should not block them.
+- MCP server and long-running server modes: phase 1 is a one-shot CLI. An MCP wrapper can come later over the same commands.
 - Agent-written engine code for house rules: phase 1 applies them as prose through overrides. The house rule format leaves room for it.
 
 ## Frontier
 
-- Engine language and runtime (grilling)
+- Monster schema and engine state model (grilling)
 - Skill and repo name (grilling)
+- Live mode turn contract (grilling)

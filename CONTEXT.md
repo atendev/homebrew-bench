@@ -24,6 +24,10 @@ _Avoid_: Simulation mode, bench run
 The agent acts as DM for one combat encounter, passing each action through the engine one step at a time while the user controls the party.
 _Avoid_: Play mode, interactive mode
 
+**Encounter**:
+One combat the engine holds state for, from rolling initiative until it ends. Live mode plays one encounter turn by turn. Batch mode plays many encounters inside a single engine call.
+_Avoid_: Fight, battle, session
+
 **Agent judgment**:
 A call the engine cannot make, such as an ambiguous or unmodelable ability, made by the agent and clearly labeled as such in reports and in play.
 _Avoid_: Fudge, guess
