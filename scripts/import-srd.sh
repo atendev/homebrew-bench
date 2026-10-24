@@ -15,12 +15,10 @@ git -C "$WORK/src" remote add origin "$REPO_URL"
 git -C "$WORK/src" fetch -q --depth 1 origin "$COMMIT"
 git -C "$WORK/src" checkout -q FETCH_HEAD
 
-rm -rf "$DEST/2014" "$DEST/2024"
-for edition in 2014 2024; do
-  mkdir -p "$DEST/$edition/schemas"
-  cp "$WORK/src/src/$edition/en/"*.json "$DEST/$edition/"
-  cp "$WORK/src/src/$edition/schemas/"*.ts "$DEST/$edition/schemas/"
-done
+rm -rf "$DEST/2024"
+mkdir -p "$DEST/2024/schemas"
+cp "$WORK/src/src/2024/en/"*.json "$DEST/2024/"
+cp "$WORK/src/src/2024/schemas/"*.ts "$DEST/2024/schemas/"
 cp "$WORK/src/LICENSE.md" "$DEST/LICENSE-5e-database.md"
 echo "$COMMIT" > "$DEST/COMMIT"
 
