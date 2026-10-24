@@ -28,6 +28,22 @@ _Avoid_: Play mode, interactive mode
 One combat the engine holds state for, from rolling initiative until it ends. Live mode plays one encounter turn by turn. Batch mode plays many encounters inside a single engine call.
 _Avoid_: Fight, battle, session
 
+**Stat block**:
+The definition of a creature, SRD or homebrew, in our own format. Party members use stat blocks too.
+_Avoid_: Monster file, creature (a rules term in 5e)
+
+**Combatant**:
+One creature taking part in an encounter, created from a stat block and carrying its own state. Four goblins from one stat block are four combatants.
+_Avoid_: Creature, unit, token
+
+**Engaged**:
+Two combatants are engaged when they are in melee with each other. The engine tracks engagement and a coarse range band instead of positions on a map.
+_Avoid_: Adjacent, in contact
+
+**Modeled ability**:
+An ability the engine can run from its structured effects. Every other ability is an **unmodeled ability**: it keeps only its text, and the agent resolves it as agent judgment.
+_Avoid_: Supported, custom ability
+
 **Agent judgment**:
 A call the engine cannot make, such as an ambiguous or unmodelable ability, made by the agent and clearly labeled as such in reports and in play.
 _Avoid_: Fudge, guess
