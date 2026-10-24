@@ -22,6 +22,7 @@ Both modes ship in phase 1. Everything the engine can't model is labeled agent j
 - [Engine language and runtime](closed/003-engine-language.md): Rust workspace (core library plus thin binary), shipped as prebuilt binaries via cargo-dist, mlua leads for later scripting but is undecided. See `docs/adr/0001-rust-engine-shipped-as-binaries.md`.
 - [How the agent talks to the engine](closed/004-agent-engine-interface.md): one-shot `bench` CLI with JSON on stdout, a state file per encounter with a tamper check, one `bench batch` call per report, everything under `~/.bench/` with encounters optionally in `./.bench/`, install script pulls the release binary. See `docs/adr/0002-one-shot-cli-with-state-files.md`.
 - [Monster schema and engine state model](closed/005-monster-schema-and-state-model.md): one step function that batch loops, no grid (engagement plus range bands), JSON stat blocks with modeled or unmodeled abilities, PCs share the schema, batch refuses unresolved unmodeled abilities, SRD import cross-checks prose. See `docs/adr/0003-step-engine-with-abstract-engagement.md`.
+- [Skill and repo name](closed/006-skill-and-repo-name.md): skill and repo are both `homebrew-bench`, binary stays `bench`, one skill with batch and live mode sections.
 
 ## Not yet specified
 
@@ -46,5 +47,4 @@ Both modes ship in phase 1. Everything the engine can't model is labeled agent j
 
 ## Frontier
 
-- Skill and repo name (grilling)
 - Live mode turn contract (grilling)
