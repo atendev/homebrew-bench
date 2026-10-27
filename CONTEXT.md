@@ -83,3 +83,11 @@ _Avoid_: Trigger, interrupt
 **Log**:
 The human-readable record of every action the engine takes, including overrides with their stated reasons. The log cannot be overridden.
 _Avoid_: History, trace
+
+**Public view**:
+A filtered read of the log and digest for showing players, not the DM. It hides monster hit points, resources and recharge, and replaces hit points with wounded states. The fact of an override or prompt stays; the hidden detail goes.
+_Avoid_: Redacted log, spoiler-free mode
+
+**Wounded state**:
+One of four words used in place of a monster's exact hit points in the public view: unhurt at full, wounded below full, bloodied at half or less, at death's door at a quarter or less.
+_Avoid_: Health bar, percent health
