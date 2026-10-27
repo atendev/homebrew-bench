@@ -44,6 +44,14 @@ _Avoid_: Adjacent, in contact
 An ability the engine can run from its structured effects. Every other ability is an **unmodeled ability**: it keeps only its text, and the agent resolves it as agent judgment.
 _Avoid_: Supported, custom ability
 
+**Agent clause**:
+A part of an otherwise modeled ability that the engine cannot run, kept as text for the agent to resolve. The rest of the ability still runs through the engine.
+_Avoid_: Rider, partial ability
+
+**Modifier**:
+A timed change a modeled ability puts on a combatant's stats or rolls, such as halved Speed, no Reactions, or Disadvantage on Strength checks. It ends on a duration or a successful save. Conditions are separate: the ruleset defines them.
+_Avoid_: Buff, debuff, status
+
 **Agent judgment**:
 A call the engine cannot make, such as an ambiguous or unmodelable ability, made by the agent and clearly labeled as such in reports and in play.
 _Avoid_: Fudge, guess
