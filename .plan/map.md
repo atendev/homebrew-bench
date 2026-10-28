@@ -31,6 +31,7 @@ Both modes ship in phase 1. Everything the engine can't model is labeled agent j
 - [SRD ability survey](closed/008-srd-ability-survey.md): 1,392 ability entries across 341 stat blocks; six pattern families plus conditions and movement effects cover nearly everything, 83 entries stay unmodeled, 2 match nothing; two upstream data faults confirmed. See `docs/research/srd-ability-survey.md`.
 - [CR and encounter guidance in SRD 5.2](closed/009-cr-and-encounter-guidance.md): the SRD gives only XP by CR, PB by CR and the XP budget table; no per-CR stat benchmarks, DMG "Creating a Creature" unconfirmed; CC-BY-4.0 needs verbatim attribution. See `docs/research/009-cr-and-encounter-guidance.md`.
 - [Agent skill locations](closed/010-agent-skill-locations.md): `.agents/skills/` covers most agents, Claude Code needs `.claude/skills/`, Cline and Kiro need their own, `AGENTS.md` is the fallback, frontmatter stays minimal. See `docs/research/agent-skill-locations.md`.
+- [SRD import review](closed/020-srd-import-review.md): four review classes with prose winning field-vs-prose and ruleset tables beating stat blocks, only mismatches block, fixtures graduate per monster toward all 341, fixes come only from `corrections.json` or the effects layer, review list regenerated and committed each run. See `docs/adr/0008-import-review-with-correction-list.md`.
 
 ## Not yet specified
 
@@ -48,11 +49,12 @@ Both modes ship in phase 1. Everything the engine can't model is labeled agent j
 
 Takeable now, in order:
 
-- SRD import review (grilling)
 - House rule template and folder (grilling)
 - License and attribution notice (task)
 - Standard party build (grilling)
 - Packaging, SRD data and skill install (grilling)
+- Seed corrections for known upstream faults (task)
+- Spell effects file authorship (grilling)
 
 Blocked:
 

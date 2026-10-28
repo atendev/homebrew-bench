@@ -72,6 +72,18 @@ _Avoid_: Edition, rules version
 A rule the user adds beyond the ruleset, either to fill a gap or to change how a ruleset rule works. It persists across runs, the agent applies it, and the log names it when used.
 _Avoid_: Homebrew rule, custom rule
 
+**Fixture**:
+An SRD stat block that has cleared import review and ships as trusted reference data. The engine only ever sees fixtures; a stat block with open mismatches stays unavailable until they are fixed. Fixtures graduate one monster at a time.
+_Avoid_: Validated monster, gold master
+
+**Correction**:
+A checked-in patch to an upstream SRD data fault, applied by the import instead of editing upstream data. Each correction names the monster, the field, the corrected value, and a citation. Every applied correction appears on the import review list.
+_Avoid_: Fix, patch, override of import data
+
+**Import review list**:
+The generated list the import writes each run: mismatches between upstream structured fields and the prose or ruleset tables, plus one classification note per ability recording where it landed (modeled, partly modeled, inert, unmodeled, and its default resolution). Only mismatches block a stat block from becoming a fixture.
+_Avoid_: Diff report, error log
+
 **Pending prompt**:
 A pause in a live encounter where the engine waits for a decision or a die roll before it finishes the current action. Nothing else changes the encounter until it is answered.
 _Avoid_: Interrupt, callback
