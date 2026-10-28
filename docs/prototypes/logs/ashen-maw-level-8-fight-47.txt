@@ -1,0 +1,21 @@
+HOME BREW BENCH PROTOTYPE LOG
+Monster: Ashen Maw
+Party level: 8
+Fight index: 47
+Seed: 847249
+Status: INVENTED SAMPLE, NOT AN ENGINE RUN
+Standing assumptions: standard party, no magic items, tactics policy v0.3
+
+ROUND 1
+  ASHEN MAW uses Claw against defender: 18 damage.
+  CASTER uses spell attack against Ashen Maw: 22 damage.
+  STRIKER uses weapon attack against Ashen Maw: 31 damage.
+
+ROUND 5
+  ASHEN MAW uses Ash cloud. AGENT JUDGMENT: zone effect skipped in this prototype.
+  HEALER restores 14 hit points to defender.
+
+RESULT
+  Party victory after 5 rounds.
+  Monster damage per round: 24.5 (invented).
+  Skipped mechanic warning: Ash cloud may change this result.

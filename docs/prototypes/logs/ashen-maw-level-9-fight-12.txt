@@ -1,0 +1,20 @@
+HOME BREW BENCH PROTOTYPE LOG
+Monster: Ashen Maw
+Party level: 9
+Fight index: 12
+Seed: 847213
+Status: INVENTED SAMPLE, NOT AN ENGINE RUN
+Standing assumptions: standard party, no magic items, tactics policy v0.3
+
+ROUND 1
+  ASHEN MAW uses Claw against defender: 24 damage.
+  DEFENDER fails a death save.
+
+ROUND 4
+  HEALER restores 18 hit points to defender.
+  CASTER uses spell attack against Ashen Maw: 29 damage.
+
+RESULT
+  Party victory after 7 rounds.
+  One PC reached at death's door. No casualty.
+  Monster damage per round: 33.1 (invented).

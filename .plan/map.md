@@ -41,6 +41,7 @@ Both modes ship in phase 1. Everything the engine can't model is labeled agent j
 - [Seed corrections for known upstream faults](closed/022-seed-corrections-for-known-faults.md): audited all 341 SRD monsters and committed `data/srd/corrections.json` (72 entries across 50 monsters: 40 shared-group `breath_weapons` recharge entries across 20 metallic dragons, 16 flat-1 damage entries, 1 Archmage CR 12 XP entry, 3 entries replacing Octopus abilities spliced onto `mule`, and 12 genuine `Multiattack` faults on `dryad`, `erinyes`, and 10 non-hybrid werebeast forms while folding 34 `(N - K) + choose(K, swap)` Multiattacks in the converter); refined ADR 0005 and ADR 0008.
 - [Spell effects file authorship](closed/023-spell-effects-file-authorship.md): start with the standard party minimums, scaffold entries from SRD structured fields via `scripts/scaffold-spells.py` and hand-finish them into the closed effect vocabulary, embed `data/spells/effects.json` in the binary, and keep it honest with SRD snapshot diffs, regression fights, and import-review missing-id warnings. See `docs/adr/0014-spell-effects-file-authorship.md`.
 - [Standard party spell list](closed/024-standard-party-spell-list.md): `data/party/standard-spells.json` commits caster and healer choices by tier, with SRD ids, role categories, and explicit effects-file coverage status.
+- [Report format prototype](closed/017-report-format-prototype.md): the batch report is a static, accessible reading surface with a headline CR comparison, level metrics, explicit assumptions and ability resolutions, thin/stale-data warnings, reproducibility metadata, and three sampled-log links. The prototype uses invented data and separates SRD facts from project-derived calibration.
 
 ## Not yet specified
 
@@ -56,6 +57,4 @@ Both modes ship in phase 1. Everything the engine can't model is labeled agent j
 
 ## Frontier
 
-Takeable now, in order:
-
-- Report format (prototype)
+No frontier tickets remain.

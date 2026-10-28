@@ -1,0 +1,20 @@
+HOME BREW BENCH PROTOTYPE LOG
+Monster: Ashen Maw
+Party level: 8
+Fight index: 83
+Seed: 847285
+Status: INVENTED SAMPLE, NOT AN ENGINE RUN
+Standing assumptions: standard party, no magic items, tactics policy v0.3
+
+ROUND 1
+  ASHEN MAW critical hit against defender: 42 damage.
+  DEFENDER falls unconscious.
+
+ROUND 3
+  AGENT JUDGMENT: sealed-throat clause resolved as damage only.
+  STRIKER uses a limited resource: 38 damage.
+
+RESULT
+  Party victory after 9 rounds.
+  One PC was downed and recovered. No casualty.
+  Monster damage per round: 40.0 (invented).

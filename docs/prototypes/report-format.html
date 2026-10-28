@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Batch report prototype: Ashen Maw</title>
+  <style>
+    :root { color-scheme: light; --ink:#18212b; --muted:#5d6873; --line:#d7dde3; --panel:#f5f7f9; --blue:#075985; --warn:#7c2d12; --warn-bg:#fff7ed; --good:#166534; }
+    * { box-sizing:border-box; }
+    body { margin:0; color:var(--ink); background:#fff; font:16px/1.5 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
+    main { max-width:1180px; margin:auto; padding:2rem 1rem 4rem; }
+    h1,h2,h3 { line-height:1.2; margin:0 0 .75rem; }
+    h1 { font-size:clamp(2rem,4vw,3.2rem); }
+    h2 { margin-top:2.5rem; border-bottom:2px solid var(--line); padding-bottom:.45rem; }
+    h3 { margin-top:1.5rem; }
+    p { max-width:78ch; }
+    a { color:var(--blue); text-underline-offset:3px; }
+    a:focus-visible { outline:3px solid #f59e0b; outline-offset:3px; }
+    .banner { border:2px solid var(--warn); background:var(--warn-bg); padding:1rem; margin-bottom:1.5rem; }
+    .eyebrow { color:var(--muted); text-transform:uppercase; letter-spacing:.08em; font-weight:700; font-size:.8rem; }
+    .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:1rem; }
+    .card { border:1px solid var(--line); border-radius:8px; padding:1rem; background:var(--panel); }
+    .card strong { display:block; font-size:1.45rem; }
+    .good { color:var(--good); }
+    .warn { color:var(--warn); font-weight:700; }
+    table { width:100%; border-collapse:collapse; margin:1rem 0; font-variant-numeric:tabular-nums; }
+    caption { text-align:left; font-weight:700; margin-bottom:.5rem; }
+    th,td { border:1px solid var(--line); padding:.55rem .65rem; text-align:left; vertical-align:top; }
+    th { background:#e9eef2; }
+    tbody tr:nth-child(even) { background:#fafbfc; }
+    .scroll { overflow-x:auto; }
+    code { background:#edf1f4; padding:.1rem .3rem; border-radius:3px; }
+    .two { display:grid; grid-template-columns:repeat(auto-fit,minmax(320px,1fr)); gap:1.5rem; }
+    dt { font-weight:700; margin-top:.7rem; }
+    dd { margin-left:0; color:var(--muted); }
+    footer { border-top:1px solid var(--line); margin-top:3rem; padding-top:1rem; color:var(--muted); font-size:.9rem; }
+  </style>
+</head>
+<body>
+<main>
+  <div class="banner" role="note">
+    <strong>Prototype only.</strong> The numbers in this report are invented to test the report layout. This is not an engine run and must not be used to judge Ashen Maw.
+  </div>
+
+  <header>
+    <p class="eyebrow">Homebrew Bench batch report prototype</p>
+    <h1>Ashen Maw</h1>
+    <p>One invented monster against the four-member standard party. This report shows the proposed reading for party levels 1 through 20.</p>
+  </header>
+
+  <section aria-labelledby="headline">
+    <h2 id="headline">Headline reading</h2>
+    <div class="grid">
+      <div class="card"><span class="eyebrow">Claimed CR</span><strong>8</strong><span>SRD XP reference: 3,900</span></div>
+      <div class="card"><span class="eyebrow">Effective CR</span><strong>9</strong><span>Lowest level reading Low</span></div>
+      <div class="card"><span class="eyebrow">Claimed-CR comparison</span><strong class="warn">Above claimed CR</strong><span>At party level 8, this reads Moderate.</span></div>
+      <div class="card"><span class="eyebrow">Representative band</span><strong class="good">Moderate</strong><span>Project calibration, not an SRD threshold</span></div>
+    </div>
+    <p><strong>Basis.</strong> At claimed CR 8, Ashen Maw reads Moderate at level 8 and Low at level 9. The level 8 baseline cell is thin, so the direction is qualified.</p>
+    <p class="warn">Warning: the baseline fingerprint is stale because the tactics policy version differs from the committed curve. Skipped mechanics may change the result.</p>
+  </section>
+
+  <section aria-labelledby="levels">
+    <h2 id="levels">Results by party level</h2>
+    <p>Each row represents 100 invented fights. Median is the primary statistic. Mean follows in parentheses. P10–P90 gives the spread. DPR means total monster damage divided by encounter rounds.</p>
+    <div class="scroll">
+      <table>
+        <caption>Illustrative results for Ashen Maw</caption>
+        <thead><tr><th scope="col">Level</th><th scope="col">Wins</th><th scope="col">Deaths</th><th scope="col">Win rate</th><th scope="col">Rounds</th><th scope="col">Monster DPR</th><th scope="col">Band</th><th scope="col">Flags</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td>0 / 100</td><td>100 / 100</td><td>0%</td><td>3.0 (3.1)<br>P10–P90: 2–5</td><td>31.2 (32.0)<br>P10–P90: 24–43</td><td>High</td><td>—</td></tr>
+          <tr><td>4</td><td>12 / 100</td><td>91 / 100</td><td>12%</td><td>4.0 (4.2)<br>P10–P90: 3–7</td><td>28.0 (29.4)<br>P10–P90: 19–42</td><td>High</td><td>—</td></tr>
+          <tr><td>8</td><td>78 / 100</td><td>13 / 100</td><td>78%</td><td>5.0 (5.4)<br>P10–P90: 3–9</td><td>24.5 (26.1)<br>P10–P90: 15–40</td><td>Moderate</td><td class="warn">Thin data</td></tr>
+          <tr><td>9</td><td>96 / 100</td><td>1 / 100</td><td>96%</td><td>4.0 (4.3)<br>P10–P90: 3–7</td><td>21.2 (22.8)<br>P10–P90: 13–35</td><td>Low</td><td>Effective CR</td></tr>
+          <tr><td>12</td><td>99 / 100</td><td>0 / 100</td><td>99%</td><td>3.0 (3.2)<br>P10–P90: 2–5</td><td>17.0 (18.2)<br>P10–P90: 10–28</td><td>Low</td><td>—</td></tr>
+          <tr><td>16</td><td>100 / 100</td><td>0 / 100</td><td>100%</td><td>2.0 (2.4)<br>P10–P90: 1–4</td><td>12.4 (13.7)<br>P10–P90: 7–22</td><td>Low</td><td>—</td></tr>
+          <tr><td>20</td><td>100 / 100</td><td>0 / 100</td><td>100%</td><td>2.0 (2.1)<br>P10–P90: 1–3</td><td>9.2 (10.1)<br>P10–P90: 5–17</td><td>Low</td><td>—</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>Production reports would include every level from 1 to 20. This prototype shows representative rows to keep the mock readable.</p>
+  </section>
+
+  <section aria-labelledby="cr">
+    <h2 id="cr">CR comparison and reference facts</h2>
+    <div class="two">
+      <div>
+        <h3 id="cr">Project-derived reading</h3>
+        <dl>
+          <dt>Difficulty bands</dt><dd>Low: at least 95% party wins and deaths in under 2% of fights. Moderate: at least 75% wins and deaths in under 15%. High: anything riskier. These are Homebrew Bench calibration thresholds.</dd>
+          <dt>Effective CR</dt><dd>Lowest whole party level reading Low. Values below level 1 read around 1 or trivial; values above level 20 read over 20.</dd>
+          <dt>Baseline</dt><dd>Fixture curve, standard party, batch tactics policy, 100 fights per cell. Rounds and DPR flag anomalies; they do not grade CR.</dd>
+        </dl>
+      </div>
+      <div>
+        <h3>SRD reference facts</h3>
+        <dl>
+          <dt>Claimed CR 8</dt><dd>3,900 XP. Monster proficiency bonus: +3.</dd>
+          <dt>Party-level context</dt><dd>The SRD budget tables provide Low, Moderate, and High XP budgets per character. This mock does not reproduce the full table.</dd>
+          <dt>SRD anchor</dt><dd>The SRD states that one monster with CR equal to the party level is a Low-difficulty fight for four characters.</dd>
+        </dl>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="findings">
+    <h2 id="findings">Wording and coverage findings</h2>
+    <ul>
+      <li><strong>Agent clause:</strong> “The maw may pull a creature into a sealed throat.” The damage is modeled; the sealed-throat outcome is agent judgment.</li>
+      <li><strong>Skipped mechanic:</strong> “Ash cloud” is a zone effect not modeled in phase 1. Results may understate the monster’s danger.</li>
+      <li><strong>Inert ability:</strong> “Deep-water adaptation” has no combat effect in this encounter.</li>
+      <li><strong>Resolved wording:</strong> “Swallow” uses the base-form default for this mock. No alternate form is applied.</li>
+    </ul>
+    <p class="warn">The verdict remains available, but skipped mechanics qualify it. An unresolved homebrew ability would block batch execution instead.</p>
+  </section>
+
+  <section aria-labelledby="assumptions">
+    <h2 id="assumptions">Standing assumptions</h2>
+    <table>
+      <caption>Inputs held constant for every illustrative fight</caption>
+      <thead><tr><th scope="col">Input</th><th scope="col">Value</th></tr></thead>
+      <tbody>
+        <tr><th scope="row">Party</th><td>Defender, striker, healer, and caster archetypes; no magic items</td></tr>
+        <tr><th scope="row">Ruleset</th><td>SRD 5.2.1</td></tr>
+        <tr><th scope="row">Tactics</th><td>Batch tactics policy v0.3; target, movement, resource, area, healing, and consumable rules fixed</td></tr>
+        <tr><th scope="row">Encounter</th><td>One Ashen Maw against four party members; abstract engagement and range bands</td></tr>
+        <tr><th scope="row">Randomness</th><td>Master seed <code>847201</code>; 100 derived fight seeds per level</td></tr>
+        <tr><th scope="row">Overrides</th><td>None. House rules: none.</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section aria-labelledby="repro">
+    <h2 id="repro">Reproducibility and sampled logs</h2>
+    <p>Samples use the hybrid rule: one representative result, one high-variance result, and one casualty or edge result. Each link carries the fight index and seed.</p>
+    <table>
+      <caption>Illustrative sampled logs</caption>
+      <thead><tr><th scope="col">Selection</th><th scope="col">Level</th><th scope="col">Fight index</th><th scope="col">Seed</th><th scope="col">Replay</th><th scope="col">Log</th></tr></thead>
+      <tbody>
+        <tr><th scope="row">Representative</th><td>8</td><td>47</td><td>847249</td><td><code>bench batch --seed 847201 --fight 47</code></td><td><a href="logs/ashen-maw-level-8-fight-47.txt">Read log</a></td></tr>
+        <tr><th scope="row">High variance</th><td>8</td><td>83</td><td>847285</td><td><code>bench batch --seed 847201 --fight 83</code></td><td><a href="logs/ashen-maw-level-8-fight-83.txt">Read log</a></td></tr>
+        <tr><th scope="row">Casualty edge</th><td>9</td><td>12</td><td>847213</td><td><code>bench batch --seed 847201 --fight 12</code></td><td><a href="logs/ashen-maw-level-9-fight-12.txt">Read log</a></td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section aria-labelledby="method">
+    <h2 id="method">Method and limitations</h2>
+    <p>This prototype is a static reading test. A production report would be generated from one batch result, include all 20 party levels, carry input fingerprints, and refuse invalid or unresolved inputs. Thin cells and stale baselines would remain visible warnings rather than silently smoothed values.</p>
+  </section>
+
+  <footer>
+    <p>This work includes material from the System Reference Document 5.2.1 ("SRD 5.2.1") by Wizards of the Coast LLC, available at <a href="https://www.dndbeyond.com/srd">https://www.dndbeyond.com/srd</a>. The SRD 5.2.1 is licensed under the <a href="https://creativecommons.org/licenses/by/4.0/legalcode">Creative Commons Attribution 4.0 International License</a>. The SRD-derived material is modified here by reformatting and restructuring into a report mock. The empirical curve and thresholds shown above are Homebrew Bench analysis, not SRD tables.</p>
+  </footer>
+</main>
+</body>
+</html>
