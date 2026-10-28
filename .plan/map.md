@@ -36,6 +36,7 @@ Both modes ship in phase 1. Everything the engine can't model is labeled agent j
 - [License and attribution notice](closed/021-license-and-attribution-notice.md): pinned SRD 5.2.1, `data/srd/README.md` carries the verbatim statement with the dndbeyond URL and a modification note, no other Wizards attribution, release artifacts get a `NOTICE` file when packaging lands.
 - [Standard party build](closed/014-standard-party-build.md): four archetype stat blocks (defender, striker, healer, caster) at levels 1 to 20 generated from committed designer-set tables, no magic items, PCs make death saves and monsters die at 0, user parties through `--party` and two parties/ layers, caster/healer spell minimums set ticket 023's phase-1 scope. See `docs/adr/0010-standard-party-of-four-generated-archetypes.md`.
 - [CR baseline](closed/015-cr-baseline.md): a committed empirical curve from single-fixture fights against the standard party, with calibrated difficulty bands, whole-level effective CR, thin-data labels, reproducible 100-fight cells, input fingerprints and stale-baseline reporting. See `docs/adr/0011-empirical-fixture-curve-as-cr-baseline.md`.
+- [Batch tactics policy](closed/016-batch-tactics-policy.md): one deterministic, versioned policy scores move-plus-action plans for both sides, with explicit target, resource, movement, area, healing and consumable rules; decisions are logged and policy inputs fingerprint baselines. See `docs/adr/0012-deterministic-batch-tactics-policy.md`.
 
 ## Not yet specified
 
@@ -53,7 +54,6 @@ Both modes ship in phase 1. Everything the engine can't model is labeled agent j
 
 Takeable now, in order:
 
-- Batch tactics policy (grilling)
 - Packaging, SRD data and skill install (grilling)
 - Seed corrections for known upstream faults (task)
 - Spell effects file authorship (grilling)

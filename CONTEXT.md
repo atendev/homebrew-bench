@@ -68,6 +68,10 @@ _Avoid_: Default
 The built-in party of four stat blocks, one per role (defender, striker, healer, caster), available at every level from 1 to 20. Batch mode fights homebrew against it by default, and `--party` substitutes a user's own party. It carries no magic items.
 _Avoid_: Default party, test party
 
+**Batch tactics policy**:
+The deterministic, versioned decision policy that chooses targets, movement, actions, resources, area targets, healing and consumables for both sides in batch mode. Its decisions and assumptions are logged, and its inputs are part of baseline fingerprints.
+_Avoid_: AI strategy, simulator behavior
+
 **Ruleset**:
 The rules the engine models: the combat rules of SRD 5.2.1, the 2024 edition. Anything outside it is not modeled unless a house rule or agent judgment covers it.
 _Avoid_: Edition, rules version
