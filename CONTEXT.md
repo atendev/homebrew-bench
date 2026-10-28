@@ -72,6 +72,10 @@ _Avoid_: Edition, rules version
 A rule the user adds beyond the ruleset, either to fill a gap or to change how a ruleset rule works. It persists across runs, the agent applies it, and the log names it when used.
 _Avoid_: Homebrew rule, custom rule
 
+**Rule slug**:
+The name of a house rule, taken from its file name. The log tags every outcome a house rule changed with its slug.
+_Avoid_: Rule id, rule number
+
 **Fixture**:
 An SRD stat block that has cleared import review and ships as trusted reference data. The engine only ever sees fixtures; a stat block with open mismatches stays unavailable until they are fixed. Fixtures graduate one monster at a time.
 _Avoid_: Validated monster, gold master
