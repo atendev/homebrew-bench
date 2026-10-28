@@ -14,6 +14,6 @@ Is the SRD data embedded in the binary or shipped as files next to it? How do th
 
 ## Notes
 
-The interface ticket fixed `install.sh` and `install.ps1`, which download the release binary into `~/.bench/bin/`. Use the agent skill locations findings (`docs/research/agent-skill-locations.md`): `.agents/skills/` covers most agents, Claude Code needs `.claude/skills/`, Cline and Kiro need their own paths, and detection is binary-plus-config-dir inference. Open caveat from the findings: Antigravity CLI (which replaced Gemini CLI for unpaid tiers in June 2026) is unresearched. The release archive must carry the SRD attribution notice; see License and attribution notice. Consult `grilling` and `domain-modeling`.
+The interface ticket fixed `install.sh` and `install.ps1`, which download the release binary into `~/.bench/bin/`. Use the agent skill locations findings (`docs/research/agent-skill-locations.md`): `.agents/skills/` covers most agents, Claude Code needs `.claude/skills/`, Cline and Kiro need their own paths, and detection is binary-plus-config-dir inference. Open caveat from the findings: Antigravity CLI (which replaced Gemini CLI for unpaid tiers in June 2026) is unresearched. The release archive must carry the SRD attribution notice as a `NOTICE` or `LICENSE-SRD` file: the verbatim SRD 5.2.1 statement plus a modification note, per the closed License and attribution notice ticket; a linked notice is acceptable. Consult `grilling` and `domain-modeling`.
 
 ## Resolution

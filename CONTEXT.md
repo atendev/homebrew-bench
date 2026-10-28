@@ -65,7 +65,7 @@ An override the agent sets at intake in batch mode so the engine applies it in e
 _Avoid_: Default
 
 **Ruleset**:
-The rules the engine models: the combat rules of SRD 5.2, the 2024 edition. Anything outside it is not modeled unless a house rule or agent judgment covers it.
+The rules the engine models: the combat rules of SRD 5.2.1, the 2024 edition. Anything outside it is not modeled unless a house rule or agent judgment covers it.
 _Avoid_: Edition, rules version
 
 **House rule**:

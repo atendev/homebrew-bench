@@ -33,6 +33,7 @@ Both modes ship in phase 1. Everything the engine can't model is labeled agent j
 - [CR and encounter guidance in SRD 5.2](closed/009-cr-and-encounter-guidance.md): the SRD gives only XP by CR, PB by CR and the XP budget table; no per-CR stat benchmarks, DMG "Creating a Creature" unconfirmed; CC-BY-4.0 needs verbatim attribution. See `docs/research/009-cr-and-encounter-guidance.md`.
 - [Agent skill locations](closed/010-agent-skill-locations.md): `.agents/skills/` covers most agents, Claude Code needs `.claude/skills/`, Cline and Kiro need their own, `AGENTS.md` is the fallback, frontmatter stays minimal. See `docs/research/agent-skill-locations.md`.
 - [SRD import review](closed/020-srd-import-review.md): four review classes with prose winning field-vs-prose and ruleset tables beating stat blocks, only mismatches block, fixtures graduate per monster toward all 341, fixes come only from `corrections.json` or the effects layer, review list regenerated and committed each run. See `docs/adr/0008-import-review-with-correction-list.md`.
+- [License and attribution notice](closed/021-license-and-attribution-notice.md): pinned SRD 5.2.1, `data/srd/README.md` carries the verbatim statement with the dndbeyond URL and a modification note, no other Wizards attribution, release artifacts get a `NOTICE` file when packaging lands.
 
 ## Not yet specified
 
@@ -50,7 +51,6 @@ Both modes ship in phase 1. Everything the engine can't model is labeled agent j
 
 Takeable now, in order:
 
-- License and attribution notice (task)
 - Standard party build (grilling)
 - Packaging, SRD data and skill install (grilling)
 - Seed corrections for known upstream faults (task)
