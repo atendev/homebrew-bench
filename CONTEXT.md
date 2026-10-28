@@ -64,6 +64,10 @@ _Avoid_: Patch, hack
 An override the agent sets at intake in batch mode so the engine applies it in every run, labeled as an assumption in the report.
 _Avoid_: Default
 
+**Standard party**:
+The built-in party of four stat blocks, one per role (defender, striker, healer, caster), available at every level from 1 to 20. Batch mode fights homebrew against it by default, and `--party` substitutes a user's own party. It carries no magic items.
+_Avoid_: Default party, test party
+
 **Ruleset**:
 The rules the engine models: the combat rules of SRD 5.2.1, the 2024 edition. Anything outside it is not modeled unless a house rule or agent judgment covers it.
 _Avoid_: Edition, rules version

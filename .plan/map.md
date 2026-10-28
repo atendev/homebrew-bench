@@ -34,10 +34,11 @@ Both modes ship in phase 1. Everything the engine can't model is labeled agent j
 - [Agent skill locations](closed/010-agent-skill-locations.md): `.agents/skills/` covers most agents, Claude Code needs `.claude/skills/`, Cline and Kiro need their own, `AGENTS.md` is the fallback, frontmatter stays minimal. See `docs/research/agent-skill-locations.md`.
 - [SRD import review](closed/020-srd-import-review.md): four review classes with prose winning field-vs-prose and ruleset tables beating stat blocks, only mismatches block, fixtures graduate per monster toward all 341, fixes come only from `corrections.json` or the effects layer, review list regenerated and committed each run. See `docs/adr/0008-import-review-with-correction-list.md`.
 - [License and attribution notice](closed/021-license-and-attribution-notice.md): pinned SRD 5.2.1, `data/srd/README.md` carries the verbatim statement with the dndbeyond URL and a modification note, no other Wizards attribution, release artifacts get a `NOTICE` file when packaging lands.
+- [Standard party build](closed/014-standard-party-build.md): four archetype stat blocks (defender, striker, healer, caster) at levels 1 to 20 generated from committed designer-set tables, no magic items, PCs make death saves and monsters die at 0, user parties through `--party` and two parties/ layers, caster/healer spell minimums set ticket 023's phase-1 scope. See `docs/adr/0010-standard-party-of-four-generated-archetypes.md`.
 
 ## Not yet specified
 
-- Nothing at the moment.
+- Magic items in the standard party: ruled out for phase 1, revisit if the CR baseline ticket shows the party falling off SRD monsters at high levels.
 
 ## Out of scope
 
@@ -51,13 +52,12 @@ Both modes ship in phase 1. Everything the engine can't model is labeled agent j
 
 Takeable now, in order:
 
-- Standard party build (grilling)
+- CR baseline (grilling)
+- Batch tactics policy (grilling)
 - Packaging, SRD data and skill install (grilling)
 - Seed corrections for known upstream faults (task)
 - Spell effects file authorship (grilling)
 
 Blocked:
 
-- CR baseline (grilling), blocked by Standard party build
-- Batch tactics policy (grilling), blocked by Standard party build
-- Report format (prototype), blocked by Standard party build and CR baseline
+- Report format (prototype), blocked by CR baseline
