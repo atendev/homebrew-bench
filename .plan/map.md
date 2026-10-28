@@ -43,6 +43,7 @@ Both modes ship in phase 1. Everything the engine can't model is labeled agent j
 - [Spell effects file authorship](closed/023-spell-effects-file-authorship.md): start with the standard party minimums, scaffold entries from SRD structured fields via `scripts/scaffold-spells.py` and hand-finish them into the closed effect vocabulary, embed `data/spells/effects.json` in the binary, and keep it honest with SRD snapshot diffs, regression fights, and import-review missing-id warnings. See `docs/adr/0014-spell-effects-file-authorship.md`.
 - [Standard party spell list](closed/024-standard-party-spell-list.md): `data/party/standard-spells.json` commits caster and healer choices by tier, with SRD ids, role categories, and explicit effects-file coverage status.
 - [Report format prototype](closed/017-report-format-prototype.md): the batch report is a static, accessible reading surface with a headline CR comparison, level metrics, explicit assumptions and ability resolutions, thin/stale-data warnings, reproducibility metadata, and three sampled-log links. The prototype uses invented data and separates SRD facts from project-derived calibration.
+- [Workspace, schemas and CLI skeleton](closed/025-workspace-schemas-and-cli-skeleton.md): Rust workspace (`bench-core` + `bench`) set up with canonical stat-block/effect/spell/encounter models, ChaCha8 RNG, config/path layout, JSON stdout envelope, stable error/exit codes, and `bench schema` / `bench help --json` CLI commands.
 
 ## Not yet specified
 
@@ -60,14 +61,13 @@ Both modes ship in phase 1. Everything the engine can't model is labeled agent j
 
 Takeable now, in order:
 
-- Workspace, schemas and CLI skeleton (task)
+- Spell effects scaffold and data file (task)
+- Step engine and combat rules (task)
 
 Blocked:
 
-- Spell effects scaffold and data file (task), blocked by Workspace, schemas and CLI skeleton
-- Step engine and combat rules (task), blocked by Workspace, schemas and CLI skeleton
-- Standard party progression tables and generator (task), blocked by Workspace, schemas and CLI skeleton and Spell effects scaffold and data file
-- SRD importer, review pipeline and fixtures (task), blocked by Workspace, schemas and CLI skeleton and Spell effects scaffold and data file
+- Standard party progression tables and generator (task), blocked by Spell effects scaffold and data file
+- SRD importer, review pipeline and fixtures (task), blocked by Spell effects scaffold and data file
 - Live mode CLI, overrides, log, public view and replay (task), blocked by Step engine and combat rules
 - Batch tactics policy and batch runner (task), blocked by Standard party progression tables and generator, SRD importer, review pipeline and fixtures and Live mode CLI, overrides, log, public view and replay
 - Empirical CR baseline curve and embedded reference data (task), blocked by Batch tactics policy and batch runner
