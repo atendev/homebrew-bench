@@ -14,7 +14,7 @@ Both modes ship in phase 1. Everything the engine can't model is labeled agent j
 - Domain: D&D 5e homebrew testing. Consult the `grilling` and `domain-modeling` skills in every session. Vocabulary lives in `CONTEXT.md`.
 - Existing material: `data/srd/` holds SRD JSON from an earlier pass and `scripts/` holds import tooling. The 2024 data stays as import source. The 2014 data is slated for removal (see Rules baseline).
 - The map was reset on 2026-10-24. Earlier decisions were discarded on purpose and live only in git history (commit 9120650).
-- The three research tickets (SRD ability survey, CR and encounter guidance, agent skill locations) are created but their agents are held. Launch them after the planning work is committed, so each throwaway `research/<name>` branch starts from a clean tree.
+- The three research tickets (SRD ability survey, CR and encounter guidance, agent skill locations) ran on 2026-10-27 and are closed; findings live in `docs/research/`.
 
 ## Decisions so far
 
@@ -28,6 +28,9 @@ Both modes ship in phase 1. Everything the engine can't model is labeled agent j
 - [Modeled-ability vocabulary](closed/013-modeled-ability-vocabulary.md): a closed effect list the engine runs, abilities that can be partly modeled with agent clauses, spells through an engine-owned effects file, six reaction triggers and six passive triggers, a timed modifier effect, roll modifiers with a `lighting` setting, five usage kinds, all 15 conditions, zones and spawn left unmodeled, and three classes of SRD default resolution. See `docs/adr/0005-closed-effect-vocabulary-with-agent-clauses.md`.
 - [Override mechanics, log format and public view](closed/011-override-and-log-format.md): dotted override paths with `--clear`, separate `add`/`remove` commands for roster changes, one tagged plain-text log per encounter shared by both modes, and a public filter that hides monster numbers behind four wounded states. See `docs/adr/0006-override-paths-and-log-format.md`.
 - [Randomness, seeds and replay](closed/012-randomness-seeds-and-replay.md): one ChaCha8 stream per encounter, `--seed` on start and batch with per-fight seeds derived from the master seed, `bench batch --seed [--fight]` reruns, live `bench replay` over a recorded command history, user-entered dice draw and discard, undo rewinds the stream. See `docs/adr/0007-chacha8-stream-seeds-and-replay.md`.
+- [SRD ability survey](closed/008-srd-ability-survey.md): 1,392 ability entries across 341 stat blocks; six pattern families plus conditions and movement effects cover nearly everything, 83 entries stay unmodeled, 2 match nothing; two upstream data faults confirmed. See `docs/research/srd-ability-survey.md`.
+- [CR and encounter guidance in SRD 5.2](closed/009-cr-and-encounter-guidance.md): the SRD gives only XP by CR, PB by CR and the XP budget table; no per-CR stat benchmarks, DMG "Creating a Creature" unconfirmed; CC-BY-4.0 needs verbatim attribution. See `docs/research/009-cr-and-encounter-guidance.md`.
+- [Agent skill locations](closed/010-agent-skill-locations.md): `.agents/skills/` covers most agents, Claude Code needs `.claude/skills/`, Cline and Kiro need their own, `AGENTS.md` is the fallback, frontmatter stays minimal. See `docs/research/agent-skill-locations.md`.
 
 ## Not yet specified
 
@@ -47,14 +50,12 @@ Takeable now, in order:
 
 - SRD import review (grilling)
 - House rule template and folder (grilling)
-- SRD ability survey (research, agent held)
-- CR and encounter guidance in SRD 5.2 (research, agent held)
-- Agent skill locations (research, agent held)
+- License and attribution notice (task)
+- Standard party build (grilling)
+- Packaging, SRD data and skill install (grilling)
 
 Blocked:
 
-- Standard party build (grilling), blocked by CR and encounter guidance
-- CR baseline (grilling), blocked by CR and encounter guidance and Standard party build
+- CR baseline (grilling), blocked by Standard party build
 - Batch tactics policy (grilling), blocked by Standard party build
 - Report format (prototype), blocked by Standard party build and CR baseline
-- Packaging, SRD data and skill install (grilling), blocked by Agent skill locations
