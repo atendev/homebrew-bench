@@ -5,7 +5,7 @@ type: research
 mode: AFK
 status: open
 blocked_by: []
-claimed: false
+claimed: true
 ---
 
 ## Question
