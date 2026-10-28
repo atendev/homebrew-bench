@@ -3,7 +3,7 @@ id: 024
 title: Standard party spell list
 type: prototype
 mode: HITL
-status: open
+status: closed
 blocked_by:
   - 023
 claimed: false
@@ -24,3 +24,16 @@ Ticket 023 settled the file path (`data/spells/effects.json`), the schema (`id`,
 The artifact should be a small file or snippet in the proposed standard-party generator location, showing the caster and healer spell choices by tier, with SRD spell ids and a note about which already have effects-file entries and which still need them.
 
 ## Resolution
+
+Resolved 2026-10-28. The committed artifact is `data/party/standard-spells.json`.
+
+- The caster has one at-will damage spell and four leveled spells in each tier from 1
+  through 9, covering single-target damage, area damage, save-based control, and a
+  defensive or utility buff. No summons or zones are included.
+- The healer has one at-will option and two or three leveled healing or recovery
+  spells in each tier where the 2024 SRD provides them. Tier 8 is intentionally
+  empty because the SRD has no direct healing or recovery spell at that level.
+- Every entry includes its SRD id, display name, category, and source. The snapshot
+  contains every selected id. The effects file does not exist yet, so the artifact
+  marks every selection as `needs-effects-entry`; this is the honest handoff for
+  the effects-file authoring work described in ticket 023.

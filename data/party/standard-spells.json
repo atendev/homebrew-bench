@@ -1,0 +1,126 @@
+{
+  "source": "SRD 5.2.1",
+  "notes": [
+    "This is the phase-1 reference list for the generated standard party.",
+    "The caster list deliberately excludes summons and zones.",
+    "effects_status is explicit because data/spells/effects.json has not been authored yet."
+  ],
+  "caster": {
+    "at_will": [
+      {
+        "id": "fire-bolt",
+        "name": "Fire Bolt",
+        "source": "SRD 5.2.1",
+        "effects_status": "needs-effects-entry"
+      }
+    ],
+    "by_tier": {
+      "1": [
+        ["magic-missile", "Magic Missile", "single-target-damage"],
+        ["burning-hands", "Burning Hands", "area-damage"],
+        ["sleep", "Sleep", "save-based-control"],
+        ["shield", "Shield", "buff"]
+      ],
+      "2": [
+        ["scorching-ray", "Scorching Ray", "single-target-damage"],
+        ["shatter", "Shatter", "area-damage"],
+        ["hold-person", "Hold Person", "save-based-control"],
+        ["invisibility", "Invisibility", "buff"]
+      ],
+      "3": [
+        ["lightning-bolt", "Lightning Bolt", "single-target-damage"],
+        ["fireball", "Fireball", "area-damage"],
+        ["hypnotic-pattern", "Hypnotic Pattern", "save-based-control"],
+        ["haste", "Haste", "buff"]
+      ],
+      "4": [
+        ["vitriolic-sphere", "Vitriolic Sphere", "single-target-damage"],
+        ["ice-storm", "Ice Storm", "area-damage"],
+        ["polymorph", "Polymorph", "save-based-control"],
+        ["greater-invisibility", "Greater Invisibility", "buff"]
+      ],
+      "5": [
+        ["arcane-hand", "Arcane Hand", "single-target-damage"],
+        ["cone-of-cold", "Cone of Cold", "area-damage"],
+        ["hold-monster", "Hold Monster", "save-based-control"],
+        ["telekinesis", "Telekinesis", "buff"]
+      ],
+      "6": [
+        ["disintegrate", "Disintegrate", "single-target-damage"],
+        ["chain-lightning", "Chain Lightning", "area-damage"],
+        ["mass-suggestion", "Mass Suggestion", "save-based-control"],
+        ["globe-of-invulnerability", "Globe of Invulnerability", "buff"]
+      ],
+      "7": [
+        ["finger-of-death", "Finger of Death", "single-target-damage"],
+        ["prismatic-spray", "Prismatic Spray", "area-damage"],
+        ["dominate-person", "Dominate Person", "save-based-control"],
+        ["etherealness", "Etherealness", "buff"]
+      ],
+      "8": [
+        ["befuddlement", "Befuddlement", "single-target-damage"],
+        ["sunburst", "Sunburst", "area-damage"],
+        ["power-word-stun", "Power Word Stun", "save-based-control"],
+        ["mind-blank", "Mind Blank", "buff"]
+      ],
+      "9": [
+        ["power-word-kill", "Power Word Kill", "single-target-damage"],
+        ["meteor-swarm", "Meteor Swarm", "area-damage"],
+        ["dominate-monster", "Dominate Monster", "save-based-control"],
+        ["foresight", "Foresight", "buff"]
+      ]
+    },
+    "effects_status": "all-needs-effects-entry"
+  },
+  "healer": {
+    "at_will": [
+      {
+        "id": "spare-the-dying",
+        "name": "Spare the Dying",
+        "source": "SRD 5.2.1",
+        "effects_status": "needs-effects-entry"
+      }
+    ],
+    "by_tier": {
+      "1": [
+        ["cure-wounds", "Cure Wounds", "healing"],
+        ["healing-word", "Healing Word", "healing"],
+        ["goodberry", "Goodberry", "healing"]
+      ],
+      "2": [
+        ["aid", "Aid", "healing"],
+        ["prayer-of-healing", "Prayer of Healing", "healing"],
+        ["lesser-restoration", "Lesser Restoration", "recovery"]
+      ],
+      "3": [
+        ["mass-healing-word", "Mass Healing Word", "healing"],
+        ["revivify", "Revivify", "recovery"],
+        ["beacon-of-hope", "Beacon of Hope", "healing-buff"]
+      ],
+      "4": [
+        ["aura-of-life", "Aura of Life", "healing-buff"],
+        ["death-ward", "Death Ward", "recovery"]
+      ],
+      "5": [
+        ["mass-cure-wounds", "Mass Cure Wounds", "healing"],
+        ["greater-restoration", "Greater Restoration", "recovery"],
+        ["raise-dead", "Raise Dead", "recovery"]
+      ],
+      "6": [
+        ["heal", "Heal", "healing"],
+        ["heroes-feast", "Heroes' Feast", "healing-buff"]
+      ],
+      "7": [
+        ["regenerate", "Regenerate", "healing"],
+        ["resurrection", "Resurrection", "recovery"]
+      ],
+      "8": [],
+      "9": [
+        ["mass-heal", "Mass Heal", "healing"],
+        ["power-word-heal", "Power Word Heal", "healing"],
+        ["true-resurrection", "True Resurrection", "recovery"]
+      ]
+    },
+    "effects_status": "all-needs-effects-entry"
+  }
+}
