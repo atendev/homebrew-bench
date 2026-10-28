@@ -84,6 +84,26 @@ _Avoid_: Rule id, rule number
 An SRD stat block that has cleared import review and ships as trusted reference data. The engine only ever sees fixtures; a stat block with open mismatches stays unavailable until they are fixed. Fixtures graduate one monster at a time.
 _Avoid_: Validated monster, gold master
 
+**Baseline curve**:
+The committed results of running every fixture against the standard party at each party level under the batch tactics policy. It is the reference distribution for judging a single homebrew monster, not an SRD table.
+_Avoid_: CR table, benchmark table
+
+**Difficulty band**:
+The calibrated Low, Moderate or High reading assigned to a fight from its party win rate and death rate. The thresholds are homebrew-bench calibration, not SRD numbers.
+_Avoid_: Difficulty score, rating
+
+**Effective CR**:
+The lowest whole party level at which a monster reads as a Low fight against the baseline curve. Reports clamp results below level 1 to around 1 or trivial and results above level 20 to over 20.
+_Avoid_: True CR, recommended CR
+
+**Thin data**:
+A baseline cell with too few fixtures even after pooling the neighboring CRs. It is named in reports rather than silently smoothed.
+_Avoid_: Missing data, interpolated data
+
+**Casualty**:
+A PC death during a batch encounter. A PC being downed but later saved is not a casualty for difficulty-band calibration.
+_Avoid_: Down, knockout
+
 **Correction**:
 A checked-in patch to an upstream SRD data fault, applied by the import instead of editing upstream data. Each correction names the monster, the field, the corrected value, and a citation. Every applied correction appears on the import review list.
 _Avoid_: Fix, patch, override of import data

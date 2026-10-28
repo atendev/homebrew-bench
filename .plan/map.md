@@ -35,6 +35,7 @@ Both modes ship in phase 1. Everything the engine can't model is labeled agent j
 - [SRD import review](closed/020-srd-import-review.md): four review classes with prose winning field-vs-prose and ruleset tables beating stat blocks, only mismatches block, fixtures graduate per monster toward all 341, fixes come only from `corrections.json` or the effects layer, review list regenerated and committed each run. See `docs/adr/0008-import-review-with-correction-list.md`.
 - [License and attribution notice](closed/021-license-and-attribution-notice.md): pinned SRD 5.2.1, `data/srd/README.md` carries the verbatim statement with the dndbeyond URL and a modification note, no other Wizards attribution, release artifacts get a `NOTICE` file when packaging lands.
 - [Standard party build](closed/014-standard-party-build.md): four archetype stat blocks (defender, striker, healer, caster) at levels 1 to 20 generated from committed designer-set tables, no magic items, PCs make death saves and monsters die at 0, user parties through `--party` and two parties/ layers, caster/healer spell minimums set ticket 023's phase-1 scope. See `docs/adr/0010-standard-party-of-four-generated-archetypes.md`.
+- [CR baseline](closed/015-cr-baseline.md): a committed empirical curve from single-fixture fights against the standard party, with calibrated difficulty bands, whole-level effective CR, thin-data labels, reproducible 100-fight cells, input fingerprints and stale-baseline reporting. See `docs/adr/0011-empirical-fixture-curve-as-cr-baseline.md`.
 
 ## Not yet specified
 
@@ -52,12 +53,10 @@ Both modes ship in phase 1. Everything the engine can't model is labeled agent j
 
 Takeable now, in order:
 
-- CR baseline (grilling)
 - Batch tactics policy (grilling)
 - Packaging, SRD data and skill install (grilling)
 - Seed corrections for known upstream faults (task)
 - Spell effects file authorship (grilling)
 
-Blocked:
-
-- Report format (prototype), blocked by CR baseline
+Newly unblocked:
+- Report format (prototype), now grounded by the CR baseline's claim ordering and metrics.
