@@ -1,2 +1,4 @@
 .agent-state.md
 .bench/
+/target
+

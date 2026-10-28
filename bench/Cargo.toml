@@ -1,0 +1,24 @@
+[package]
+name = "bench"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+description = "One-shot CLI for homebrew-bench."
+
+[[bin]]
+name = "bench"
+path = "src/main.rs"
+
+[dependencies]
+bench-core = { path = "../bench-core" }
+serde = { workspace = true }
+serde_json = { workspace = true }
+schemars = { workspace = true }
+clap = { workspace = true }
+anyhow = { workspace = true }
+
+[dev-dependencies]
+serde_json = { workspace = true }

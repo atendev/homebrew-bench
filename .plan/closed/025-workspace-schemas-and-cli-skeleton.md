@@ -3,7 +3,7 @@ id: 025
 title: Workspace, schemas and CLI skeleton
 type: task
 mode: AFK
-status: open
+status: closed
 blocked_by: []
 claimed: false
 ---
@@ -34,3 +34,25 @@ Key decisions to implement:
   - Deterministic ChaCha8 stream via `rand_chacha` with cursor tracking/rewind and deterministic per-fight seed derivation from `(master_seed, fight_index)`.
 
 ## Resolution
+
+Implemented on branch `025-workspace-schemas-and-cli-skeleton`.
+
+- Added Cargo workspace (`bench-core` library + `bench` binary) with dependencies for serde, schemars, clap, rand/rand_chacha, directories, toml, sha2, anyhow, thiserror, hex, and serde_path_to_error.
+- Implemented canonical models in `bench-core/src/`:
+  - `stat_block.rs`: 2024 stat block schema including identity, AC, HP, speeds (with per-mode `hover`), abilities, saves/skills, initiative, PB, damage/condition immunities, senses/languages, CR/XP/lair XP, traits/actions/bonus/reactions/legendary actions, PC fields, gear, pasted source, and intake flags. Four ability states (`modeled`, `partly_modeled`, `inert`, `unmodeled`) with optional default resolution.
+  - `effect.rs`: closed effect vocabulary (attack, saving throw variants, damage, condition, timed modifier, roll modifier with lighting, forced move, heal, temp HP, teleport, move-then-attack, multiattack, use_action, cast, area with `origin`), reaction/passive triggers, and usage kinds.
+  - `spell.rs`: spell effects file schema with scaling and delayed effects.
+  - `encounter.rs`: encounter state, combatant state, engagement/range bands, action economy, command history, stat block snapshots, and tamper-hash helpers.
+  - `rng.rs`: ChaCha8 wrapper with seed/cursor tracking, rewind, deterministic per-fight seed derivation using portable SHA-256 mixing, and pinned cross-platform test vector.
+  - `config.rs` / `paths.rs`: `~/.bench/` layout, `config.toml`, home/workspace output directories.
+  - `error.rs`: stable error codes (`invalid_json`, `schema_validation_failed`, `unmodeled_ability_refused`, `state_tampered`, `not_found`, `internal`) with distinct exit codes 1/2/3, plus `CodedError` with optional structured details.
+  - `schema.rs`: JSON Schema generation via schemars and first-line validation via `serde_path_to_error` producing dotted field-path errors.
+- Implemented thin CLI in `bench/src/main.rs`:
+  - `bench help --json` prints the command catalog inside the JSON stdout envelope.
+  - `bench schema monster` prints the stat block JSON Schema.
+  - `bench schema validate <path>` validates a file and returns either an ok envelope or `schema_validation_failed` with dotted-path details.
+  - All failures map to stable error codes/exit codes; JSON is emitted on stdout.
+- Added unit tests covering schema round-trip, RNG determinism/replay, seed derivation, tamper hashing, snapshot verification, and CLI commands.
+- Audited by a subagent in auto-mode; all blockers and all high issues except full JSON-Schema-only validation were resolved. Full schema-only validation is deferred to a later ticket and documented in `schema.rs`.
+
+Status: closed.
