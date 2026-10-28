@@ -101,6 +101,8 @@ pub struct Combatant {
     pub engagement: Engagement,
     pub ranges: HashMap<String, RangeBand>,
     pub end_state: EndState,
+    #[serde(default)]
+    pub death_saves: crate::stat_block::DeathSaves,
 }
 
 /// What a combatant has already done this turn.
@@ -133,6 +135,19 @@ pub struct CommandRecord {
     pub reason: Option<String>,
 }
 
+/// A prompt that must be answered before the current action can finish.
+#[derive(Debug, Clone, Serialize, Deserialize, schemars::JsonSchema)]
+pub struct PendingPrompt {
+    pub id: String,
+    pub kind: String,
+    pub actor_id: String,
+    pub message: String,
+    pub sides: Option<u32>,
+    pub remaining: u32,
+    #[serde(default)]
+    pub metadata: serde_json::Value,
+}
+
 /// One active effect in the encounter, such as a zone or lingering modifier.
 /// Zones and spawns stay unmodeled in phase 1; this struct is the placeholder
 /// for any engine-tracked area effect.
@@ -160,9 +175,13 @@ pub struct EncounterState {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub active_effects: Vec<ActiveEffect>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub active_modifiers: Vec<ActiveModifier>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub standing_assumptions: Vec<StandingAssumption>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub command_history: Vec<CommandRecord>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub pending: Option<PendingPrompt>,
     pub rng: RngState,
     pub tamper_hash: String,
 }
@@ -301,8 +320,10 @@ mod tests {
             initiative_order: vec![],
             active_turn: None,
             active_effects: vec![],
+            active_modifiers: vec![],
             standing_assumptions: vec![],
             command_history: vec![],
+            pending: None,
             rng: RngState::new(1),
             tamper_hash: String::new(),
         };

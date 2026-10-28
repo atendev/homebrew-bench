@@ -45,6 +45,7 @@ Both modes ship in phase 1. Everything the engine can't model is labeled agent j
 - [Report format prototype](closed/017-report-format-prototype.md): the batch report is a static, accessible reading surface with a headline CR comparison, level metrics, explicit assumptions and ability resolutions, thin/stale-data warnings, reproducibility metadata, and three sampled-log links. The prototype uses invented data and separates SRD facts from project-derived calibration.
 - [Workspace, schemas and CLI skeleton](closed/025-workspace-schemas-and-cli-skeleton.md): Rust workspace (`bench-core` + `bench`) set up with canonical stat-block/effect/spell/encounter models, ChaCha8 RNG, config/path layout, JSON stdout envelope, stable error/exit codes, and `bench schema` / `bench help --json` CLI commands.
 - [Spell effects scaffold and data file](closed/026-spell-effects-scaffold-and-data-file.md): `scripts/scaffold-spells.py` scaffolds entries from SRD structured fields, `data/spells/effects.json` covers the standard party caster/healer list and core SRD monster combat spells in the closed effect vocabulary, `data/party/standard-spells.json` coverage statuses are updated, and `scripts/check-spell-effects.py` keeps the file honest against upstream SRD text. See `docs/adr/0014-spell-effects-file-authorship.md`.
+- [Step engine and combat rules](closed/029-step-engine-and-combat-rules.md): `bench-core/src/engine.rs` implements the deterministic step function with initiative, abstract engagement and range bands, action resolution, the closed effect vocabulary, all 15 conditions, usage tracking, PC death saves, concentration checks, and turn lifecycle. Schema adds `active_modifiers` to `EncounterState` and `death_saves` to `Combatant`.
 
 ## Not yet specified
 
@@ -62,13 +63,12 @@ Both modes ship in phase 1. Everything the engine can't model is labeled agent j
 
 Takeable now, in order:
 
-- Step engine and combat rules (task)
+- Standard party progression tables and generator (task)
+- SRD importer, review pipeline and fixtures (task)
+- Live mode CLI, overrides, log, public view and replay (task)
 
 Blocked:
 
-- Standard party progression tables and generator (task), blocked by Spell effects scaffold and data file
-- SRD importer, review pipeline and fixtures (task), blocked by Spell effects scaffold and data file
-- Live mode CLI, overrides, log, public view and replay (task), blocked by Step engine and combat rules
 - Batch tactics policy and batch runner (task), blocked by Standard party progression tables and generator, SRD importer, review pipeline and fixtures and Live mode CLI, overrides, log, public view and replay
 - Empirical CR baseline curve and embedded reference data (task), blocked by Batch tactics policy and batch runner
 - Agent skill and house-rule templates (task), blocked by Live mode CLI, overrides, log, public view and replay and Empirical CR baseline curve and embedded reference data

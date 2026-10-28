@@ -7,6 +7,7 @@
 
 pub mod config;
 pub mod effect;
+pub mod engine;
 pub mod encounter;
 pub mod error;
 pub mod paths;

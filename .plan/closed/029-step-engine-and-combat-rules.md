@@ -6,7 +6,7 @@ mode: AFK
 status: open
 blocked_by:
   - 025
-claimed: false
+claimed: true
 ---
 
 ## Question
@@ -40,3 +40,36 @@ Key decisions to implement:
   - Every step emits structured `events` (with ready-made log lines), updated `digest`, and `pending`.
 
 ## Resolution
+
+Implemented the step engine and core combat rules in `bench-core/src/engine.rs` with supporting schema changes.
+
+**What's implemented:**
+- `step()` function dispatching `Action`, `Move`, `EndTurn`, and `Respond` requests
+- Initiative rolling with grouped-by-stat-block default, individual flag, and surprise disadvantage
+- Attack rolls with advantage/disadvantage from conditions (Blinded, Frightened, Invisible, Paralyzed, Prone, Restrained, Stunned, Unconscious), crits, AC with timed modifier bonuses, temp HP absorption, and damage resistances/vulnerabilities/immunities
+- Saving throws with DCs, half/no damage on success, timed modifier bonuses to saves, and concentration Constitution saves on damage (DC = max(10, damage/2))
+- All 15 conditions applied via `Effect::Condition`; durations decrement each round in `end_turn`
+- Abstract engagement and range bands (`Engaged`, `Near`, `Far`) with fixed movement costs; leaving engagement emits Opportunity Attack events
+- Forced movement, teleport, and move-then-attack effects
+- `Multiattack`, `UseAction`, and `Cast` (resolves against `data/spells/effects.json` with concentration tracking)
+- Timed modifiers and roll modifiers stored in `EncounterState.active_modifiers` affecting attack/save/AC rolls
+- Usage tracking: `at_will`, `recharge` with shared group keys, `per_day`, `per_rest`, and `cooldown_until_next_turn`
+- PC death saves at start of turn (natural 20 regains consciousness, 3 successes stabilizes, 3 failures dies)
+- `end_turn` skips dead/unconscious/stable combatants, rolls recharge, processes repeat saves, and decrements durations
+- `PendingPrompt` support in `EncounterState` with `Respond` handling
+- 12 unit tests covering attack, damage, death saves, movement, initiative, concentration, and disposition
+
+**Schema changes:**
+- Added `active_modifiers: Vec<ActiveModifier>` to `EncounterState`
+- Added `death_saves: DeathSaves` to `Combatant`
+- Added `PartialEq` to `ModifierTarget` in `effect.rs`
+
+**Known gaps for later tickets:**
+- Full pending-prompt resume for interrupted actions (reaction windows, Shield, pc_dice)
+- Reaction and passive trigger engine beyond Opportunity Attack events
+- Two-stage saves, immunity_after_success, HP/creature-type gates, Legendary Resistance
+- Spell slot spending and upcast scaling
+- Area effect resolution
+- Bonus action and legendary action resolution paths
+- Encounter end conditions
+- Lighting setting integration for roll modifiers
