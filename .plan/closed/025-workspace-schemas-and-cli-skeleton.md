@@ -35,7 +35,7 @@ Key decisions to implement:
 
 ## Resolution
 
-Implemented in commit 3598236.
+Implemented on branch `025-workspace-schemas-and-cli-skeleton`.
 
 - Added Cargo workspace (`bench-core` library + `bench` binary) with dependencies for serde, schemars, clap, rand/rand_chacha, directories, toml, sha2, anyhow, thiserror, hex, and serde_path_to_error.
 - Implemented canonical models in `bench-core/src/`:
