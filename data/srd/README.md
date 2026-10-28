@@ -4,6 +4,7 @@ JSON and TypeScript schemas copied from [5e-bits/5e-database](https://github.com
 
 - `2024/` is SRD 5.2.1 content (2024 rules), the only edition the engine models.
 - `2024/schemas/` holds the upstream TypeScript schemas.
+- `corrections.json` holds the checked-in, cited corrections applied during conversion to fix upstream data faults against the commit in `COMMIT`.
 
 ## Licenses
 

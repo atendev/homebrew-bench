@@ -16,5 +16,6 @@ SRD imports ship a default resolution for each unmodeled ability or clause, in t
 
 - A new effect type is an engine change, a schema change and a version bump. Adding one is the way to model a new pattern.
 - The SRD import fills the vocabulary from the structured fields where it can and from a hand-authored effects layer where the text carries the mechanic. The import review lists each mismatch.
+- `recharge` usage accepts an optional `group` key (for example `breath_weapons` on the two breath actions of a metallic dragon). Abilities sharing a `group` on the same combatant share one recharge state and roll once at the start of the turn.
 - Spells are modeled through an engine-owned spell effects file keyed by SRD spell id, not through the stat block. A spell id absent from the file makes the cast an unmodeled ability with its default resolution. The future spells map can replace the file.
 - Zones, spawned creatures and objects with their own HP stay unmodeled. If early reports show many monsters hitting the skipped class, revisit this ADR before adding engine entities.
