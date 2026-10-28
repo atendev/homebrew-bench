@@ -11,8 +11,9 @@ Both modes ship in phase 1. Everything the engine can't model is labeled agent j
 
 ## Notes
 
-- Domain: D&D 5e homebrew testing. Consult the `grilling` and `domain-modeling` skills in every session. Vocabulary lives in `CONTEXT.md`.
-- Existing material: `data/srd/` holds SRD JSON from an earlier pass and `scripts/` holds import tooling. The 2024 data stays as import source. The 2014 data is slated for removal (see Rules baseline).
+- Domain: D&D 5e homebrew testing. Consult the `grilling` and `domain-modeling` skills in every decision session, and `implement`, `tdd`, `codebase-design`, `domain-modeling`, and `code-review` in every build session (`writing-for-agents` when authoring the skill). Vocabulary lives in `CONTEXT.md`.
+- Build phase override: all 24 phase-1 design tickets and 14 ADRs (`docs/adr/0001` through `0014`) are closed. This map now carries execution in place through `task` tickets (`025` through `034`) that deliver the working Rust workspace, reference datasets, `bench` CLI, agent skill, and release installers.
+- Existing material: `data/srd/2024/` holds pinned SRD 5.2.1 JSON and schemas, `data/srd/corrections.json` holds the 72 audited upstream corrections, `data/party/standard-spells.json` holds the standard party spell list, `docs/prototypes/report-format.html` holds the batch report prototype, and `scripts/` holds import and survey tooling.
 - The map was reset on 2026-10-24. Earlier decisions were discarded on purpose and live only in git history (commit 9120650).
 - The three research tickets (SRD ability survey, CR and encounter guidance, agent skill locations) ran on 2026-10-27 and are closed; findings live in `docs/research/`.
 
@@ -33,7 +34,7 @@ Both modes ship in phase 1. Everything the engine can't model is labeled agent j
 - [CR and encounter guidance in SRD 5.2](closed/009-cr-and-encounter-guidance.md): the SRD gives only XP by CR, PB by CR and the XP budget table; no per-CR stat benchmarks, DMG "Creating a Creature" unconfirmed; CC-BY-4.0 needs verbatim attribution. See `docs/research/009-cr-and-encounter-guidance.md`.
 - [Agent skill locations](closed/010-agent-skill-locations.md): `.agents/skills/` covers most agents, Claude Code needs `.claude/skills/`, Cline and Kiro need their own, `AGENTS.md` is the fallback, frontmatter stays minimal. See `docs/research/agent-skill-locations.md`.
 - [SRD import review](closed/020-srd-import-review.md): four review classes with prose winning field-vs-prose and ruleset tables beating stat blocks, only mismatches block, fixtures graduate per monster toward all 341, fixes come only from `corrections.json` or the effects layer, review list regenerated and committed each run. See `docs/adr/0008-import-review-with-correction-list.md`.
-- [License and attribution notice](closed/021-license-and-attribution-notice.md): pinned SRD 5.2.1, `data/srd/README.md` carries the verbatim statement with the dndbeyond URL and a modification note, no other Wizards attribution, release artifacts get a `NOTICE` file when packaging lands.
+- [License and attribution notice](closed/021-license-and-attribution-notice.md): pinned SRD 5.2.1, `data/srd/README.md` carries the verbatim statement with the dndbeyond URL and a modification note, no other attribution to Wizards, release artifacts get a `NOTICE` file when packaging lands.
 - [Standard party build](closed/014-standard-party-build.md): four archetype stat blocks (defender, striker, healer, caster) at levels 1 to 20 generated from committed designer-set tables, no magic items, PCs make death saves and monsters die at 0, user parties through `--party` and two parties/ layers, caster/healer spell minimums set ticket 023's phase-1 scope. See `docs/adr/0010-standard-party-of-four-generated-archetypes.md`.
 - [CR baseline](closed/015-cr-baseline.md): a committed empirical curve from single-fixture fights against the standard party, with calibrated difficulty bands, whole-level effective CR, thin-data labels, reproducible 100-fight cells, input fingerprints and stale-baseline reporting. See `docs/adr/0011-empirical-fixture-curve-as-cr-baseline.md`.
 - [Batch tactics policy](closed/016-batch-tactics-policy.md): one deterministic, versioned policy scores move-plus-action plans for both sides, with explicit target, resource, movement, area, healing and consumable rules; decisions are logged and policy inputs fingerprint baselines. See `docs/adr/0012-deterministic-batch-tactics-policy.md`.
@@ -45,7 +46,7 @@ Both modes ship in phase 1. Everything the engine can't model is labeled agent j
 
 ## Not yet specified
 
-- Magic items in the standard party: ruled out for phase 1, revisit if the CR baseline ticket shows the party falling off SRD monsters at high levels.
+- Magic items in the standard party: ruled out for phase 1, revisit if the CR baseline curve shows the party falling off SRD monsters at high levels.
 
 ## Out of scope
 
@@ -57,4 +58,18 @@ Both modes ship in phase 1. Everything the engine can't model is labeled agent j
 
 ## Frontier
 
-No frontier tickets remain.
+Takeable now, in order:
+
+- Workspace, schemas and CLI skeleton (task)
+
+Blocked:
+
+- Spell effects scaffold and data file (task), blocked by Workspace, schemas and CLI skeleton
+- Step engine and combat rules (task), blocked by Workspace, schemas and CLI skeleton
+- Standard party progression tables and generator (task), blocked by Workspace, schemas and CLI skeleton and Spell effects scaffold and data file
+- SRD importer, review pipeline and fixtures (task), blocked by Workspace, schemas and CLI skeleton and Spell effects scaffold and data file
+- Live mode CLI, overrides, log, public view and replay (task), blocked by Step engine and combat rules
+- Batch tactics policy and batch runner (task), blocked by Standard party progression tables and generator, SRD importer, review pipeline and fixtures and Live mode CLI, overrides, log, public view and replay
+- Empirical CR baseline curve and embedded reference data (task), blocked by Batch tactics policy and batch runner
+- Agent skill and house-rule templates (task), blocked by Live mode CLI, overrides, log, public view and replay and Empirical CR baseline curve and embedded reference data
+- Release packaging, legal notices and installers (task), blocked by Empirical CR baseline curve and embedded reference data and Agent skill and house-rule templates
