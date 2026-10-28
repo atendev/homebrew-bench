@@ -27,6 +27,7 @@ Both modes ship in phase 1. Everything the engine can't model is labeled agent j
 - [Live mode turn contract](closed/007-live-mode-turn-contract.md): one command resolves one whole action, pending prompts cover reactions and user-entered dice, the engine rolls by default, `bench end-turn` advances, every response carries events plus a state digest, `bench undo` reverts one command. See `docs/adr/0004-whole-actions-with-pending-prompts.md`.
 - [Modeled-ability vocabulary](closed/013-modeled-ability-vocabulary.md): a closed effect list the engine runs, abilities that can be partly modeled with agent clauses, spells through an engine-owned effects file, six reaction triggers and six passive triggers, a timed modifier effect, roll modifiers with a `lighting` setting, five usage kinds, all 15 conditions, zones and spawn left unmodeled, and three classes of SRD default resolution. See `docs/adr/0005-closed-effect-vocabulary-with-agent-clauses.md`.
 - [Override mechanics, log format and public view](closed/011-override-and-log-format.md): dotted override paths with `--clear`, separate `add`/`remove` commands for roster changes, one tagged plain-text log per encounter shared by both modes, and a public filter that hides monster numbers behind four wounded states. See `docs/adr/0006-override-paths-and-log-format.md`.
+- [Randomness, seeds and replay](closed/012-randomness-seeds-and-replay.md): one ChaCha8 stream per encounter, `--seed` on start and batch with per-fight seeds derived from the master seed, `bench batch --seed [--fight]` reruns, live `bench replay` over a recorded command history, user-entered dice draw and discard, undo rewinds the stream. See `docs/adr/0007-chacha8-stream-seeds-and-replay.md`.
 
 ## Not yet specified
 
@@ -44,7 +45,6 @@ Both modes ship in phase 1. Everything the engine can't model is labeled agent j
 
 Takeable now, in order:
 
-- Randomness, seeds and replay (grilling)
 - SRD import review (grilling)
 - House rule template and folder (grilling)
 - SRD ability survey (research, agent held)

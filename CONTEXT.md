@@ -80,6 +80,18 @@ _Avoid_: Interrupt, callback
 A pending prompt that offers one combatant a chance to use a reaction, such as Shield or an Opportunity Attack, or a legendary action between turns.
 _Avoid_: Trigger, interrupt
 
+**Seed**:
+The number that fixes an encounter's dice stream. Every encounter has one. Batch encounters derive theirs from the batch's master seed and fight index. The same seed and the same commands give the same dice.
+_Avoid_: Random state, entropy
+
+**Command history**:
+The ordered list of mutating commands a live encounter has processed, stored with their arguments and any user-entered dice. Replay re-executes it from the initial snapshot.
+_Avoid_: Event log, transcript
+
+**Replay**:
+Re-running a live encounter's command history from its seed to rebuild the state, as a tamper check or to find where an old encounter diverges under newer rules.
+_Avoid_: Resume, restore
+
 **Log**:
 The human-readable record of every action the engine takes, including overrides with their stated reasons. The log cannot be overridden.
 _Avoid_: History, trace
