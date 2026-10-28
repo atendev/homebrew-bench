@@ -29,3 +29,11 @@ Key decisions to implement:
   - Add a test/check that renders each modeled spell's expected mechanical behavior as text and diffs/verifies it against upstream SRD `description` and `higher_level` fields in `data/srd/2024/5e-SRD-Spells.json`.
 
 ## Resolution
+
+- Created `scripts/scaffold-spells.py`, a deterministic helper that reads `data/srd/2024/5e-SRD-Spells.json` and emits starter `SpellEffect` JSON entries for requested SRD spell ids. It detects range, duration, concentration, attack/save, damage dice, slot scaling, area shapes, conditions, healing, teleports, and modifiers.
+- Created `data/spells/effects.json` with 84 hand-finished spell entries: every caster and healer spell from `data/party/standard-spells.json` (tiers 1–9 plus at-will options), plus 25 core SRD monster combat spells. Each entry uses the closed effect vocabulary, includes `agent_clauses` for riders outside the vocabulary, and carries `source: SRD 5.2.1`.
+- Updated `data/party/standard-spells.json` so every covered spell is marked `modeled` or `agent-only`, and the archetype `effects_status` fields now read `partially-modeled`.
+- Added `SavingThrow::immunity_after_success` default in `bench-core/src/effect.rs` so omitting the field deserializes cleanly.
+- Added a Rust schema-validation test in `bench-core/src/spell.rs` that fails the test suite if any entry in `data/spells/effects.json` does not deserialize into `SpellEffect`.
+- Created `scripts/check-spell-effects.py`, the SRD-text honesty check. It renders each modeled spell's mechanical facts (damage dice, save abilities, conditions, area shapes, healing, upcast dice) and verifies that those concrete facts appear in the upstream SRD `description` and `higher_level` text. All 84 entries now pass.
+- `cargo test` passes with 15 tests.

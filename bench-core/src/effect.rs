@@ -115,6 +115,7 @@ pub struct SavingThrow {
     pub no_damage_on_success: bool,
     pub repeat_save: Option<RepeatSave>,
     pub two_stage: Option<TwoStage>,
+    #[serde(default)]
     pub immunity_after_success: bool,
     pub hp_gate: Option<u32>,
     pub creature_type_gate: Option<Vec<String>>,

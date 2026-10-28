@@ -1,0 +1,2329 @@
+{
+  "acid-arrow": {
+    "agent_clauses": [
+      "On a miss, the target takes half the initial damage only."
+    ],
+    "concentration": false,
+    "delayed": [
+      {
+        "delay": {
+          "rounds": 1
+        },
+        "effect": {
+          "damage": {
+            "dice": "2d4",
+            "magical": true,
+            "type": "acid"
+          }
+        }
+      }
+    ],
+    "effects": [
+      {
+        "attack": {
+          "damage": [
+            {
+              "dice": "4d4",
+              "magical": true,
+              "type": "acid"
+            }
+          ],
+          "modifier": 0,
+          "range": [
+            90,
+            90
+          ],
+          "target_count": 1
+        }
+      }
+    ],
+    "id": "acid-arrow",
+    "name": "Acid Arrow",
+    "scaling": [
+      {
+        "effect_index": 0,
+        "per_slot": {
+          "extra_dice": {
+            "dice": "1d4"
+          }
+        }
+      },
+      {
+        "effect_index": 1,
+        "per_slot": {
+          "extra_dice": {
+            "dice": "1d4"
+          }
+        }
+      }
+    ],
+    "source": "SRD 5.2.1"
+  },
+  "aid": {
+    "agent_clauses": [
+      "Up to three targets' Hit Point maximums and current Hit Points increase by 5.",
+      "Increase by 5 per spell slot level above 2."
+    ],
+    "concentration": false,
+    "effects": [],
+    "id": "aid",
+    "name": "Aid",
+    "notes": "Upcast: Each target's Hit Points increase by 5 for each spell slot level above 2.",
+    "source": "SRD 5.2.1"
+  },
+  "arcane-hand": {
+    "agent_clauses": [
+      "As a Bonus Action on later turns, the caster can move the hand 60 feet and repeat the attack (Clenched Fist) or grapple/push (Grasping Hand).",
+      "The hand is an object with AC 20 and Hit Points equal to the caster's maximum."
+    ],
+    "concentration": true,
+    "effects": [
+      {
+        "attack": {
+          "damage": [
+            {
+              "dice": "5d8",
+              "magical": true,
+              "type": "force"
+            }
+          ],
+          "modifier": 0,
+          "reach": 5,
+          "target_count": 1
+        }
+      }
+    ],
+    "id": "arcane-hand",
+    "name": "Arcane Hand",
+    "scaling": [
+      {
+        "effect_index": 0,
+        "per_slot": {
+          "extra_dice": {
+            "dice": "2d8"
+          }
+        }
+      }
+    ],
+    "source": "SRD 5.2.1"
+  },
+  "aura-of-life": {
+    "agent_clauses": [
+      "Allies in the 30-foot Emanation have Resistance to Necrotic damage and their Hit Point maximums cannot be reduced.",
+      "An ally with 0 Hit Points that starts its turn in the aura regains 1 Hit Point."
+    ],
+    "concentration": true,
+    "effects": [],
+    "id": "aura-of-life",
+    "name": "Aura of Life",
+    "source": "SRD 5.2.1"
+  },
+  "beacon-of-hope": {
+    "agent_clauses": [
+      "Targets have Advantage on Wisdom saving throws and Death Saving Throws.",
+      "Targets regain the maximum number of Hit Points possible from any healing."
+    ],
+    "concentration": true,
+    "effects": [],
+    "id": "beacon-of-hope",
+    "name": "Beacon of Hope",
+    "source": "SRD 5.2.1"
+  },
+  "befuddlement": {
+    "agent_clauses": [
+      "On a failed save, the target cannot cast spells or take the Magic action.",
+      "The target repeats the save at the end of every 30 days; Greater Restoration, Heal, or Wish ends the effect."
+    ],
+    "concentration": false,
+    "effects": [
+      {
+        "saving_throw": {
+          "ability": "int",
+          "damage": [
+            {
+              "dice": "10d12",
+              "magical": true,
+              "type": "psychic"
+            }
+          ],
+          "dc": 0,
+          "half_on_success": true,
+          "no_damage_on_success": false
+        }
+      }
+    ],
+    "id": "befuddlement",
+    "name": "Befuddlement",
+    "source": "SRD 5.2.1",
+    "notes": "The curse preventing spellcasting and the Magic action is not represented mechanically; resolve via agent clauses."
+  },
+  "bless": {
+    "agent_clauses": [
+      "Up to three targets add 1d4 to attack rolls and saving throws before the spell ends.",
+      "One additional target per spell slot level above 1."
+    ],
+    "concentration": true,
+    "effects": [],
+    "id": "bless",
+    "name": "Bless",
+    "scaling": [
+      {
+        "effect_index": 0,
+        "per_slot": {
+          "extra_targets": {
+            "count": 1
+          }
+        }
+      }
+    ],
+    "source": "SRD 5.2.1"
+  },
+  "burning-hands": {
+    "concentration": false,
+    "effects": [
+      {
+        "saving_throw": {
+          "ability": "dex",
+          "damage": [
+            {
+              "dice": "3d6",
+              "magical": true,
+              "type": "fire"
+            }
+          ],
+          "dc": 0,
+          "half_on_success": true,
+          "no_damage_on_success": false
+        }
+      }
+    ],
+    "id": "burning-hands",
+    "name": "Burning Hands",
+    "scaling": [
+      {
+        "effect_index": 0,
+        "per_slot": {
+          "extra_dice": {
+            "dice": "1d6"
+          }
+        }
+      }
+    ],
+    "source": "SRD 5.2.1"
+  },
+  "chain-lightning": {
+    "agent_clauses": [
+      "Three bolts leap from the first target to up to three other targets within 30 feet; each target can be hit only once."
+    ],
+    "concentration": false,
+    "effects": [
+      {
+        "saving_throw": {
+          "ability": "dex",
+          "damage": [
+            {
+              "dice": "10d8",
+              "magical": true,
+              "type": "lightning"
+            }
+          ],
+          "dc": 0,
+          "half_on_success": true,
+          "no_damage_on_success": false
+        }
+      }
+    ],
+    "id": "chain-lightning",
+    "name": "Chain Lightning",
+    "scaling": [
+      {
+        "effect_index": 0,
+        "per_slot": {
+          "extra_targets": {
+            "count": 1
+          }
+        }
+      }
+    ],
+    "source": "SRD 5.2.1"
+  },
+  "charm-monster": {
+    "agent_clauses": [
+      "Target has Advantage on the save if the caster or its allies are fighting it.",
+      "The condition ends if the caster or its allies damage the target."
+    ],
+    "concentration": false,
+    "effects": [
+      {
+        "saving_throw": {
+          "ability": "wis",
+          "damage": [],
+          "dc": 0,
+          "half_on_success": false,
+          "no_damage_on_success": false,
+          "on_failure": [
+            {
+              "condition": {
+                "condition": "charmed",
+                "duration": {
+                  "concentration": null
+                },
+                "source_ability": "charm-monster"
+              }
+            }
+          ]
+        }
+      }
+    ],
+    "id": "charm-monster",
+    "name": "Charm Monster",
+    "scaling": [
+      {
+        "effect_index": 0,
+        "per_slot": {
+          "extra_targets": {
+            "count": 1
+          }
+        }
+      }
+    ],
+    "source": "SRD 5.2.1"
+  },
+  "charm-person": {
+    "agent_clauses": [
+      "Target has Advantage on the save if the caster or its allies are fighting it.",
+      "The condition ends if the caster or its allies damage the target.",
+      "The target is Friendly to the caster while Charmed."
+    ],
+    "concentration": false,
+    "effects": [
+      {
+        "saving_throw": {
+          "ability": "wis",
+          "damage": [],
+          "dc": 0,
+          "half_on_success": false,
+          "no_damage_on_success": false,
+          "on_failure": [
+            {
+              "condition": {
+                "condition": "charmed",
+                "duration": {
+                  "hours": 1
+                },
+                "source_ability": "charm-person"
+              }
+            }
+          ]
+        }
+      }
+    ],
+    "id": "charm-person",
+    "name": "Charm Person",
+    "scaling": [
+      {
+        "effect_index": 0,
+        "per_slot": {
+          "extra_targets": {
+            "count": 1
+          }
+        }
+      }
+    ],
+    "source": "SRD 5.2.1"
+  },
+  "command": {
+    "agent_clauses": [
+      "On a failed save, the target follows a one-word command on its next turn: Approach, Drop, Flee, Grovel, or Halt.",
+      "One additional creature per spell slot level above 1."
+    ],
+    "concentration": false,
+    "effects": [
+      {
+        "saving_throw": {
+          "ability": "wis",
+          "damage": [],
+          "dc": 0,
+          "half_on_success": false,
+          "no_damage_on_success": false,
+          "on_failure": [
+            {
+              "condition": {
+                "condition": "prone",
+                "duration": {
+                  "instant": null
+                },
+                "source_ability": "command"
+              }
+            }
+          ]
+        }
+      }
+    ],
+    "id": "command",
+    "name": "Command",
+    "scaling": [
+      {
+        "effect_index": 0,
+        "per_slot": {
+          "extra_targets": {
+            "count": 1
+          }
+        }
+      }
+    ],
+    "source": "SRD 5.2.1"
+  },
+  "cone-of-cold": {
+    "concentration": false,
+    "effects": [
+      {
+        "area": {
+          "area": {
+            "cone": {
+              "size": 60
+            }
+          },
+          "effect": {
+            "saving_throw": {
+              "ability": "con",
+              "damage": [
+                {
+                  "dice": "8d8",
+                  "magical": true,
+                  "type": "cold"
+                }
+              ],
+              "dc": 0,
+              "half_on_success": true,
+              "no_damage_on_success": false
+            }
+          },
+          "origin": "self_"
+        }
+      }
+    ],
+    "id": "cone-of-cold",
+    "name": "Cone of Cold",
+    "scaling": [
+      {
+        "effect_index": 0,
+        "per_slot": {
+          "extra_dice": {
+            "dice": "1d8"
+          }
+        }
+      }
+    ],
+    "source": "SRD 5.2.1"
+  },
+  "counterspell": {
+    "agent_clauses": [
+      "Reaction to interrupt a spell being cast within 60 feet; the caster makes a Constitution save.",
+      "On a failed save, the spell dissipates with no effect and the slot is not expended."
+    ],
+    "concentration": false,
+    "effects": [],
+    "id": "counterspell",
+    "name": "Counterspell",
+    "source": "SRD 5.2.1"
+  },
+  "cure-wounds": {
+    "concentration": false,
+    "effects": [
+      {
+        "heal": {
+          "dice": "2d8",
+          "modifier": 0
+        }
+      }
+    ],
+    "id": "cure-wounds",
+    "name": "Cure Wounds",
+    "scaling": [
+      {
+        "effect_index": 0,
+        "per_slot": {
+          "extra_dice": {
+            "dice": "2d8"
+          }
+        }
+      }
+    ],
+    "source": "SRD 5.2.1"
+  },
+  "darkness": {
+    "agent_clauses": [
+      "Magical Darkness fills a 15-foot-radius Sphere for the duration; Darkvision cannot see through it and nonmagical light cannot illuminate it.",
+      "Alternatively, Darkness fills a 15-foot Emanation from an object.",
+      "Dispels light spells of level 2 or lower that overlap the area."
+    ],
+    "concentration": true,
+    "effects": [],
+    "id": "darkness",
+    "name": "Darkness",
+    "source": "SRD 5.2.1"
+  },
+  "death-ward": {
+    "agent_clauses": [
+      "The first time the target would drop to 0 Hit Points before the spell ends, it instead drops to 1 Hit Point and the spell ends.",
+      "An instant-kill effect that does not deal damage is negated against the target and ends the spell."
+    ],
+    "concentration": false,
+    "effects": [],
+    "id": "death-ward",
+    "name": "Death Ward",
+    "source": "SRD 5.2.1"
+  },
+  "disintegrate": {
+    "agent_clauses": [
+      "A creature reduced to 0 Hit Points by this spell is disintegrated, as is a 10-foot-Cube of nonmagical object."
+    ],
+    "concentration": false,
+    "effects": [
+      {
+        "saving_throw": {
+          "ability": "dex",
+          "damage": [
+            {
+              "dice": "10d6+40",
+              "magical": true,
+              "type": "force"
+            }
+          ],
+          "dc": 0,
+          "half_on_success": false,
+          "no_damage_on_success": false
+        }
+      }
+    ],
+    "id": "disintegrate",
+    "name": "Disintegrate",
+    "scaling": [
+      {
+        "effect_index": 0,
+        "per_slot": {
+          "extra_dice": {
+            "dice": "3d6"
+          }
+        }
+      }
+    ],
+    "source": "SRD 5.2.1"
+  },
+  "dominate-monster": {
+    "agent_clauses": [
+      "Target has Advantage on the save if the caster or its allies are fighting it.",
+      "The target repeats the save whenever it takes damage, ending the spell on a success.",
+      "Concentration lasts up to 8 hours with a level 9 slot."
+    ],
+    "concentration": true,
+    "effects": [
+      {
+        "saving_throw": {
+          "ability": "wis",
+          "damage": [],
+          "dc": 0,
+          "half_on_success": false,
+          "no_damage_on_success": false,
+          "on_failure": [
+            {
+              "condition": {
+                "condition": "charmed",
+                "duration": {
+                  "concentration": null
+                },
+                "source_ability": "dominate-monster"
+              }
+            }
+          ]
+        }
+      }
+    ],
+    "id": "dominate-monster",
+    "name": "Dominate Monster",
+    "notes": "Upcast: Your Concentration can last longer with a level 9 spell slot (up to 8 hours).",
+    "source": "SRD 5.2.1"
+  },
+  "dominate-person": {
+    "agent_clauses": [
+      "Target has Advantage on the save if the caster or its allies are fighting it.",
+      "The target repeats the save whenever it takes damage, ending the spell on a success.",
+      "The caster has a telepathic link with the Charmed target."
+    ],
+    "concentration": true,
+    "effects": [
+      {
+        "saving_throw": {
+          "ability": "wis",
+          "damage": [],
+          "dc": 0,
+          "half_on_success": false,
+          "no_damage_on_success": false,
+          "on_failure": [
+            {
+              "condition": {
+                "condition": "charmed",
+                "duration": {
+                  "concentration": null
+                },
+                "source_ability": "dominate-person"
+              }
+            }
+          ]
+        }
+      }
+    ],
+    "id": "dominate-person",
+    "name": "Dominate Person",
+    "notes": "Upcast: Your Concentration can last longer with a spell slot of level 6 (up to 10 minutes), 7 (up to 1 hour), or 8+ (up to 8 hours).",
+    "source": "SRD 5.2.1"
+  },
+  "etherealness": {
+    "agent_clauses": [
+      "Target enters the Border Ethereal for the duration and cannot interact with creatures on the Material Plane.",
+      "One additional willing creature per spell slot level above 7, within 10 feet."
+    ],
+    "concentration": false,
+    "effects": [],
+    "id": "etherealness",
+    "name": "Etherealness",
+    "notes": "Upcast: You can target up to three willing creatures (including yourself) for each spell slot level above 7. The creatures must be within 10 feet of you when you cast the spell.",
+    "source": "SRD 5.2.1"
+  },
+  "faerie-fire": {
+    "agent_clauses": [
+      "Creatures that fail the save are outlined in light and cannot benefit from the Invisible condition.",
+      "Attack rolls against an affected creature have Advantage."
+    ],
+    "concentration": true,
+    "effects": [
+      {
+        "area": {
+          "area": {
+            "cube": {
+              "size": 20
+            }
+          },
+          "effect": {
+            "saving_throw": {
+              "ability": "dex",
+              "damage": [],
+              "dc": 0,
+              "half_on_success": false,
+              "no_damage_on_success": false,
+              "on_failure": []
+            }
+          },
+          "origin": "target_point"
+        }
+      }
+    ],
+    "id": "faerie-fire",
+    "name": "Faerie Fire",
+    "source": "SRD 5.2.1"
+  },
+  "fear": {
+    "agent_clauses": [
+      "Frightened creatures drop what they are holding and take the Dash action to move away by the safest route.",
+      "At the end of its turn, a creature out of line of sight repeats the save, ending the spell on a success."
+    ],
+    "concentration": true,
+    "effects": [
+      {
+        "area": {
+          "area": {
+            "cone": {
+              "size": 30
+            }
+          },
+          "effect": {
+            "saving_throw": {
+              "ability": "wis",
+              "damage": [],
+              "dc": 0,
+              "half_on_success": false,
+              "no_damage_on_success": false,
+              "on_failure": [
+                {
+                  "condition": {
+                    "condition": "frightened",
+                    "duration": {
+                      "concentration": null
+                    },
+                    "source_ability": "fear"
+                  }
+                }
+              ]
+            }
+          },
+          "origin": "self_"
+        }
+      }
+    ],
+    "id": "fear",
+    "name": "Fear",
+    "source": "SRD 5.2.1"
+  },
+  "finger-of-death": {
+    "agent_clauses": [
+      "A Humanoid killed by this spell rises as a Zombie at the start of the caster's next turn."
+    ],
+    "concentration": false,
+    "effects": [
+      {
+        "saving_throw": {
+          "ability": "con",
+          "damage": [
+            {
+              "dice": "7d8+30",
+              "magical": true,
+              "type": "necrotic"
+            }
+          ],
+          "dc": 0,
+          "half_on_success": true,
+          "no_damage_on_success": false
+        }
+      }
+    ],
+    "id": "finger-of-death",
+    "name": "Finger of Death",
+    "source": "SRD 5.2.1"
+  },
+  "fire-bolt": {
+    "concentration": false,
+    "effects": [
+      {
+        "attack": {
+          "damage": [
+            {
+              "dice": "1d10",
+              "magical": true,
+              "type": "fire"
+            }
+          ],
+          "modifier": 0,
+          "range": [
+            120,
+            120
+          ],
+          "target_count": 1
+        }
+      }
+    ],
+    "id": "fire-bolt",
+    "name": "Fire Bolt",
+    "source": "SRD 5.2.1"
+  },
+  "fireball": {
+    "concentration": false,
+    "effects": [
+      {
+        "saving_throw": {
+          "ability": "dex",
+          "damage": [
+            {
+              "dice": "8d6",
+              "magical": true,
+              "type": "fire"
+            }
+          ],
+          "dc": 0,
+          "half_on_success": true,
+          "no_damage_on_success": false
+        }
+      }
+    ],
+    "id": "fireball",
+    "name": "Fireball",
+    "scaling": [
+      {
+        "effect_index": 0,
+        "per_slot": {
+          "extra_dice": {
+            "dice": "1d6"
+          }
+        }
+      }
+    ],
+    "source": "SRD 5.2.1"
+  },
+  "fly": {
+    "agent_clauses": [
+      "Target gains a Fly Speed equal to its walking speed for the duration."
+    ],
+    "concentration": true,
+    "effects": [
+      {
+        "timed_modifier": {
+          "change": "double",
+          "duration": {
+            "concentration": null
+          },
+          "source_ability": "fly",
+          "target": {
+            "speed": null
+          }
+        }
+      }
+    ],
+    "id": "fly",
+    "name": "Fly",
+    "scaling": [
+      {
+        "effect_index": 0,
+        "per_slot": {
+          "extra_targets": {
+            "count": 1
+          }
+        }
+      }
+    ],
+    "source": "SRD 5.2.1"
+  },
+  "foresight": {
+    "agent_clauses": [
+      "Target has Advantage on D20 Tests, and other creatures have Disadvantage on attack rolls against it, for 8 hours.",
+      "The spell ends early if the caster casts it again."
+    ],
+    "concentration": false,
+    "effects": [],
+    "id": "foresight",
+    "name": "Foresight",
+    "source": "SRD 5.2.1"
+  },
+  "globe-of-invulnerability": {
+    "agent_clauses": [
+      "Spells of level 5 or lower cast from outside the 10-foot Emanation cannot affect creatures inside it.",
+      "Blocks spells of 1 level higher per spell slot level above 6."
+    ],
+    "concentration": true,
+    "effects": [],
+    "id": "globe-of-invulnerability",
+    "name": "Globe of Invulnerability",
+    "notes": "Upcast: The barrier blocks spells of 1 level higher for each spell slot level above 6.",
+    "source": "SRD 5.2.1"
+  },
+  "goodberry": {
+    "agent_clauses": [
+      "Creates ten berries; eating one as a Bonus Action restores 1 Hit Point and provides nourishment for one day."
+    ],
+    "concentration": false,
+    "effects": [],
+    "id": "goodberry",
+    "name": "Goodberry",
+    "source": "SRD 5.2.1"
+  },
+  "greater-invisibility": {
+    "agent_clauses": [
+      "The spell does not end early when the target attacks or deals damage."
+    ],
+    "concentration": true,
+    "effects": [
+      {
+        "condition": {
+          "condition": "invisible",
+          "duration": {
+            "concentration": null
+          },
+          "source_ability": "greater-invisibility"
+        }
+      }
+    ],
+    "id": "greater-invisibility",
+    "name": "Greater Invisibility",
+    "source": "SRD 5.2.1"
+  },
+  "greater-restoration": {
+    "agent_clauses": [
+      "Removes one of: 1 Exhaustion level; Charmed or Petrified condition; a curse; ability score reduction; Hit Point maximum reduction."
+    ],
+    "concentration": false,
+    "effects": [],
+    "id": "greater-restoration",
+    "name": "Greater Restoration",
+    "source": "SRD 5.2.1"
+  },
+  "guiding-bolt": {
+    "agent_clauses": [
+      "The next attack roll against the target before the end of the caster's next turn has Advantage."
+    ],
+    "concentration": false,
+    "effects": [
+      {
+        "attack": {
+          "damage": [
+            {
+              "dice": "4d6",
+              "magical": true,
+              "type": "radiant"
+            }
+          ],
+          "modifier": 0,
+          "range": [
+            120,
+            120
+          ],
+          "target_count": 1
+        }
+      }
+    ],
+    "id": "guiding-bolt",
+    "name": "Guiding Bolt",
+    "scaling": [
+      {
+        "effect_index": 0,
+        "per_slot": {
+          "extra_dice": {
+            "dice": "1d6"
+          }
+        }
+      }
+    ],
+    "source": "SRD 5.2.1"
+  },
+  "haste": {
+    "agent_clauses": [
+      "Target gains an extra action each turn that can only be used for Attack (one attack), Dash, Disengage, Hide, or Utilize.",
+      "When the spell ends, the target is Incapacitated and has Speed 0 until the end of its next turn."
+    ],
+    "concentration": true,
+    "effects": [
+      {
+        "timed_modifier": {
+          "change": "double",
+          "duration": {
+            "concentration": null
+          },
+          "source_ability": "haste",
+          "target": {
+            "speed": null
+          }
+        }
+      },
+      {
+        "timed_modifier": {
+          "change": {
+            "add": 2
+          },
+          "duration": {
+            "concentration": null
+          },
+          "source_ability": "haste",
+          "target": {
+            "armor_class": null
+          }
+        }
+      },
+      {
+        "timed_modifier": {
+          "change": "advantage",
+          "duration": {
+            "concentration": null
+          },
+          "source_ability": "haste",
+          "target": {
+            "saving_throws": {
+              "ability": "dex"
+            }
+          }
+        }
+      }
+    ],
+    "id": "haste",
+    "name": "Haste",
+    "source": "SRD 5.2.1"
+  },
+  "heal": {
+    "concentration": false,
+    "effects": [
+      {
+        "heal": {
+          "dice": "70",
+          "modifier": 0
+        }
+      }
+    ],
+    "id": "heal",
+    "name": "Heal",
+    "notes": "Upcast: The healing increases by 10 for each spell slot level above 6.",
+    "source": "SRD 5.2.1"
+  },
+  "healing-word": {
+    "concentration": false,
+    "effects": [
+      {
+        "heal": {
+          "dice": "2d4",
+          "modifier": 0
+        }
+      }
+    ],
+    "id": "healing-word",
+    "name": "Healing Word",
+    "scaling": [
+      {
+        "effect_index": 0,
+        "per_slot": {
+          "extra_dice": {
+            "dice": "2d4"
+          }
+        }
+      }
+    ],
+    "source": "SRD 5.2.1"
+  },
+  "heroes-feast": {
+    "agent_clauses": [
+      "After a 1-hour feast, up to twelve creatures gain Resistance to Poison damage, immunity to the Frightened and Poisoned conditions, and advantage on Wisdom saving throws for 24 hours."
+    ],
+    "concentration": false,
+    "effects": [],
+    "id": "heroes-feast",
+    "name": "Heroes' Feast",
+    "source": "SRD 5.2.1"
+  },
+  "hold-monster": {
+    "agent_clauses": [
+      "Target repeats the save at the end of each of its turns, ending the spell on a success."
+    ],
+    "concentration": true,
+    "effects": [
+      {
+        "saving_throw": {
+          "ability": "wis",
+          "damage": [],
+          "dc": 0,
+          "half_on_success": false,
+          "no_damage_on_success": false,
+          "on_failure": [
+            {
+              "condition": {
+                "condition": "paralyzed",
+                "duration": {
+                  "concentration": null
+                },
+                "source_ability": "hold-monster"
+              }
+            }
+          ]
+        }
+      }
+    ],
+    "id": "hold-monster",
+    "name": "Hold Monster",
+    "scaling": [
+      {
+        "effect_index": 0,
+        "per_slot": {
+          "extra_targets": {
+            "count": 1
+          }
+        }
+      }
+    ],
+    "source": "SRD 5.2.1"
+  },
+  "hold-person": {
+    "agent_clauses": [
+      "Only Humanoids can be targeted.",
+      "Target repeats the save at the end of each of its turns, ending the spell on a success."
+    ],
+    "concentration": true,
+    "effects": [
+      {
+        "saving_throw": {
+          "ability": "wis",
+          "damage": [],
+          "dc": 0,
+          "half_on_success": false,
+          "no_damage_on_success": false,
+          "on_failure": [
+            {
+              "condition": {
+                "condition": "paralyzed",
+                "duration": {
+                  "concentration": null
+                },
+                "source_ability": "hold-person"
+              }
+            }
+          ]
+        }
+      }
+    ],
+    "id": "hold-person",
+    "name": "Hold Person",
+    "notes": "Upcast: You can target one additional Humanoid for each spell slot level above 2.",
+    "scaling": [
+      {
+        "effect_index": 0,
+        "per_slot": {
+          "extra_targets": {
+            "count": 1
+          }
+        }
+      }
+    ],
+    "source": "SRD 5.2.1"
+  },
+  "hypnotic-pattern": {
+    "agent_clauses": [
+      "Only creatures that can see the pattern are affected.",
+      "The spell ends on an affected creature if it takes damage or a creature uses an action to shake it awake."
+    ],
+    "concentration": true,
+    "effects": [
+      {
+        "area": {
+          "area": {
+            "cube": {
+              "size": 30
+            }
+          },
+          "effect": {
+            "saving_throw": {
+              "ability": "wis",
+              "damage": [],
+              "dc": 0,
+              "half_on_success": false,
+              "no_damage_on_success": false,
+              "on_failure": [
+                {
+                  "condition": {
+                    "condition": "charmed",
+                    "duration": {
+                      "concentration": null
+                    },
+                    "source_ability": "hypnotic-pattern"
+                  }
+                },
+                {
+                  "condition": {
+                    "condition": "incapacitated",
+                    "duration": {
+                      "concentration": null
+                    },
+                    "source_ability": "hypnotic-pattern"
+                  }
+                },
+                {
+                  "timed_modifier": {
+                    "change": {
+                      "set": 0
+                    },
+                    "duration": {
+                      "concentration": null
+                    },
+                    "source_ability": "hypnotic-pattern",
+                    "target": {
+                      "speed": null
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          "origin": "target_point"
+        }
+      }
+    ],
+    "id": "hypnotic-pattern",
+    "name": "Hypnotic Pattern",
+    "source": "SRD 5.2.1"
+  },
+  "ice-knife": {
+    "agent_clauses": [
+      "On a hit or miss, the shard explodes in a 5-foot-radius Sphere around the target."
+    ],
+    "concentration": false,
+    "delayed": [
+      {
+        "delay": {
+          "instant": null
+        },
+        "effect": {
+          "area": {
+            "area": {
+              "sphere": {
+                "radius": 5
+              }
+            },
+            "effect": {
+              "saving_throw": {
+                "ability": "dex",
+                "damage": [
+                  {
+                    "dice": "2d6",
+                    "magical": true,
+                    "type": "cold"
+                  }
+                ],
+                "dc": 0,
+                "half_on_success": true,
+                "no_damage_on_success": false
+              }
+            },
+            "origin": "target_creature"
+          }
+        }
+      }
+    ],
+    "effects": [
+      {
+        "attack": {
+          "damage": [
+            {
+              "dice": "1d10",
+              "magical": true,
+              "type": "piercing"
+            }
+          ],
+          "modifier": 0,
+          "range": [
+            60,
+            60
+          ],
+          "target_count": 1
+        }
+      }
+    ],
+    "id": "ice-knife",
+    "name": "Ice Knife",
+    "scaling": [
+      {
+        "effect_index": 0,
+        "per_slot": {
+          "extra_dice": {
+            "dice": "1d6"
+          }
+        }
+      }
+    ],
+    "source": "SRD 5.2.1"
+  },
+  "ice-storm": {
+    "agent_clauses": [
+      "Ground in the Cylinder becomes Difficult Terrain until the end of the caster's next turn."
+    ],
+    "concentration": false,
+    "effects": [
+      {
+        "area": {
+          "area": {
+            "cylinder": {
+              "height": 40,
+              "radius": 20
+            }
+          },
+          "effect": {
+            "saving_throw": {
+              "ability": "dex",
+              "damage": [
+                {
+                  "dice": "2d10",
+                  "magical": true,
+                  "type": "bludgeoning"
+                },
+                {
+                  "dice": "4d6",
+                  "magical": true,
+                  "type": "cold"
+                }
+              ],
+              "dc": 0,
+              "half_on_success": true,
+              "no_damage_on_success": false
+            }
+          },
+          "origin": "target_point"
+        }
+      }
+    ],
+    "id": "ice-storm",
+    "name": "Ice Storm",
+    "scaling": [
+      {
+        "effect_index": 0,
+        "per_slot": {
+          "extra_dice": {
+            "dice": "1d10"
+          }
+        }
+      }
+    ],
+    "source": "SRD 5.2.1"
+  },
+  "invisibility": {
+    "agent_clauses": [
+      "The spell ends early immediately after the target makes an attack roll, deals damage, or casts a spell."
+    ],
+    "concentration": true,
+    "effects": [
+      {
+        "condition": {
+          "condition": "invisible",
+          "duration": {
+            "concentration": null
+          },
+          "source_ability": "invisibility"
+        }
+      }
+    ],
+    "id": "invisibility",
+    "name": "Invisibility",
+    "scaling": [
+      {
+        "effect_index": 0,
+        "per_slot": {
+          "extra_targets": {
+            "count": 1
+          }
+        }
+      }
+    ],
+    "source": "SRD 5.2.1"
+  },
+  "lesser-restoration": {
+    "agent_clauses": [
+      "Ends one condition on a touched creature: Blinded, Deafened, Paralyzed, or Poisoned."
+    ],
+    "concentration": false,
+    "effects": [],
+    "id": "lesser-restoration",
+    "name": "Lesser Restoration",
+    "source": "SRD 5.2.1"
+  },
+  "lightning-bolt": {
+    "concentration": false,
+    "effects": [
+      {
+        "saving_throw": {
+          "ability": "dex",
+          "damage": [
+            {
+              "dice": "8d6",
+              "magical": true,
+              "type": "lightning"
+            }
+          ],
+          "dc": 0,
+          "half_on_success": true,
+          "no_damage_on_success": false
+        }
+      }
+    ],
+    "id": "lightning-bolt",
+    "name": "Lightning Bolt",
+    "scaling": [
+      {
+        "effect_index": 0,
+        "per_slot": {
+          "extra_dice": {
+            "dice": "1d6"
+          }
+        }
+      }
+    ],
+    "source": "SRD 5.2.1"
+  },
+  "magic-missile": {
+    "agent_clauses": [
+      "Each dart hits a visible target of the caster's choice; the engine treats them as auto-hit damage instances.",
+      "One additional dart per spell slot level above 1."
+    ],
+    "concentration": false,
+    "effects": [
+      {
+        "damage": {
+          "dice": "1d4+1",
+          "magical": true,
+          "type": "force"
+        }
+      },
+      {
+        "damage": {
+          "dice": "1d4+1",
+          "magical": true,
+          "type": "force"
+        }
+      },
+      {
+        "damage": {
+          "dice": "1d4+1",
+          "magical": true,
+          "type": "force"
+        }
+      }
+    ],
+    "id": "magic-missile",
+    "name": "Magic Missile",
+    "scaling": [
+      {
+        "effect_index": 0,
+        "per_slot": {
+          "extra_dice": {
+            "dice": "1d4+1"
+          }
+        }
+      },
+      {
+        "effect_index": 1,
+        "per_slot": {
+          "extra_dice": {
+            "dice": "1d4+1"
+          }
+        }
+      },
+      {
+        "effect_index": 2,
+        "per_slot": {
+          "extra_dice": {
+            "dice": "1d4+1"
+          }
+        }
+      }
+    ],
+    "source": "SRD 5.2.1"
+  },
+  "mass-cure-wounds": {
+    "agent_clauses": [
+      "Heals up to six creatures in a 30-foot-radius Sphere."
+    ],
+    "concentration": false,
+    "effects": [
+      {
+        "heal": {
+          "dice": "5d8",
+          "modifier": 0
+        }
+      }
+    ],
+    "id": "mass-cure-wounds",
+    "name": "Mass Cure Wounds",
+    "scaling": [
+      {
+        "effect_index": 0,
+        "per_slot": {
+          "extra_dice": {
+            "dice": "1d8"
+          }
+        }
+      }
+    ],
+    "source": "SRD 5.2.1"
+  },
+  "mass-heal": {
+    "agent_clauses": [
+      "Distributes up to 700 Hit Points among any number of visible targets.",
+      "Removes Blinded, Deafened, and Poisoned conditions from creatures healed."
+    ],
+    "concentration": false,
+    "effects": [],
+    "id": "mass-heal",
+    "name": "Mass Heal",
+    "source": "SRD 5.2.1"
+  },
+  "mass-healing-word": {
+    "agent_clauses": [
+      "Heals up to six visible creatures of the caster's choice."
+    ],
+    "concentration": false,
+    "effects": [
+      {
+        "heal": {
+          "dice": "2d4",
+          "modifier": 0
+        }
+      }
+    ],
+    "id": "mass-healing-word",
+    "name": "Mass Healing Word",
+    "scaling": [
+      {
+        "effect_index": 0,
+        "per_slot": {
+          "extra_dice": {
+            "dice": "1d4"
+          }
+        }
+      }
+    ],
+    "source": "SRD 5.2.1"
+  },
+  "mass-suggestion": {
+    "agent_clauses": [
+      "On a failed Wisdom save, up to twelve targets follow a reasonable course of activity for the duration.",
+      "Duration increases with higher-level slots: 7 (10 days), 8 (30 days), 9 (366 days)."
+    ],
+    "concentration": false,
+    "effects": [],
+    "id": "mass-suggestion",
+    "name": "Mass Suggestion",
+    "notes": "Upcast: The duration is longer with a spell slot of level 7 (10 days), 8 (30 days), or 9 (366 days).",
+    "source": "SRD 5.2.1"
+  },
+  "meteor-swarm": {
+    "agent_clauses": [
+      "Four 40-foot-radius Spheres at chosen points within 1 mile; a creature in overlapping areas is affected only once."
+    ],
+    "concentration": false,
+    "effects": [
+      {
+        "area": {
+          "area": {
+            "sphere": {
+              "radius": 40
+            }
+          },
+          "effect": {
+            "saving_throw": {
+              "ability": "dex",
+              "damage": [
+                {
+                  "dice": "20d6",
+                  "magical": true,
+                  "type": "fire"
+                },
+                {
+                  "dice": "20d6",
+                  "magical": true,
+                  "type": "bludgeoning"
+                }
+              ],
+              "dc": 0,
+              "half_on_success": true,
+              "no_damage_on_success": false
+            }
+          },
+          "origin": "target_point"
+        }
+      }
+    ],
+    "id": "meteor-swarm",
+    "name": "Meteor Swarm",
+    "source": "SRD 5.2.1"
+  },
+  "mind-blank": {
+    "agent_clauses": [
+      "Target has Immunity to Psychic damage and the Charmed condition, and is unaffected by mind-reading, divination, or remote observation for 24 hours."
+    ],
+    "concentration": false,
+    "effects": [],
+    "id": "mind-blank",
+    "name": "Mind Blank",
+    "source": "SRD 5.2.1"
+  },
+  "mind-spike": {
+    "agent_clauses": [
+      "On a failed save, the caster knows the target's location until the spell ends."
+    ],
+    "concentration": true,
+    "effects": [
+      {
+        "saving_throw": {
+          "ability": "wis",
+          "damage": [
+            {
+              "dice": "3d8",
+              "magical": true,
+              "type": "psychic"
+            }
+          ],
+          "dc": 0,
+          "half_on_success": true,
+          "no_damage_on_success": false
+        }
+      }
+    ],
+    "id": "mind-spike",
+    "name": "Mind Spike",
+    "scaling": [
+      {
+        "effect_index": 0,
+        "per_slot": {
+          "extra_dice": {
+            "dice": "1d8"
+          }
+        }
+      }
+    ],
+    "source": "SRD 5.2.1"
+  },
+  "mirror-image": {
+    "agent_clauses": [
+      "Creates three illusory duplicates; attacks that would hit the caster may strike a duplicate instead.",
+      "The duplicates disappear when destroyed or when the spell ends."
+    ],
+    "concentration": false,
+    "effects": [],
+    "id": "mirror-image",
+    "name": "Mirror Image",
+    "source": "SRD 5.2.1"
+  },
+  "misty-step": {
+    "concentration": false,
+    "effects": [
+      {
+        "teleport": {
+          "destination": "unoccupied space you can see",
+          "range": 30
+        }
+      }
+    ],
+    "id": "misty-step",
+    "name": "Misty Step",
+    "source": "SRD 5.2.1"
+  },
+  "polymorph": {
+    "agent_clauses": [
+      "Target transforms into a Beast of CR equal to or less than its own (or level) on a failed Wisdom save; game statistics are replaced by the Beast's.",
+      "Target repeats the save at the end of each of its turns, ending the spell on a success."
+    ],
+    "concentration": true,
+    "effects": [],
+    "id": "polymorph",
+    "name": "Polymorph",
+    "source": "SRD 5.2.1"
+  },
+  "power-word-heal": {
+    "agent_clauses": [
+      "Restores all Hit Points to one visible creature.",
+      "Ends Charmed, Frightened, Paralyzed, Poisoned, and Stunned; if Prone, the target can use its Reaction to stand."
+    ],
+    "concentration": false,
+    "effects": [],
+    "id": "power-word-heal",
+    "name": "Power Word Heal",
+    "source": "SRD 5.2.1"
+  },
+  "power-word-kill": {
+    "agent_clauses": [
+      "If the target has 100 Hit Points or fewer, it dies instantly; otherwise it takes 12d12 Psychic damage."
+    ],
+    "concentration": false,
+    "effects": [],
+    "id": "power-word-kill",
+    "name": "Power Word Kill",
+    "source": "SRD 5.2.1"
+  },
+  "power-word-stun": {
+    "agent_clauses": [
+      "If the target has 150 Hit Points or fewer, it has the Stunned condition; otherwise its Speed is 0 until the start of the caster's next turn.",
+      "The Stunned target repeats the save at the end of each of its turns, ending the condition on a success."
+    ],
+    "concentration": false,
+    "effects": [],
+    "id": "power-word-stun",
+    "name": "Power Word Stun",
+    "source": "SRD 5.2.1"
+  },
+  "prayer-of-healing": {
+    "agent_clauses": [
+      "Targets gain the benefits of a Short Rest.",
+      "A creature cannot be affected again until it finishes a Long Rest."
+    ],
+    "concentration": false,
+    "effects": [
+      {
+        "heal": {
+          "dice": "2d8",
+          "modifier": 0
+        }
+      }
+    ],
+    "id": "prayer-of-healing",
+    "name": "Prayer of Healing",
+    "scaling": [
+      {
+        "effect_index": 0,
+        "per_slot": {
+          "extra_dice": {
+            "dice": "1d8"
+          }
+        }
+      }
+    ],
+    "source": "SRD 5.2.1"
+  },
+  "prismatic-spray": {
+    "agent_clauses": [
+      "Each target rolls 1d8 for ray color; damage type and rider vary by color.",
+      "The closed effect uses Acid as a placeholder; the agent resolves the actual ray color and rider."
+    ],
+    "concentration": false,
+    "effects": [
+      {
+        "area": {
+          "area": {
+            "cone": {
+              "size": 60
+            }
+          },
+          "effect": {
+            "saving_throw": {
+              "ability": "dex",
+              "damage": [
+                {
+                  "dice": "12d6",
+                  "magical": true,
+                  "type": "acid"
+                }
+              ],
+              "dc": 0,
+              "half_on_success": true,
+              "no_damage_on_success": false
+            }
+          },
+          "origin": "self_"
+        }
+      }
+    ],
+    "id": "prismatic-spray",
+    "name": "Prismatic Spray",
+    "source": "SRD 5.2.1"
+  },
+  "protection-from-evil-and-good": {
+    "agent_clauses": [
+      "Target is protected against aberrations, celestials, elementals, fey, fiends, and undead.",
+      "Such creatures have Disadvantage on attack rolls against the target, and the target cannot be Charmed, Frightened, or possessed by them."
+    ],
+    "concentration": false,
+    "effects": [],
+    "id": "protection-from-evil-and-good",
+    "name": "Protection from Evil and Good",
+    "source": "SRD 5.2.1"
+  },
+  "raise-dead": {
+    "agent_clauses": [
+      "Restores life to a creature dead no longer than 10 days with 1 Hit Point; does not restore missing body parts."
+    ],
+    "concentration": false,
+    "effects": [],
+    "id": "raise-dead",
+    "name": "Raise Dead",
+    "source": "SRD 5.2.1"
+  },
+  "regenerate": {
+    "agent_clauses": [
+      "Target regains 1 Hit Point at the start of each of its turns for the duration."
+    ],
+    "concentration": false,
+    "effects": [
+      {
+        "heal": {
+          "dice": "4d8+15"
+        }
+      }
+    ],
+    "id": "regenerate",
+    "name": "Regenerate",
+    "source": "SRD 5.2.1"
+  },
+  "remove-curse": {
+    "agent_clauses": [
+      "Ends one curse affecting a touched creature or object, including attunement to a cursed magic item."
+    ],
+    "concentration": false,
+    "effects": [],
+    "id": "remove-curse",
+    "name": "Remove Curse",
+    "source": "SRD 5.2.1"
+  },
+  "resistance": {
+    "agent_clauses": [
+      "When the target takes damage of a chosen type before the spell ends, it reduces the damage by 1d4 (once per turn)."
+    ],
+    "concentration": true,
+    "effects": [],
+    "id": "resistance",
+    "name": "Resistance",
+    "source": "SRD 5.2.1"
+  },
+  "resurrection": {
+    "agent_clauses": [
+      "Restores life to a creature dead no longer than a century with all Hit Points; restores missing body parts."
+    ],
+    "concentration": false,
+    "effects": [],
+    "id": "resurrection",
+    "name": "Resurrection",
+    "source": "SRD 5.2.1"
+  },
+  "revivify": {
+    "agent_clauses": [
+      "Restores 1 Hit Point to a creature that died within the last minute."
+    ],
+    "concentration": false,
+    "effects": [],
+    "id": "revivify",
+    "name": "Revivify",
+    "source": "SRD 5.2.1"
+  },
+  "sanctuary": {
+    "agent_clauses": [
+      "Creatures that target the warded creature with a harmful spell or attack must succeed on a Wisdom save or choose a new target.",
+      "The spell ends if the warded creature attacks, casts a harmful spell, or deals damage to another creature."
+    ],
+    "concentration": false,
+    "effects": [],
+    "id": "sanctuary",
+    "name": "Sanctuary",
+    "source": "SRD 5.2.1"
+  },
+  "scorching-ray": {
+    "agent_clauses": [
+      "One additional ray per slot above 2; distribute rays among targets as desired."
+    ],
+    "concentration": false,
+    "effects": [
+      {
+        "attack": {
+          "damage": [
+            {
+              "dice": "2d6",
+              "magical": true,
+              "type": "fire"
+            }
+          ],
+          "modifier": 0,
+          "range": [
+            120,
+            120
+          ],
+          "target_count": 1
+        }
+      },
+      {
+        "attack": {
+          "damage": [
+            {
+              "dice": "2d6",
+              "magical": true,
+              "type": "fire"
+            }
+          ],
+          "modifier": 0,
+          "range": [
+            120,
+            120
+          ],
+          "target_count": 1
+        }
+      },
+      {
+        "attack": {
+          "damage": [
+            {
+              "dice": "2d6",
+              "magical": true,
+              "type": "fire"
+            }
+          ],
+          "modifier": 0,
+          "range": [
+            120,
+            120
+          ],
+          "target_count": 1
+        }
+      }
+    ],
+    "id": "scorching-ray",
+    "name": "Scorching Ray",
+    "scaling": [
+      {
+        "effect_index": 0,
+        "per_slot": {
+          "extra_targets": {
+            "count": 1
+          }
+        }
+      },
+      {
+        "effect_index": 1,
+        "per_slot": {
+          "extra_targets": {
+            "count": 1
+          }
+        }
+      },
+      {
+        "effect_index": 2,
+        "per_slot": {
+          "extra_targets": {
+            "count": 1
+          }
+        }
+      }
+    ],
+    "source": "SRD 5.2.1"
+  },
+  "shatter": {
+    "concentration": false,
+    "effects": [
+      {
+        "saving_throw": {
+          "ability": "con",
+          "damage": [
+            {
+              "dice": "3d8",
+              "magical": true,
+              "type": "thunder"
+            }
+          ],
+          "dc": 0,
+          "half_on_success": true,
+          "no_damage_on_success": false
+        }
+      }
+    ],
+    "id": "shatter",
+    "name": "Shatter",
+    "source": "SRD 5.2.1"
+  },
+  "shield": {
+    "agent_clauses": [
+      "No damage from Magic Missile while the modifier lasts."
+    ],
+    "concentration": false,
+    "effects": [
+      {
+        "timed_modifier": {
+          "change": {
+            "add": 5
+          },
+          "duration": {
+            "rounds": 1
+          },
+          "source_ability": "shield",
+          "target": {
+            "armor_class": null
+          }
+        }
+      }
+    ],
+    "id": "shield",
+    "name": "Shield",
+    "source": "SRD 5.2.1"
+  },
+  "sleep": {
+    "agent_clauses": [
+      "Creatures that do not sleep or are immune to Exhaustion automatically succeed on saves.",
+      "The spell ends on a target if it takes damage or a creature within 5 feet uses an action to shake it awake."
+    ],
+    "concentration": true,
+    "effects": [
+      {
+        "area": {
+          "area": {
+            "sphere": {
+              "radius": 5
+            }
+          },
+          "effect": {
+            "saving_throw": {
+              "ability": "wis",
+              "damage": [],
+              "dc": 0,
+              "half_on_success": false,
+              "no_damage_on_success": false,
+              "on_failure": [
+                {
+                  "condition": {
+                    "condition": "incapacitated",
+                    "duration": {
+                      "rounds": 1
+                    },
+                    "source_ability": "sleep"
+                  }
+                },
+                {
+                  "condition": {
+                    "condition": "unconscious",
+                    "duration": {
+                      "concentration": null
+                    },
+                    "source_ability": "sleep"
+                  }
+                }
+              ]
+            }
+          },
+          "origin": "target_point"
+        }
+      }
+    ],
+    "id": "sleep",
+    "name": "Sleep",
+    "source": "SRD 5.2.1"
+  },
+  "slow": {
+    "agent_clauses": [
+      "Affected targets can take only an action or a Bonus Action on their turn, not both, and only one attack if they take the Attack action.",
+      "Somatic spells have a 25% chance of failure.",
+      "Target repeats the save at the end of each of its turns, ending the spell on a success."
+    ],
+    "concentration": true,
+    "effects": [
+      {
+        "area": {
+          "area": {
+            "cube": {
+              "size": 40
+            }
+          },
+          "effect": {
+            "saving_throw": {
+              "ability": "wis",
+              "damage": [],
+              "dc": 0,
+              "half_on_success": false,
+              "no_damage_on_success": false,
+              "on_failure": [
+                {
+                  "timed_modifier": {
+                    "change": "halve",
+                    "duration": {
+                      "concentration": null
+                    },
+                    "source_ability": "slow",
+                    "target": {
+                      "speed": null
+                    }
+                  }
+                },
+                {
+                  "timed_modifier": {
+                    "change": {
+                      "add": -2
+                    },
+                    "duration": {
+                      "concentration": null
+                    },
+                    "source_ability": "slow",
+                    "target": {
+                      "armor_class": null
+                    }
+                  }
+                },
+                {
+                  "timed_modifier": {
+                    "change": {
+                      "add": -2
+                    },
+                    "duration": {
+                      "concentration": null
+                    },
+                    "source_ability": "slow",
+                    "target": {
+                      "saving_throws": {
+                        "ability": "dex"
+                      }
+                    }
+                  }
+                },
+                {
+                  "timed_modifier": {
+                    "change": "none",
+                    "duration": {
+                      "concentration": null
+                    },
+                    "source_ability": "slow",
+                    "target": {
+                      "reactions": null
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          "origin": "target_point"
+        }
+      }
+    ],
+    "id": "slow",
+    "name": "Slow",
+    "source": "SRD 5.2.1"
+  },
+  "spare-the-dying": {
+    "agent_clauses": [
+      "Stabilizes one creature within range that has 0 Hit Points and is not dead."
+    ],
+    "concentration": false,
+    "effects": [],
+    "id": "spare-the-dying",
+    "name": "Spare the Dying",
+    "source": "SRD 5.2.1"
+  },
+  "spiritual-weapon": {
+    "agent_clauses": [
+      "As a Bonus Action on later turns, the caster can move the force up to 20 feet and repeat the attack."
+    ],
+    "concentration": true,
+    "effects": [
+      {
+        "attack": {
+          "damage": [
+            {
+              "dice": "1d8",
+              "magical": true,
+              "modifier": 0,
+              "type": "force"
+            }
+          ],
+          "modifier": 0,
+          "reach": 5,
+          "target_count": 1
+        }
+      }
+    ],
+    "id": "spiritual-weapon",
+    "name": "Spiritual Weapon",
+    "scaling": [
+      {
+        "effect_index": 0,
+        "per_slot": {
+          "extra_dice": {
+            "dice": "1d8"
+          }
+        }
+      }
+    ],
+    "source": "SRD 5.2.1"
+  },
+  "sunburst": {
+    "agent_clauses": [
+      "A Blinded creature repeats the save at the end of each of its turns, ending the condition on a success."
+    ],
+    "concentration": false,
+    "effects": [
+      {
+        "area": {
+          "area": {
+            "sphere": {
+              "radius": 60
+            }
+          },
+          "effect": {
+            "saving_throw": {
+              "ability": "con",
+              "damage": [
+                {
+                  "dice": "12d6",
+                  "magical": true,
+                  "type": "radiant"
+                }
+              ],
+              "dc": 0,
+              "half_on_success": true,
+              "no_damage_on_success": false,
+              "on_failure": [
+                {
+                  "condition": {
+                    "condition": "blinded",
+                    "duration": {
+                      "minutes": 1
+                    },
+                    "source_ability": "sunburst"
+                  }
+                }
+              ]
+            }
+          },
+          "origin": "target_point"
+        }
+      }
+    ],
+    "id": "sunburst",
+    "name": "Sunburst",
+    "source": "SRD 5.2.1"
+  },
+  "telekinesis": {
+    "agent_clauses": [
+      "As a Magic action on later turns, the caster can move or manipulate one creature or object within 60 feet; Strength contest to move a held creature."
+    ],
+    "concentration": true,
+    "effects": [],
+    "id": "telekinesis",
+    "name": "Telekinesis",
+    "source": "SRD 5.2.1"
+  },
+  "teleport": {
+    "agent_clauses": [
+      "Teleports the caster and up to eight willing creatures within 10 feet to a destination on the same plane.",
+      "The spell may miss the destination depending on the caster's familiarity with it."
+    ],
+    "concentration": false,
+    "effects": [],
+    "id": "teleport",
+    "name": "Teleport",
+    "source": "SRD 5.2.1"
+  },
+  "true-resurrection": {
+    "agent_clauses": [
+      "Restores life to a creature dead no longer than 200 years with all Hit Points, even if the body is destroyed."
+    ],
+    "concentration": false,
+    "effects": [],
+    "id": "true-resurrection",
+    "name": "True Resurrection",
+    "source": "SRD 5.2.1"
+  },
+  "vitriolic-sphere": {
+    "agent_clauses": [
+      "On a successful save, a creature takes half the initial damage only."
+    ],
+    "concentration": false,
+    "delayed": [
+      {
+        "delay": {
+          "rounds": 1
+        },
+        "effect": {
+          "damage": {
+            "dice": "5d4",
+            "magical": true,
+            "type": "acid"
+          }
+        }
+      }
+    ],
+    "effects": [
+      {
+        "area": {
+          "area": {
+            "sphere": {
+              "radius": 20
+            }
+          },
+          "effect": {
+            "saving_throw": {
+              "ability": "dex",
+              "damage": [
+                {
+                  "dice": "10d4",
+                  "magical": true,
+                  "type": "acid"
+                }
+              ],
+              "dc": 0,
+              "half_on_success": true,
+              "no_damage_on_success": false
+            }
+          },
+          "origin": "target_point"
+        }
+      }
+    ],
+    "id": "vitriolic-sphere",
+    "name": "Vitriolic Sphere",
+    "scaling": [
+      {
+        "effect_index": 0,
+        "per_slot": {
+          "extra_dice": {
+            "dice": "2d4"
+          }
+        }
+      },
+      {
+        "effect_index": 1,
+        "per_slot": {
+          "extra_dice": {
+            "dice": "1d4"
+          }
+        }
+      }
+    ],
+    "source": "SRD 5.2.1"
+  },
+  "wall-of-fire": {
+    "agent_clauses": [
+      "Creates a wall of fire up to 60 feet long, 20 feet high, and 1 foot thick, or a 20-foot-radius ring.",
+      "Creatures within the wall or passing through take 5d8 Fire damage (or 8d8 on a failed Dexterity save if passing through).",
+      "Damage increases by 1d8 per spell slot level above 4."
+    ],
+    "concentration": true,
+    "effects": [],
+    "id": "wall-of-fire",
+    "name": "Wall of Fire",
+    "scaling": [
+      {
+        "effect_index": 0,
+        "per_slot": {
+          "extra_dice": {
+            "dice": "1d8"
+          }
+        }
+      }
+    ],
+    "source": "SRD 5.2.1"
+  },
+  "wall-of-ice": {
+    "agent_clauses": [
+      "Creates a wall of ice; creatures within its area take 10d6 Cold damage on a failed Dexterity save.",
+      "Passing through a sheet of frigid air deals 5d6 Cold damage.",
+      "Damage when the wall appears increases by 2d6 per slot level above 6; passing damage increases by 1d6."
+    ],
+    "concentration": true,
+    "effects": [],
+    "id": "wall-of-ice",
+    "name": "Wall of Ice",
+    "scaling": [
+      {
+        "effect_index": 0,
+        "per_slot": {
+          "extra_dice": {
+            "dice": "2d6"
+          }
+        }
+      }
+    ],
+    "source": "SRD 5.2.1"
+  },
+  "web": {
+    "agent_clauses": [
+      "Webs are Difficult Terrain and Lightly Obscured.",
+      "A creature Restrained by the webs can take an action to make a Strength (Athletics) check against the spell save DC to escape.",
+      "Fire destroys a 5-foot Cube of webs and deals 2d4 Fire damage to creatures starting their turn in the fire."
+    ],
+    "concentration": true,
+    "effects": [
+      {
+        "area": {
+          "area": {
+            "cube": {
+              "size": 20
+            }
+          },
+          "effect": {
+            "saving_throw": {
+              "ability": "dex",
+              "damage": [],
+              "dc": 0,
+              "half_on_success": false,
+              "no_damage_on_success": false,
+              "on_failure": [
+                {
+                  "condition": {
+                    "condition": "restrained",
+                    "duration": {
+                      "concentration": null
+                    },
+                    "source_ability": "web"
+                  }
+                }
+              ]
+            }
+          },
+          "origin": "target_point"
+        }
+      }
+    ],
+    "id": "web",
+    "name": "Web",
+    "source": "SRD 5.2.1"
+  }
+}

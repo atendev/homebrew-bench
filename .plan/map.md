@@ -44,6 +44,7 @@ Both modes ship in phase 1. Everything the engine can't model is labeled agent j
 - [Standard party spell list](closed/024-standard-party-spell-list.md): `data/party/standard-spells.json` commits caster and healer choices by tier, with SRD ids, role categories, and explicit effects-file coverage status.
 - [Report format prototype](closed/017-report-format-prototype.md): the batch report is a static, accessible reading surface with a headline CR comparison, level metrics, explicit assumptions and ability resolutions, thin/stale-data warnings, reproducibility metadata, and three sampled-log links. The prototype uses invented data and separates SRD facts from project-derived calibration.
 - [Workspace, schemas and CLI skeleton](closed/025-workspace-schemas-and-cli-skeleton.md): Rust workspace (`bench-core` + `bench`) set up with canonical stat-block/effect/spell/encounter models, ChaCha8 RNG, config/path layout, JSON stdout envelope, stable error/exit codes, and `bench schema` / `bench help --json` CLI commands.
+- [Spell effects scaffold and data file](closed/026-spell-effects-scaffold-and-data-file.md): `scripts/scaffold-spells.py` scaffolds entries from SRD structured fields, `data/spells/effects.json` covers the standard party caster/healer list and core SRD monster combat spells in the closed effect vocabulary, `data/party/standard-spells.json` coverage statuses are updated, and `scripts/check-spell-effects.py` keeps the file honest against upstream SRD text. See `docs/adr/0014-spell-effects-file-authorship.md`.
 
 ## Not yet specified
 
@@ -61,7 +62,6 @@ Both modes ship in phase 1. Everything the engine can't model is labeled agent j
 
 Takeable now, in order:
 
-- Spell effects scaffold and data file (task)
 - Step engine and combat rules (task)
 
 Blocked:

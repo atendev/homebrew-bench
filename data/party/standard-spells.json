@@ -11,7 +11,7 @@
         "id": "fire-bolt",
         "name": "Fire Bolt",
         "source": "SRD 5.2.1",
-        "effects_status": "needs-effects-entry"
+        "effects_status": "modeled"
       }
     ],
     "by_tier": {
@@ -70,7 +70,7 @@
         ["foresight", "Foresight", "buff"]
       ]
     },
-    "effects_status": "all-needs-effects-entry"
+    "effects_status": "partially-modeled"
   },
   "healer": {
     "at_will": [
@@ -78,7 +78,7 @@
         "id": "spare-the-dying",
         "name": "Spare the Dying",
         "source": "SRD 5.2.1",
-        "effects_status": "needs-effects-entry"
+        "effects_status": "agent-only"
       }
     ],
     "by_tier": {
@@ -121,6 +121,6 @@
         ["true-resurrection", "True Resurrection", "recovery"]
       ]
     },
-    "effects_status": "all-needs-effects-entry"
+    "effects_status": "partially-modeled"
   }
 }

@@ -43,3 +43,37 @@ pub struct SpellEffect {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub notes: Option<String>,
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::path::PathBuf;
+
+    #[test]
+    fn effects_file_validates_against_schema() {
+        let root = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .parent()
+            .expect("workspace root")
+            .to_path_buf();
+        let path = root.join("data/spells/effects.json");
+        let text = std::fs::read_to_string(&path)
+            .unwrap_or_else(|e| panic!("failed to read {}: {e}", path.display()));
+        let value: serde_json::Value = serde_json::from_str(&text)
+            .unwrap_or_else(|e| panic!("effects.json is not valid json: {e}"));
+        let map = value.as_object().expect("effects.json must be an object");
+        let mut failures = Vec::new();
+        for (key, entry_value) in map {
+            let result: Result<SpellEffect, _> = serde_json::from_value(entry_value.clone());
+            if let Err(e) = result {
+                failures.push(format!("{key}: {e}"));
+            }
+        }
+        if !failures.is_empty() {
+            panic!(
+                "{} spell effect entries failed schema validation:\n{}",
+                failures.len(),
+                failures.join("\n")
+            );
+        }
+    }
+}
