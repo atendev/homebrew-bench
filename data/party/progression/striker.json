@@ -1,0 +1,223 @@
+{
+  "note": "Designer-set calibration table. Editing it changes the reference numbers behind every batch report; treat edits as calibration changes (ADR 0010).",
+  "size": "medium",
+  "creature_type": "humanoid",
+  "alignment": "unaligned",
+  "speed": 30,
+  "languages": [
+    "Common"
+  ],
+  "archetype": "striker",
+  "label": "Striker",
+  "class_note": "Approximates a ranged skirmisher with precision damage (rogue or ranger). A calibration role, not class fidelity. One attack per action: the precision dice stand in for a once-per-turn bonus and apply to every hit, so there is no extra-attack progression.",
+  "hit_die": 10,
+  "saving_throw_proficiencies": [
+    "dex",
+    "int"
+  ],
+  "skill_proficiencies": [
+    "perception",
+    "stealth"
+  ],
+  "ability_scores": [
+    {
+      "from": 1,
+      "strength": 10,
+      "dexterity": 16,
+      "constitution": 14,
+      "intelligence": 10,
+      "wisdom": 14,
+      "charisma": 8
+    },
+    {
+      "from": 4,
+      "dexterity": 18
+    },
+    {
+      "from": 8,
+      "dexterity": 20
+    },
+    {
+      "from": 12,
+      "constitution": 16
+    },
+    {
+      "from": 16,
+      "wisdom": 16
+    },
+    {
+      "from": 19,
+      "constitution": 18
+    }
+  ],
+  "armor_class": [
+    {
+      "from": 1,
+      "value": 15,
+      "source": "studded leather"
+    },
+    {
+      "from": 4,
+      "value": 16,
+      "source": "studded leather"
+    },
+    {
+      "from": 8,
+      "value": 17,
+      "source": "studded leather"
+    }
+  ],
+  "gear": [
+    {
+      "from": 1,
+      "items": [
+        "studded leather",
+        "longbow",
+        "shortsword"
+      ]
+    }
+  ],
+  "attacks": [
+    {
+      "id": "longbow",
+      "name": "Longbow",
+      "ability": "dexterity",
+      "range": [
+        150,
+        600
+      ],
+      "attack_bonus": [
+        {
+          "from": 1,
+          "bonus": 2
+        }
+      ],
+      "damage": [
+        {
+          "from": 1,
+          "dice": "1d8",
+          "type": "piercing"
+        }
+      ],
+      "bonus_damage": [
+        {
+          "from": 1,
+          "dice": "1d6",
+          "type": "piercing"
+        },
+        {
+          "from": 3,
+          "dice": "2d6",
+          "type": "piercing"
+        },
+        {
+          "from": 5,
+          "dice": "3d6",
+          "type": "piercing"
+        },
+        {
+          "from": 7,
+          "dice": "4d6",
+          "type": "piercing"
+        },
+        {
+          "from": 9,
+          "dice": "5d6",
+          "type": "piercing"
+        },
+        {
+          "from": 11,
+          "dice": "6d6",
+          "type": "piercing"
+        },
+        {
+          "from": 13,
+          "dice": "7d6",
+          "type": "piercing"
+        },
+        {
+          "from": 15,
+          "dice": "8d6",
+          "type": "piercing"
+        },
+        {
+          "from": 17,
+          "dice": "9d6",
+          "type": "piercing"
+        },
+        {
+          "from": 19,
+          "dice": "10d6",
+          "type": "piercing"
+        }
+      ]
+    },
+    {
+      "id": "shortsword",
+      "name": "Shortsword",
+      "ability": "dexterity",
+      "reach": 5,
+      "damage": [
+        {
+          "from": 1,
+          "dice": "1d6",
+          "type": "piercing"
+        }
+      ],
+      "bonus_damage": [
+        {
+          "from": 1,
+          "dice": "1d6",
+          "type": "piercing"
+        },
+        {
+          "from": 3,
+          "dice": "2d6",
+          "type": "piercing"
+        },
+        {
+          "from": 5,
+          "dice": "3d6",
+          "type": "piercing"
+        },
+        {
+          "from": 7,
+          "dice": "4d6",
+          "type": "piercing"
+        },
+        {
+          "from": 9,
+          "dice": "5d6",
+          "type": "piercing"
+        },
+        {
+          "from": 11,
+          "dice": "6d6",
+          "type": "piercing"
+        },
+        {
+          "from": 13,
+          "dice": "7d6",
+          "type": "piercing"
+        },
+        {
+          "from": 15,
+          "dice": "8d6",
+          "type": "piercing"
+        },
+        {
+          "from": 17,
+          "dice": "9d6",
+          "type": "piercing"
+        },
+        {
+          "from": 19,
+          "dice": "10d6",
+          "type": "piercing"
+        }
+      ]
+    }
+  ],
+  "multiattack": null,
+  "features": []
+}

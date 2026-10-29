@@ -182,6 +182,16 @@ pub struct DeathSaves {
     pub failures: u8,
 }
 
+/// Spellcasting ability and derived numbers for a PC. Spell effects in
+/// `data/spells/effects.json` carry no save DC or attack modifier of their own;
+/// the caster's block supplies them.
+#[derive(Debug, Clone, Serialize, Deserialize, schemars::JsonSchema)]
+pub struct Spellcasting {
+    pub ability: Ability,
+    pub save_dc: i32,
+    pub attack_bonus: i32,
+}
+
 /// Intake flag for ambiguous wording or data problems.
 #[derive(Debug, Clone, Serialize, Deserialize, schemars::JsonSchema)]
 pub struct IntakeFlag {
@@ -209,7 +219,6 @@ pub struct AbilityEntry {
     pub usage: Option<Usage>,
 }
 
-/// Spell slot maxima for a PC.
 /// A complete stat block. Monsters, SRD fixtures, and the standard party share
 /// this schema.
 #[derive(Debug, Clone, Serialize, Deserialize, schemars::JsonSchema)]
@@ -266,6 +275,7 @@ pub struct StatBlock {
     pub class: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub level: Option<u8>,
+    /// Spell slot maxima by slot level; index 0 is 1st level.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub spell_slots: Option<Vec<u32>>,
     #[serde(default)]
@@ -274,6 +284,12 @@ pub struct StatBlock {
     pub death_saves: DeathSaves,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub gear: Vec<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub spellcasting: Option<Spellcasting>,
+    /// Designer notes with no combat effect, such as the class a standard
+    /// party archetype approximates.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub notes: Vec<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub pasted_source: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -351,6 +367,8 @@ mod tests {
             dying: false,
             death_saves: DeathSaves::default(),
             gear: vec![],
+            spellcasting: None,
+            notes: vec![],
             pasted_source: None,
             intake_flags: vec![],
         };

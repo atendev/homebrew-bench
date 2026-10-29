@@ -5,7 +5,6 @@ type: task
 mode: AFK
 status: open
 blocked_by:
-  - 027
   - 028
   - 030
 claimed: false
@@ -32,5 +31,6 @@ Key decisions to implement:
   - Fights the monster against the standard party across levels 1–20 (or a requested level range / `--party <name>` resolved from `./.bench/parties/<name>/` then `~/.bench/parties/<name>/`), running 100 fights per cell by default (tunable) with a round cap (default 20, overridable).
   - Derives per-fight seeds deterministically from `--seed <master>` and fight index; `bench batch --seed X` reproduces the batch bit-for-bit, and `--fight <i>` reproduces a single fight with its full plain-text log (opening with the standing-assumptions header block).
   - Emits JSON summary on stdout plus the static, accessible HTML report and three sampled fight logs matching the structure and reading order established in `docs/prototypes/report-format.html` (closed ticket 017).
+- **Engine gaps inherited from ticket 027 (see its resolution):** wire caster save DC, attack bonus and heal modifier from `StatBlock.spellcasting` into `Cast`, spend and validate `spell_slots`, scale cantrips by level, add bonus-action and reaction execution, and make a hit on a downed PC add a death-save failure. The standard party cannot be calibrated until these land.
 
 ## Resolution

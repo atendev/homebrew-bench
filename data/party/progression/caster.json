@@ -1,0 +1,275 @@
+{
+  "note": "Designer-set calibration table. Editing it changes the reference numbers behind every batch report; treat edits as calibration changes (ADR 0010).",
+  "size": "medium",
+  "creature_type": "humanoid",
+  "alignment": "unaligned",
+  "speed": 30,
+  "languages": [
+    "Common"
+  ],
+  "archetype": "caster",
+  "label": "Caster",
+  "class_note": "Approximates a robed arcane caster (wizard). A calibration role, not class fidelity.",
+  "hit_die": 6,
+  "saving_throw_proficiencies": [
+    "int",
+    "wis"
+  ],
+  "skill_proficiencies": [
+    "arcana"
+  ],
+  "ability_scores": [
+    {
+      "from": 1,
+      "strength": 8,
+      "dexterity": 14,
+      "constitution": 14,
+      "intelligence": 16,
+      "wisdom": 12,
+      "charisma": 10
+    },
+    {
+      "from": 4,
+      "intelligence": 18
+    },
+    {
+      "from": 8,
+      "intelligence": 20
+    },
+    {
+      "from": 12,
+      "dexterity": 16
+    },
+    {
+      "from": 16,
+      "constitution": 16
+    },
+    {
+      "from": 19,
+      "dexterity": 18
+    }
+  ],
+  "armor_class": [
+    {
+      "from": 1,
+      "value": 12,
+      "source": "robes"
+    },
+    {
+      "from": 12,
+      "value": 13,
+      "source": "robes"
+    },
+    {
+      "from": 19,
+      "value": 14,
+      "source": "robes"
+    }
+  ],
+  "gear": [
+    {
+      "from": 1,
+      "items": [
+        "robes",
+        "dagger",
+        "arcane focus",
+        "spellbook"
+      ]
+    }
+  ],
+  "attacks": [
+    {
+      "id": "dagger",
+      "name": "Dagger",
+      "ability": "dexterity",
+      "reach": 5,
+      "damage": [
+        {
+          "from": 1,
+          "dice": "1d4",
+          "type": "piercing"
+        }
+      ]
+    }
+  ],
+  "multiattack": null,
+  "features": [],
+  "spellcasting": {
+    "ability": "intelligence",
+    "spell_list": "caster",
+    "slots": [
+      {
+        "from": 1,
+        "slots": [
+          2
+        ]
+      },
+      {
+        "from": 2,
+        "slots": [
+          3
+        ]
+      },
+      {
+        "from": 3,
+        "slots": [
+          4,
+          2
+        ]
+      },
+      {
+        "from": 4,
+        "slots": [
+          4,
+          3
+        ]
+      },
+      {
+        "from": 5,
+        "slots": [
+          4,
+          3,
+          2
+        ]
+      },
+      {
+        "from": 6,
+        "slots": [
+          4,
+          3,
+          3
+        ]
+      },
+      {
+        "from": 7,
+        "slots": [
+          4,
+          3,
+          3,
+          1
+        ]
+      },
+      {
+        "from": 8,
+        "slots": [
+          4,
+          3,
+          3,
+          2
+        ]
+      },
+      {
+        "from": 9,
+        "slots": [
+          4,
+          3,
+          3,
+          3,
+          1
+        ]
+      },
+      {
+        "from": 10,
+        "slots": [
+          4,
+          3,
+          3,
+          3,
+          2
+        ]
+      },
+      {
+        "from": 11,
+        "slots": [
+          4,
+          3,
+          3,
+          3,
+          2,
+          1
+        ]
+      },
+      {
+        "from": 13,
+        "slots": [
+          4,
+          3,
+          3,
+          3,
+          2,
+          1,
+          1
+        ]
+      },
+      {
+        "from": 15,
+        "slots": [
+          4,
+          3,
+          3,
+          3,
+          2,
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "from": 17,
+        "slots": [
+          4,
+          3,
+          3,
+          3,
+          2,
+          1,
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "from": 18,
+        "slots": [
+          4,
+          3,
+          3,
+          3,
+          3,
+          1,
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "from": 19,
+        "slots": [
+          4,
+          3,
+          3,
+          3,
+          3,
+          2,
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "from": 20,
+        "slots": [
+          4,
+          3,
+          3,
+          3,
+          3,
+          2,
+          2,
+          1,
+          1
+        ]
+      }
+    ]
+  }
+}

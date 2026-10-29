@@ -1,0 +1,180 @@
+{
+  "note": "Designer-set calibration table. Editing it changes the reference numbers behind every batch report; treat edits as calibration changes (ADR 0010).",
+  "size": "medium",
+  "creature_type": "humanoid",
+  "alignment": "unaligned",
+  "speed": 30,
+  "languages": [
+    "Common"
+  ],
+  "archetype": "defender",
+  "label": "Defender",
+  "class_note": "Approximates a heavily armored martial front-liner (fighter or paladin). A calibration role, not class fidelity.",
+  "hit_die": 10,
+  "saving_throw_proficiencies": [
+    "str",
+    "con"
+  ],
+  "skill_proficiencies": [],
+  "ability_scores": [
+    {
+      "from": 1,
+      "strength": 16,
+      "dexterity": 12,
+      "constitution": 14,
+      "intelligence": 8,
+      "wisdom": 12,
+      "charisma": 10
+    },
+    {
+      "from": 4,
+      "strength": 18
+    },
+    {
+      "from": 6,
+      "strength": 20
+    },
+    {
+      "from": 8,
+      "constitution": 16
+    },
+    {
+      "from": 12,
+      "constitution": 18
+    },
+    {
+      "from": 14,
+      "dexterity": 14
+    },
+    {
+      "from": 16,
+      "constitution": 20
+    },
+    {
+      "from": 19,
+      "dexterity": 16
+    }
+  ],
+  "armor_class": [
+    {
+      "from": 1,
+      "value": 18,
+      "source": "chain mail, shield"
+    },
+    {
+      "from": 5,
+      "value": 19,
+      "source": "splint armor, shield"
+    },
+    {
+      "from": 10,
+      "value": 20,
+      "source": "plate armor, shield"
+    }
+  ],
+  "gear": [
+    {
+      "from": 1,
+      "items": [
+        "chain mail",
+        "shield",
+        "longsword",
+        "javelins"
+      ]
+    },
+    {
+      "from": 5,
+      "items": [
+        "splint armor",
+        "shield",
+        "longsword",
+        "javelins"
+      ]
+    },
+    {
+      "from": 10,
+      "items": [
+        "plate armor",
+        "shield",
+        "longsword",
+        "javelins"
+      ]
+    }
+  ],
+  "attacks": [
+    {
+      "id": "longsword",
+      "name": "Longsword",
+      "ability": "strength",
+      "reach": 5,
+      "damage": [
+        {
+          "from": 1,
+          "dice": "1d8",
+          "type": "slashing"
+        }
+      ]
+    },
+    {
+      "id": "javelin",
+      "name": "Javelin",
+      "ability": "strength",
+      "range": [
+        30,
+        120
+      ],
+      "damage": [
+        {
+          "from": 1,
+          "dice": "1d6",
+          "type": "piercing"
+        }
+      ]
+    }
+  ],
+  "multiattack": {
+    "attack": "longsword",
+    "count": [
+      {
+        "from": 1,
+        "count": 1
+      },
+      {
+        "from": 5,
+        "count": 2
+      },
+      {
+        "from": 11,
+        "count": 3
+      },
+      {
+        "from": 20,
+        "count": 4
+      }
+    ]
+  },
+  "features": [
+    {
+      "slot": "bonus_actions",
+      "id": "second-wind",
+      "name": "Second Wind",
+      "from": 1,
+      "kind": "modeled",
+      "desc": "Regain hit points equal to 1d10 plus the defender's level. Once per short or long rest.",
+      "usage": {
+        "per_rest": {
+          "rest": "short",
+          "uses": 1
+        }
+      },
+      "effects": [
+        {
+          "heal": {
+            "dice": "1d10",
+            "modifier": "level"
+          }
+        }
+      ]
+    }
+  ]
+}

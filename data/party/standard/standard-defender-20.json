@@ -1,0 +1,151 @@
+{
+  "ability_scores": {
+    "charisma": 10,
+    "constitution": 20,
+    "dexterity": 16,
+    "intelligence": 8,
+    "strength": 20,
+    "wisdom": 12
+  },
+  "actions": [
+    {
+      "desc": "Makes 4 longsword attacks.",
+      "effects": [
+        {
+          "multiattack": {
+            "steps": [
+              {
+                "action": {
+                  "action_id": "longsword",
+                  "count": 4
+                }
+              }
+            ],
+            "swap": false
+          }
+        }
+      ],
+      "id": "multiattack",
+      "kind": "modeled",
+      "name": "Multiattack"
+    },
+    {
+      "desc": "Melee weapon attack, +11 to hit.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "1d8",
+                "magical": false,
+                "modifier": 5,
+                "type": "slashing"
+              }
+            ],
+            "modifier": 11,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "longsword",
+      "kind": "modeled",
+      "name": "Longsword"
+    },
+    {
+      "desc": "Ranged weapon attack, +11 to hit.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "1d6",
+                "magical": false,
+                "modifier": 5,
+                "type": "piercing"
+              }
+            ],
+            "modifier": 11,
+            "range": [
+              30,
+              120
+            ],
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "javelin",
+      "kind": "modeled",
+      "name": "Javelin"
+    }
+  ],
+  "alignment": "unaligned",
+  "armor_class": [
+    {
+      "source": "plate armor, shield",
+      "value": 20
+    }
+  ],
+  "bonus_actions": [
+    {
+      "desc": "Regain hit points equal to 1d10 plus the defender's level. Once per short or long rest.",
+      "effects": [
+        {
+          "heal": {
+            "dice": "1d10",
+            "modifier": 20
+          }
+        }
+      ],
+      "id": "second-wind",
+      "kind": "modeled",
+      "name": "Second Wind",
+      "usage": {
+        "per_rest": {
+          "rest": "short",
+          "uses": 1
+        }
+      }
+    }
+  ],
+  "class": "Defender",
+  "dying": true,
+  "gear": [
+    "plate armor",
+    "shield",
+    "longsword",
+    "javelins"
+  ],
+  "hit_points": {
+    "average": 224,
+    "dice": "20d10+100"
+  },
+  "id": "standard-defender-20",
+  "initiative": 3,
+  "languages": [
+    "Common"
+  ],
+  "level": 20,
+  "name": "Standard Defender (Level 20)",
+  "notes": [
+    "Approximates a heavily armored martial front-liner (fighter or paladin). A calibration role, not class fidelity.",
+    "No magic items; gear exists only as numbers in this stat block."
+  ],
+  "proficiency_bonus": 6,
+  "saving_throws": {
+    "con": 11,
+    "str": 11
+  },
+  "schema_version": "1",
+  "senses": {
+    "passive_perception": 11
+  },
+  "size": "medium",
+  "source": "homebrew-bench standard party",
+  "speeds": {
+    "walk": {
+      "feet": 30
+    }
+  },
+  "type": "humanoid"
+}

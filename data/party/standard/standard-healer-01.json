@@ -1,0 +1,171 @@
+{
+  "ability_scores": {
+    "charisma": 12,
+    "constitution": 14,
+    "dexterity": 10,
+    "intelligence": 10,
+    "strength": 12,
+    "wisdom": 16
+  },
+  "actions": [
+    {
+      "desc": "Melee weapon attack, +3 to hit.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "1d6",
+                "magical": false,
+                "modifier": 1,
+                "type": "bludgeoning"
+              }
+            ],
+            "modifier": 3,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "mace",
+      "kind": "modeled",
+      "name": "Mace"
+    },
+    {
+      "agent_clauses": [
+        "Stabilizes one creature within range that has 0 Hit Points and is not dead."
+      ],
+      "desc": "Cantrip. Cast Spare the Dying.",
+      "effects": [
+        {
+          "cast": {
+            "slot_level": null,
+            "spell_id": "spare-the-dying",
+            "upcast": false
+          }
+        }
+      ],
+      "id": "spare-the-dying",
+      "kind": "partly_modeled",
+      "name": "Spare the Dying",
+      "usage": "at_will"
+    },
+    {
+      "desc": "Level 1 spell. Cast Cure Wounds.",
+      "effects": [
+        {
+          "cast": {
+            "slot_level": 1,
+            "spell_id": "cure-wounds",
+            "upcast": false
+          }
+        }
+      ],
+      "id": "cure-wounds",
+      "kind": "modeled",
+      "name": "Cure Wounds"
+    },
+    {
+      "agent_clauses": [
+        "Creates ten berries; eating one as a Bonus Action restores 1 Hit Point and provides nourishment for one day."
+      ],
+      "desc": "Level 1 spell. Cast Goodberry.",
+      "effects": [
+        {
+          "cast": {
+            "slot_level": 1,
+            "spell_id": "goodberry",
+            "upcast": false
+          }
+        }
+      ],
+      "id": "goodberry",
+      "kind": "partly_modeled",
+      "name": "Goodberry"
+    }
+  ],
+  "alignment": "unaligned",
+  "armor_class": [
+    {
+      "source": "scale mail, shield",
+      "value": 16
+    }
+  ],
+  "bonus_actions": [
+    {
+      "desc": "Level 1 spell. Cast Healing Word.",
+      "effects": [
+        {
+          "cast": {
+            "slot_level": 1,
+            "spell_id": "healing-word",
+            "upcast": false
+          }
+        }
+      ],
+      "id": "healing-word",
+      "kind": "modeled",
+      "name": "Healing Word"
+    }
+  ],
+  "class": "Healer",
+  "dying": true,
+  "gear": [
+    "scale mail",
+    "shield",
+    "mace",
+    "holy symbol"
+  ],
+  "hit_points": {
+    "average": 10,
+    "dice": "1d8+2"
+  },
+  "id": "standard-healer-01",
+  "initiative": 0,
+  "languages": [
+    "Common"
+  ],
+  "level": 1,
+  "name": "Standard Healer (Level 1)",
+  "notes": [
+    "Approximates a medium-armored divine healer (cleric). A calibration role, not class fidelity.",
+    "No magic items; gear exists only as numbers in this stat block."
+  ],
+  "proficiency_bonus": 2,
+  "saving_throws": {
+    "cha": 3,
+    "wis": 5
+  },
+  "schema_version": "1",
+  "senses": {
+    "passive_perception": 15
+  },
+  "size": "medium",
+  "skills": {
+    "medicine": 5,
+    "perception": 5
+  },
+  "source": "homebrew-bench standard party",
+  "speeds": {
+    "walk": {
+      "feet": 30
+    }
+  },
+  "spell_slots": [
+    2,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+  ],
+  "spellcasting": {
+    "ability": "wis",
+    "attack_bonus": 5,
+    "save_dc": 13
+  },
+  "type": "humanoid"
+}

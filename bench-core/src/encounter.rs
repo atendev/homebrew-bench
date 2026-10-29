@@ -295,6 +295,8 @@ mod tests {
             dying: false,
             death_saves: Default::default(),
             gear: vec![],
+            spellcasting: None,
+            notes: vec![],
             pasted_source: None,
             intake_flags: vec![],
         };

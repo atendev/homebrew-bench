@@ -1,0 +1,401 @@
+{
+  "ability_scores": {
+    "charisma": 10,
+    "constitution": 14,
+    "dexterity": 14,
+    "intelligence": 20,
+    "strength": 8,
+    "wisdom": 12
+  },
+  "actions": [
+    {
+      "desc": "Melee weapon attack, +5 to hit.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "1d4",
+                "magical": false,
+                "modifier": 2,
+                "type": "piercing"
+              }
+            ],
+            "modifier": 5,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "dagger",
+      "kind": "modeled",
+      "name": "Dagger"
+    },
+    {
+      "desc": "Cantrip. Cast Fire Bolt.",
+      "effects": [
+        {
+          "cast": {
+            "slot_level": null,
+            "spell_id": "fire-bolt",
+            "upcast": false
+          }
+        }
+      ],
+      "id": "fire-bolt",
+      "kind": "modeled",
+      "name": "Fire Bolt",
+      "usage": "at_will"
+    },
+    {
+      "agent_clauses": [
+        "Each dart hits a visible target of the caster's choice; the engine treats them as auto-hit damage instances.",
+        "One additional dart per spell slot level above 1."
+      ],
+      "desc": "Level 1 spell. Cast Magic Missile.",
+      "effects": [
+        {
+          "cast": {
+            "slot_level": 1,
+            "spell_id": "magic-missile",
+            "upcast": false
+          }
+        }
+      ],
+      "id": "magic-missile",
+      "kind": "partly_modeled",
+      "name": "Magic Missile"
+    },
+    {
+      "desc": "Level 1 spell. Cast Burning Hands.",
+      "effects": [
+        {
+          "cast": {
+            "slot_level": 1,
+            "spell_id": "burning-hands",
+            "upcast": false
+          }
+        }
+      ],
+      "id": "burning-hands",
+      "kind": "modeled",
+      "name": "Burning Hands"
+    },
+    {
+      "agent_clauses": [
+        "Creatures that do not sleep or are immune to Exhaustion automatically succeed on saves.",
+        "The spell ends on a target if it takes damage or a creature within 5 feet uses an action to shake it awake."
+      ],
+      "desc": "Level 1 spell. Cast Sleep.",
+      "effects": [
+        {
+          "cast": {
+            "slot_level": 1,
+            "spell_id": "sleep",
+            "upcast": false
+          }
+        }
+      ],
+      "id": "sleep",
+      "kind": "partly_modeled",
+      "name": "Sleep"
+    },
+    {
+      "agent_clauses": [
+        "One additional ray per slot above 2; distribute rays among targets as desired."
+      ],
+      "desc": "Level 2 spell. Cast Scorching Ray.",
+      "effects": [
+        {
+          "cast": {
+            "slot_level": 2,
+            "spell_id": "scorching-ray",
+            "upcast": false
+          }
+        }
+      ],
+      "id": "scorching-ray",
+      "kind": "partly_modeled",
+      "name": "Scorching Ray"
+    },
+    {
+      "desc": "Level 2 spell. Cast Shatter.",
+      "effects": [
+        {
+          "cast": {
+            "slot_level": 2,
+            "spell_id": "shatter",
+            "upcast": false
+          }
+        }
+      ],
+      "id": "shatter",
+      "kind": "modeled",
+      "name": "Shatter"
+    },
+    {
+      "agent_clauses": [
+        "Only Humanoids can be targeted.",
+        "Target repeats the save at the end of each of its turns, ending the spell on a success."
+      ],
+      "desc": "Level 2 spell. Cast Hold Person.",
+      "effects": [
+        {
+          "cast": {
+            "slot_level": 2,
+            "spell_id": "hold-person",
+            "upcast": false
+          }
+        }
+      ],
+      "id": "hold-person",
+      "kind": "partly_modeled",
+      "name": "Hold Person"
+    },
+    {
+      "agent_clauses": [
+        "The spell ends early immediately after the target makes an attack roll, deals damage, or casts a spell."
+      ],
+      "desc": "Level 2 spell. Cast Invisibility.",
+      "effects": [
+        {
+          "cast": {
+            "slot_level": 2,
+            "spell_id": "invisibility",
+            "upcast": false
+          }
+        }
+      ],
+      "id": "invisibility",
+      "kind": "partly_modeled",
+      "name": "Invisibility"
+    },
+    {
+      "desc": "Level 3 spell. Cast Lightning Bolt.",
+      "effects": [
+        {
+          "cast": {
+            "slot_level": 3,
+            "spell_id": "lightning-bolt",
+            "upcast": false
+          }
+        }
+      ],
+      "id": "lightning-bolt",
+      "kind": "modeled",
+      "name": "Lightning Bolt"
+    },
+    {
+      "desc": "Level 3 spell. Cast Fireball.",
+      "effects": [
+        {
+          "cast": {
+            "slot_level": 3,
+            "spell_id": "fireball",
+            "upcast": false
+          }
+        }
+      ],
+      "id": "fireball",
+      "kind": "modeled",
+      "name": "Fireball"
+    },
+    {
+      "agent_clauses": [
+        "Only creatures that can see the pattern are affected.",
+        "The spell ends on an affected creature if it takes damage or a creature uses an action to shake it awake."
+      ],
+      "desc": "Level 3 spell. Cast Hypnotic Pattern.",
+      "effects": [
+        {
+          "cast": {
+            "slot_level": 3,
+            "spell_id": "hypnotic-pattern",
+            "upcast": false
+          }
+        }
+      ],
+      "id": "hypnotic-pattern",
+      "kind": "partly_modeled",
+      "name": "Hypnotic Pattern"
+    },
+    {
+      "agent_clauses": [
+        "Target gains an extra action each turn that can only be used for Attack (one attack), Dash, Disengage, Hide, or Utilize.",
+        "When the spell ends, the target is Incapacitated and has Speed 0 until the end of its next turn."
+      ],
+      "desc": "Level 3 spell. Cast Haste.",
+      "effects": [
+        {
+          "cast": {
+            "slot_level": 3,
+            "spell_id": "haste",
+            "upcast": false
+          }
+        }
+      ],
+      "id": "haste",
+      "kind": "partly_modeled",
+      "name": "Haste"
+    },
+    {
+      "agent_clauses": [
+        "On a successful save, a creature takes half the initial damage only."
+      ],
+      "desc": "Level 4 spell. Cast Vitriolic Sphere.",
+      "effects": [
+        {
+          "cast": {
+            "slot_level": 4,
+            "spell_id": "vitriolic-sphere",
+            "upcast": false
+          }
+        }
+      ],
+      "id": "vitriolic-sphere",
+      "kind": "partly_modeled",
+      "name": "Vitriolic Sphere"
+    },
+    {
+      "agent_clauses": [
+        "Ground in the Cylinder becomes Difficult Terrain until the end of the caster's next turn."
+      ],
+      "desc": "Level 4 spell. Cast Ice Storm.",
+      "effects": [
+        {
+          "cast": {
+            "slot_level": 4,
+            "spell_id": "ice-storm",
+            "upcast": false
+          }
+        }
+      ],
+      "id": "ice-storm",
+      "kind": "partly_modeled",
+      "name": "Ice Storm"
+    },
+    {
+      "agent_clauses": [
+        "Target transforms into a Beast of CR equal to or less than its own (or level) on a failed Wisdom save; game statistics are replaced by the Beast's.",
+        "Target repeats the save at the end of each of its turns, ending the spell on a success."
+      ],
+      "desc": "Level 4 spell. Cast Polymorph.",
+      "effects": [
+        {
+          "cast": {
+            "slot_level": 4,
+            "spell_id": "polymorph",
+            "upcast": false
+          }
+        }
+      ],
+      "id": "polymorph",
+      "kind": "partly_modeled",
+      "name": "Polymorph"
+    },
+    {
+      "agent_clauses": [
+        "The spell does not end early when the target attacks or deals damage."
+      ],
+      "desc": "Level 4 spell. Cast Greater Invisibility.",
+      "effects": [
+        {
+          "cast": {
+            "slot_level": 4,
+            "spell_id": "greater-invisibility",
+            "upcast": false
+          }
+        }
+      ],
+      "id": "greater-invisibility",
+      "kind": "partly_modeled",
+      "name": "Greater Invisibility"
+    }
+  ],
+  "alignment": "unaligned",
+  "armor_class": [
+    {
+      "source": "robes",
+      "value": 12
+    }
+  ],
+  "class": "Caster",
+  "dying": true,
+  "gear": [
+    "robes",
+    "dagger",
+    "arcane focus",
+    "spellbook"
+  ],
+  "hit_points": {
+    "average": 50,
+    "dice": "8d6+16"
+  },
+  "id": "standard-caster-08",
+  "initiative": 2,
+  "languages": [
+    "Common"
+  ],
+  "level": 8,
+  "name": "Standard Caster (Level 8)",
+  "notes": [
+    "Approximates a robed arcane caster (wizard). A calibration role, not class fidelity.",
+    "No magic items; gear exists only as numbers in this stat block."
+  ],
+  "proficiency_bonus": 3,
+  "reactions": [
+    {
+      "agent_clauses": [
+        "No damage from Magic Missile while the modifier lasts."
+      ],
+      "desc": "Level 1 spell. Cast Shield.",
+      "effects": [
+        {
+          "cast": {
+            "slot_level": 1,
+            "spell_id": "shield",
+            "upcast": false
+          }
+        }
+      ],
+      "id": "shield",
+      "kind": "partly_modeled",
+      "name": "Shield"
+    }
+  ],
+  "saving_throws": {
+    "int": 8,
+    "wis": 4
+  },
+  "schema_version": "1",
+  "senses": {
+    "passive_perception": 11
+  },
+  "size": "medium",
+  "skills": {
+    "arcana": 8
+  },
+  "source": "homebrew-bench standard party",
+  "speeds": {
+    "walk": {
+      "feet": 30
+    }
+  },
+  "spell_slots": [
+    4,
+    3,
+    3,
+    2,
+    0,
+    0,
+    0,
+    0,
+    0
+  ],
+  "spellcasting": {
+    "ability": "int",
+    "attack_bonus": 8,
+    "save_dc": 16
+  },
+  "type": "humanoid"
+}

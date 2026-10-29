@@ -1,0 +1,123 @@
+{
+  "ability_scores": {
+    "charisma": 8,
+    "constitution": 16,
+    "dexterity": 20,
+    "intelligence": 10,
+    "strength": 10,
+    "wisdom": 14
+  },
+  "actions": [
+    {
+      "desc": "Ranged weapon attack, +12 to hit.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "1d8",
+                "magical": false,
+                "modifier": 5,
+                "type": "piercing"
+              },
+              {
+                "dice": "7d6",
+                "magical": false,
+                "modifier": 0,
+                "type": "piercing"
+              }
+            ],
+            "modifier": 12,
+            "range": [
+              150,
+              600
+            ],
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "longbow",
+      "kind": "modeled",
+      "name": "Longbow"
+    },
+    {
+      "desc": "Melee weapon attack, +10 to hit.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "1d6",
+                "magical": false,
+                "modifier": 5,
+                "type": "piercing"
+              },
+              {
+                "dice": "7d6",
+                "magical": false,
+                "modifier": 0,
+                "type": "piercing"
+              }
+            ],
+            "modifier": 10,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "shortsword",
+      "kind": "modeled",
+      "name": "Shortsword"
+    }
+  ],
+  "alignment": "unaligned",
+  "armor_class": [
+    {
+      "source": "studded leather",
+      "value": 17
+    }
+  ],
+  "class": "Striker",
+  "dying": true,
+  "gear": [
+    "studded leather",
+    "longbow",
+    "shortsword"
+  ],
+  "hit_points": {
+    "average": 121,
+    "dice": "13d10+39"
+  },
+  "id": "standard-striker-13",
+  "initiative": 5,
+  "languages": [
+    "Common"
+  ],
+  "level": 13,
+  "name": "Standard Striker (Level 13)",
+  "notes": [
+    "Approximates a ranged skirmisher with precision damage (rogue or ranger). A calibration role, not class fidelity. One attack per action: the precision dice stand in for a once-per-turn bonus and apply to every hit, so there is no extra-attack progression.",
+    "No magic items; gear exists only as numbers in this stat block."
+  ],
+  "proficiency_bonus": 5,
+  "saving_throws": {
+    "dex": 10,
+    "int": 5
+  },
+  "schema_version": "1",
+  "senses": {
+    "passive_perception": 17
+  },
+  "size": "medium",
+  "skills": {
+    "perception": 7,
+    "stealth": 10
+  },
+  "source": "homebrew-bench standard party",
+  "speeds": {
+    "walk": {
+      "feet": 30
+    }
+  },
+  "type": "humanoid"
+}

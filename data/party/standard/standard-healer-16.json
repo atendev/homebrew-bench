@@ -1,0 +1,358 @@
+{
+  "ability_scores": {
+    "charisma": 12,
+    "constitution": 18,
+    "dexterity": 10,
+    "intelligence": 10,
+    "strength": 12,
+    "wisdom": 20
+  },
+  "actions": [
+    {
+      "desc": "Melee weapon attack, +6 to hit.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "1d6",
+                "magical": false,
+                "modifier": 1,
+                "type": "bludgeoning"
+              },
+              {
+                "dice": "2d8",
+                "magical": false,
+                "modifier": 0,
+                "type": "radiant"
+              }
+            ],
+            "modifier": 6,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "mace",
+      "kind": "modeled",
+      "name": "Mace"
+    },
+    {
+      "agent_clauses": [
+        "Stabilizes one creature within range that has 0 Hit Points and is not dead."
+      ],
+      "desc": "Cantrip. Cast Spare the Dying.",
+      "effects": [
+        {
+          "cast": {
+            "slot_level": null,
+            "spell_id": "spare-the-dying",
+            "upcast": false
+          }
+        }
+      ],
+      "id": "spare-the-dying",
+      "kind": "partly_modeled",
+      "name": "Spare the Dying",
+      "usage": "at_will"
+    },
+    {
+      "desc": "Level 1 spell. Cast Cure Wounds.",
+      "effects": [
+        {
+          "cast": {
+            "slot_level": 1,
+            "spell_id": "cure-wounds",
+            "upcast": false
+          }
+        }
+      ],
+      "id": "cure-wounds",
+      "kind": "modeled",
+      "name": "Cure Wounds"
+    },
+    {
+      "agent_clauses": [
+        "Creates ten berries; eating one as a Bonus Action restores 1 Hit Point and provides nourishment for one day."
+      ],
+      "desc": "Level 1 spell. Cast Goodberry.",
+      "effects": [
+        {
+          "cast": {
+            "slot_level": 1,
+            "spell_id": "goodberry",
+            "upcast": false
+          }
+        }
+      ],
+      "id": "goodberry",
+      "kind": "partly_modeled",
+      "name": "Goodberry"
+    },
+    {
+      "agent_clauses": [
+        "Up to three targets' Hit Point maximums and current Hit Points increase by 5.",
+        "Increase by 5 per spell slot level above 2."
+      ],
+      "desc": "Level 2 spell. Cast Aid.",
+      "effects": [
+        {
+          "cast": {
+            "slot_level": 2,
+            "spell_id": "aid",
+            "upcast": false
+          }
+        }
+      ],
+      "id": "aid",
+      "kind": "partly_modeled",
+      "name": "Aid"
+    },
+    {
+      "agent_clauses": [
+        "Restores 1 Hit Point to a creature that died within the last minute."
+      ],
+      "desc": "Level 3 spell. Cast Revivify.",
+      "effects": [
+        {
+          "cast": {
+            "slot_level": 3,
+            "spell_id": "revivify",
+            "upcast": false
+          }
+        }
+      ],
+      "id": "revivify",
+      "kind": "partly_modeled",
+      "name": "Revivify"
+    },
+    {
+      "agent_clauses": [
+        "Targets have Advantage on Wisdom saving throws and Death Saving Throws.",
+        "Targets regain the maximum number of Hit Points possible from any healing."
+      ],
+      "desc": "Level 3 spell. Cast Beacon of Hope.",
+      "effects": [
+        {
+          "cast": {
+            "slot_level": 3,
+            "spell_id": "beacon-of-hope",
+            "upcast": false
+          }
+        }
+      ],
+      "id": "beacon-of-hope",
+      "kind": "partly_modeled",
+      "name": "Beacon of Hope"
+    },
+    {
+      "agent_clauses": [
+        "Allies in the 30-foot Emanation have Resistance to Necrotic damage and their Hit Point maximums cannot be reduced.",
+        "An ally with 0 Hit Points that starts its turn in the aura regains 1 Hit Point."
+      ],
+      "desc": "Level 4 spell. Cast Aura of Life.",
+      "effects": [
+        {
+          "cast": {
+            "slot_level": 4,
+            "spell_id": "aura-of-life",
+            "upcast": false
+          }
+        }
+      ],
+      "id": "aura-of-life",
+      "kind": "partly_modeled",
+      "name": "Aura of Life"
+    },
+    {
+      "agent_clauses": [
+        "The first time the target would drop to 0 Hit Points before the spell ends, it instead drops to 1 Hit Point and the spell ends.",
+        "An instant-kill effect that does not deal damage is negated against the target and ends the spell."
+      ],
+      "desc": "Level 4 spell. Cast Death Ward.",
+      "effects": [
+        {
+          "cast": {
+            "slot_level": 4,
+            "spell_id": "death-ward",
+            "upcast": false
+          }
+        }
+      ],
+      "id": "death-ward",
+      "kind": "partly_modeled",
+      "name": "Death Ward"
+    },
+    {
+      "agent_clauses": [
+        "Heals up to six creatures in a 30-foot-radius Sphere."
+      ],
+      "desc": "Level 5 spell. Cast Mass Cure Wounds.",
+      "effects": [
+        {
+          "cast": {
+            "slot_level": 5,
+            "spell_id": "mass-cure-wounds",
+            "upcast": false
+          }
+        }
+      ],
+      "id": "mass-cure-wounds",
+      "kind": "partly_modeled",
+      "name": "Mass Cure Wounds"
+    },
+    {
+      "agent_clauses": [
+        "Removes one of: 1 Exhaustion level; Charmed or Petrified condition; a curse; ability score reduction; Hit Point maximum reduction."
+      ],
+      "desc": "Level 5 spell. Cast Greater Restoration.",
+      "effects": [
+        {
+          "cast": {
+            "slot_level": 5,
+            "spell_id": "greater-restoration",
+            "upcast": false
+          }
+        }
+      ],
+      "id": "greater-restoration",
+      "kind": "partly_modeled",
+      "name": "Greater Restoration"
+    },
+    {
+      "desc": "Level 6 spell. Cast Heal.",
+      "effects": [
+        {
+          "cast": {
+            "slot_level": 6,
+            "spell_id": "heal",
+            "upcast": false
+          }
+        }
+      ],
+      "id": "heal",
+      "kind": "modeled",
+      "name": "Heal"
+    }
+  ],
+  "alignment": "unaligned",
+  "armor_class": [
+    {
+      "source": "half plate armor, shield",
+      "value": 17
+    }
+  ],
+  "bonus_actions": [
+    {
+      "desc": "Level 1 spell. Cast Healing Word.",
+      "effects": [
+        {
+          "cast": {
+            "slot_level": 1,
+            "spell_id": "healing-word",
+            "upcast": false
+          }
+        }
+      ],
+      "id": "healing-word",
+      "kind": "modeled",
+      "name": "Healing Word"
+    },
+    {
+      "agent_clauses": [
+        "Ends one condition on a touched creature: Blinded, Deafened, Paralyzed, or Poisoned."
+      ],
+      "desc": "Level 2 spell. Cast Lesser Restoration.",
+      "effects": [
+        {
+          "cast": {
+            "slot_level": 2,
+            "spell_id": "lesser-restoration",
+            "upcast": false
+          }
+        }
+      ],
+      "id": "lesser-restoration",
+      "kind": "partly_modeled",
+      "name": "Lesser Restoration"
+    },
+    {
+      "agent_clauses": [
+        "Heals up to six visible creatures of the caster's choice."
+      ],
+      "desc": "Level 3 spell. Cast Mass Healing Word.",
+      "effects": [
+        {
+          "cast": {
+            "slot_level": 3,
+            "spell_id": "mass-healing-word",
+            "upcast": false
+          }
+        }
+      ],
+      "id": "mass-healing-word",
+      "kind": "partly_modeled",
+      "name": "Mass Healing Word"
+    }
+  ],
+  "class": "Healer",
+  "dying": true,
+  "gear": [
+    "half plate armor",
+    "shield",
+    "mace",
+    "holy symbol"
+  ],
+  "hit_points": {
+    "average": 147,
+    "dice": "16d8+64"
+  },
+  "id": "standard-healer-16",
+  "initiative": 0,
+  "languages": [
+    "Common"
+  ],
+  "level": 16,
+  "name": "Standard Healer (Level 16)",
+  "notes": [
+    "Approximates a medium-armored divine healer (cleric). A calibration role, not class fidelity.",
+    "No magic items; gear exists only as numbers in this stat block."
+  ],
+  "proficiency_bonus": 5,
+  "saving_throws": {
+    "cha": 6,
+    "wis": 10
+  },
+  "schema_version": "1",
+  "senses": {
+    "passive_perception": 20
+  },
+  "size": "medium",
+  "skills": {
+    "medicine": 10,
+    "perception": 10
+  },
+  "source": "homebrew-bench standard party",
+  "speeds": {
+    "walk": {
+      "feet": 30
+    }
+  },
+  "spell_slots": [
+    4,
+    3,
+    3,
+    3,
+    2,
+    1,
+    1,
+    1,
+    0
+  ],
+  "spellcasting": {
+    "ability": "wis",
+    "attack_bonus": 10,
+    "save_dc": 18
+  },
+  "type": "humanoid"
+}

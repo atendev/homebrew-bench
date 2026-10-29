@@ -10,6 +10,7 @@ pub mod effect;
 pub mod engine;
 pub mod encounter;
 pub mod error;
+pub mod party;
 pub mod paths;
 pub mod rng;
 pub mod schema;
