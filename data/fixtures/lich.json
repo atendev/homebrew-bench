@@ -1,0 +1,254 @@
+{
+  "ability_scores": {
+    "charisma": 16,
+    "constitution": 16,
+    "dexterity": 16,
+    "intelligence": 21,
+    "strength": 11,
+    "wisdom": 14
+  },
+  "actions": [
+    {
+      "desc": "The lich makes three attacks, using Eldritch Burst or Paralyzing Touch in any combination.",
+      "effects": [
+        {
+          "multiattack": {
+            "steps": [
+              {
+                "choice": {
+                  "options": [
+                    {
+                      "action_id": "eldritch-burst",
+                      "count": 1
+                    },
+                    {
+                      "action_id": "eldritch-burst",
+                      "count": 1
+                    },
+                    {
+                      "action_id": "eldritch-burst",
+                      "count": 1
+                    },
+                    {
+                      "action_id": "paralyzing-touch",
+                      "count": 1
+                    },
+                    {
+                      "action_id": "paralyzing-touch",
+                      "count": 1
+                    },
+                    {
+                      "action_id": "paralyzing-touch",
+                      "count": 1
+                    }
+                  ],
+                  "pick": 3
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "id": "multiattack",
+      "kind": "modeled",
+      "name": "Multiattack"
+    },
+    {
+      "desc": "Melee or Ranged Attack Roll: +12, reach 5 ft. or range 120 ft. Hit: 31 (4d12 + 5) Force damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "4d12",
+                "magical": false,
+                "modifier": 5,
+                "type": "force"
+              }
+            ],
+            "modifier": 12,
+            "on_hit": [],
+            "range": [
+              120,
+              120
+            ],
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "eldritch-burst",
+      "kind": "modeled",
+      "name": "Eldritch Burst"
+    },
+    {
+      "desc": "Melee Attack Roll: +12, reach 5 ft. Hit: 15 (3d6 + 5) Cold damage, and the target has the Paralyzed condition until the start of the lich’s next turn.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "3d6",
+                "magical": false,
+                "modifier": 5,
+                "type": "cold"
+              }
+            ],
+            "modifier": 12,
+            "on_hit": [],
+            "range": null,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "paralyzing-touch",
+      "kind": "modeled",
+      "name": "Paralyzing Touch"
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "The lich casts one of the following spells, using Intelligence as the spellcasting ability (spell save DC 20):",
+      "id": "spellcasting",
+      "kind": "unmodeled",
+      "name": "Spellcasting"
+    }
+  ],
+  "alignment": "neutral evil",
+  "armor_class": [
+    {
+      "value": 20
+    }
+  ],
+  "challenge_rating": 21,
+  "condition_immunities": [
+    "charmed",
+    "exhaustion",
+    "frightened",
+    "paralyzed",
+    "poisoned"
+  ],
+  "damage_immunities": [
+    "necrotic",
+    "poison"
+  ],
+  "damage_resistances": [
+    "cold",
+    "lightning"
+  ],
+  "hit_points": {
+    "average": 315,
+    "dice": "42d8+126"
+  },
+  "id": "lich",
+  "initiative": 3,
+  "lair_xp": 41000,
+  "languages": [
+    "All"
+  ],
+  "legendary_actions": [
+    {
+      "default_resolution": "skipped",
+      "desc": "The lich teleports up to 60 feet to an unoccupied space it can see, and each creature within 10 feet of the space it left takes 11 (2d10) Necrotic damage.",
+      "id": "deathly-teleport",
+      "kind": "unmodeled",
+      "name": "Deathly Teleport"
+    },
+    {
+      "desc": "Constitution Saving Throw: DC 20, each creature that isn’t an Undead in a 20-foot Emanation originating from the lich. Failure: 31 (9d6) Necrotic damage. Success: Half damage. Failure or Success: The lich can’t take this action again until the start of its next turn.",
+      "effects": [
+        {
+          "saving_throw": {
+            "ability": "con",
+            "creature_type_gate": null,
+            "damage": [
+              {
+                "dice": "9d6",
+                "magical": false,
+                "modifier": 0,
+                "type": "necrotic"
+              }
+            ],
+            "dc": 20,
+            "half_on_success": true,
+            "hp_gate": null,
+            "immunity_after_success": false,
+            "no_damage_on_success": false,
+            "on_failure": [],
+            "repeat_save": null,
+            "two_stage": null
+          }
+        }
+      ],
+      "id": "disrupt-life",
+      "kind": "modeled",
+      "name": "Disrupt Life"
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "The lich casts Fear, using the same spellcasting ability as Spellcasting. The lich can’t take this action again until the start of its next turn.",
+      "id": "frightening-gaze",
+      "kind": "unmodeled",
+      "name": "Frightening Gaze"
+    }
+  ],
+  "legendary_uses_per_round": 3,
+  "name": "Lich",
+  "proficiency_bonus": 7,
+  "reactions": [
+    {
+      "default_resolution": "skipped",
+      "desc": "The lich casts Counterspell or Shield in response to the spell’s trigger, using the same spellcasting ability as Spellcasting.",
+      "id": "protective-magic",
+      "kind": "unmodeled",
+      "name": "Protective Magic"
+    }
+  ],
+  "saving_throws": {
+    "con": 10,
+    "dex": 10,
+    "int": 12,
+    "wis": 9
+  },
+  "schema_version": "1",
+  "senses": {
+    "passive_perception": 19,
+    "truesight": 120
+  },
+  "size": "medium",
+  "skills": {
+    "arcana": 19,
+    "history": 12,
+    "insight": 9,
+    "perception": 9
+  },
+  "source": "srd-5.2.1",
+  "speeds": {
+    "walk": {
+      "feet": 30
+    }
+  },
+  "traits": [
+    {
+      "default_resolution": "skipped",
+      "desc": "If the lich fails a saving throw, it can choose to succeed instead.",
+      "id": "legendary-resistance",
+      "kind": "unmodeled",
+      "name": "Legendary Resistance",
+      "usage": {
+        "per_day": {
+          "uses": 4
+        }
+      }
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "If destroyed, the lich reforms in 1d10 days if it has a spirit jar, reviving with all its Hit Points. The new body appears in an unoccupied space within the lich’s lair.",
+      "id": "spirit-jar",
+      "kind": "unmodeled",
+      "name": "Spirit Jar"
+    }
+  ],
+  "type": "undead",
+  "xp": 33000
+}

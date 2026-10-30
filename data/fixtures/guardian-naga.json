@@ -1,0 +1,189 @@
+{
+  "ability_scores": {
+    "charisma": 18,
+    "constitution": 16,
+    "dexterity": 18,
+    "intelligence": 16,
+    "strength": 19,
+    "wisdom": 19
+  },
+  "actions": [
+    {
+      "desc": "The naga makes two Bite attacks. It can replace any attack with a use of Poisonous Spittle.",
+      "effects": [
+        {
+          "multiattack": {
+            "steps": [
+              {
+                "choice": {
+                  "options": [
+                    {
+                      "action_id": "bite",
+                      "count": 1
+                    },
+                    {
+                      "action_id": "bite",
+                      "count": 1
+                    },
+                    {
+                      "action_id": "poisonous-spittle",
+                      "count": 1
+                    },
+                    {
+                      "action_id": "poisonous-spittle",
+                      "count": 1
+                    }
+                  ],
+                  "pick": 2
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "id": "multiattack",
+      "kind": "modeled",
+      "name": "Multiattack"
+    },
+    {
+      "desc": "Melee Attack Roll: +8, reach 10 ft. Hit: 17 (2d12 + 4) Piercing damage plus 22 (4d10) Poison damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "2d12",
+                "magical": false,
+                "modifier": 4,
+                "type": "piercing"
+              },
+              {
+                "dice": "4d10",
+                "magical": false,
+                "modifier": 0,
+                "type": "poison"
+              }
+            ],
+            "modifier": 8,
+            "on_hit": [],
+            "range": null,
+            "reach": 10,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "bite",
+      "kind": "modeled",
+      "name": "Bite"
+    },
+    {
+      "agent_clauses": [
+        "and the target has the Blinded condition until the start of the naga’s next turn"
+      ],
+      "desc": "Constitution Saving Throw: DC 16, one creature the naga can see within 60 feet. Failure: 31 (7d8) Poison damage, and the target has the Blinded condition until the start of the naga’s next turn. Success: Half damage only.",
+      "effects": [
+        {
+          "saving_throw": {
+            "ability": "con",
+            "creature_type_gate": null,
+            "damage": [
+              {
+                "dice": "7d8",
+                "magical": false,
+                "modifier": 0,
+                "type": "poison"
+              }
+            ],
+            "dc": 16,
+            "half_on_success": true,
+            "hp_gate": null,
+            "immunity_after_success": false,
+            "no_damage_on_success": false,
+            "on_failure": [],
+            "repeat_save": null,
+            "two_stage": null
+          }
+        }
+      ],
+      "id": "poisonous-spittle",
+      "kind": "partly_modeled",
+      "name": "Poisonous Spittle"
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "The naga casts one of the following spells, requiring no Somatic or Material components and using Wisdom as the spellcasting ability (spell save DC 16):",
+      "id": "spellcasting",
+      "kind": "unmodeled",
+      "name": "Spellcasting"
+    }
+  ],
+  "alignment": "lawful good",
+  "armor_class": [
+    {
+      "value": 18
+    }
+  ],
+  "challenge_rating": 10,
+  "condition_immunities": [
+    "charmed",
+    "paralyzed",
+    "poisoned",
+    "restrained"
+  ],
+  "damage_immunities": [
+    "poison"
+  ],
+  "hit_points": {
+    "average": 136,
+    "dice": "16d10+48"
+  },
+  "id": "guardian-naga",
+  "initiative": 4,
+  "languages": [
+    "Celestial",
+    "Common"
+  ],
+  "name": "Guardian Naga",
+  "proficiency_bonus": 4,
+  "saving_throws": {
+    "cha": 8,
+    "con": 7,
+    "dex": 8,
+    "int": 7,
+    "wis": 8
+  },
+  "schema_version": "1",
+  "senses": {
+    "darkvision": 60,
+    "passive_perception": 14
+  },
+  "size": "large",
+  "skills": {
+    "arcana": 11,
+    "history": 11,
+    "religion": 11
+  },
+  "source": "srd-5.2.1",
+  "speeds": {
+    "climb": {
+      "feet": 40
+    },
+    "swim": {
+      "feet": 40
+    },
+    "walk": {
+      "feet": 40
+    }
+  },
+  "traits": [
+    {
+      "default_resolution": "skipped",
+      "desc": "If the naga dies, it returns to life in 1d6 days and regains all its Hit Points unless Dispel Evil and Good is cast on its remains.",
+      "id": "celestial-restoration",
+      "kind": "unmodeled",
+      "name": "Celestial Restoration"
+    }
+  ],
+  "type": "celestial",
+  "xp": 5900
+}

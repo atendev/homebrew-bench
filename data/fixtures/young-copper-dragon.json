@@ -1,0 +1,173 @@
+{
+  "ability_scores": {
+    "charisma": 15,
+    "constitution": 17,
+    "dexterity": 12,
+    "intelligence": 16,
+    "strength": 19,
+    "wisdom": 13
+  },
+  "actions": [
+    {
+      "desc": "The dragon makes three Rend attacks. It can replace one attack with a use of Slowing Breath.",
+      "effects": [
+        {
+          "multiattack": {
+            "steps": [
+              {
+                "action": {
+                  "action_id": "rend",
+                  "count": 2
+                }
+              },
+              {
+                "choice": {
+                  "options": [
+                    {
+                      "action_id": "rend",
+                      "count": 1
+                    },
+                    {
+                      "action_id": "slowing-breath",
+                      "count": 1
+                    }
+                  ],
+                  "pick": 1
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "id": "multiattack",
+      "kind": "modeled",
+      "name": "Multiattack"
+    },
+    {
+      "desc": "Melee Attack Roll: +7, reach 10 ft. Hit: 15 (2d10 + 4) Slashing damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "2d10",
+                "magical": false,
+                "modifier": 4,
+                "type": "slashing"
+              }
+            ],
+            "modifier": 7,
+            "on_hit": [],
+            "range": null,
+            "reach": 10,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "rend",
+      "kind": "modeled",
+      "name": "Rend"
+    },
+    {
+      "desc": "Dexterity Saving Throw: DC 14, each creature in a 40-foot-long, 5-footwide Line. Failure: 40 (9d8) Acid damage. Success: Half damage.",
+      "effects": [
+        {
+          "saving_throw": {
+            "ability": "dex",
+            "creature_type_gate": null,
+            "damage": [
+              {
+                "dice": "9d8",
+                "magical": false,
+                "modifier": 0,
+                "type": "acid"
+              }
+            ],
+            "dc": 14,
+            "half_on_success": true,
+            "hp_gate": null,
+            "immunity_after_success": false,
+            "no_damage_on_success": false,
+            "on_failure": [],
+            "repeat_save": null,
+            "two_stage": null
+          }
+        }
+      ],
+      "id": "acid-breath",
+      "kind": "modeled",
+      "name": "Acid Breath",
+      "usage": {
+        "recharge": {
+          "dice": "5-6",
+          "group": "breath_weapons"
+        }
+      }
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "Constitution Saving Throw: DC 14, each creature in a 30-foot Cone. Failure: The target can’t take Reactions; its Speed is halved; and it can take either an action or a Bonus Action on its turn, not both. This effect lasts until the end of its next turn.",
+      "id": "slowing-breath",
+      "kind": "unmodeled",
+      "name": "Slowing Breath",
+      "usage": {
+        "recharge": {
+          "dice": "5-6",
+          "group": "breath_weapons"
+        }
+      }
+    }
+  ],
+  "alignment": "chaotic good",
+  "armor_class": [
+    {
+      "value": 17
+    }
+  ],
+  "challenge_rating": 7,
+  "damage_immunities": [
+    "acid"
+  ],
+  "hit_points": {
+    "average": 119,
+    "dice": "14d10+42"
+  },
+  "id": "young-copper-dragon",
+  "initiative": 1,
+  "languages": [
+    "Common",
+    "Draconic"
+  ],
+  "name": "Young Copper Dragon",
+  "proficiency_bonus": 3,
+  "saving_throws": {
+    "dex": 4,
+    "wis": 4
+  },
+  "schema_version": "1",
+  "senses": {
+    "blindsight": 30,
+    "darkvision": 120,
+    "passive_perception": 17
+  },
+  "size": "large",
+  "skills": {
+    "deception": 5,
+    "perception": 7,
+    "stealth": 4
+  },
+  "source": "srd-5.2.1",
+  "speeds": {
+    "climb": {
+      "feet": 40
+    },
+    "fly": {
+      "feet": 80
+    },
+    "walk": {
+      "feet": 40
+    }
+  },
+  "type": "dragon",
+  "xp": 2900
+}

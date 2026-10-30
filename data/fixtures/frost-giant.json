@@ -1,0 +1,171 @@
+{
+  "ability_scores": {
+    "charisma": 12,
+    "constitution": 21,
+    "dexterity": 9,
+    "intelligence": 9,
+    "strength": 23,
+    "wisdom": 10
+  },
+  "actions": [
+    {
+      "desc": "The giant makes two attacks, using Frost Axe or Great Bow in any combination.",
+      "effects": [
+        {
+          "multiattack": {
+            "steps": [
+              {
+                "choice": {
+                  "options": [
+                    {
+                      "action_id": "frost-axe",
+                      "count": 1
+                    },
+                    {
+                      "action_id": "frost-axe",
+                      "count": 1
+                    },
+                    {
+                      "action_id": "great-bow",
+                      "count": 1
+                    },
+                    {
+                      "action_id": "great-bow",
+                      "count": 1
+                    }
+                  ],
+                  "pick": 2
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "id": "multiattack",
+      "kind": "modeled",
+      "name": "Multiattack"
+    },
+    {
+      "desc": "Melee Attack Roll: +9, reach 10 ft. Hit: 19 (2d12 + 6) Slashing damage plus 9 (2d8) Cold damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "2d12",
+                "magical": false,
+                "modifier": 6,
+                "type": "slashing"
+              },
+              {
+                "dice": "2d8",
+                "magical": false,
+                "modifier": 0,
+                "type": "cold"
+              }
+            ],
+            "modifier": 9,
+            "on_hit": [],
+            "range": null,
+            "reach": 10,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "frost-axe",
+      "kind": "modeled",
+      "name": "Frost Axe"
+    },
+    {
+      "desc": "Ranged Attack Roll: +9, range 150/600 ft. Hit: 17 (2d10 + 6) Piercing damage plus 7 (2d6) Cold damage, and the target’s Speed decreases by 10 feet until the end of its next turn.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "2d10",
+                "magical": false,
+                "modifier": 6,
+                "type": "piercing"
+              },
+              {
+                "dice": "2d6",
+                "magical": false,
+                "modifier": 0,
+                "type": "cold"
+              }
+            ],
+            "modifier": 9,
+            "on_hit": [],
+            "range": [
+              150,
+              600
+            ],
+            "reach": null,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "great-bow",
+      "kind": "modeled",
+      "name": "Great Bow"
+    }
+  ],
+  "alignment": "neutral evil",
+  "armor_class": [
+    {
+      "value": 15
+    }
+  ],
+  "bonus_actions": [
+    {
+      "default_resolution": "skipped",
+      "desc": "The giant or one creature of its choice that can see or hear it gains 16 (2d10 + 5) Temporary Hit Points and has Advantage on attack rolls until the start of the giant’s next turn.",
+      "id": "war-cry",
+      "kind": "unmodeled",
+      "name": "War Cry",
+      "usage": {
+        "recharge": {
+          "dice": "5-6"
+        }
+      }
+    }
+  ],
+  "challenge_rating": 8,
+  "damage_immunities": [
+    "cold"
+  ],
+  "hit_points": {
+    "average": 149,
+    "dice": "13d12+65"
+  },
+  "id": "frost-giant",
+  "initiative": -1,
+  "languages": [
+    "Giant"
+  ],
+  "name": "Frost Giant",
+  "proficiency_bonus": 3,
+  "saving_throws": {
+    "cha": 4,
+    "con": 8,
+    "wis": 3
+  },
+  "schema_version": "1",
+  "senses": {
+    "passive_perception": 13
+  },
+  "size": "huge",
+  "skills": {
+    "athletics": 9,
+    "perception": 3
+  },
+  "source": "srd-5.2.1",
+  "speeds": {
+    "walk": {
+      "feet": 40
+    }
+  },
+  "type": "giant",
+  "xp": 3900
+}

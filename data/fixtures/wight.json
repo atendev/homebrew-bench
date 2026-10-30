@@ -1,0 +1,207 @@
+{
+  "ability_scores": {
+    "charisma": 15,
+    "constitution": 16,
+    "dexterity": 14,
+    "intelligence": 10,
+    "strength": 15,
+    "wisdom": 13
+  },
+  "actions": [
+    {
+      "desc": "The wight makes two attacks, using Necrotic Sword or Necrotic Bow in any combination. It can replace one attack with a use of Life Drain.",
+      "effects": [
+        {
+          "multiattack": {
+            "steps": [
+              {
+                "choice": {
+                  "options": [
+                    {
+                      "action_id": "necrotic-sword",
+                      "count": 1
+                    },
+                    {
+                      "action_id": "necrotic-sword",
+                      "count": 1
+                    },
+                    {
+                      "action_id": "necrotic-bow",
+                      "count": 1
+                    },
+                    {
+                      "action_id": "necrotic-bow",
+                      "count": 1
+                    },
+                    {
+                      "action_id": "life-drain",
+                      "count": 1
+                    }
+                  ],
+                  "pick": 2
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "id": "multiattack",
+      "kind": "modeled",
+      "name": "Multiattack"
+    },
+    {
+      "desc": "Melee Attack Roll: +4, reach 5 ft. Hit: 6 (1d8 + 2) Slashing damage plus 4 (1d8) Necrotic damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "1d8",
+                "magical": false,
+                "modifier": 2,
+                "type": "slashing"
+              },
+              {
+                "dice": "1d8",
+                "magical": false,
+                "modifier": 0,
+                "type": "necrotic"
+              }
+            ],
+            "modifier": 4,
+            "on_hit": [],
+            "range": null,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "necrotic-sword",
+      "kind": "modeled",
+      "name": "Necrotic Sword"
+    },
+    {
+      "desc": "Ranged Attack Roll: +4, range 150/600 ft. Hit: 6 (1d8 + 2) Piercing damage plus 4 (1d8) Necrotic damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "1d8",
+                "magical": false,
+                "modifier": 2,
+                "type": "piercing"
+              },
+              {
+                "dice": "1d8",
+                "magical": false,
+                "modifier": 0,
+                "type": "necrotic"
+              }
+            ],
+            "modifier": 4,
+            "on_hit": [],
+            "range": [
+              150,
+              600
+            ],
+            "reach": null,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "necrotic-bow",
+      "kind": "modeled",
+      "name": "Necrotic Bow"
+    },
+    {
+      "agent_clauses": [
+        "and the target’s Hit Point maximum decreases by an amount equal to the damage taken. A Humanoid slain by this attack rises 24 hours later as a Zombie under the wight’s control, unless the Humanoid is restored to life or its body is destroyed. The wight can have no more than twelve zombies under its control at a time"
+      ],
+      "desc": "Constitution Saving Throw: DC 13, one creature within 5 feet. Failure: 6 (1d8 + 2) Necrotic damage, and the target’s Hit Point maximum decreases by an amount equal to the damage taken. A Humanoid slain by this attack rises 24 hours later as a Zombie under the wight’s control, unless the Humanoid is restored to life or its body is destroyed. The wight can have no more than twelve zombies under its control at a time.",
+      "effects": [
+        {
+          "saving_throw": {
+            "ability": "con",
+            "creature_type_gate": null,
+            "damage": [
+              {
+                "dice": "1d8",
+                "magical": false,
+                "modifier": 2,
+                "type": "necrotic"
+              }
+            ],
+            "dc": 13,
+            "half_on_success": false,
+            "hp_gate": null,
+            "immunity_after_success": false,
+            "no_damage_on_success": true,
+            "on_failure": [],
+            "repeat_save": null,
+            "two_stage": null
+          }
+        }
+      ],
+      "id": "life-drain",
+      "kind": "partly_modeled",
+      "name": "Life Drain"
+    }
+  ],
+  "alignment": "neutral evil",
+  "armor_class": [
+    {
+      "source": "Studded Leather Armor",
+      "value": 14
+    }
+  ],
+  "challenge_rating": 3,
+  "condition_immunities": [
+    "exhaustion",
+    "poisoned"
+  ],
+  "damage_immunities": [
+    "poison"
+  ],
+  "damage_resistances": [
+    "necrotic"
+  ],
+  "hit_points": {
+    "average": 82,
+    "dice": "11d8+33"
+  },
+  "id": "wight",
+  "initiative": 2,
+  "languages": [
+    "Common plus one other language"
+  ],
+  "name": "Wight",
+  "proficiency_bonus": 2,
+  "schema_version": "1",
+  "senses": {
+    "darkvision": 60,
+    "passive_perception": 13
+  },
+  "size": "medium",
+  "skills": {
+    "perception": 3,
+    "stealth": 4
+  },
+  "source": "srd-5.2.1",
+  "speeds": {
+    "walk": {
+      "feet": 30
+    }
+  },
+  "traits": [
+    {
+      "default_resolution": "skipped",
+      "desc": "While in sunlight, the wight has Disadvantage on ability checks and attack rolls.",
+      "id": "sunlight-sensitivity",
+      "kind": "unmodeled",
+      "name": "Sunlight Sensitivity"
+    }
+  ],
+  "type": "undead",
+  "xp": 700
+}

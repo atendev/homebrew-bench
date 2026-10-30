@@ -1,0 +1,152 @@
+{
+  "ability_scores": {
+    "charisma": 9,
+    "constitution": 20,
+    "dexterity": 10,
+    "intelligence": 3,
+    "strength": 28,
+    "wisdom": 10
+  },
+  "actions": [
+    {
+      "desc": "The roc makes two Beak attacks. It can replace one attack with a Talons attack.",
+      "effects": [
+        {
+          "multiattack": {
+            "steps": [
+              {
+                "action": {
+                  "action_id": "beak",
+                  "count": 1
+                }
+              },
+              {
+                "choice": {
+                  "options": [
+                    {
+                      "action_id": "beak",
+                      "count": 1
+                    },
+                    {
+                      "action_id": "talons",
+                      "count": 1
+                    }
+                  ],
+                  "pick": 1
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "id": "multiattack",
+      "kind": "modeled",
+      "name": "Multiattack"
+    },
+    {
+      "desc": "Melee Attack Roll: +13, reach 10 ft. Hit: 28 (3d12 + 9) Piercing damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "3d12",
+                "magical": false,
+                "modifier": 9,
+                "type": "piercing"
+              }
+            ],
+            "modifier": 13,
+            "on_hit": [],
+            "range": null,
+            "reach": 10,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "beak",
+      "kind": "modeled",
+      "name": "Beak"
+    },
+    {
+      "agent_clauses": [
+        "If the target is a Huge or smaller creature, it has the Grappled condition (escape DC 19) from both talons, and it has the Restrained condition until the grapple ends."
+      ],
+      "desc": "Melee Attack Roll: +13, reach 5 ft. Hit: 23 (4d6 + 9) Slashing damage. If the target is a Huge or smaller creature, it has the Grappled condition (escape DC 19) from both talons, and it has the Restrained condition until the grapple ends.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "4d6",
+                "magical": false,
+                "modifier": 9,
+                "type": "slashing"
+              }
+            ],
+            "modifier": 13,
+            "on_hit": [],
+            "range": null,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "talons",
+      "kind": "partly_modeled",
+      "name": "Talons"
+    }
+  ],
+  "alignment": "unaligned",
+  "armor_class": [
+    {
+      "value": 15
+    }
+  ],
+  "bonus_actions": [
+    {
+      "default_resolution": "skipped",
+      "desc": "If the roc has a creature Grappled, the roc flies up to half its Fly Speed without provoking Opportunity Attacks and drops that creature.",
+      "id": "swoop",
+      "kind": "unmodeled",
+      "name": "Swoop",
+      "usage": {
+        "recharge": {
+          "dice": "5-6"
+        }
+      }
+    }
+  ],
+  "challenge_rating": 11,
+  "hit_points": {
+    "average": 248,
+    "dice": "16d20+80"
+  },
+  "id": "roc",
+  "initiative": 0,
+  "name": "Roc",
+  "proficiency_bonus": 4,
+  "saving_throws": {
+    "dex": 4,
+    "wis": 4
+  },
+  "schema_version": "1",
+  "senses": {
+    "passive_perception": 18
+  },
+  "size": "gargantuan",
+  "skills": {
+    "perception": 8
+  },
+  "source": "srd-5.2.1",
+  "speeds": {
+    "fly": {
+      "feet": 120
+    },
+    "walk": {
+      "feet": 20
+    }
+  },
+  "type": "monstrosity",
+  "xp": 7200
+}

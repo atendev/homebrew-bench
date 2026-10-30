@@ -1,0 +1,249 @@
+{
+  "ability_scores": {
+    "charisma": 18,
+    "constitution": 15,
+    "dexterity": 9,
+    "intelligence": 18,
+    "strength": 21,
+    "wisdom": 15
+  },
+  "actions": [
+    {
+      "desc": "The aboleth makes two Tentacle attacks and uses either Consume Memories or Dominate Mind if available.",
+      "effects": [
+        {
+          "multiattack": {
+            "steps": [
+              {
+                "action": {
+                  "action_id": "tentacle",
+                  "count": 2
+                }
+              },
+              {
+                "choice": {
+                  "options": [
+                    {
+                      "action_id": "consume-memories",
+                      "count": 1
+                    },
+                    {
+                      "action_id": "dominate-mind",
+                      "count": 1
+                    }
+                  ],
+                  "pick": 1
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "id": "multiattack",
+      "kind": "modeled",
+      "name": "Multiattack"
+    },
+    {
+      "agent_clauses": [
+        "If the target is a Large or smaller creature, it has the Grappled condition (escape DC 14) from one of four tentacles."
+      ],
+      "desc": "Melee Attack Roll: +9, reach 15 ft. Hit: 12 (2d6 + 5) Bludgeoning damage. If the target is a Large or smaller creature, it has the Grappled condition (escape DC 14) from one of four tentacles.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "2d6",
+                "magical": false,
+                "modifier": 5,
+                "type": "bludgeoning"
+              }
+            ],
+            "modifier": 9,
+            "on_hit": [],
+            "range": null,
+            "reach": 15,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "tentacle",
+      "kind": "partly_modeled",
+      "name": "Tentacle"
+    },
+    {
+      "desc": "Intelligence Saving Throw: DC 16, one creature within 30 feet that is Charmed or Grappled by the aboleth. Failure: 10 (3d6) Psychic damage. Success: Half damage. Failure or Success: The aboleth gains the target’s memories if the target is a Humanoid and is reduced to 0 Hit Points by this action.",
+      "effects": [
+        {
+          "saving_throw": {
+            "ability": "int",
+            "creature_type_gate": null,
+            "damage": [
+              {
+                "dice": "3d6",
+                "magical": false,
+                "modifier": 0,
+                "type": "psychic"
+              }
+            ],
+            "dc": 16,
+            "half_on_success": true,
+            "hp_gate": null,
+            "immunity_after_success": false,
+            "no_damage_on_success": false,
+            "on_failure": [],
+            "repeat_save": null,
+            "two_stage": null
+          }
+        }
+      ],
+      "id": "consume-memories",
+      "kind": "modeled",
+      "name": "Consume Memories"
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "Wisdom Saving Throw: DC 16, one creature the aboleth can see within 30 feet. Failure: The target has the Charmed condition until the aboleth dies or is on a different plane of existence from the target. While Charmed, the target acts as an ally to the aboleth and is under its control while within 60 feet of it. In addition, the aboleth and the target can communicate telepathically with each other over any distance. The target repeats the save whenever it takes damage as well as after every 24 hours it spends at least 1 mile away from the aboleth, ending the effect on itself on a success.",
+      "id": "dominate-mind",
+      "kind": "unmodeled",
+      "name": "Dominate Mind",
+      "usage": {
+        "per_day": {
+          "uses": 2
+        }
+      }
+    }
+  ],
+  "alignment": "lawful evil",
+  "armor_class": [
+    {
+      "value": 17
+    }
+  ],
+  "challenge_rating": 10,
+  "hit_points": {
+    "average": 150,
+    "dice": "20d10+40"
+  },
+  "id": "aboleth",
+  "initiative": -1,
+  "lair_xp": 7200,
+  "languages": [
+    "Deep Speech",
+    "telepathy 120 ft."
+  ],
+  "legendary_actions": [
+    {
+      "default_resolution": "skipped",
+      "desc": "The aboleth makes one Tentacle attack.",
+      "id": "lash",
+      "kind": "unmodeled",
+      "name": "Lash"
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "If the aboleth has at least one creature Charmed or Grappled, it uses Consume Memories and regains 5 (1d10) Hit Points.",
+      "id": "psychic-drain",
+      "kind": "unmodeled",
+      "name": "Psychic Drain"
+    }
+  ],
+  "legendary_uses_per_round": 3,
+  "name": "Aboleth",
+  "proficiency_bonus": 4,
+  "saving_throws": {
+    "con": 6,
+    "dex": 3,
+    "int": 8,
+    "wis": 6
+  },
+  "schema_version": "1",
+  "senses": {
+    "darkvision": 120,
+    "passive_perception": 20
+  },
+  "size": "large",
+  "skills": {
+    "history": 12,
+    "perception": 10
+  },
+  "source": "srd-5.2.1",
+  "speeds": {
+    "swim": {
+      "feet": 40
+    },
+    "walk": {
+      "feet": 10
+    }
+  },
+  "traits": [
+    {
+      "default_resolution": "skipped",
+      "desc": "The aboleth can breathe air and water.",
+      "id": "amphibious",
+      "kind": "unmodeled",
+      "name": "Amphibious"
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "If destroyed, the aboleth gains a new body in 5d10 days, reviving with all its Hit Points in the Far Realm or another location chosen by the GM.",
+      "id": "eldritch-restoration",
+      "kind": "unmodeled",
+      "name": "Eldritch Restoration"
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "If the aboleth fails a saving throw, it can choose to succeed instead.",
+      "id": "legendary-resistance",
+      "kind": "unmodeled",
+      "name": "Legendary Resistance",
+      "usage": {
+        "per_day": {
+          "uses": 3
+        }
+      }
+    },
+    {
+      "agent_clauses": [
+        "The target is cursed. Until the curse ends, the target’s skin becomes slimy, the target can breathe air and water, and it can’t regain Hit Points unless it is underwater. While the cursed creature is outside a body of water, the creature takes  at the end of every 10 minutes unless moisture is applied to its skin before those minutes have passed"
+      ],
+      "desc": "While underwater, the aboleth is surrounded by mucus. Constitution Saving Throw: DC 14, each creature in a 5-foot Emanation originating from the aboleth at the end of the aboleth’s turn. Failure: The target is cursed. Until the curse ends, the target’s skin becomes slimy, the target can breathe air and water, and it can’t regain Hit Points unless it is underwater. While the cursed creature is outside a body of water, the creature takes 6 (1d12) Acid damage at the end of every 10 minutes unless moisture is applied to its skin before those minutes have passed.",
+      "effects": [
+        {
+          "saving_throw": {
+            "ability": "con",
+            "creature_type_gate": null,
+            "damage": [
+              {
+                "dice": "1d12",
+                "magical": false,
+                "modifier": 0,
+                "type": "acid"
+              }
+            ],
+            "dc": 14,
+            "half_on_success": false,
+            "hp_gate": null,
+            "immunity_after_success": false,
+            "no_damage_on_success": true,
+            "on_failure": [],
+            "repeat_save": null,
+            "two_stage": null
+          }
+        }
+      ],
+      "id": "mucus-cloud",
+      "kind": "partly_modeled",
+      "name": "Mucus Cloud"
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "If a creature the aboleth can see communicates telepathically with the aboleth, the aboleth learns the creature’s greatest desires.",
+      "id": "probing-telepathy",
+      "kind": "unmodeled",
+      "name": "Probing Telepathy"
+    }
+  ],
+  "type": "aberration",
+  "xp": 5900
+}

@@ -1,0 +1,196 @@
+{
+  "ability_scores": {
+    "charisma": 12,
+    "constitution": 20,
+    "dexterity": 10,
+    "intelligence": 10,
+    "strength": 25,
+    "wisdom": 12
+  },
+  "actions": [
+    {
+      "desc": "The dragon makes three Bite attacks. It can replace one attack with a Tail attack.",
+      "effects": [
+        {
+          "multiattack": {
+            "steps": [
+              {
+                "action": {
+                  "action_id": "bite",
+                  "count": 2
+                }
+              },
+              {
+                "choice": {
+                  "options": [
+                    {
+                      "action_id": "bite",
+                      "count": 1
+                    },
+                    {
+                      "action_id": "tail",
+                      "count": 1
+                    }
+                  ],
+                  "pick": 1
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "id": "multiattack",
+      "kind": "modeled",
+      "name": "Multiattack"
+    },
+    {
+      "agent_clauses": [
+        "Being underwater doesn’t grant Resistance to this Fire damage."
+      ],
+      "desc": "Melee Attack Roll: +13, reach 15 ft. Hit: 23 (3d10 + 7) Piercing damage plus 7 (2d6) Fire damage. Being underwater doesn’t grant Resistance to this Fire damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "3d10",
+                "magical": false,
+                "modifier": 7,
+                "type": "piercing"
+              },
+              {
+                "dice": "2d6",
+                "magical": false,
+                "modifier": 0,
+                "type": "fire"
+              }
+            ],
+            "modifier": 13,
+            "on_hit": [],
+            "range": null,
+            "reach": 15,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "bite",
+      "kind": "partly_modeled",
+      "name": "Bite"
+    },
+    {
+      "agent_clauses": [
+        "If the target is a Huge or smaller creature, it has the Prone condition."
+      ],
+      "desc": "Melee Attack Roll: +13, reach 15 ft. Hit: 18 (2d10 + 7) Bludgeoning damage. If the target is a Huge or smaller creature, it has the Prone condition.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "2d10",
+                "magical": false,
+                "modifier": 7,
+                "type": "bludgeoning"
+              }
+            ],
+            "modifier": 13,
+            "on_hit": [],
+            "range": null,
+            "reach": 15,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "tail",
+      "kind": "partly_modeled",
+      "name": "Tail"
+    },
+    {
+      "desc": "Constitution Saving Throw: DC 19, each creature in a 60-foot Cone. Failure: 56 (16d6) Fire damage. Success: Half damage. Failure or Success: Being underwater doesn’t grant Resistance to this Fire damage.",
+      "effects": [
+        {
+          "saving_throw": {
+            "ability": "con",
+            "creature_type_gate": null,
+            "damage": [
+              {
+                "dice": "16d6",
+                "magical": false,
+                "modifier": 0,
+                "type": "fire"
+              }
+            ],
+            "dc": 19,
+            "half_on_success": true,
+            "hp_gate": null,
+            "immunity_after_success": false,
+            "no_damage_on_success": false,
+            "on_failure": [],
+            "repeat_save": null,
+            "two_stage": null
+          }
+        }
+      ],
+      "id": "steam-breath",
+      "kind": "modeled",
+      "name": "Steam Breath",
+      "usage": {
+        "recharge": {
+          "dice": "5-6"
+        }
+      }
+    }
+  ],
+  "alignment": "neutral",
+  "armor_class": [
+    {
+      "value": 20
+    }
+  ],
+  "challenge_rating": 17,
+  "damage_resistances": [
+    "fire"
+  ],
+  "hit_points": {
+    "average": 356,
+    "dice": "23d20+115"
+  },
+  "id": "dragon-turtle",
+  "initiative": 0,
+  "languages": [
+    "Draconic",
+    "Primordial (Aquan)"
+  ],
+  "name": "Dragon Turtle",
+  "proficiency_bonus": 6,
+  "saving_throws": {
+    "con": 11,
+    "wis": 7
+  },
+  "schema_version": "1",
+  "senses": {
+    "darkvision": 120,
+    "passive_perception": 11
+  },
+  "size": "gargantuan",
+  "source": "srd-5.2.1",
+  "speeds": {
+    "swim": {
+      "feet": 50
+    },
+    "walk": {
+      "feet": 20
+    }
+  },
+  "traits": [
+    {
+      "default_resolution": "skipped",
+      "desc": "The dragon can breathe air and water.",
+      "id": "amphibious",
+      "kind": "unmodeled",
+      "name": "Amphibious"
+    }
+  ],
+  "type": "dragon",
+  "xp": 18000
+}

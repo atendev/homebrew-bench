@@ -375,10 +375,25 @@ fn resolve_effect(
                             resolve_nested_action(state, stream, actor_id, &action_id, target_ids, events)?;
                         }
                     }
-                    crate::effect::MultiattackStep::Choice { options, count } => {
-                        if let Some(action_id) = options.first() {
-                            for _ in 0..count {
-                                resolve_nested_action(state, stream, actor_id, action_id, target_ids, events)?;
+                    crate::effect::MultiattackStep::Choice { options, pick } => {
+                        // Phase 1 default: pick the first `pick` distinct options deterministically.
+                        // Live mode will later pause with a pending prompt for these picks; the batch
+                        // tactics policy will supply them as part of its plan. When that lands, the
+                        // engine will use those picks instead of this deterministic fallback.
+                        let pick = pick.min(options.len() as u32);
+                        let picks: Vec<_> = options.into_iter().take(pick as usize).collect();
+                        for opt in picks {
+                            events.push(EngineEvent {
+                                kind: "multiattack_choice".into(),
+                                message: format!("{} chooses {} for multiattack", actor_id, opt.action_id),
+                                actor_id: Some(actor_id.into()),
+                                target_id: None,
+                                roll: None,
+                                total: None,
+                                damage: None,
+                            });
+                            for _ in 0..opt.count {
+                                resolve_nested_action(state, stream, actor_id, &opt.action_id, target_ids, events)?;
                             }
                         }
                     }
@@ -1482,6 +1497,80 @@ mod tests {
         let goblin_a_total = events.iter().find(|e| e.actor_id.as_deref() == Some("goblin_a")).unwrap().total.unwrap();
         let goblin_b_total = events.iter().find(|e| e.actor_id.as_deref() == Some("goblin_b")).unwrap().total.unwrap();
         assert_eq!(goblin_a_total, goblin_b_total);
+    }
+
+    #[test]
+    fn multiattack_choice_resolves_k_distinct_picks() {
+        let mut attacker_block = test_stat_block("attacker", "Attacker", 30, 15);
+        attacker_block.actions.push(crate::stat_block::AbilityEntry {
+            id: "multiattack".into(),
+            name: "Multiattack".into(),
+            desc: None,
+            kind: crate::stat_block::AbilityKind::Modeled,
+            effects: vec![Effect::Multiattack(crate::effect::Multiattack {
+                steps: vec![
+                    crate::effect::MultiattackStep::Action { action_id: "claw".into(), count: 1 },
+                    crate::effect::MultiattackStep::Choice {
+                        options: vec![
+                            crate::effect::ChoiceOption { action_id: "claw".into(), count: 1 },
+                            crate::effect::ChoiceOption { action_id: "bite".into(), count: 1 },
+                        ],
+                        pick: 1,
+                    },
+                ],
+            })],
+            agent_clauses: vec![],
+            default_resolution: None,
+            usage: None,
+        });
+        attacker_block.actions.push(crate::stat_block::AbilityEntry {
+            id: "claw".into(),
+            name: "Claw".into(),
+            desc: None,
+            kind: crate::stat_block::AbilityKind::Modeled,
+            effects: vec![Effect::Attack(Attack {
+                modifier: 5,
+                reach: Some(5),
+                range: None,
+                target_count: 1,
+                damage: vec![Damage { dice: "1d6".into(), damage_type: DamageType::Slashing, modifier: 3, magical: false }],
+                on_hit: vec![],
+            })],
+            agent_clauses: vec![],
+            default_resolution: None,
+            usage: None,
+        });
+        attacker_block.actions.push(crate::stat_block::AbilityEntry {
+            id: "bite".into(),
+            name: "Bite".into(),
+            desc: None,
+            kind: crate::stat_block::AbilityKind::Modeled,
+            effects: vec![Effect::Attack(Attack {
+                modifier: 5,
+                reach: Some(5),
+                range: None,
+                target_count: 1,
+                damage: vec![Damage { dice: "1d8".into(), damage_type: DamageType::Piercing, modifier: 3, magical: false }],
+                on_hit: vec![],
+            })],
+            agent_clauses: vec![],
+            default_resolution: None,
+            usage: None,
+        });
+        let target_block = test_stat_block("target", "Target", 50, 10);
+        let attacker = test_combatant("attacker", "attacker", 30, "enemy");
+        let target = test_combatant("target", "target", 50, "ally");
+        let mut state = test_encounter(
+            vec![target_block, attacker_block],
+            vec![target, attacker],
+        );
+        state.combatants[0].engagement.push("attacker".into());
+        state.combatants[1].engagement.push("target".into());
+        state.active_turn = Some("attacker".into());
+        let req = StepRequest::Action { actor_id: "attacker".into(), action_id: "multiattack".into(), target_ids: vec!["target".into()] };
+        let resp = step(&mut state, req).unwrap();
+        let attack_events: Vec<_> = resp.events.iter().filter(|e| e.kind == "attack").collect();
+        assert_eq!(attack_events.len(), 2, "fixed 1 attack plus choice 1 attack");
     }
 
     #[test]

@@ -127,7 +127,7 @@ def build_multiattack(table, level):
         "desc": f"Makes {count} {spec['attack']} attacks.",
         "kind": "modeled",
         "effects": [
-            {"multiattack": {"steps": [{"action": {"action_id": spec["attack"], "count": count}}], "swap": False}}
+            {"multiattack": {"steps": [{"action": {"action_id": spec["attack"], "count": count}}]}}
         ],
     }
 

@@ -277,20 +277,6 @@ class Converter:
         }}
         return effect, clauses
 
-    @staticmethod
-    def option_reason(opts, has_fixed_steps):
-        from_ = opts.get("from", {})
-        options = from_.get("options", [])
-        if has_fixed_steps:
-            return "replacement option (swap) with fixed attacks"
-        if any(o.get("option_type") != "action" for o in options):
-            return "nested option group"
-        if len({o.get("count") for o in options}) > 1:
-            return "choice with unequal option counts"
-        if opts.get("choose") != 1:
-            return f"choose-{opts.get('choose')} combination"
-        return "option set"
-
     def multiattack(self, raw, base, action_ids):
         steps, ok = [], True
         counts = [a.get("count") for a in raw.get("actions") or []]
@@ -309,12 +295,18 @@ class Converter:
         if opts:
             from_ = opts.get("from", {})
             options = from_.get("options", [])
-            counts = {o.get("count") for o in options}
-            representable = (opts.get("choose") == 1 and from_.get("option_set_type") == "options_array"
-                             and options and all(o.get("option_type") == "action" for o in options)
-                             and len(counts) == 1)
-            if steps or not representable:
-                self.rec("b", f"{base}.effects", f"multiattack {self.option_reason(opts, bool(steps))} is not representable in the closed vocabulary")
+            choose = opts.get("choose", 1)
+            representable = (from_.get("option_set_type") == "options_array"
+                             and options
+                             and all(o.get("option_type") == "action" for o in options)
+                             and choose in (1, 2, 3))
+            if not representable:
+                reason = "unsupported option set"
+                if any(o.get("option_type") != "action" for o in options):
+                    reason = "nested option group"
+                elif choose not in (1, 2, 3):
+                    reason = f"choose-{choose} combination"
+                self.rec("b", f"{base}.effects", f"multiattack {reason} is not representable in the closed vocabulary")
                 ok = False
             else:
                 ids = [slug(o["action_name"]) for o in options]
@@ -323,13 +315,22 @@ class Converter:
                     self.rec("a", f"{base}.effects", f"multiattack options name missing actions {missing}")
                     ok = False
                 else:
-                    steps.append({"choice": {"options": ids, "count": counts.pop()}})
+                    # Expand each upstream option into `count` distinct pick slots.
+                    # This lets a `Choice { options, pick = choose }` represent SRD
+                    # "any combination" patterns where the same action can be chosen
+                    # multiple times. The engine resolves `pick` distinct slots.
+                    choice_options = [
+                        {"action_id": slug(o["action_name"]), "count": 1}
+                        for o in options
+                        for _ in range(o.get("count", 1))
+                    ]
+                    steps.append({"choice": {"options": choice_options, "pick": choose}})
         if not steps and ok:
             self.rec("b", f"{base}.effects", "multiattack has no representable steps")
             ok = False
         if not ok:
             return []
-        return [{"multiattack": {"steps": steps, "swap": False}}]
+        return [{"multiattack": {"steps": steps}}]
 
     def ability(self, raw, section, aid, action_ids):
         base = f"{section}.{aid}"

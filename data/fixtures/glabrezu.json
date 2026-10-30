@@ -1,0 +1,182 @@
+{
+  "ability_scores": {
+    "charisma": 16,
+    "constitution": 21,
+    "dexterity": 15,
+    "intelligence": 19,
+    "strength": 20,
+    "wisdom": 17
+  },
+  "actions": [
+    {
+      "desc": "The glabrezu makes two Pincer attacks and uses Pummel or Spellcasting.",
+      "effects": [
+        {
+          "multiattack": {
+            "steps": [
+              {
+                "action": {
+                  "action_id": "pincer",
+                  "count": 2
+                }
+              },
+              {
+                "choice": {
+                  "options": [
+                    {
+                      "action_id": "pummel",
+                      "count": 1
+                    },
+                    {
+                      "action_id": "spellcasting",
+                      "count": 1
+                    }
+                  ],
+                  "pick": 1
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "id": "multiattack",
+      "kind": "modeled",
+      "name": "Multiattack"
+    },
+    {
+      "agent_clauses": [
+        "If the target is a Medium or smaller creature, it has the Grappled condition (escape DC 15) from one of two pincers."
+      ],
+      "desc": "Melee Attack Roll: +9, reach 10 ft. Hit: 16 (2d10 + 5) Slashing damage. If the target is a Medium or smaller creature, it has the Grappled condition (escape DC 15) from one of two pincers.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "2d10",
+                "magical": false,
+                "modifier": 5,
+                "type": "slashing"
+              }
+            ],
+            "modifier": 9,
+            "on_hit": [],
+            "range": null,
+            "reach": 10,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "pincer",
+      "kind": "partly_modeled",
+      "name": "Pincer"
+    },
+    {
+      "desc": "Dexterity Saving Throw: DC 17, one creature Grappled by the glabrezu. Failure: 15 (3d6 + 5) Bludgeoning damage. Success: Half damage.",
+      "effects": [
+        {
+          "saving_throw": {
+            "ability": "dex",
+            "creature_type_gate": null,
+            "damage": [
+              {
+                "dice": "3d6",
+                "magical": false,
+                "modifier": 5,
+                "type": "bludgeoning"
+              }
+            ],
+            "dc": 17,
+            "half_on_success": true,
+            "hp_gate": null,
+            "immunity_after_success": false,
+            "no_damage_on_success": false,
+            "on_failure": [],
+            "repeat_save": null,
+            "two_stage": null
+          }
+        }
+      ],
+      "id": "pummel",
+      "kind": "modeled",
+      "name": "Pummel"
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "The glabrezu casts one of the following spells, requiring no Material components and using Intelligence as the spellcasting ability (spell save DC 16):",
+      "id": "spellcasting",
+      "kind": "unmodeled",
+      "name": "Spellcasting"
+    }
+  ],
+  "alignment": "chaotic evil",
+  "armor_class": [
+    {
+      "value": 17
+    }
+  ],
+  "challenge_rating": 9,
+  "condition_immunities": [
+    "poisoned"
+  ],
+  "damage_immunities": [
+    "poison"
+  ],
+  "damage_resistances": [
+    "cold",
+    "fire",
+    "lightning"
+  ],
+  "hit_points": {
+    "average": 189,
+    "dice": "18d10+90"
+  },
+  "id": "glabrezu",
+  "initiative": 2,
+  "languages": [
+    "Abyssal",
+    "telepathy 120 ft."
+  ],
+  "name": "Glabrezu",
+  "proficiency_bonus": 4,
+  "saving_throws": {
+    "cha": 7,
+    "con": 9,
+    "str": 9,
+    "wis": 7
+  },
+  "schema_version": "1",
+  "senses": {
+    "passive_perception": 17,
+    "truesight": 120
+  },
+  "size": "large",
+  "skills": {
+    "deception": 7,
+    "perception": 7
+  },
+  "source": "srd-5.2.1",
+  "speeds": {
+    "walk": {
+      "feet": 40
+    }
+  },
+  "traits": [
+    {
+      "default_resolution": "skipped",
+      "desc": "If the glabrezu dies outside the Abyss, its body dissolves into ichor, and it gains a new body instantly, reviving with all its Hit Points somewhere in the Abyss.",
+      "id": "demonic-restoration",
+      "kind": "unmodeled",
+      "name": "Demonic Restoration"
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "The glabrezu has Advantage on saving throws against spells and other magical effects.",
+      "id": "magic-resistance",
+      "kind": "unmodeled",
+      "name": "Magic Resistance"
+    }
+  ],
+  "type": "fiend",
+  "xp": 5000
+}

@@ -1,0 +1,178 @@
+{
+  "ability_scores": {
+    "charisma": 16,
+    "constitution": 14,
+    "dexterity": 17,
+    "intelligence": 16,
+    "strength": 18,
+    "wisdom": 15
+  },
+  "actions": [
+    {
+      "desc": "The naga makes three attacks, using Bite or Necrotic Ray in any combination.",
+      "effects": [
+        {
+          "multiattack": {
+            "steps": [
+              {
+                "choice": {
+                  "options": [
+                    {
+                      "action_id": "bite",
+                      "count": 1
+                    },
+                    {
+                      "action_id": "bite",
+                      "count": 1
+                    },
+                    {
+                      "action_id": "bite",
+                      "count": 1
+                    },
+                    {
+                      "action_id": "necrotic-ray",
+                      "count": 1
+                    },
+                    {
+                      "action_id": "necrotic-ray",
+                      "count": 1
+                    },
+                    {
+                      "action_id": "necrotic-ray",
+                      "count": 1
+                    }
+                  ],
+                  "pick": 3
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "id": "multiattack",
+      "kind": "modeled",
+      "name": "Multiattack"
+    },
+    {
+      "desc": "Melee Attack Roll: +7, reach 10 ft. Hit: 7 (1d6 + 4) Piercing damage plus 14 (4d6) Poison damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "1d6",
+                "magical": false,
+                "modifier": 4,
+                "type": "piercing"
+              },
+              {
+                "dice": "4d6",
+                "magical": false,
+                "modifier": 0,
+                "type": "poison"
+              }
+            ],
+            "modifier": 7,
+            "on_hit": [],
+            "range": null,
+            "reach": 10,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "bite",
+      "kind": "modeled",
+      "name": "Bite"
+    },
+    {
+      "desc": "Ranged Attack Roll: +6, range 60 ft. Hit: 21 (6d6) Necrotic damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "6d6",
+                "magical": false,
+                "modifier": 0,
+                "type": "necrotic"
+              }
+            ],
+            "modifier": 6,
+            "on_hit": [],
+            "range": [
+              60,
+              60
+            ],
+            "reach": null,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "necrotic-ray",
+      "kind": "modeled",
+      "name": "Necrotic Ray"
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "The naga casts one of the following spells, requiring no Somatic or Material components and using Intelligence as the spellcasting ability (spell save DC 14):",
+      "id": "spellcasting",
+      "kind": "unmodeled",
+      "name": "Spellcasting"
+    }
+  ],
+  "alignment": "chaotic evil",
+  "armor_class": [
+    {
+      "value": 17
+    }
+  ],
+  "challenge_rating": 8,
+  "condition_immunities": [
+    "charmed",
+    "poisoned"
+  ],
+  "damage_immunities": [
+    "poison"
+  ],
+  "hit_points": {
+    "average": 135,
+    "dice": "18d10+36"
+  },
+  "id": "spirit-naga",
+  "initiative": 3,
+  "languages": [
+    "Abyssal",
+    "Common"
+  ],
+  "name": "Spirit Naga",
+  "proficiency_bonus": 3,
+  "saving_throws": {
+    "cha": 6,
+    "con": 5,
+    "dex": 6,
+    "wis": 5
+  },
+  "schema_version": "1",
+  "senses": {
+    "darkvision": 60,
+    "passive_perception": 12
+  },
+  "size": "large",
+  "source": "srd-5.2.1",
+  "speeds": {
+    "walk": {
+      "feet": 40
+    }
+  },
+  "traits": [
+    {
+      "default_resolution": "skipped",
+      "desc": "If it dies, the naga returns to life in 1d6 days and regains all its Hit Points. Only a Wish spell can prevent this trait from functioning.",
+      "id": "fiendish-restoration",
+      "kind": "unmodeled",
+      "name": "Fiendish Restoration"
+    }
+  ],
+  "type": "fiend",
+  "xp": 3900
+}

@@ -1,0 +1,219 @@
+{
+  "ability_scores": {
+    "charisma": 18,
+    "constitution": 20,
+    "dexterity": 14,
+    "intelligence": 16,
+    "strength": 29,
+    "wisdom": 20
+  },
+  "actions": [
+    {
+      "desc": "The giant makes two attacks, using Storm Sword or Thunderbolt in any combination.",
+      "effects": [
+        {
+          "multiattack": {
+            "steps": [
+              {
+                "choice": {
+                  "options": [
+                    {
+                      "action_id": "storm-sword",
+                      "count": 1
+                    },
+                    {
+                      "action_id": "storm-sword",
+                      "count": 1
+                    },
+                    {
+                      "action_id": "thunderbolt",
+                      "count": 1
+                    },
+                    {
+                      "action_id": "thunderbolt",
+                      "count": 1
+                    }
+                  ],
+                  "pick": 2
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "id": "multiattack",
+      "kind": "modeled",
+      "name": "Multiattack"
+    },
+    {
+      "desc": "Melee Attack Roll: +14, reach 10 ft. Hit: 23 (4d6 + 9) Slashing damage plus 13 (3d8) Lightning damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "4d6",
+                "magical": false,
+                "modifier": 9,
+                "type": "slashing"
+              },
+              {
+                "dice": "3d8",
+                "magical": false,
+                "modifier": 0,
+                "type": "lightning"
+              }
+            ],
+            "modifier": 14,
+            "on_hit": [],
+            "range": null,
+            "reach": 10,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "storm-sword",
+      "kind": "modeled",
+      "name": "Storm Sword"
+    },
+    {
+      "desc": "Ranged Attack Roll: +14, range 500 ft. Hit: 22 (2d12 + 9) Lightning damage, and the target has the Blinded and Deafened conditions until the start of the giant’s next turn.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "2d12",
+                "magical": false,
+                "modifier": 9,
+                "type": "lightning"
+              }
+            ],
+            "modifier": 14,
+            "on_hit": [],
+            "range": [
+              500,
+              500
+            ],
+            "reach": null,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "thunderbolt",
+      "kind": "modeled",
+      "name": "Thunderbolt"
+    },
+    {
+      "desc": "Dexterity Saving Throw: DC 18, each creature in a 10-foot-radius, 40-foot-high Cylinder originating from a point the giant can see within 500 feet. Failure: 55 (10d10) Lightning damage. Success: Half damage.",
+      "effects": [
+        {
+          "saving_throw": {
+            "ability": "dex",
+            "creature_type_gate": null,
+            "damage": [
+              {
+                "dice": "10d10",
+                "magical": false,
+                "modifier": 0,
+                "type": "lightning"
+              }
+            ],
+            "dc": 18,
+            "half_on_success": true,
+            "hp_gate": null,
+            "immunity_after_success": false,
+            "no_damage_on_success": false,
+            "on_failure": [],
+            "repeat_save": null,
+            "two_stage": null
+          }
+        }
+      ],
+      "id": "lightning-storm",
+      "kind": "modeled",
+      "name": "Lightning Storm",
+      "usage": {
+        "recharge": {
+          "dice": "5-6"
+        }
+      }
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "The giant casts one of the following spells, requiring no Material components and using Wisdom as the spellcasting ability (spell save DC 18):",
+      "id": "spellcasting",
+      "kind": "unmodeled",
+      "name": "Spellcasting"
+    }
+  ],
+  "alignment": "chaotic good",
+  "armor_class": [
+    {
+      "value": 16
+    }
+  ],
+  "challenge_rating": 13,
+  "damage_immunities": [
+    "lightning",
+    "thunder"
+  ],
+  "damage_resistances": [
+    "cold"
+  ],
+  "hit_points": {
+    "average": 230,
+    "dice": "20d12+100"
+  },
+  "id": "storm-giant",
+  "initiative": 2,
+  "languages": [
+    "Common",
+    "Giant"
+  ],
+  "name": "Storm Giant",
+  "proficiency_bonus": 5,
+  "saving_throws": {
+    "cha": 9,
+    "con": 10,
+    "str": 14,
+    "wis": 10
+  },
+  "schema_version": "1",
+  "senses": {
+    "darkvision": 120,
+    "passive_perception": 20,
+    "truesight": 30
+  },
+  "size": "huge",
+  "skills": {
+    "arcana": 8,
+    "athletics": 14,
+    "history": 8,
+    "perception": 10
+  },
+  "source": "srd-5.2.1",
+  "speeds": {
+    "fly": {
+      "feet": 25,
+      "hover": true
+    },
+    "swim": {
+      "feet": 50
+    },
+    "walk": {
+      "feet": 50
+    }
+  },
+  "traits": [
+    {
+      "default_resolution": "skipped",
+      "desc": "The giant can breathe air and water.",
+      "id": "amphibious",
+      "kind": "unmodeled",
+      "name": "Amphibious"
+    }
+  ],
+  "type": "giant",
+  "xp": 10000
+}

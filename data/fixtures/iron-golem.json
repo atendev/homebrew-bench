@@ -1,0 +1,211 @@
+{
+  "ability_scores": {
+    "charisma": 1,
+    "constitution": 20,
+    "dexterity": 9,
+    "intelligence": 3,
+    "strength": 24,
+    "wisdom": 11
+  },
+  "actions": [
+    {
+      "desc": "The golem makes two attacks, using Bladed Arm or Fiery Bolt in any combination.",
+      "effects": [
+        {
+          "multiattack": {
+            "steps": [
+              {
+                "choice": {
+                  "options": [
+                    {
+                      "action_id": "bladed-arm",
+                      "count": 1
+                    },
+                    {
+                      "action_id": "bladed-arm",
+                      "count": 1
+                    },
+                    {
+                      "action_id": "fiery-bolt",
+                      "count": 1
+                    },
+                    {
+                      "action_id": "fiery-bolt",
+                      "count": 1
+                    }
+                  ],
+                  "pick": 2
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "id": "multiattack",
+      "kind": "modeled",
+      "name": "Multiattack"
+    },
+    {
+      "desc": "Melee Attack Roll: +12, reach 10 ft. Hit: 20 (3d8 + 7) Slashing damage plus 10 (3d6) Fire damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "3d8",
+                "magical": false,
+                "modifier": 7,
+                "type": "slashing"
+              },
+              {
+                "dice": "3d6",
+                "magical": false,
+                "modifier": 0,
+                "type": "fire"
+              }
+            ],
+            "modifier": 12,
+            "on_hit": [],
+            "range": null,
+            "reach": 10,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "bladed-arm",
+      "kind": "modeled",
+      "name": "Bladed Arm"
+    },
+    {
+      "desc": "Ranged Attack Roll: +10, range 120 ft. Hit: 36 (8d8) Fire damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "8d8",
+                "magical": false,
+                "modifier": 0,
+                "type": "fire"
+              }
+            ],
+            "modifier": 10,
+            "on_hit": [],
+            "range": [
+              120,
+              120
+            ],
+            "reach": null,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "fiery-bolt",
+      "kind": "modeled",
+      "name": "Fiery Bolt"
+    },
+    {
+      "desc": "Constitution Saving Throw: DC 18, each creature in a 60-foot Cone. Failure: 55 (10d10) Poison damage. Success: Half damage.",
+      "effects": [
+        {
+          "saving_throw": {
+            "ability": "con",
+            "creature_type_gate": null,
+            "damage": [
+              {
+                "dice": "10d10",
+                "magical": false,
+                "modifier": 0,
+                "type": "poison"
+              }
+            ],
+            "dc": 18,
+            "half_on_success": true,
+            "hp_gate": null,
+            "immunity_after_success": false,
+            "no_damage_on_success": false,
+            "on_failure": [],
+            "repeat_save": null,
+            "two_stage": null
+          }
+        }
+      ],
+      "id": "poison-breath",
+      "kind": "modeled",
+      "name": "Poison Breath",
+      "usage": {
+        "recharge": {
+          "dice": "6"
+        }
+      }
+    }
+  ],
+  "alignment": "unaligned",
+  "armor_class": [
+    {
+      "value": 20
+    }
+  ],
+  "challenge_rating": 16,
+  "condition_immunities": [
+    "charmed",
+    "exhaustion",
+    "frightened",
+    "paralyzed",
+    "petrified",
+    "poisoned"
+  ],
+  "damage_immunities": [
+    "fire",
+    "poison",
+    "psychic"
+  ],
+  "hit_points": {
+    "average": 252,
+    "dice": "24d10+120"
+  },
+  "id": "iron-golem",
+  "initiative": -1,
+  "languages": [
+    "Understands Common plus two other languages but can’t speak"
+  ],
+  "name": "Iron Golem",
+  "proficiency_bonus": 5,
+  "schema_version": "1",
+  "senses": {
+    "darkvision": 120,
+    "passive_perception": 10
+  },
+  "size": "large",
+  "source": "srd-5.2.1",
+  "speeds": {
+    "walk": {
+      "feet": 30
+    }
+  },
+  "traits": [
+    {
+      "default_resolution": "skipped",
+      "desc": "Whenever the golem is subjected to Fire damage, it regains a number of Hit Points equal to the Fire damage dealt.",
+      "id": "fire-absorption",
+      "kind": "unmodeled",
+      "name": "Fire Absorption"
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "The golem can’t shape-shift.",
+      "id": "immutable-form",
+      "kind": "unmodeled",
+      "name": "Immutable Form"
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "The golem has Advantage on saving throws against spells and other magical effects.",
+      "id": "magic-resistance",
+      "kind": "unmodeled",
+      "name": "Magic Resistance"
+    }
+  ],
+  "type": "construct",
+  "xp": 15000
+}

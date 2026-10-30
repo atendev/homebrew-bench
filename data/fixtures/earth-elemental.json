@@ -1,0 +1,170 @@
+{
+  "ability_scores": {
+    "charisma": 5,
+    "constitution": 20,
+    "dexterity": 8,
+    "intelligence": 5,
+    "strength": 20,
+    "wisdom": 10
+  },
+  "actions": [
+    {
+      "desc": "The elemental makes two attacks, using Slam or Rock Launch in any combination.",
+      "effects": [
+        {
+          "multiattack": {
+            "steps": [
+              {
+                "choice": {
+                  "options": [
+                    {
+                      "action_id": "slam",
+                      "count": 1
+                    },
+                    {
+                      "action_id": "slam",
+                      "count": 1
+                    },
+                    {
+                      "action_id": "rock-launch",
+                      "count": 1
+                    },
+                    {
+                      "action_id": "rock-launch",
+                      "count": 1
+                    }
+                  ],
+                  "pick": 2
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "id": "multiattack",
+      "kind": "modeled",
+      "name": "Multiattack"
+    },
+    {
+      "desc": "Melee Attack Roll: +8, reach 10 ft. Hit: 14 (2d8 + 5) Bludgeoning damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "2d8",
+                "magical": false,
+                "modifier": 5,
+                "type": "bludgeoning"
+              }
+            ],
+            "modifier": 8,
+            "on_hit": [],
+            "range": null,
+            "reach": 10,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "slam",
+      "kind": "modeled",
+      "name": "Slam"
+    },
+    {
+      "agent_clauses": [
+        "If the target is a Large or smaller creature, it has the Prone condition."
+      ],
+      "desc": "Ranged Attack Roll: +8, range 60 ft. Hit: 8 (1d6 + 5) Bludgeoning damage. If the target is a Large or smaller creature, it has the Prone condition.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "1d6",
+                "magical": false,
+                "modifier": 5,
+                "type": "bludgeoning"
+              }
+            ],
+            "modifier": 8,
+            "on_hit": [],
+            "range": [
+              60,
+              60
+            ],
+            "reach": null,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "rock-launch",
+      "kind": "partly_modeled",
+      "name": "Rock Launch"
+    }
+  ],
+  "alignment": "neutral",
+  "armor_class": [
+    {
+      "value": 17
+    }
+  ],
+  "challenge_rating": 5,
+  "condition_immunities": [
+    "exhaustion",
+    "paralyzed",
+    "petrified",
+    "poisoned",
+    "unconscious"
+  ],
+  "damage_immunities": [
+    "poison"
+  ],
+  "damage_vulnerabilities": [
+    "thunder"
+  ],
+  "hit_points": {
+    "average": 147,
+    "dice": "14d10+70"
+  },
+  "id": "earth-elemental",
+  "initiative": -1,
+  "languages": [
+    "Primordial (Terran)"
+  ],
+  "name": "Earth Elemental",
+  "proficiency_bonus": 3,
+  "schema_version": "1",
+  "senses": {
+    "darkvision": 60,
+    "passive_perception": 10,
+    "tremorsense": 60
+  },
+  "size": "large",
+  "source": "srd-5.2.1",
+  "speeds": {
+    "burrow": {
+      "feet": 30
+    },
+    "walk": {
+      "feet": 30
+    }
+  },
+  "traits": [
+    {
+      "default_resolution": "skipped",
+      "desc": "The elemental can burrow through nonmagical, unworked earth and stone. While doing so, the elemental doesn’t disturb the material it moves through.",
+      "id": "earth-glide",
+      "kind": "unmodeled",
+      "name": "Earth Glide"
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "The elemental deals double damage to objects and structures.",
+      "id": "siege-monster",
+      "kind": "unmodeled",
+      "name": "Siege Monster"
+    }
+  ],
+  "type": "elemental",
+  "xp": 1800
+}

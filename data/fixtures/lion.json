@@ -1,0 +1,128 @@
+{
+  "ability_scores": {
+    "charisma": 8,
+    "constitution": 11,
+    "dexterity": 15,
+    "intelligence": 3,
+    "strength": 17,
+    "wisdom": 12
+  },
+  "actions": [
+    {
+      "desc": "The lion makes two Rend attacks. It can replace one attack with a use of Roar.",
+      "effects": [
+        {
+          "multiattack": {
+            "steps": [
+              {
+                "action": {
+                  "action_id": "rend",
+                  "count": 1
+                }
+              },
+              {
+                "choice": {
+                  "options": [
+                    {
+                      "action_id": "rend",
+                      "count": 1
+                    },
+                    {
+                      "action_id": "roar",
+                      "count": 1
+                    }
+                  ],
+                  "pick": 1
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "id": "multiattack",
+      "kind": "modeled",
+      "name": "Multiattack"
+    },
+    {
+      "desc": "Melee Attack Roll: +5, reach 5 ft. Hit: 7 (1d8 + 3) Slashing damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "1d8",
+                "magical": false,
+                "modifier": 3,
+                "type": "slashing"
+              }
+            ],
+            "modifier": 5,
+            "on_hit": [],
+            "range": null,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "rend",
+      "kind": "modeled",
+      "name": "Rend"
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "Wisdom Saving Throw: DC 11, one creature within 15 feet. Failure: The target has the Frightened condition until the start of the lion’s next turn.",
+      "id": "roar",
+      "kind": "unmodeled",
+      "name": "Roar"
+    }
+  ],
+  "alignment": "unaligned",
+  "armor_class": [
+    {
+      "value": 12
+    }
+  ],
+  "challenge_rating": 1,
+  "hit_points": {
+    "average": 22,
+    "dice": "4d10"
+  },
+  "id": "lion",
+  "initiative": 2,
+  "name": "Lion",
+  "proficiency_bonus": 2,
+  "schema_version": "1",
+  "senses": {
+    "darkvision": 60,
+    "passive_perception": 13
+  },
+  "size": "large",
+  "skills": {
+    "perception": 3,
+    "stealth": 4
+  },
+  "source": "srd-5.2.1",
+  "speeds": {
+    "walk": {
+      "feet": 50
+    }
+  },
+  "traits": [
+    {
+      "default_resolution": "skipped",
+      "desc": "The lion has Advantage on an attack roll against a creature if at least one of the lion’s allies is within 5 feet of the creature and the ally doesn’t have the Incapacitated condition.",
+      "id": "pack-tactics",
+      "kind": "unmodeled",
+      "name": "Pack Tactics"
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "With a 10-foot running start, the lion can Long Jump up to 25 feet.",
+      "id": "running-leap",
+      "kind": "unmodeled",
+      "name": "Running Leap"
+    }
+  ],
+  "type": "beast",
+  "xp": 200
+}

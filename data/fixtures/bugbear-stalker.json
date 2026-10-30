@@ -1,0 +1,162 @@
+{
+  "ability_scores": {
+    "charisma": 11,
+    "constitution": 14,
+    "dexterity": 14,
+    "intelligence": 11,
+    "strength": 17,
+    "wisdom": 12
+  },
+  "actions": [
+    {
+      "desc": "The bugbear makes two Javelin or Morningstar attacks.",
+      "effects": [
+        {
+          "multiattack": {
+            "steps": [
+              {
+                "choice": {
+                  "options": [
+                    {
+                      "action_id": "javelin",
+                      "count": 1
+                    },
+                    {
+                      "action_id": "javelin",
+                      "count": 1
+                    },
+                    {
+                      "action_id": "morningstar",
+                      "count": 1
+                    },
+                    {
+                      "action_id": "morningstar",
+                      "count": 1
+                    }
+                  ],
+                  "pick": 2
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "id": "multiattack",
+      "kind": "modeled",
+      "name": "Multiattack"
+    },
+    {
+      "desc": "Melee or Ranged Attack Roll: +5, reach 10 ft. or range 30/120 ft. Hit: 13 (3d6 + 3) Piercing damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "3d6",
+                "magical": false,
+                "modifier": 3,
+                "type": "piercing"
+              }
+            ],
+            "modifier": 5,
+            "on_hit": [],
+            "range": [
+              30,
+              120
+            ],
+            "reach": 10,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "javelin",
+      "kind": "modeled",
+      "name": "Javelin"
+    },
+    {
+      "desc": "Melee Attack Roll: +5 (with Advantage if the target is Grappled by the bugbear), reach 10 ft. Hit: 12 (2d8 + 3) Piercing damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "2d8",
+                "magical": false,
+                "modifier": 3,
+                "type": "piercing"
+              }
+            ],
+            "modifier": 5,
+            "on_hit": [],
+            "range": null,
+            "reach": 10,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "morningstar",
+      "kind": "modeled",
+      "name": "Morningstar"
+    }
+  ],
+  "alignment": "chaotic evil",
+  "armor_class": [
+    {
+      "source": "Chain Shirt",
+      "value": 15
+    }
+  ],
+  "bonus_actions": [
+    {
+      "default_resolution": "skipped",
+      "desc": "Dexterity Saving Throw: DC 13, one Medium or smaller creature the bugbear can see within 10 feet. Failure: The target has the Grappled condition (escape DC 13).",
+      "id": "quick-grapple",
+      "kind": "unmodeled",
+      "name": "Quick Grapple"
+    }
+  ],
+  "challenge_rating": 3,
+  "hit_points": {
+    "average": 65,
+    "dice": "10d8+20"
+  },
+  "id": "bugbear-stalker",
+  "initiative": 2,
+  "languages": [
+    "Common",
+    "Goblin"
+  ],
+  "name": "Bugbear Stalker",
+  "proficiency_bonus": 2,
+  "saving_throws": {
+    "con": 4,
+    "wis": 3
+  },
+  "schema_version": "1",
+  "senses": {
+    "darkvision": 60,
+    "passive_perception": 11
+  },
+  "size": "medium",
+  "skills": {
+    "stealth": 6,
+    "survival": 3
+  },
+  "source": "srd-5.2.1",
+  "speeds": {
+    "walk": {
+      "feet": 30
+    }
+  },
+  "traits": [
+    {
+      "default_resolution": "skipped",
+      "desc": "The bugbear needn’t spend extra movement to move a creature it is grappling.",
+      "id": "abduct",
+      "kind": "unmodeled",
+      "name": "Abduct"
+    }
+  ],
+  "type": "fey",
+  "xp": 700
+}
