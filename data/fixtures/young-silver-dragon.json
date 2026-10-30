@@ -1,0 +1,170 @@
+{
+  "ability_scores": {
+    "charisma": 19,
+    "constitution": 21,
+    "dexterity": 10,
+    "intelligence": 14,
+    "strength": 23,
+    "wisdom": 11
+  },
+  "actions": [
+    {
+      "desc": "The dragon makes three Rend attacks. It can replace one attack with a use of Paralyzing Breath.",
+      "effects": [
+        {
+          "multiattack": {
+            "steps": [
+              {
+                "action": {
+                  "action_id": "rend",
+                  "count": 2
+                }
+              },
+              {
+                "choice": {
+                  "options": [
+                    {
+                      "action_id": "rend",
+                      "count": 1
+                    },
+                    {
+                      "action_id": "paralyzing-breath",
+                      "count": 1
+                    }
+                  ],
+                  "pick": 1
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "id": "multiattack",
+      "kind": "modeled",
+      "name": "Multiattack"
+    },
+    {
+      "desc": "Melee Attack Roll: +10, reach 10 ft. Hit: 15 (2d8 + 6) Slashing damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "2d8",
+                "magical": false,
+                "modifier": 6,
+                "type": "slashing"
+              }
+            ],
+            "modifier": 10,
+            "on_hit": [],
+            "range": null,
+            "reach": 10,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "rend",
+      "kind": "modeled",
+      "name": "Rend"
+    },
+    {
+      "desc": "Constitution Saving Throw: DC 17, each creature in a 30-foot Cone. Failure: 49 (11d8) Cold damage. Success: Half damage.",
+      "effects": [
+        {
+          "saving_throw": {
+            "ability": "con",
+            "creature_type_gate": null,
+            "damage": [
+              {
+                "dice": "11d8",
+                "magical": false,
+                "modifier": 0,
+                "type": "cold"
+              }
+            ],
+            "dc": 17,
+            "half_on_success": true,
+            "hp_gate": null,
+            "immunity_after_success": false,
+            "no_damage_on_success": false,
+            "on_failure": [],
+            "repeat_save": null,
+            "two_stage": null
+          }
+        }
+      ],
+      "id": "cold-breath",
+      "kind": "modeled",
+      "name": "Cold Breath",
+      "usage": {
+        "recharge": {
+          "dice": "5-6",
+          "group": "breath_weapons"
+        }
+      }
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "Constitution Saving Throw: DC 17, each creature in a 30-foot Cone. First Failure: The target has the Incapacitated condition until the end of its next turn, when it repeats the save. Second Failure: The target has the Paralyzed condition, and it repeats the save at the end of each of its turns, ending the effect on itself on a success. After 1 minute, it succeeds automatically.",
+      "id": "paralyzing-breath",
+      "kind": "unmodeled",
+      "name": "Paralyzing Breath",
+      "usage": {
+        "recharge": {
+          "dice": "5-6",
+          "group": "breath_weapons"
+        }
+      }
+    }
+  ],
+  "alignment": "lawful good",
+  "armor_class": [
+    {
+      "value": 18
+    }
+  ],
+  "challenge_rating": 9,
+  "damage_immunities": [
+    "cold"
+  ],
+  "hit_points": {
+    "average": 168,
+    "dice": "16d10+80"
+  },
+  "id": "young-silver-dragon",
+  "initiative": 0,
+  "languages": [
+    "Common",
+    "Draconic"
+  ],
+  "name": "Young Silver Dragon",
+  "proficiency_bonus": 4,
+  "saving_throws": {
+    "dex": 4,
+    "wis": 4
+  },
+  "schema_version": "1",
+  "senses": {
+    "blindsight": 30,
+    "darkvision": 120,
+    "passive_perception": 18
+  },
+  "size": "large",
+  "skills": {
+    "history": 6,
+    "perception": 8,
+    "stealth": 4
+  },
+  "source": "srd-5.2.1",
+  "speeds": {
+    "fly": {
+      "feet": 80
+    },
+    "walk": {
+      "feet": 40
+    }
+  },
+  "type": "dragon",
+  "xp": 5000
+}

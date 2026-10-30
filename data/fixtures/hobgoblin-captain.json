@@ -1,0 +1,157 @@
+{
+  "ability_scores": {
+    "charisma": 13,
+    "constitution": 14,
+    "dexterity": 14,
+    "intelligence": 12,
+    "strength": 15,
+    "wisdom": 10
+  },
+  "actions": [
+    {
+      "desc": "The hobgoblin makes two attacks, using Greatsword or Longbow in any combination.",
+      "effects": [
+        {
+          "multiattack": {
+            "steps": [
+              {
+                "choice": {
+                  "options": [
+                    {
+                      "action_id": "greatsword",
+                      "count": 1
+                    },
+                    {
+                      "action_id": "greatsword",
+                      "count": 1
+                    },
+                    {
+                      "action_id": "longbow",
+                      "count": 1
+                    },
+                    {
+                      "action_id": "longbow",
+                      "count": 1
+                    }
+                  ],
+                  "pick": 2
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "id": "multiattack",
+      "kind": "modeled",
+      "name": "Multiattack"
+    },
+    {
+      "desc": "Melee Attack Roll: +4, reach 5 ft. Hit: 9 (2d6 + 2) Slashing damage plus 3 (1d6) Poison damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "2d6",
+                "magical": false,
+                "modifier": 2,
+                "type": "slashing"
+              },
+              {
+                "dice": "1d6",
+                "magical": false,
+                "modifier": 0,
+                "type": "poison"
+              }
+            ],
+            "modifier": 4,
+            "on_hit": [],
+            "range": null,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "greatsword",
+      "kind": "modeled",
+      "name": "Greatsword"
+    },
+    {
+      "desc": "Ranged Attack Roll: +4, range 150/600 ft. Hit: 6 (1d8 + 2) Piercing damage plus 5 (2d4) Poison damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "1d8",
+                "magical": false,
+                "modifier": 2,
+                "type": "piercing"
+              },
+              {
+                "dice": "2d4",
+                "magical": false,
+                "modifier": 0,
+                "type": "poison"
+              }
+            ],
+            "modifier": 4,
+            "on_hit": [],
+            "range": [
+              150,
+              600
+            ],
+            "reach": null,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "longbow",
+      "kind": "modeled",
+      "name": "Longbow"
+    }
+  ],
+  "alignment": "lawful evil",
+  "armor_class": [
+    {
+      "source": "Half-Plate Armor",
+      "value": 17
+    }
+  ],
+  "challenge_rating": 3,
+  "hit_points": {
+    "average": 58,
+    "dice": "9d8+18"
+  },
+  "id": "hobgoblin-captain",
+  "initiative": 2,
+  "languages": [
+    "Common",
+    "Goblin"
+  ],
+  "name": "Hobgoblin Captain",
+  "proficiency_bonus": 2,
+  "schema_version": "1",
+  "senses": {
+    "darkvision": 60,
+    "passive_perception": 10
+  },
+  "size": "medium",
+  "source": "srd-5.2.1",
+  "speeds": {
+    "walk": {
+      "feet": 30
+    }
+  },
+  "traits": [
+    {
+      "default_resolution": "skipped",
+      "desc": "While in a 10-foot Emanation originating from the hobgoblin, the hobgoblin and its allies have Advantage on attack rolls and saving throws, provided the hobgoblin doesn’t have the Incapacitated condition.",
+      "id": "aura-of-authority",
+      "kind": "unmodeled",
+      "name": "Aura of Authority"
+    }
+  ],
+  "type": "fey",
+  "xp": 700
+}

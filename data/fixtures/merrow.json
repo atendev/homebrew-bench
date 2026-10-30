@@ -1,0 +1,183 @@
+{
+  "ability_scores": {
+    "charisma": 9,
+    "constitution": 15,
+    "dexterity": 15,
+    "intelligence": 8,
+    "strength": 18,
+    "wisdom": 10
+  },
+  "actions": [
+    {
+      "desc": "The merrow makes two attacks, using Bite, Claw, or Harpoon in any combination.",
+      "effects": [
+        {
+          "multiattack": {
+            "steps": [
+              {
+                "choice": {
+                  "options": [
+                    {
+                      "action_id": "bite",
+                      "count": 1
+                    },
+                    {
+                      "action_id": "bite",
+                      "count": 1
+                    },
+                    {
+                      "action_id": "claw",
+                      "count": 1
+                    },
+                    {
+                      "action_id": "claw",
+                      "count": 1
+                    },
+                    {
+                      "action_id": "harpoon",
+                      "count": 1
+                    },
+                    {
+                      "action_id": "harpoon",
+                      "count": 1
+                    }
+                  ],
+                  "pick": 2
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "id": "multiattack",
+      "kind": "modeled",
+      "name": "Multiattack"
+    },
+    {
+      "desc": "Melee Attack Roll: +6, reach 5 ft. Hit: 6 (1d4 + 4) Piercing damage, and the target has the Poisoned condition until the end of the merrow’s next turn.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "1d4",
+                "magical": false,
+                "modifier": 4,
+                "type": "piercing"
+              }
+            ],
+            "modifier": 6,
+            "on_hit": [],
+            "range": null,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "bite",
+      "kind": "modeled",
+      "name": "Bite"
+    },
+    {
+      "desc": "Melee Attack Roll: +6, reach 5 ft. Hit: 9 (2d4 + 4) Slashing damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "2d4",
+                "magical": false,
+                "modifier": 4,
+                "type": "slashing"
+              }
+            ],
+            "modifier": 6,
+            "on_hit": [],
+            "range": null,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "claw",
+      "kind": "modeled",
+      "name": "Claw"
+    },
+    {
+      "agent_clauses": [
+        "If the target is a Large or smaller creature, the merrow pulls the target up to 15 feet straight toward itself."
+      ],
+      "desc": "Melee or Ranged Attack Roll: +6, reach 5 ft. or range 20/60 ft. Hit: 11 (2d6 + 4) Piercing damage. If the target is a Large or smaller creature, the merrow pulls the target up to 15 feet straight toward itself.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "2d6",
+                "magical": false,
+                "modifier": 4,
+                "type": "piercing"
+              }
+            ],
+            "modifier": 6,
+            "on_hit": [],
+            "range": [
+              20,
+              60
+            ],
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "harpoon",
+      "kind": "partly_modeled",
+      "name": "Harpoon"
+    }
+  ],
+  "alignment": "chaotic evil",
+  "armor_class": [
+    {
+      "value": 13
+    }
+  ],
+  "challenge_rating": 2,
+  "hit_points": {
+    "average": 45,
+    "dice": "6d10+12"
+  },
+  "id": "merrow",
+  "initiative": 2,
+  "languages": [
+    "Abyssal",
+    "Primordial (Aquan)"
+  ],
+  "name": "Merrow",
+  "proficiency_bonus": 2,
+  "schema_version": "1",
+  "senses": {
+    "darkvision": 60,
+    "passive_perception": 10
+  },
+  "size": "large",
+  "source": "srd-5.2.1",
+  "speeds": {
+    "swim": {
+      "feet": 40
+    },
+    "walk": {
+      "feet": 10
+    }
+  },
+  "traits": [
+    {
+      "default_resolution": "skipped",
+      "desc": "The merrow can breathe air and water.",
+      "id": "amphibious",
+      "kind": "unmodeled",
+      "name": "Amphibious"
+    }
+  ],
+  "type": "monstrosity",
+  "xp": 450
+}

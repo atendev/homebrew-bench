@@ -250,19 +250,24 @@ pub struct MoveThenAttack {
     pub attack_id: String,
 }
 
+/// One selectable option inside a `MultiattackStep::Choice`.
+#[derive(Debug, Clone, Serialize, Deserialize, schemars::JsonSchema)]
+pub struct ChoiceOption {
+    pub action_id: String,
+    pub count: u32,
+}
+
 /// Multiattack step.
 #[derive(Debug, Clone, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum MultiattackStep {
     Action { action_id: String, count: u32 },
-    Choice { options: Vec<String>, count: u32 },
+    Choice { options: Vec<ChoiceOption>, pick: u32 },
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, schemars::JsonSchema)]
 pub struct Multiattack {
     pub steps: Vec<MultiattackStep>,
-    #[serde(default)]
-    pub swap: bool,
 }
 
 /// Use another action by id.

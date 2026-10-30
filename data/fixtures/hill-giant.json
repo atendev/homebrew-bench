@@ -1,0 +1,139 @@
+{
+  "ability_scores": {
+    "charisma": 6,
+    "constitution": 19,
+    "dexterity": 8,
+    "intelligence": 5,
+    "strength": 21,
+    "wisdom": 9
+  },
+  "actions": [
+    {
+      "desc": "The giant makes two attacks, using Tree Club or Trash Lob in any combination.",
+      "effects": [
+        {
+          "multiattack": {
+            "steps": [
+              {
+                "choice": {
+                  "options": [
+                    {
+                      "action_id": "tree-club",
+                      "count": 1
+                    },
+                    {
+                      "action_id": "tree-club",
+                      "count": 1
+                    },
+                    {
+                      "action_id": "trash-lob",
+                      "count": 1
+                    },
+                    {
+                      "action_id": "trash-lob",
+                      "count": 1
+                    }
+                  ],
+                  "pick": 2
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "id": "multiattack",
+      "kind": "modeled",
+      "name": "Multiattack"
+    },
+    {
+      "agent_clauses": [
+        "If the target is a Large or smaller creature, it has the Prone condition."
+      ],
+      "desc": "Melee Attack Roll: +8, reach 10 ft. Hit: 18 (3d8 + 5) Bludgeoning damage. If the target is a Large or smaller creature, it has the Prone condition.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "3d8",
+                "magical": false,
+                "modifier": 5,
+                "type": "bludgeoning"
+              }
+            ],
+            "modifier": 8,
+            "on_hit": [],
+            "range": null,
+            "reach": 10,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "tree-club",
+      "kind": "partly_modeled",
+      "name": "Tree Club"
+    },
+    {
+      "desc": "Ranged Attack Roll: +8, range 60/240 ft. Hit: 16 (2d10 + 5) Bludgeoning damage, and the target has the Poisoned condition until the end of its next turn.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "2d10",
+                "magical": false,
+                "modifier": 5,
+                "type": "bludgeoning"
+              }
+            ],
+            "modifier": 8,
+            "on_hit": [],
+            "range": [
+              60,
+              240
+            ],
+            "reach": null,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "trash-lob",
+      "kind": "modeled",
+      "name": "Trash Lob"
+    }
+  ],
+  "alignment": "chaotic evil",
+  "armor_class": [
+    {
+      "value": 13
+    }
+  ],
+  "challenge_rating": 5,
+  "hit_points": {
+    "average": 105,
+    "dice": "10d12+40"
+  },
+  "id": "hill-giant",
+  "initiative": -1,
+  "languages": [
+    "Giant"
+  ],
+  "name": "Hill Giant",
+  "proficiency_bonus": 3,
+  "schema_version": "1",
+  "senses": {
+    "passive_perception": 12
+  },
+  "size": "huge",
+  "skills": {
+    "perception": 2
+  },
+  "source": "srd-5.2.1",
+  "speeds": {
+    "walk": {
+      "feet": 40
+    }
+  },
+  "type": "giant",
+  "xp": 1800
+}

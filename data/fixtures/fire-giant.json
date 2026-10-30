@@ -1,0 +1,157 @@
+{
+  "ability_scores": {
+    "charisma": 13,
+    "constitution": 23,
+    "dexterity": 9,
+    "intelligence": 10,
+    "strength": 25,
+    "wisdom": 14
+  },
+  "actions": [
+    {
+      "desc": "The giant makes two attacks, using Flame Sword or Hammer Throw in any combination.",
+      "effects": [
+        {
+          "multiattack": {
+            "steps": [
+              {
+                "choice": {
+                  "options": [
+                    {
+                      "action_id": "flame-sword",
+                      "count": 1
+                    },
+                    {
+                      "action_id": "flame-sword",
+                      "count": 1
+                    },
+                    {
+                      "action_id": "hammer-throw",
+                      "count": 1
+                    },
+                    {
+                      "action_id": "hammer-throw",
+                      "count": 1
+                    }
+                  ],
+                  "pick": 2
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "id": "multiattack",
+      "kind": "modeled",
+      "name": "Multiattack"
+    },
+    {
+      "desc": "Melee Attack Roll: +11, reach 10 ft. Hit: 21 (4d6 + 7) Slashing damage plus 10 (3d6) Fire damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "4d6",
+                "magical": false,
+                "modifier": 7,
+                "type": "slashing"
+              },
+              {
+                "dice": "3d6",
+                "magical": false,
+                "modifier": 0,
+                "type": "fire"
+              }
+            ],
+            "modifier": 11,
+            "on_hit": [],
+            "range": null,
+            "reach": 10,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "flame-sword",
+      "kind": "modeled",
+      "name": "Flame Sword"
+    },
+    {
+      "desc": "Ranged Attack Roll: +11, range 60/240 ft. Hit: 23 (3d10 + 7) Bludgeoning damage plus 4 (1d8) Fire damage, and the target is pushed up to 15 feet straight away from the giant and has Disadvantage on the next attack roll it makes before the end of its next turn.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "3d10",
+                "magical": false,
+                "modifier": 7,
+                "type": "bludgeoning"
+              },
+              {
+                "dice": "1d8",
+                "magical": false,
+                "modifier": 0,
+                "type": "fire"
+              }
+            ],
+            "modifier": 11,
+            "on_hit": [],
+            "range": [
+              60,
+              240
+            ],
+            "reach": null,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "hammer-throw",
+      "kind": "modeled",
+      "name": "Hammer Throw"
+    }
+  ],
+  "alignment": "lawful evil",
+  "armor_class": [
+    {
+      "value": 18
+    }
+  ],
+  "challenge_rating": 9,
+  "damage_immunities": [
+    "fire"
+  ],
+  "hit_points": {
+    "average": 162,
+    "dice": "13d12+78"
+  },
+  "id": "fire-giant",
+  "initiative": -1,
+  "languages": [
+    "Giant"
+  ],
+  "name": "Fire Giant",
+  "proficiency_bonus": 4,
+  "saving_throws": {
+    "cha": 5,
+    "con": 10,
+    "dex": 3
+  },
+  "schema_version": "1",
+  "senses": {
+    "passive_perception": 16
+  },
+  "size": "huge",
+  "skills": {
+    "athletics": 11,
+    "perception": 6
+  },
+  "source": "srd-5.2.1",
+  "speeds": {
+    "walk": {
+      "feet": 30
+    }
+  },
+  "type": "giant",
+  "xp": 5000
+}

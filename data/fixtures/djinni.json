@@ -1,0 +1,226 @@
+{
+  "ability_scores": {
+    "charisma": 20,
+    "constitution": 22,
+    "dexterity": 15,
+    "intelligence": 15,
+    "strength": 21,
+    "wisdom": 16
+  },
+  "actions": [
+    {
+      "desc": "The djinni makes three attacks, using Storm Blade or Storm Bolt in any combination.",
+      "effects": [
+        {
+          "multiattack": {
+            "steps": [
+              {
+                "choice": {
+                  "options": [
+                    {
+                      "action_id": "storm-blade",
+                      "count": 1
+                    },
+                    {
+                      "action_id": "storm-blade",
+                      "count": 1
+                    },
+                    {
+                      "action_id": "storm-blade",
+                      "count": 1
+                    },
+                    {
+                      "action_id": "storm-bolt",
+                      "count": 1
+                    },
+                    {
+                      "action_id": "storm-bolt",
+                      "count": 1
+                    },
+                    {
+                      "action_id": "storm-bolt",
+                      "count": 1
+                    }
+                  ],
+                  "pick": 3
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "id": "multiattack",
+      "kind": "modeled",
+      "name": "Multiattack"
+    },
+    {
+      "desc": "Melee Attack Roll: +9, reach 5 feet. Hit: 12 (2d6 + 5) Slashing damage plus 7 (2d6) Lightning damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "2d6",
+                "magical": false,
+                "modifier": 5,
+                "type": "slashing"
+              },
+              {
+                "dice": "2d6",
+                "magical": false,
+                "modifier": 0,
+                "type": "lightning"
+              }
+            ],
+            "modifier": 9,
+            "on_hit": [],
+            "range": null,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "storm-blade",
+      "kind": "modeled",
+      "name": "Storm Blade"
+    },
+    {
+      "agent_clauses": [
+        "If the target is a Large or smaller creature, it has the Prone condition."
+      ],
+      "desc": "Ranged Attack Roll: +9, range 120 feet. Hit: 13 (3d8) Thunder damage. If the target is a Large or smaller creature, it has the Prone condition.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "3d8",
+                "magical": false,
+                "modifier": 0,
+                "type": "thunder"
+              }
+            ],
+            "modifier": 9,
+            "on_hit": [],
+            "range": [
+              120,
+              120
+            ],
+            "reach": null,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "storm-bolt",
+      "kind": "partly_modeled",
+      "name": "Storm Bolt"
+    },
+    {
+      "agent_clauses": [
+        "While in the whirlwind, the target has the Restrained condition and moves with the whirlwind. At the start of each of its turns, the Restrained target takes . At the end of each of its turns, the target repeats the save, ending the effect on itself on a success"
+      ],
+      "desc": "The djinni conjures a whirlwind at a point it can see within 120 feet. The whirlwind fills a 20-foot-radius, 60-foot-high Cylinder centered on that point. The whirlwind lasts until the djinni’s Concentration on it ends. The djinni can move the whirlwind up to 20 feet at the start of each of its turns. Whenever the whirlwind enters a creature’s space or a creature enters the whirlwind, that creature is subjected to the following effect. Strength Saving Throw: DC 17 (a creature makes this save only once per turn, and the djinni is unaffected). Failure: While in the whirlwind, the target has the Restrained condition and moves with the whirlwind. At the start of each of its turns, the Restrained target takes 21 (6d6) Thunder damage. At the end of each of its turns, the target repeats the save, ending the effect on itself on a success.",
+      "effects": [
+        {
+          "saving_throw": {
+            "ability": "str",
+            "creature_type_gate": null,
+            "damage": [
+              {
+                "dice": "6d6",
+                "magical": false,
+                "modifier": 0,
+                "type": "thunder"
+              }
+            ],
+            "dc": 17,
+            "half_on_success": false,
+            "hp_gate": null,
+            "immunity_after_success": false,
+            "no_damage_on_success": true,
+            "on_failure": [],
+            "repeat_save": null,
+            "two_stage": null
+          }
+        }
+      ],
+      "id": "create-whirlwind",
+      "kind": "partly_modeled",
+      "name": "Create Whirlwind"
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "The djinni casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 17):",
+      "id": "spellcasting",
+      "kind": "unmodeled",
+      "name": "Spellcasting"
+    }
+  ],
+  "alignment": "neutral",
+  "armor_class": [
+    {
+      "value": 17
+    }
+  ],
+  "challenge_rating": 11,
+  "damage_immunities": [
+    "lightning",
+    "thunder"
+  ],
+  "hit_points": {
+    "average": 218,
+    "dice": "19d10+114"
+  },
+  "id": "djinni",
+  "initiative": 2,
+  "languages": [
+    "Primordial (Auran)"
+  ],
+  "name": "Djinni",
+  "proficiency_bonus": 4,
+  "saving_throws": {
+    "dex": 6,
+    "wis": 7
+  },
+  "schema_version": "1",
+  "senses": {
+    "darkvision": 120,
+    "passive_perception": 13
+  },
+  "size": "large",
+  "source": "srd-5.2.1",
+  "speeds": {
+    "fly": {
+      "feet": 90,
+      "hover": true
+    },
+    "walk": {
+      "feet": 30
+    }
+  },
+  "traits": [
+    {
+      "default_resolution": "skipped",
+      "desc": "If the djinni dies outside the Elemental Plane of Air, its body dissolves into mist, and it gains a new body in 1d4 days, reviving with all its Hit Points somewhere on the Plane of Air.",
+      "id": "elemental-restoration",
+      "kind": "unmodeled",
+      "name": "Elemental Restoration"
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "The djinni has Advantage on saving throws against spells and other magical effects.",
+      "id": "magic-resistance",
+      "kind": "unmodeled",
+      "name": "Magic Resistance"
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "The djinni has a 30 percent chance of knowing the Wish spell. If the djinni knows it, the djinni can cast it only on behalf of a non-genie creature who communicates a wish in a way the djinni can understand. If the djinni casts the spell for the creature, the djinni suffers none of the spell’s stress. Once the djinni has cast it three times, the djinni can’t do so again for 365 days.",
+      "id": "wishes",
+      "kind": "unmodeled",
+      "name": "Wishes"
+    }
+  ],
+  "type": "elemental",
+  "xp": 7200
+}

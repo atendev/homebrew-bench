@@ -1,0 +1,182 @@
+{
+  "ability_scores": {
+    "charisma": 1,
+    "constitution": 20,
+    "dexterity": 9,
+    "intelligence": 3,
+    "strength": 22,
+    "wisdom": 11
+  },
+  "actions": [
+    {
+      "desc": "The golem makes two attacks, using Slam or Force Bolt in any combination.",
+      "effects": [
+        {
+          "multiattack": {
+            "steps": [
+              {
+                "choice": {
+                  "options": [
+                    {
+                      "action_id": "slam",
+                      "count": 1
+                    },
+                    {
+                      "action_id": "slam",
+                      "count": 1
+                    },
+                    {
+                      "action_id": "force-bolt",
+                      "count": 1
+                    },
+                    {
+                      "action_id": "force-bolt",
+                      "count": 1
+                    }
+                  ],
+                  "pick": 2
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "id": "multiattack",
+      "kind": "modeled",
+      "name": "Multiattack"
+    },
+    {
+      "desc": "Melee Attack Roll: +10, reach 5 ft. Hit: 15 (2d8 + 6) Bludgeoning damage plus 9 (2d8) Force damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "2d8",
+                "magical": false,
+                "modifier": 6,
+                "type": "bludgeoning"
+              },
+              {
+                "dice": "2d8",
+                "magical": false,
+                "modifier": 0,
+                "type": "force"
+              }
+            ],
+            "modifier": 10,
+            "on_hit": [],
+            "range": null,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "slam",
+      "kind": "modeled",
+      "name": "Slam"
+    },
+    {
+      "desc": "Ranged Attack Roll: +9, range 120 ft. Hit: 22 (4d10) Force damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "4d10",
+                "magical": false,
+                "modifier": 0,
+                "type": "force"
+              }
+            ],
+            "modifier": 9,
+            "on_hit": [],
+            "range": [
+              120,
+              120
+            ],
+            "reach": null,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "force-bolt",
+      "kind": "modeled",
+      "name": "Force Bolt"
+    }
+  ],
+  "alignment": "unaligned",
+  "armor_class": [
+    {
+      "value": 18
+    }
+  ],
+  "bonus_actions": [
+    {
+      "default_resolution": "skipped",
+      "desc": "The golem casts the Slow spell, requiring no spell components and using Constitution as the spellcasting ability (spell save DC 17).",
+      "id": "slow",
+      "kind": "unmodeled",
+      "name": "Slow",
+      "usage": {
+        "recharge": {
+          "dice": "5-6"
+        }
+      }
+    }
+  ],
+  "challenge_rating": 10,
+  "condition_immunities": [
+    "charmed",
+    "exhaustion",
+    "frightened",
+    "paralyzed",
+    "petrified",
+    "poisoned"
+  ],
+  "damage_immunities": [
+    "poison",
+    "psychic"
+  ],
+  "hit_points": {
+    "average": 220,
+    "dice": "21d10+105"
+  },
+  "id": "stone-golem",
+  "initiative": -1,
+  "languages": [
+    "Understands Common plus two other languages but can’t speak"
+  ],
+  "name": "Stone Golem",
+  "proficiency_bonus": 4,
+  "schema_version": "1",
+  "senses": {
+    "darkvision": 120,
+    "passive_perception": 10
+  },
+  "size": "large",
+  "source": "srd-5.2.1",
+  "speeds": {
+    "walk": {
+      "feet": 30
+    }
+  },
+  "traits": [
+    {
+      "default_resolution": "skipped",
+      "desc": "The golem can’t shape-shift.",
+      "id": "immutable-form",
+      "kind": "unmodeled",
+      "name": "Immutable Form"
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "The golem has Advantage on saving throws against spells and other magical effects.",
+      "id": "magic-resistance",
+      "kind": "unmodeled",
+      "name": "Magic Resistance"
+    }
+  ],
+  "type": "construct",
+  "xp": 5900
+}

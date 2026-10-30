@@ -1,0 +1,182 @@
+{
+  "ability_scores": {
+    "charisma": 17,
+    "constitution": 19,
+    "dexterity": 10,
+    "intelligence": 14,
+    "strength": 21,
+    "wisdom": 13
+  },
+  "actions": [
+    {
+      "desc": "The dragon makes three Rend attacks. It can replace one attack with a use of Repulsion Breath.",
+      "effects": [
+        {
+          "multiattack": {
+            "steps": [
+              {
+                "action": {
+                  "action_id": "rend",
+                  "count": 2
+                }
+              },
+              {
+                "choice": {
+                  "options": [
+                    {
+                      "action_id": "rend",
+                      "count": 1
+                    },
+                    {
+                      "action_id": "repulsion-breath",
+                      "count": 1
+                    }
+                  ],
+                  "pick": 1
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "id": "multiattack",
+      "kind": "modeled",
+      "name": "Multiattack"
+    },
+    {
+      "desc": "Melee Attack Roll: +8, reach 10 ft. Hit: 16 (2d10 + 5) Slashing damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "2d10",
+                "magical": false,
+                "modifier": 5,
+                "type": "slashing"
+              }
+            ],
+            "modifier": 8,
+            "on_hit": [],
+            "range": null,
+            "reach": 10,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "rend",
+      "kind": "modeled",
+      "name": "Rend"
+    },
+    {
+      "desc": "Dexterity Saving Throw: DC 15, each creature in a 60-foot-long, 5-footwide Line. Failure: 49 (9d10) Lightning damage. Success: Half damage.",
+      "effects": [
+        {
+          "saving_throw": {
+            "ability": "dex",
+            "creature_type_gate": null,
+            "damage": [
+              {
+                "dice": "9d10",
+                "magical": false,
+                "modifier": 0,
+                "type": "lightning"
+              }
+            ],
+            "dc": 15,
+            "half_on_success": true,
+            "hp_gate": null,
+            "immunity_after_success": false,
+            "no_damage_on_success": false,
+            "on_failure": [],
+            "repeat_save": null,
+            "two_stage": null
+          }
+        }
+      ],
+      "id": "lightning-breath",
+      "kind": "modeled",
+      "name": "Lightning Breath",
+      "usage": {
+        "recharge": {
+          "dice": "5-6",
+          "group": "breath_weapons"
+        }
+      }
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "Strength Saving Throw: DC 15, each creature in a 30-foot Cone. Failure: The target is pushed up to 40 feet straight away from the dragon and has the Prone condition.",
+      "id": "repulsion-breath",
+      "kind": "unmodeled",
+      "name": "Repulsion Breath",
+      "usage": {
+        "recharge": {
+          "dice": "5-6",
+          "group": "breath_weapons"
+        }
+      }
+    }
+  ],
+  "alignment": "lawful good",
+  "armor_class": [
+    {
+      "value": 17
+    }
+  ],
+  "challenge_rating": 8,
+  "damage_immunities": [
+    "lightning"
+  ],
+  "hit_points": {
+    "average": 142,
+    "dice": "15d10+60"
+  },
+  "id": "young-bronze-dragon",
+  "initiative": 0,
+  "languages": [
+    "Common",
+    "Draconic"
+  ],
+  "name": "Young Bronze Dragon",
+  "proficiency_bonus": 3,
+  "saving_throws": {
+    "dex": 3,
+    "wis": 4
+  },
+  "schema_version": "1",
+  "senses": {
+    "blindsight": 30,
+    "darkvision": 120,
+    "passive_perception": 17
+  },
+  "size": "large",
+  "skills": {
+    "insight": 4,
+    "perception": 7,
+    "stealth": 3
+  },
+  "source": "srd-5.2.1",
+  "speeds": {
+    "fly": {
+      "feet": 80
+    },
+    "swim": {
+      "feet": 40
+    },
+    "walk": {
+      "feet": 40
+    }
+  },
+  "traits": [
+    {
+      "default_resolution": "skipped",
+      "desc": "The dragon can breathe air and water.",
+      "id": "amphibious",
+      "kind": "unmodeled",
+      "name": "Amphibious"
+    }
+  ],
+  "type": "dragon",
+  "xp": 3900
+}

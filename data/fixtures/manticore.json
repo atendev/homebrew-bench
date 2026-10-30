@@ -1,0 +1,145 @@
+{
+  "ability_scores": {
+    "charisma": 8,
+    "constitution": 17,
+    "dexterity": 16,
+    "intelligence": 7,
+    "strength": 17,
+    "wisdom": 12
+  },
+  "actions": [
+    {
+      "desc": "The manticore makes three attacks, using Rend or Tail Spike in any combination.",
+      "effects": [
+        {
+          "multiattack": {
+            "steps": [
+              {
+                "choice": {
+                  "options": [
+                    {
+                      "action_id": "rend",
+                      "count": 1
+                    },
+                    {
+                      "action_id": "rend",
+                      "count": 1
+                    },
+                    {
+                      "action_id": "rend",
+                      "count": 1
+                    },
+                    {
+                      "action_id": "tail-spike",
+                      "count": 1
+                    },
+                    {
+                      "action_id": "tail-spike",
+                      "count": 1
+                    },
+                    {
+                      "action_id": "tail-spike",
+                      "count": 1
+                    }
+                  ],
+                  "pick": 3
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "id": "multiattack",
+      "kind": "modeled",
+      "name": "Multiattack"
+    },
+    {
+      "desc": "Melee Attack Roll: +5, reach 5 ft. Hit: 7 (1d8 + 3) Slashing damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "1d8",
+                "magical": false,
+                "modifier": 3,
+                "type": "slashing"
+              }
+            ],
+            "modifier": 5,
+            "on_hit": [],
+            "range": null,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "rend",
+      "kind": "modeled",
+      "name": "Rend"
+    },
+    {
+      "desc": "Ranged Attack Roll: +5, range 100/200 ft. Hit: 7 (1d8 + 3) Piercing damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "1d8",
+                "magical": false,
+                "modifier": 3,
+                "type": "piercing"
+              }
+            ],
+            "modifier": 5,
+            "on_hit": [],
+            "range": [
+              100,
+              200
+            ],
+            "reach": null,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "tail-spike",
+      "kind": "modeled",
+      "name": "Tail Spike"
+    }
+  ],
+  "alignment": "lawful evil",
+  "armor_class": [
+    {
+      "value": 14
+    }
+  ],
+  "challenge_rating": 3,
+  "hit_points": {
+    "average": 68,
+    "dice": "8d10+24"
+  },
+  "id": "manticore",
+  "initiative": 3,
+  "languages": [
+    "Common"
+  ],
+  "name": "Manticore",
+  "proficiency_bonus": 2,
+  "schema_version": "1",
+  "senses": {
+    "darkvision": 60,
+    "passive_perception": 11
+  },
+  "size": "large",
+  "source": "srd-5.2.1",
+  "speeds": {
+    "fly": {
+      "feet": 50
+    },
+    "walk": {
+      "feet": 30
+    }
+  },
+  "type": "monstrosity",
+  "xp": 700
+}

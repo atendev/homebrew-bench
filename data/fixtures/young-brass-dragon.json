@@ -1,0 +1,177 @@
+{
+  "ability_scores": {
+    "charisma": 15,
+    "constitution": 17,
+    "dexterity": 10,
+    "intelligence": 12,
+    "strength": 19,
+    "wisdom": 11
+  },
+  "actions": [
+    {
+      "desc": "The dragon makes three Rend attacks. It can replace two attacks with a use of Sleep Breath.",
+      "effects": [
+        {
+          "multiattack": {
+            "steps": [
+              {
+                "action": {
+                  "action_id": "rend",
+                  "count": 1
+                }
+              },
+              {
+                "choice": {
+                  "options": [
+                    {
+                      "action_id": "rend",
+                      "count": 1
+                    },
+                    {
+                      "action_id": "rend",
+                      "count": 1
+                    },
+                    {
+                      "action_id": "sleep-breath",
+                      "count": 1
+                    }
+                  ],
+                  "pick": 1
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "id": "multiattack",
+      "kind": "modeled",
+      "name": "Multiattack"
+    },
+    {
+      "desc": "Melee Attack Roll: +7, reach 10 ft. Hit: 15 (2d10 + 4) Slashing damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "2d10",
+                "magical": false,
+                "modifier": 4,
+                "type": "slashing"
+              }
+            ],
+            "modifier": 7,
+            "on_hit": [],
+            "range": null,
+            "reach": 10,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "rend",
+      "kind": "modeled",
+      "name": "Rend"
+    },
+    {
+      "desc": "Dexterity Saving Throw: DC 14, each creature in a 40-foot-long, 5-footwide Line. Failure: 38 (11d6) Fire damage. Success: Half damage.",
+      "effects": [
+        {
+          "saving_throw": {
+            "ability": "dex",
+            "creature_type_gate": null,
+            "damage": [
+              {
+                "dice": "11d6",
+                "magical": false,
+                "modifier": 0,
+                "type": "fire"
+              }
+            ],
+            "dc": 14,
+            "half_on_success": true,
+            "hp_gate": null,
+            "immunity_after_success": false,
+            "no_damage_on_success": false,
+            "on_failure": [],
+            "repeat_save": null,
+            "two_stage": null
+          }
+        }
+      ],
+      "id": "fire-breath",
+      "kind": "modeled",
+      "name": "Fire Breath",
+      "usage": {
+        "recharge": {
+          "dice": "5-6",
+          "group": "breath_weapons"
+        }
+      }
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "Constitution Saving Throw: DC 14, each creature in a 30-foot Cone. Failure: The target has the Incapacitated condition until the end of its next turn, at which point it repeats the save. Second Failure: The target has the Unconscious condition for 1 minute. This effect ends for the target if it takes damage or a creature within 5 feet of it takes an action to wake it.",
+      "id": "sleep-breath",
+      "kind": "unmodeled",
+      "name": "Sleep Breath",
+      "usage": {
+        "recharge": {
+          "dice": "5-6",
+          "group": "breath_weapons"
+        }
+      }
+    }
+  ],
+  "alignment": "chaotic good",
+  "armor_class": [
+    {
+      "value": 17
+    }
+  ],
+  "challenge_rating": 6,
+  "damage_immunities": [
+    "fire"
+  ],
+  "hit_points": {
+    "average": 110,
+    "dice": "13d10+39"
+  },
+  "id": "young-brass-dragon",
+  "initiative": 0,
+  "languages": [
+    "Common",
+    "Draconic"
+  ],
+  "name": "Young Brass Dragon",
+  "proficiency_bonus": 3,
+  "saving_throws": {
+    "dex": 3,
+    "wis": 3
+  },
+  "schema_version": "1",
+  "senses": {
+    "blindsight": 30,
+    "darkvision": 120,
+    "passive_perception": 16
+  },
+  "size": "large",
+  "skills": {
+    "perception": 6,
+    "persuasion": 5,
+    "stealth": 3
+  },
+  "source": "srd-5.2.1",
+  "speeds": {
+    "burrow": {
+      "feet": 20
+    },
+    "fly": {
+      "feet": 80
+    },
+    "walk": {
+      "feet": 40
+    }
+  },
+  "type": "dragon",
+  "xp": 2300
+}

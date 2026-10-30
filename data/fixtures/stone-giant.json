@@ -1,0 +1,184 @@
+{
+  "ability_scores": {
+    "charisma": 9,
+    "constitution": 20,
+    "dexterity": 15,
+    "intelligence": 10,
+    "strength": 23,
+    "wisdom": 12
+  },
+  "actions": [
+    {
+      "desc": "The giant makes two attacks, using Stone Club or Boulder in any combination.",
+      "effects": [
+        {
+          "multiattack": {
+            "steps": [
+              {
+                "choice": {
+                  "options": [
+                    {
+                      "action_id": "stone-club",
+                      "count": 1
+                    },
+                    {
+                      "action_id": "stone-club",
+                      "count": 1
+                    },
+                    {
+                      "action_id": "boulder",
+                      "count": 1
+                    },
+                    {
+                      "action_id": "boulder",
+                      "count": 1
+                    }
+                  ],
+                  "pick": 2
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "id": "multiattack",
+      "kind": "modeled",
+      "name": "Multiattack"
+    },
+    {
+      "desc": "Melee Attack Roll: +9, reach 15 ft. Hit: 22 (3d10 + 6) Bludgeoning damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "3d10",
+                "magical": false,
+                "modifier": 6,
+                "type": "bludgeoning"
+              }
+            ],
+            "modifier": 9,
+            "on_hit": [],
+            "range": null,
+            "reach": 15,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "stone-club",
+      "kind": "modeled",
+      "name": "Stone Club"
+    },
+    {
+      "agent_clauses": [
+        "If the target is a Large or smaller creature, it has the Prone condition."
+      ],
+      "desc": "Ranged Attack Roll: +9, range 60/240 ft. Hit: 15 (2d8 + 6) Bludgeoning damage. If the target is a Large or smaller creature, it has the Prone condition.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "2d8",
+                "magical": false,
+                "modifier": 6,
+                "type": "bludgeoning"
+              }
+            ],
+            "modifier": 9,
+            "on_hit": [],
+            "range": [
+              60,
+              240
+            ],
+            "reach": null,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "boulder",
+      "kind": "partly_modeled",
+      "name": "Boulder"
+    }
+  ],
+  "alignment": "neutral",
+  "armor_class": [
+    {
+      "value": 17
+    }
+  ],
+  "challenge_rating": 7,
+  "hit_points": {
+    "average": 126,
+    "dice": "11d12+55"
+  },
+  "id": "stone-giant",
+  "initiative": 2,
+  "languages": [
+    "Giant"
+  ],
+  "name": "Stone Giant",
+  "proficiency_bonus": 3,
+  "reactions": [
+    {
+      "desc": "Trigger: The giant is hit by a ranged attack roll and takes Bludgeoning, Piercing, or Slashing damage from it. Response: The giant reduces the damage it takes from the attack by 11 (1d10 + 6), and if that damage is reduced to 0, the giant can redirect some of the attack’s force. Dexterity Saving Throw: DC 17, one creature the giant can see within 60 feet. Failure: 11 (1d10 + 6) Force damage.",
+      "effects": [
+        {
+          "saving_throw": {
+            "ability": "dex",
+            "creature_type_gate": null,
+            "damage": [
+              {
+                "dice": "1d10",
+                "magical": false,
+                "modifier": 6,
+                "type": "force"
+              }
+            ],
+            "dc": 17,
+            "half_on_success": false,
+            "hp_gate": null,
+            "immunity_after_success": false,
+            "no_damage_on_success": true,
+            "on_failure": [],
+            "repeat_save": null,
+            "two_stage": null
+          }
+        }
+      ],
+      "id": "deflect-missile",
+      "kind": "modeled",
+      "name": "Deflect Missile",
+      "usage": {
+        "recharge": {
+          "dice": "5-6"
+        }
+      }
+    }
+  ],
+  "saving_throws": {
+    "con": 8,
+    "dex": 5,
+    "wis": 4
+  },
+  "schema_version": "1",
+  "senses": {
+    "darkvision": 60,
+    "passive_perception": 14
+  },
+  "size": "huge",
+  "skills": {
+    "athletics": 12,
+    "perception": 4,
+    "stealth": 5
+  },
+  "source": "srd-5.2.1",
+  "speeds": {
+    "walk": {
+      "feet": 40
+    }
+  },
+  "type": "giant",
+  "xp": 2900
+}

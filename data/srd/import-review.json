@@ -2,19 +2,12 @@
   "summary": {
     "commit": "a6212beb4b278917c2cff41c2b04c4ef4f3e0d6f",
     "monsters": 341,
-    "graduated": 186,
-    "blocked": 155,
-    "open_blocking": 234,
+    "graduated": 227,
+    "blocked": 114,
+    "open_blocking": 161,
     "corrections": 72
   },
   "entries": [
-    {
-      "monster": "aboleth",
-      "class": "b",
-      "path": "actions.multiattack.effects",
-      "status": "open",
-      "summary": "multiattack replacement option (swap) with fixed attacks is not representable in the closed vocabulary"
-    },
     {
       "monster": "aboleth",
       "class": "d",
@@ -34,7 +27,7 @@
       "class": "d",
       "path": "actions.multiattack",
       "status": "open",
-      "summary": "classified unmodeled (default skipped)"
+      "summary": "classified modeled"
     },
     {
       "monster": "aboleth",
@@ -101,10 +94,10 @@
     },
     {
       "monster": "adult-black-dragon",
-      "class": "b",
+      "class": "a",
       "path": "actions.multiattack.effects",
       "status": "open",
-      "summary": "multiattack replacement option (swap) with fixed attacks is not representable in the closed vocabulary"
+      "summary": "multiattack options name missing actions ['acid-arrow']"
     },
     {
       "monster": "adult-black-dragon",
@@ -185,10 +178,10 @@
     },
     {
       "monster": "adult-blue-dragon",
-      "class": "b",
+      "class": "a",
       "path": "actions.multiattack.effects",
       "status": "open",
-      "summary": "multiattack replacement option (swap) with fixed attacks is not representable in the closed vocabulary"
+      "summary": "multiattack options name missing actions ['shatter']"
     },
     {
       "monster": "adult-blue-dragon",
@@ -262,10 +255,10 @@
     },
     {
       "monster": "adult-brass-dragon",
-      "class": "b",
+      "class": "a",
       "path": "actions.multiattack.effects",
       "status": "open",
-      "summary": "multiattack replacement option (swap) with fixed attacks is not representable in the closed vocabulary"
+      "summary": "multiattack options name missing actions ['scorching-ray']"
     },
     {
       "monster": "adult-brass-dragon",
@@ -360,10 +353,10 @@
     },
     {
       "monster": "adult-bronze-dragon",
-      "class": "b",
+      "class": "a",
       "path": "actions.multiattack.effects",
       "status": "open",
-      "summary": "multiattack replacement option (swap) with fixed attacks is not representable in the closed vocabulary"
+      "summary": "multiattack options name missing actions ['guiding-bolt']"
     },
     {
       "monster": "adult-bronze-dragon",
@@ -465,10 +458,10 @@
     },
     {
       "monster": "adult-copper-dragon",
-      "class": "b",
+      "class": "a",
       "path": "actions.multiattack.effects",
       "status": "open",
-      "summary": "multiattack replacement option (swap) with fixed attacks is not representable in the closed vocabulary"
+      "summary": "multiattack options name missing actions ['mind-spike']"
     },
     {
       "monster": "adult-copper-dragon",
@@ -563,10 +556,10 @@
     },
     {
       "monster": "adult-gold-dragon",
-      "class": "b",
+      "class": "a",
       "path": "actions.multiattack.effects",
       "status": "open",
-      "summary": "multiattack replacement option (swap) with fixed attacks is not representable in the closed vocabulary"
+      "summary": "multiattack options name missing actions ['guiding-bolt']"
     },
     {
       "monster": "adult-gold-dragon",
@@ -668,10 +661,10 @@
     },
     {
       "monster": "adult-green-dragon",
-      "class": "b",
+      "class": "a",
       "path": "actions.multiattack.effects",
       "status": "open",
-      "summary": "multiattack replacement option (swap) with fixed attacks is not representable in the closed vocabulary"
+      "summary": "multiattack options name missing actions ['mind-spike']"
     },
     {
       "monster": "adult-green-dragon",
@@ -752,10 +745,10 @@
     },
     {
       "monster": "adult-red-dragon",
-      "class": "b",
+      "class": "a",
       "path": "actions.multiattack.effects",
       "status": "open",
-      "summary": "multiattack replacement option (swap) with fixed attacks is not representable in the closed vocabulary"
+      "summary": "multiattack options name missing actions ['scorching-ray']"
     },
     {
       "monster": "adult-red-dragon",
@@ -829,10 +822,10 @@
     },
     {
       "monster": "adult-silver-dragon",
-      "class": "b",
+      "class": "a",
       "path": "actions.multiattack.effects",
       "status": "open",
-      "summary": "multiattack replacement option (swap) with fixed attacks is not representable in the closed vocabulary"
+      "summary": "multiattack options name missing actions ['ice-knife']"
     },
     {
       "monster": "adult-silver-dragon",
@@ -1046,10 +1039,10 @@
     },
     {
       "monster": "ancient-black-dragon",
-      "class": "b",
+      "class": "a",
       "path": "actions.multiattack.effects",
       "status": "open",
-      "summary": "multiattack replacement option (swap) with fixed attacks is not representable in the closed vocabulary"
+      "summary": "multiattack options name missing actions ['acid-arrow']"
     },
     {
       "monster": "ancient-black-dragon",
@@ -1130,10 +1123,10 @@
     },
     {
       "monster": "ancient-blue-dragon",
-      "class": "b",
+      "class": "a",
       "path": "actions.multiattack.effects",
       "status": "open",
-      "summary": "multiattack replacement option (swap) with fixed attacks is not representable in the closed vocabulary"
+      "summary": "multiattack options name missing actions ['shatter']"
     },
     {
       "monster": "ancient-blue-dragon",
@@ -1207,10 +1200,10 @@
     },
     {
       "monster": "ancient-brass-dragon",
-      "class": "b",
+      "class": "a",
       "path": "actions.multiattack.effects",
       "status": "open",
-      "summary": "multiattack replacement option (swap) with fixed attacks is not representable in the closed vocabulary"
+      "summary": "multiattack options name missing actions ['scorching-ray']"
     },
     {
       "monster": "ancient-brass-dragon",
@@ -1305,10 +1298,10 @@
     },
     {
       "monster": "ancient-bronze-dragon",
-      "class": "b",
+      "class": "a",
       "path": "actions.multiattack.effects",
       "status": "open",
-      "summary": "multiattack replacement option (swap) with fixed attacks is not representable in the closed vocabulary"
+      "summary": "multiattack options name missing actions ['guiding-bolt']"
     },
     {
       "monster": "ancient-bronze-dragon",
@@ -1410,10 +1403,10 @@
     },
     {
       "monster": "ancient-copper-dragon",
-      "class": "b",
+      "class": "a",
       "path": "actions.multiattack.effects",
       "status": "open",
-      "summary": "multiattack replacement option (swap) with fixed attacks is not representable in the closed vocabulary"
+      "summary": "multiattack options name missing actions ['mind-spike']"
     },
     {
       "monster": "ancient-copper-dragon",
@@ -1515,10 +1508,10 @@
     },
     {
       "monster": "ancient-gold-dragon",
-      "class": "b",
+      "class": "a",
       "path": "actions.multiattack.effects",
       "status": "open",
-      "summary": "multiattack replacement option (swap) with fixed attacks is not representable in the closed vocabulary"
+      "summary": "multiattack options name missing actions ['guiding-bolt']"
     },
     {
       "monster": "ancient-gold-dragon",
@@ -1620,10 +1613,10 @@
     },
     {
       "monster": "ancient-green-dragon",
-      "class": "b",
+      "class": "a",
       "path": "actions.multiattack.effects",
       "status": "open",
-      "summary": "multiattack replacement option (swap) with fixed attacks is not representable in the closed vocabulary"
+      "summary": "multiattack options name missing actions ['mind-spike']"
     },
     {
       "monster": "ancient-green-dragon",
@@ -1704,10 +1697,10 @@
     },
     {
       "monster": "ancient-red-dragon",
-      "class": "b",
+      "class": "a",
       "path": "actions.multiattack.effects",
       "status": "open",
-      "summary": "multiattack replacement option (swap) with fixed attacks is not representable in the closed vocabulary"
+      "summary": "multiattack options name missing actions ['scorching-ray']"
     },
     {
       "monster": "ancient-red-dragon",
@@ -1781,10 +1774,10 @@
     },
     {
       "monster": "ancient-silver-dragon",
-      "class": "b",
+      "class": "a",
       "path": "actions.multiattack.effects",
       "status": "open",
-      "summary": "multiattack replacement option (swap) with fixed attacks is not representable in the closed vocabulary"
+      "summary": "multiattack options name missing actions ['ice-knife']"
     },
     {
       "monster": "ancient-silver-dragon",
@@ -2167,13 +2160,6 @@
     {
       "monster": "assassin",
       "class": "b",
-      "path": "actions.multiattack.effects",
-      "status": "open",
-      "summary": "multiattack choose-3 combination is not representable in the closed vocabulary"
-    },
-    {
-      "monster": "assassin",
-      "class": "b",
       "path": "size",
       "status": "open",
       "summary": "size 'Medium or small' is not representable"
@@ -2190,7 +2176,7 @@
       "class": "d",
       "path": "actions.multiattack",
       "status": "open",
-      "summary": "classified unmodeled (default skipped)"
+      "summary": "classified modeled"
     },
     {
       "monster": "assassin",
@@ -2405,13 +2391,6 @@
     {
       "monster": "bandit-captain",
       "class": "b",
-      "path": "actions.multiattack.effects",
-      "status": "open",
-      "summary": "multiattack choose-2 combination is not representable in the closed vocabulary"
-    },
-    {
-      "monster": "bandit-captain",
-      "class": "b",
       "path": "size",
       "status": "open",
       "summary": "size 'Medium or small' is not representable"
@@ -2421,7 +2400,7 @@
       "class": "d",
       "path": "actions.multiattack",
       "status": "open",
-      "summary": "classified unmodeled (default skipped)"
+      "summary": "classified modeled"
     },
     {
       "monster": "bandit-captain",
@@ -2964,13 +2943,6 @@
     },
     {
       "monster": "bugbear-stalker",
-      "class": "b",
-      "path": "actions.multiattack.effects",
-      "status": "open",
-      "summary": "multiattack choose-2 combination is not representable in the closed vocabulary"
-    },
-    {
-      "monster": "bugbear-stalker",
       "class": "d",
       "path": "actions.javelin",
       "status": "open",
@@ -2988,7 +2960,7 @@
       "class": "d",
       "path": "actions.multiattack",
       "status": "open",
-      "summary": "classified unmodeled (default skipped)"
+      "summary": "classified modeled"
     },
     {
       "monster": "bugbear-stalker",
@@ -3090,13 +3062,6 @@
     },
     {
       "monster": "centaur-trooper",
-      "class": "b",
-      "path": "actions.multiattack.effects",
-      "status": "open",
-      "summary": "multiattack choose-2 combination is not representable in the closed vocabulary"
-    },
-    {
-      "monster": "centaur-trooper",
       "class": "d",
       "path": "actions.longbow",
       "status": "open",
@@ -3107,7 +3072,7 @@
       "class": "d",
       "path": "actions.multiattack",
       "status": "open",
-      "summary": "classified unmodeled (default skipped)"
+      "summary": "classified modeled"
     },
     {
       "monster": "centaur-trooper",
@@ -3174,13 +3139,6 @@
     },
     {
       "monster": "chimera",
-      "class": "b",
-      "path": "actions.multiattack.effects",
-      "status": "open",
-      "summary": "multiattack replacement option (swap) with fixed attacks is not representable in the closed vocabulary"
-    },
-    {
-      "monster": "chimera",
       "class": "d",
       "path": "actions.bite",
       "status": "open",
@@ -3205,7 +3163,7 @@
       "class": "d",
       "path": "actions.multiattack",
       "status": "open",
-      "summary": "classified unmodeled (default skipped)"
+      "summary": "classified modeled"
     },
     {
       "monster": "chimera",
@@ -3251,17 +3209,10 @@
     },
     {
       "monster": "clay-golem",
-      "class": "b",
-      "path": "actions.multiattack.effects",
-      "status": "open",
-      "summary": "multiattack choice with unequal option counts is not representable in the closed vocabulary"
-    },
-    {
-      "monster": "clay-golem",
       "class": "d",
       "path": "actions.multiattack",
       "status": "open",
-      "summary": "classified unmodeled (default skipped)"
+      "summary": "classified modeled"
     },
     {
       "monster": "clay-golem",
@@ -3363,10 +3314,10 @@
     },
     {
       "monster": "cloud-giant",
-      "class": "b",
+      "class": "a",
       "path": "actions.multiattack.effects",
       "status": "open",
-      "summary": "multiattack choice with unequal option counts is not representable in the closed vocabulary"
+      "summary": "multiattack options name missing actions ['fog-cloud']"
     },
     {
       "monster": "cloud-giant",
@@ -3762,13 +3713,6 @@
     },
     {
       "monster": "djinni",
-      "class": "b",
-      "path": "actions.multiattack.effects",
-      "status": "open",
-      "summary": "multiattack choose-3 combination is not representable in the closed vocabulary"
-    },
-    {
-      "monster": "djinni",
       "class": "d",
       "path": "actions.create-whirlwind",
       "status": "open",
@@ -3779,7 +3723,7 @@
       "class": "d",
       "path": "actions.multiattack",
       "status": "open",
-      "summary": "classified unmodeled (default skipped)"
+      "summary": "classified modeled"
     },
     {
       "monster": "djinni",
@@ -3881,13 +3825,6 @@
     },
     {
       "monster": "dragon-turtle",
-      "class": "b",
-      "path": "actions.multiattack.effects",
-      "status": "open",
-      "summary": "multiattack replacement option (swap) with fixed attacks is not representable in the closed vocabulary"
-    },
-    {
-      "monster": "dragon-turtle",
       "class": "d",
       "path": "actions.bite",
       "status": "open",
@@ -3898,7 +3835,7 @@
       "class": "d",
       "path": "actions.multiattack",
       "status": "open",
-      "summary": "classified unmodeled (default skipped)"
+      "summary": "classified modeled"
     },
     {
       "monster": "dragon-turtle",
@@ -3937,13 +3874,6 @@
     },
     {
       "monster": "drider",
-      "class": "b",
-      "path": "actions.multiattack.effects",
-      "status": "open",
-      "summary": "multiattack choose-3 combination is not representable in the closed vocabulary"
-    },
-    {
-      "monster": "drider",
       "class": "d",
       "path": "actions.foreleg",
       "status": "open",
@@ -3954,7 +3884,7 @@
       "class": "d",
       "path": "actions.multiattack",
       "status": "open",
-      "summary": "classified unmodeled (default skipped)"
+      "summary": "classified modeled"
     },
     {
       "monster": "drider",
@@ -4001,13 +3931,6 @@
     {
       "monster": "druid",
       "class": "b",
-      "path": "actions.multiattack.effects",
-      "status": "open",
-      "summary": "multiattack choose-2 combination is not representable in the closed vocabulary"
-    },
-    {
-      "monster": "druid",
-      "class": "b",
       "path": "size",
       "status": "open",
       "summary": "size 'Medium or small' is not representable"
@@ -4017,7 +3940,7 @@
       "class": "d",
       "path": "actions.multiattack",
       "status": "open",
-      "summary": "classified unmodeled (default skipped)"
+      "summary": "classified modeled"
     },
     {
       "monster": "druid",
@@ -4161,17 +4084,10 @@
     },
     {
       "monster": "earth-elemental",
-      "class": "b",
-      "path": "actions.multiattack.effects",
-      "status": "open",
-      "summary": "multiattack choose-2 combination is not representable in the closed vocabulary"
-    },
-    {
-      "monster": "earth-elemental",
       "class": "d",
       "path": "actions.multiattack",
       "status": "open",
-      "summary": "classified unmodeled (default skipped)"
+      "summary": "classified modeled"
     },
     {
       "monster": "earth-elemental",
@@ -4203,13 +4119,6 @@
     },
     {
       "monster": "efreeti",
-      "class": "b",
-      "path": "actions.multiattack.effects",
-      "status": "open",
-      "summary": "multiattack choose-3 combination is not representable in the closed vocabulary"
-    },
-    {
-      "monster": "efreeti",
       "class": "d",
       "path": "actions.heated-blade",
       "status": "open",
@@ -4227,7 +4136,7 @@
       "class": "d",
       "path": "actions.multiattack",
       "status": "open",
-      "summary": "classified unmodeled (default skipped)"
+      "summary": "classified modeled"
     },
     {
       "monster": "efreeti",
@@ -4511,13 +4420,6 @@
     },
     {
       "monster": "fire-giant",
-      "class": "b",
-      "path": "actions.multiattack.effects",
-      "status": "open",
-      "summary": "multiattack choose-2 combination is not representable in the closed vocabulary"
-    },
-    {
-      "monster": "fire-giant",
       "class": "d",
       "path": "actions.flame-sword",
       "status": "open",
@@ -4535,7 +4437,7 @@
       "class": "d",
       "path": "actions.multiattack",
       "status": "open",
-      "summary": "classified unmodeled (default skipped)"
+      "summary": "classified modeled"
     },
     {
       "monster": "flesh-golem",
@@ -4637,13 +4539,6 @@
     },
     {
       "monster": "frost-giant",
-      "class": "b",
-      "path": "actions.multiattack.effects",
-      "status": "open",
-      "summary": "multiattack choose-2 combination is not representable in the closed vocabulary"
-    },
-    {
-      "monster": "frost-giant",
       "class": "d",
       "path": "actions.frost-axe",
       "status": "open",
@@ -4661,7 +4556,7 @@
       "class": "d",
       "path": "actions.multiattack",
       "status": "open",
-      "summary": "classified unmodeled (default skipped)"
+      "summary": "classified modeled"
     },
     {
       "monster": "frost-giant",
@@ -5428,17 +5323,10 @@
     },
     {
       "monster": "glabrezu",
-      "class": "b",
-      "path": "actions.multiattack.effects",
-      "status": "open",
-      "summary": "multiattack replacement option (swap) with fixed attacks is not representable in the closed vocabulary"
-    },
-    {
-      "monster": "glabrezu",
       "class": "d",
       "path": "actions.multiattack",
       "status": "open",
-      "summary": "classified unmodeled (default skipped)"
+      "summary": "classified modeled"
     },
     {
       "monster": "glabrezu",
@@ -5485,13 +5373,6 @@
     {
       "monster": "gladiator",
       "class": "b",
-      "path": "actions.multiattack.effects",
-      "status": "open",
-      "summary": "multiattack replacement option (swap) with fixed attacks is not representable in the closed vocabulary"
-    },
-    {
-      "monster": "gladiator",
-      "class": "b",
       "path": "size",
       "status": "open",
       "summary": "size 'Medium or small' is not representable"
@@ -5501,7 +5382,7 @@
       "class": "d",
       "path": "actions.multiattack",
       "status": "open",
-      "summary": "classified unmodeled (default skipped)"
+      "summary": "classified modeled"
     },
     {
       "monster": "gladiator",
@@ -5555,13 +5436,6 @@
     {
       "monster": "goblin-boss",
       "class": "b",
-      "path": "actions.multiattack.effects",
-      "status": "open",
-      "summary": "multiattack choose-2 combination is not representable in the closed vocabulary"
-    },
-    {
-      "monster": "goblin-boss",
-      "class": "b",
       "path": "actions.scimitar.damage",
       "status": "open",
       "summary": "several damage entries, not all stated unconditionally in the Hit clause"
@@ -5578,7 +5452,7 @@
       "class": "d",
       "path": "actions.multiattack",
       "status": "open",
-      "summary": "classified unmodeled (default skipped)"
+      "summary": "classified modeled"
     },
     {
       "monster": "goblin-boss",
@@ -5891,13 +5765,6 @@
     {
       "monster": "guard-captain",
       "class": "b",
-      "path": "actions.multiattack.effects",
-      "status": "open",
-      "summary": "multiattack choose-2 combination is not representable in the closed vocabulary"
-    },
-    {
-      "monster": "guard-captain",
-      "class": "b",
       "path": "size",
       "status": "open",
       "summary": "size 'Medium or small' is not representable"
@@ -5921,14 +5788,7 @@
       "class": "d",
       "path": "actions.multiattack",
       "status": "open",
-      "summary": "classified unmodeled (default skipped)"
-    },
-    {
-      "monster": "guardian-naga",
-      "class": "b",
-      "path": "actions.multiattack.effects",
-      "status": "open",
-      "summary": "multiattack choose-2 combination is not representable in the closed vocabulary"
+      "summary": "classified modeled"
     },
     {
       "monster": "guardian-naga",
@@ -5942,7 +5802,7 @@
       "class": "d",
       "path": "actions.multiattack",
       "status": "open",
-      "summary": "classified unmodeled (default skipped)"
+      "summary": "classified modeled"
     },
     {
       "monster": "guardian-naga",
@@ -6128,17 +5988,10 @@
     },
     {
       "monster": "hill-giant",
-      "class": "b",
-      "path": "actions.multiattack.effects",
-      "status": "open",
-      "summary": "multiattack choose-2 combination is not representable in the closed vocabulary"
-    },
-    {
-      "monster": "hill-giant",
       "class": "d",
       "path": "actions.multiattack",
       "status": "open",
-      "summary": "classified unmodeled (default skipped)"
+      "summary": "classified modeled"
     },
     {
       "monster": "hill-giant",
@@ -6198,13 +6051,6 @@
     },
     {
       "monster": "hobgoblin-captain",
-      "class": "b",
-      "path": "actions.multiattack.effects",
-      "status": "open",
-      "summary": "multiattack choose-2 combination is not representable in the closed vocabulary"
-    },
-    {
-      "monster": "hobgoblin-captain",
       "class": "d",
       "path": "actions.greatsword",
       "status": "open",
@@ -6222,7 +6068,7 @@
       "class": "d",
       "path": "actions.multiattack",
       "status": "open",
-      "summary": "classified unmodeled (default skipped)"
+      "summary": "classified modeled"
     },
     {
       "monster": "hobgoblin-captain",
@@ -6282,13 +6128,6 @@
     },
     {
       "monster": "horned-devil",
-      "class": "b",
-      "path": "actions.multiattack.effects",
-      "status": "open",
-      "summary": "multiattack choice with unequal option counts is not representable in the closed vocabulary"
-    },
-    {
-      "monster": "horned-devil",
       "class": "d",
       "path": "actions.hurl-flame",
       "status": "open",
@@ -6306,7 +6145,7 @@
       "class": "d",
       "path": "actions.multiattack",
       "status": "open",
-      "summary": "classified unmodeled (default skipped)"
+      "summary": "classified modeled"
     },
     {
       "monster": "horned-devil",
@@ -6408,13 +6247,6 @@
     },
     {
       "monster": "ice-devil",
-      "class": "b",
-      "path": "actions.multiattack.effects",
-      "status": "open",
-      "summary": "multiattack replacement option (swap) with fixed attacks is not representable in the closed vocabulary"
-    },
-    {
-      "monster": "ice-devil",
       "class": "d",
       "path": "actions.ice-spear",
       "status": "open",
@@ -6439,7 +6271,7 @@
       "class": "d",
       "path": "actions.multiattack",
       "status": "open",
-      "summary": "classified unmodeled (default skipped)"
+      "summary": "classified modeled"
     },
     {
       "monster": "ice-devil",
@@ -6577,13 +6409,6 @@
     {
       "monster": "invisible-stalker",
       "class": "b",
-      "path": "actions.multiattack.effects",
-      "status": "open",
-      "summary": "multiattack replacement option (swap) with fixed attacks is not representable in the closed vocabulary"
-    },
-    {
-      "monster": "invisible-stalker",
-      "class": "b",
       "path": "actions.vortex.damage",
       "status": "open",
       "summary": "several damage entries, not all stated unconditionally in the Failure clause"
@@ -6593,7 +6418,7 @@
       "class": "d",
       "path": "actions.multiattack",
       "status": "open",
-      "summary": "classified unmodeled (default skipped)"
+      "summary": "classified modeled"
     },
     {
       "monster": "invisible-stalker",
@@ -6625,13 +6450,6 @@
     },
     {
       "monster": "iron-golem",
-      "class": "b",
-      "path": "actions.multiattack.effects",
-      "status": "open",
-      "summary": "multiattack choose-2 combination is not representable in the closed vocabulary"
-    },
-    {
-      "monster": "iron-golem",
       "class": "d",
       "path": "actions.bladed-arm",
       "status": "open",
@@ -6649,7 +6467,7 @@
       "class": "d",
       "path": "actions.multiattack",
       "status": "open",
-      "summary": "classified unmodeled (default skipped)"
+      "summary": "classified modeled"
     },
     {
       "monster": "iron-golem",
@@ -6703,13 +6521,6 @@
     {
       "monster": "knight",
       "class": "b",
-      "path": "actions.multiattack.effects",
-      "status": "open",
-      "summary": "multiattack choose-2 combination is not representable in the closed vocabulary"
-    },
-    {
-      "monster": "knight",
-      "class": "b",
       "path": "size",
       "status": "open",
       "summary": "size 'Medium or small' is not representable"
@@ -6733,7 +6544,7 @@
       "class": "d",
       "path": "actions.multiattack",
       "status": "open",
-      "summary": "classified unmodeled (default skipped)"
+      "summary": "classified modeled"
     },
     {
       "monster": "knight",
@@ -6766,13 +6577,6 @@
     {
       "monster": "kraken",
       "class": "b",
-      "path": "actions.multiattack.effects",
-      "status": "open",
-      "summary": "multiattack replacement option (swap) with fixed attacks is not representable in the closed vocabulary"
-    },
-    {
-      "monster": "kraken",
-      "class": "b",
       "path": "actions.swallow.damage",
       "status": "open",
       "summary": "several damage entries, not all stated unconditionally in the Failure clause"
@@ -6796,7 +6600,7 @@
       "class": "d",
       "path": "actions.multiattack",
       "status": "open",
-      "summary": "classified unmodeled (default skipped)"
+      "summary": "classified modeled"
     },
     {
       "monster": "kraken",
@@ -6856,13 +6660,6 @@
     },
     {
       "monster": "lamia",
-      "class": "b",
-      "path": "actions.multiattack.effects",
-      "status": "open",
-      "summary": "multiattack replacement option (swap) with fixed attacks is not representable in the closed vocabulary"
-    },
-    {
-      "monster": "lamia",
       "class": "d",
       "path": "actions.claw",
       "status": "open",
@@ -6880,7 +6677,7 @@
       "class": "d",
       "path": "actions.multiattack",
       "status": "open",
-      "summary": "classified unmodeled (default skipped)"
+      "summary": "classified modeled"
     },
     {
       "monster": "lamia",
@@ -6919,13 +6716,6 @@
     },
     {
       "monster": "lich",
-      "class": "b",
-      "path": "actions.multiattack.effects",
-      "status": "open",
-      "summary": "multiattack choose-3 combination is not representable in the closed vocabulary"
-    },
-    {
-      "monster": "lich",
       "class": "d",
       "path": "actions.eldritch-burst",
       "status": "open",
@@ -6936,7 +6726,7 @@
       "class": "d",
       "path": "actions.multiattack",
       "status": "open",
-      "summary": "classified unmodeled (default skipped)"
+      "summary": "classified modeled"
     },
     {
       "monster": "lich",
@@ -7031,17 +6821,10 @@
     },
     {
       "monster": "lion",
-      "class": "b",
-      "path": "actions.multiattack.effects",
-      "status": "open",
-      "summary": "multiattack replacement option (swap) with fixed attacks is not representable in the closed vocabulary"
-    },
-    {
-      "monster": "lion",
       "class": "d",
       "path": "actions.multiattack",
       "status": "open",
-      "summary": "classified unmodeled (default skipped)"
+      "summary": "classified modeled"
     },
     {
       "monster": "lion",
@@ -7227,17 +7010,10 @@
     },
     {
       "monster": "manticore",
-      "class": "b",
-      "path": "actions.multiattack.effects",
-      "status": "open",
-      "summary": "multiattack choose-3 combination is not representable in the closed vocabulary"
-    },
-    {
-      "monster": "manticore",
       "class": "d",
       "path": "actions.multiattack",
       "status": "open",
-      "summary": "classified unmodeled (default skipped)"
+      "summary": "classified modeled"
     },
     {
       "monster": "manticore",
@@ -7381,13 +7157,6 @@
     },
     {
       "monster": "merrow",
-      "class": "b",
-      "path": "actions.multiattack.effects",
-      "status": "open",
-      "summary": "multiattack choose-2 combination is not representable in the closed vocabulary"
-    },
-    {
-      "monster": "merrow",
       "class": "d",
       "path": "actions.bite",
       "status": "open",
@@ -7412,7 +7181,7 @@
       "class": "d",
       "path": "actions.multiattack",
       "status": "open",
-      "summary": "classified unmodeled (default skipped)"
+      "summary": "classified modeled"
     },
     {
       "monster": "merrow",
@@ -7634,13 +7403,6 @@
     {
       "monster": "mummy-lord",
       "class": "b",
-      "path": "actions.multiattack.effects",
-      "status": "open",
-      "summary": "multiattack replacement option (swap) with fixed attacks is not representable in the closed vocabulary"
-    },
-    {
-      "monster": "mummy-lord",
-      "class": "b",
       "path": "actions.rotting-fist.damage",
       "status": "open",
       "summary": "damage in a later clause is not representable"
@@ -7678,7 +7440,7 @@
       "class": "d",
       "path": "actions.multiattack",
       "status": "open",
-      "summary": "classified unmodeled (default skipped)"
+      "summary": "classified modeled"
     },
     {
       "monster": "mummy-lord",
@@ -7997,13 +7759,6 @@
     },
     {
       "monster": "oni",
-      "class": "b",
-      "path": "actions.multiattack.effects",
-      "status": "open",
-      "summary": "multiattack choice with unequal option counts is not representable in the closed vocabulary"
-    },
-    {
-      "monster": "oni",
       "class": "d",
       "path": "actions.claw",
       "status": "open",
@@ -8014,7 +7769,7 @@
       "class": "d",
       "path": "actions.multiattack",
       "status": "open",
-      "summary": "classified unmodeled (default skipped)"
+      "summary": "classified modeled"
     },
     {
       "monster": "oni",
@@ -8236,13 +7991,6 @@
     {
       "monster": "pirate",
       "class": "b",
-      "path": "actions.multiattack.effects",
-      "status": "open",
-      "summary": "multiattack replacement option (swap) with fixed attacks is not representable in the closed vocabulary"
-    },
-    {
-      "monster": "pirate",
-      "class": "b",
       "path": "size",
       "status": "open",
       "summary": "size 'Medium or small' is not representable"
@@ -8266,14 +8014,7 @@
       "class": "d",
       "path": "actions.multiattack",
       "status": "open",
-      "summary": "classified unmodeled (default skipped)"
-    },
-    {
-      "monster": "pirate-captain",
-      "class": "b",
-      "path": "actions.multiattack.effects",
-      "status": "open",
-      "summary": "multiattack choose-3 combination is not representable in the closed vocabulary"
+      "summary": "classified modeled"
     },
     {
       "monster": "pirate-captain",
@@ -8287,7 +8028,7 @@
       "class": "d",
       "path": "actions.multiattack",
       "status": "open",
-      "summary": "classified unmodeled (default skipped)"
+      "summary": "classified modeled"
     },
     {
       "monster": "pirate-captain",
@@ -8410,13 +8151,6 @@
     },
     {
       "monster": "planetar",
-      "class": "b",
-      "path": "actions.multiattack.effects",
-      "status": "open",
-      "summary": "multiattack choice with unequal option counts is not representable in the closed vocabulary"
-    },
-    {
-      "monster": "planetar",
       "class": "d",
       "path": "actions.holy-burst",
       "status": "open",
@@ -8427,7 +8161,7 @@
       "class": "d",
       "path": "actions.multiattack",
       "status": "open",
-      "summary": "classified unmodeled (default skipped)"
+      "summary": "classified modeled"
     },
     {
       "monster": "planetar",
@@ -8523,13 +8257,6 @@
     {
       "monster": "priest",
       "class": "b",
-      "path": "actions.multiattack.effects",
-      "status": "open",
-      "summary": "multiattack choose-2 combination is not representable in the closed vocabulary"
-    },
-    {
-      "monster": "priest",
-      "class": "b",
       "path": "size",
       "status": "open",
       "summary": "size 'Medium or small' is not representable"
@@ -8546,7 +8273,7 @@
       "class": "d",
       "path": "actions.multiattack",
       "status": "open",
-      "summary": "classified unmodeled (default skipped)"
+      "summary": "classified modeled"
     },
     {
       "monster": "priest",
@@ -8991,13 +8718,6 @@
     },
     {
       "monster": "roc",
-      "class": "b",
-      "path": "actions.multiattack.effects",
-      "status": "open",
-      "summary": "multiattack replacement option (swap) with fixed attacks is not representable in the closed vocabulary"
-    },
-    {
-      "monster": "roc",
       "class": "d",
       "path": "actions.beak",
       "status": "open",
@@ -9008,7 +8728,7 @@
       "class": "d",
       "path": "actions.multiattack",
       "status": "open",
-      "summary": "classified unmodeled (default skipped)"
+      "summary": "classified modeled"
     },
     {
       "monster": "roc",
@@ -9180,13 +8900,6 @@
     },
     {
       "monster": "salamander",
-      "class": "b",
-      "path": "actions.multiattack.effects",
-      "status": "open",
-      "summary": "multiattack replacement option (swap) with fixed attacks is not representable in the closed vocabulary"
-    },
-    {
-      "monster": "salamander",
       "class": "d",
       "path": "actions.constrict",
       "status": "open",
@@ -9204,7 +8917,7 @@
       "class": "d",
       "path": "actions.multiattack",
       "status": "open",
-      "summary": "classified unmodeled (default skipped)"
+      "summary": "classified modeled"
     },
     {
       "monster": "salamander",
@@ -9251,13 +8964,6 @@
     {
       "monster": "scout",
       "class": "b",
-      "path": "actions.multiattack.effects",
-      "status": "open",
-      "summary": "multiattack choose-2 combination is not representable in the closed vocabulary"
-    },
-    {
-      "monster": "scout",
-      "class": "b",
       "path": "size",
       "status": "open",
       "summary": "size 'Medium or small' is not representable"
@@ -9274,7 +8980,7 @@
       "class": "d",
       "path": "actions.multiattack",
       "status": "open",
-      "summary": "classified unmodeled (default skipped)"
+      "summary": "classified modeled"
     },
     {
       "monster": "scout",
@@ -9390,13 +9096,6 @@
     },
     {
       "monster": "shambling-mound",
-      "class": "b",
-      "path": "actions.multiattack.effects",
-      "status": "open",
-      "summary": "multiattack replacement option (swap) with fixed attacks is not representable in the closed vocabulary"
-    },
-    {
-      "monster": "shambling-mound",
       "class": "d",
       "path": "actions.charged-tendril",
       "status": "open",
@@ -9414,7 +9113,7 @@
       "class": "d",
       "path": "actions.multiattack",
       "status": "open",
-      "summary": "classified unmodeled (default skipped)"
+      "summary": "classified modeled"
     },
     {
       "monster": "shambling-mound",
@@ -9538,13 +9237,6 @@
     {
       "monster": "solar",
       "class": "b",
-      "path": "actions.multiattack.effects",
-      "status": "open",
-      "summary": "multiattack replacement option (swap) with fixed attacks is not representable in the closed vocabulary"
-    },
-    {
-      "monster": "solar",
-      "class": "b",
       "path": "actions.slaying-bow.damage",
       "status": "open",
       "summary": "several damage entries, not all stated unconditionally in the Failure clause"
@@ -9561,7 +9253,7 @@
       "class": "d",
       "path": "actions.multiattack",
       "status": "open",
-      "summary": "classified unmodeled (default skipped)"
+      "summary": "classified modeled"
     },
     {
       "monster": "solar",
@@ -9880,13 +9572,6 @@
     },
     {
       "monster": "spirit-naga",
-      "class": "b",
-      "path": "actions.multiattack.effects",
-      "status": "open",
-      "summary": "multiattack choose-3 combination is not representable in the closed vocabulary"
-    },
-    {
-      "monster": "spirit-naga",
       "class": "d",
       "path": "actions.bite",
       "status": "open",
@@ -9897,7 +9582,7 @@
       "class": "d",
       "path": "actions.multiattack",
       "status": "open",
-      "summary": "classified unmodeled (default skipped)"
+      "summary": "classified modeled"
     },
     {
       "monster": "spirit-naga",
@@ -10062,13 +9747,6 @@
     },
     {
       "monster": "stone-giant",
-      "class": "b",
-      "path": "actions.multiattack.effects",
-      "status": "open",
-      "summary": "multiattack choose-2 combination is not representable in the closed vocabulary"
-    },
-    {
-      "monster": "stone-giant",
       "class": "d",
       "path": "actions.boulder",
       "status": "open",
@@ -10079,7 +9757,7 @@
       "class": "d",
       "path": "actions.multiattack",
       "status": "open",
-      "summary": "classified unmodeled (default skipped)"
+      "summary": "classified modeled"
     },
     {
       "monster": "stone-giant",
@@ -10097,13 +9775,6 @@
     },
     {
       "monster": "stone-golem",
-      "class": "b",
-      "path": "actions.multiattack.effects",
-      "status": "open",
-      "summary": "multiattack choose-2 combination is not representable in the closed vocabulary"
-    },
-    {
-      "monster": "stone-golem",
       "class": "d",
       "path": "actions.force-bolt",
       "status": "open",
@@ -10114,7 +9785,7 @@
       "class": "d",
       "path": "actions.multiattack",
       "status": "open",
-      "summary": "classified unmodeled (default skipped)"
+      "summary": "classified modeled"
     },
     {
       "monster": "stone-golem",
@@ -10153,13 +9824,6 @@
     },
     {
       "monster": "storm-giant",
-      "class": "b",
-      "path": "actions.multiattack.effects",
-      "status": "open",
-      "summary": "multiattack choose-2 combination is not representable in the closed vocabulary"
-    },
-    {
-      "monster": "storm-giant",
       "class": "d",
       "path": "actions.lightning-storm",
       "status": "open",
@@ -10170,7 +9834,7 @@
       "class": "d",
       "path": "actions.multiattack",
       "status": "open",
-      "summary": "classified unmodeled (default skipped)"
+      "summary": "classified modeled"
     },
     {
       "monster": "storm-giant",
@@ -10209,13 +9873,6 @@
     },
     {
       "monster": "succubus",
-      "class": "b",
-      "path": "actions.multiattack.effects",
-      "status": "open",
-      "summary": "multiattack replacement option (swap) with fixed attacks is not representable in the closed vocabulary"
-    },
-    {
-      "monster": "succubus",
       "class": "d",
       "path": "actions.charm",
       "status": "open",
@@ -10247,7 +9904,7 @@
       "class": "d",
       "path": "actions.multiattack",
       "status": "open",
-      "summary": "classified unmodeled (default skipped)"
+      "summary": "classified modeled"
     },
     {
       "monster": "succubus",
@@ -10433,13 +10090,6 @@
     },
     {
       "monster": "tarrasque",
-      "class": "b",
-      "path": "actions.multiattack.effects",
-      "status": "open",
-      "summary": "multiattack replacement option (swap) with fixed attacks is not representable in the closed vocabulary"
-    },
-    {
-      "monster": "tarrasque",
       "class": "d",
       "path": "actions.bite",
       "status": "open",
@@ -10457,7 +10107,7 @@
       "class": "d",
       "path": "actions.multiattack",
       "status": "open",
-      "summary": "classified unmodeled (default skipped)"
+      "summary": "classified modeled"
     },
     {
       "monster": "tarrasque",
@@ -10574,13 +10224,6 @@
     {
       "monster": "tough-boss",
       "class": "b",
-      "path": "actions.multiattack.effects",
-      "status": "open",
-      "summary": "multiattack choose-2 combination is not representable in the closed vocabulary"
-    },
-    {
-      "monster": "tough-boss",
-      "class": "b",
       "path": "size",
       "status": "open",
       "summary": "size 'Medium or small' is not representable"
@@ -10597,7 +10240,7 @@
       "class": "d",
       "path": "actions.multiattack",
       "status": "open",
-      "summary": "classified unmodeled (default skipped)"
+      "summary": "classified modeled"
     },
     {
       "monster": "tough-boss",
@@ -11435,13 +11078,6 @@
     {
       "monster": "warrior-veteran",
       "class": "b",
-      "path": "actions.multiattack.effects",
-      "status": "open",
-      "summary": "multiattack choose-2 combination is not representable in the closed vocabulary"
-    },
-    {
-      "monster": "warrior-veteran",
-      "class": "b",
       "path": "size",
       "status": "open",
       "summary": "size 'Medium or small' is not representable"
@@ -11465,7 +11101,7 @@
       "class": "d",
       "path": "actions.multiattack",
       "status": "open",
-      "summary": "classified unmodeled (default skipped)"
+      "summary": "classified modeled"
     },
     {
       "monster": "warrior-veteran",
@@ -11553,13 +11189,6 @@
     },
     {
       "monster": "werebear-bear",
-      "class": "b",
-      "path": "actions.multiattack.effects",
-      "status": "open",
-      "summary": "multiattack choice with unequal option counts is not representable in the closed vocabulary"
-    },
-    {
-      "monster": "werebear-bear",
       "class": "d",
       "path": "actions.bite",
       "status": "open",
@@ -11570,7 +11199,7 @@
       "class": "d",
       "path": "actions.multiattack",
       "status": "open",
-      "summary": "classified unmodeled (default skipped)"
+      "summary": "classified modeled"
     },
     {
       "monster": "werebear-bear",
@@ -11595,13 +11224,6 @@
     },
     {
       "monster": "werebear-human",
-      "class": "b",
-      "path": "actions.multiattack.effects",
-      "status": "open",
-      "summary": "multiattack choose-2 combination is not representable in the closed vocabulary"
-    },
-    {
-      "monster": "werebear-human",
       "class": "d",
       "path": "actions.handaxe",
       "status": "open",
@@ -11612,7 +11234,7 @@
       "class": "d",
       "path": "actions.multiattack",
       "status": "open",
-      "summary": "classified unmodeled (default skipped)"
+      "summary": "classified modeled"
     },
     {
       "monster": "werebear-human",
@@ -11620,13 +11242,6 @@
       "path": "bonus_actions.shape-shift",
       "status": "open",
       "summary": "classified unmodeled (default skipped)"
-    },
-    {
-      "monster": "werebear-hybrid",
-      "class": "b",
-      "path": "actions.multiattack.effects",
-      "status": "open",
-      "summary": "multiattack choice with unequal option counts is not representable in the closed vocabulary"
     },
     {
       "monster": "werebear-hybrid",
@@ -11647,7 +11262,7 @@
       "class": "d",
       "path": "actions.multiattack",
       "status": "open",
-      "summary": "classified unmodeled (default skipped)"
+      "summary": "classified modeled"
     },
     {
       "monster": "werebear-hybrid",
@@ -11680,13 +11295,6 @@
     {
       "monster": "wereboar-boar",
       "class": "b",
-      "path": "actions.multiattack.effects",
-      "status": "open",
-      "summary": "multiattack choice with unequal option counts is not representable in the closed vocabulary"
-    },
-    {
-      "monster": "wereboar-boar",
-      "class": "b",
       "path": "actions.tusk.damage",
       "status": "open",
       "summary": "damage in a later clause is not representable"
@@ -11710,7 +11318,7 @@
       "class": "d",
       "path": "actions.multiattack",
       "status": "open",
-      "summary": "classified unmodeled (default skipped)"
+      "summary": "classified modeled"
     },
     {
       "monster": "wereboar-boar",
@@ -11735,13 +11343,6 @@
     },
     {
       "monster": "wereboar-human",
-      "class": "b",
-      "path": "actions.multiattack.effects",
-      "status": "open",
-      "summary": "multiattack choose-2 combination is not representable in the closed vocabulary"
-    },
-    {
-      "monster": "wereboar-human",
       "class": "d",
       "path": "actions.javelin",
       "status": "open",
@@ -11752,7 +11353,7 @@
       "class": "d",
       "path": "actions.multiattack",
       "status": "open",
-      "summary": "classified unmodeled (default skipped)"
+      "summary": "classified modeled"
     },
     {
       "monster": "wereboar-human",
@@ -11767,13 +11368,6 @@
       "path": "actions.tusk.damage",
       "status": "open",
       "summary": "Hit clause dice ['2d6+3'] vs structured ['2d6+3', '2d6']"
-    },
-    {
-      "monster": "wereboar-hybrid",
-      "class": "b",
-      "path": "actions.multiattack.effects",
-      "status": "open",
-      "summary": "multiattack choice with unequal option counts is not representable in the closed vocabulary"
     },
     {
       "monster": "wereboar-hybrid",
@@ -11808,7 +11402,7 @@
       "class": "d",
       "path": "actions.multiattack",
       "status": "open",
-      "summary": "classified unmodeled (default skipped)"
+      "summary": "classified modeled"
     },
     {
       "monster": "wereboar-hybrid",
@@ -11833,13 +11427,6 @@
     },
     {
       "monster": "wererat-human",
-      "class": "b",
-      "path": "actions.multiattack.effects",
-      "status": "open",
-      "summary": "multiattack choose-2 combination is not representable in the closed vocabulary"
-    },
-    {
-      "monster": "wererat-human",
       "class": "d",
       "path": "actions.hand-crossbow",
       "status": "open",
@@ -11850,7 +11437,7 @@
       "class": "d",
       "path": "actions.multiattack",
       "status": "open",
-      "summary": "classified unmodeled (default skipped)"
+      "summary": "classified modeled"
     },
     {
       "monster": "wererat-human",
@@ -11865,13 +11452,6 @@
       "path": "bonus_actions.shape-shift",
       "status": "open",
       "summary": "classified unmodeled (default skipped)"
-    },
-    {
-      "monster": "wererat-hybrid",
-      "class": "b",
-      "path": "actions.multiattack.effects",
-      "status": "open",
-      "summary": "multiattack choice with unequal option counts is not representable in the closed vocabulary"
     },
     {
       "monster": "wererat-hybrid",
@@ -11892,7 +11472,7 @@
       "class": "d",
       "path": "actions.multiattack",
       "status": "open",
-      "summary": "classified unmodeled (default skipped)"
+      "summary": "classified modeled"
     },
     {
       "monster": "wererat-hybrid",
@@ -11917,13 +11497,6 @@
     },
     {
       "monster": "wererat-rat",
-      "class": "b",
-      "path": "actions.multiattack.effects",
-      "status": "open",
-      "summary": "multiattack choice with unequal option counts is not representable in the closed vocabulary"
-    },
-    {
-      "monster": "wererat-rat",
       "class": "d",
       "path": "actions.bite",
       "status": "open",
@@ -11934,7 +11507,7 @@
       "class": "d",
       "path": "actions.multiattack",
       "status": "open",
-      "summary": "classified unmodeled (default skipped)"
+      "summary": "classified modeled"
     },
     {
       "monster": "wererat-rat",
@@ -11959,13 +11532,6 @@
     },
     {
       "monster": "weretiger-human",
-      "class": "b",
-      "path": "actions.multiattack.effects",
-      "status": "open",
-      "summary": "multiattack choose-2 combination is not representable in the closed vocabulary"
-    },
-    {
-      "monster": "weretiger-human",
       "class": "d",
       "path": "actions.longbow",
       "status": "open",
@@ -11976,7 +11542,7 @@
       "class": "d",
       "path": "actions.multiattack",
       "status": "open",
-      "summary": "classified unmodeled (default skipped)"
+      "summary": "classified modeled"
     },
     {
       "monster": "weretiger-human",
@@ -11991,13 +11557,6 @@
       "path": "bonus_actions.shape-shift",
       "status": "open",
       "summary": "classified unmodeled (default skipped)"
-    },
-    {
-      "monster": "weretiger-hybrid",
-      "class": "b",
-      "path": "actions.multiattack.effects",
-      "status": "open",
-      "summary": "multiattack choice with unequal option counts is not representable in the closed vocabulary"
     },
     {
       "monster": "weretiger-hybrid",
@@ -12018,7 +11577,7 @@
       "class": "d",
       "path": "actions.multiattack",
       "status": "open",
-      "summary": "classified unmodeled (default skipped)"
+      "summary": "classified modeled"
     },
     {
       "monster": "weretiger-hybrid",
@@ -12050,13 +11609,6 @@
     },
     {
       "monster": "weretiger-tiger",
-      "class": "b",
-      "path": "actions.multiattack.effects",
-      "status": "open",
-      "summary": "multiattack choice with unequal option counts is not representable in the closed vocabulary"
-    },
-    {
-      "monster": "weretiger-tiger",
       "class": "d",
       "path": "actions.bite",
       "status": "open",
@@ -12067,7 +11619,7 @@
       "class": "d",
       "path": "actions.multiattack",
       "status": "open",
-      "summary": "classified unmodeled (default skipped)"
+      "summary": "classified modeled"
     },
     {
       "monster": "weretiger-tiger",
@@ -12099,13 +11651,6 @@
     },
     {
       "monster": "werewolf-human",
-      "class": "b",
-      "path": "actions.multiattack.effects",
-      "status": "open",
-      "summary": "multiattack choose-2 combination is not representable in the closed vocabulary"
-    },
-    {
-      "monster": "werewolf-human",
       "class": "d",
       "path": "actions.longbow",
       "status": "open",
@@ -12116,7 +11661,7 @@
       "class": "d",
       "path": "actions.multiattack",
       "status": "open",
-      "summary": "classified unmodeled (default skipped)"
+      "summary": "classified modeled"
     },
     {
       "monster": "werewolf-human",
@@ -12141,13 +11686,6 @@
     },
     {
       "monster": "werewolf-hybrid",
-      "class": "b",
-      "path": "actions.multiattack.effects",
-      "status": "open",
-      "summary": "multiattack choice with unequal option counts is not representable in the closed vocabulary"
-    },
-    {
-      "monster": "werewolf-hybrid",
       "class": "d",
       "path": "actions.bite",
       "status": "open",
@@ -12165,7 +11703,7 @@
       "class": "d",
       "path": "actions.multiattack",
       "status": "open",
-      "summary": "classified unmodeled (default skipped)"
+      "summary": "classified modeled"
     },
     {
       "monster": "werewolf-hybrid",
@@ -12197,13 +11735,6 @@
     },
     {
       "monster": "werewolf-wolf",
-      "class": "b",
-      "path": "actions.multiattack.effects",
-      "status": "open",
-      "summary": "multiattack choice with unequal option counts is not representable in the closed vocabulary"
-    },
-    {
-      "monster": "werewolf-wolf",
       "class": "d",
       "path": "actions.bite",
       "status": "open",
@@ -12214,7 +11745,7 @@
       "class": "d",
       "path": "actions.multiattack",
       "status": "open",
-      "summary": "classified unmodeled (default skipped)"
+      "summary": "classified modeled"
     },
     {
       "monster": "werewolf-wolf",
@@ -12267,13 +11798,6 @@
     },
     {
       "monster": "wight",
-      "class": "b",
-      "path": "actions.multiattack.effects",
-      "status": "open",
-      "summary": "multiattack choice with unequal option counts is not representable in the closed vocabulary"
-    },
-    {
-      "monster": "wight",
       "class": "d",
       "path": "actions.life-drain",
       "status": "open",
@@ -12284,7 +11808,7 @@
       "class": "d",
       "path": "actions.multiattack",
       "status": "open",
-      "summary": "classified unmodeled (default skipped)"
+      "summary": "classified modeled"
     },
     {
       "monster": "wight",
@@ -12554,13 +12078,6 @@
     },
     {
       "monster": "young-brass-dragon",
-      "class": "b",
-      "path": "actions.multiattack.effects",
-      "status": "open",
-      "summary": "multiattack replacement option (swap) with fixed attacks is not representable in the closed vocabulary"
-    },
-    {
-      "monster": "young-brass-dragon",
       "class": "d",
       "path": "actions.fire-breath",
       "status": "open",
@@ -12578,7 +12095,7 @@
       "class": "d",
       "path": "actions.multiattack",
       "status": "open",
-      "summary": "classified unmodeled (default skipped)"
+      "summary": "classified modeled"
     },
     {
       "monster": "young-brass-dragon",
@@ -12603,13 +12120,6 @@
     },
     {
       "monster": "young-bronze-dragon",
-      "class": "b",
-      "path": "actions.multiattack.effects",
-      "status": "open",
-      "summary": "multiattack replacement option (swap) with fixed attacks is not representable in the closed vocabulary"
-    },
-    {
-      "monster": "young-bronze-dragon",
       "class": "d",
       "path": "actions.lightning-breath",
       "status": "open",
@@ -12627,7 +12137,7 @@
       "class": "d",
       "path": "actions.multiattack",
       "status": "open",
-      "summary": "classified unmodeled (default skipped)"
+      "summary": "classified modeled"
     },
     {
       "monster": "young-bronze-dragon",
@@ -12659,13 +12169,6 @@
     },
     {
       "monster": "young-copper-dragon",
-      "class": "b",
-      "path": "actions.multiattack.effects",
-      "status": "open",
-      "summary": "multiattack replacement option (swap) with fixed attacks is not representable in the closed vocabulary"
-    },
-    {
-      "monster": "young-copper-dragon",
       "class": "d",
       "path": "actions.acid-breath",
       "status": "open",
@@ -12683,7 +12186,7 @@
       "class": "d",
       "path": "actions.multiattack",
       "status": "open",
-      "summary": "classified unmodeled (default skipped)"
+      "summary": "classified modeled"
     },
     {
       "monster": "young-copper-dragon",
@@ -12708,13 +12211,6 @@
     },
     {
       "monster": "young-gold-dragon",
-      "class": "b",
-      "path": "actions.multiattack.effects",
-      "status": "open",
-      "summary": "multiattack replacement option (swap) with fixed attacks is not representable in the closed vocabulary"
-    },
-    {
-      "monster": "young-gold-dragon",
       "class": "d",
       "path": "actions.fire-breath",
       "status": "open",
@@ -12732,7 +12228,7 @@
       "class": "d",
       "path": "actions.multiattack",
       "status": "open",
-      "summary": "classified unmodeled (default skipped)"
+      "summary": "classified modeled"
     },
     {
       "monster": "young-gold-dragon",
@@ -12813,13 +12309,6 @@
     },
     {
       "monster": "young-silver-dragon",
-      "class": "b",
-      "path": "actions.multiattack.effects",
-      "status": "open",
-      "summary": "multiattack replacement option (swap) with fixed attacks is not representable in the closed vocabulary"
-    },
-    {
-      "monster": "young-silver-dragon",
       "class": "d",
       "path": "actions.cold-breath",
       "status": "open",
@@ -12837,7 +12326,7 @@
       "class": "d",
       "path": "actions.multiattack",
       "status": "open",
-      "summary": "classified unmodeled (default skipped)"
+      "summary": "classified modeled"
     },
     {
       "monster": "young-silver-dragon",
