@@ -1,0 +1,207 @@
+{
+  "ability_scores": {
+    "charisma": 10,
+    "constitution": 19,
+    "dexterity": 11,
+    "intelligence": 3,
+    "strength": 19,
+    "wisdom": 14
+  },
+  "actions": [
+    {
+      "desc": "The chimera makes one Ram attack, one Bite attack, and one Claw attack. It can replace the Claw attack with a use of Fire Breath if available.",
+      "effects": [
+        {
+          "multiattack": {
+            "steps": [
+              {
+                "action": {
+                  "action_id": "ram",
+                  "count": 1
+                }
+              },
+              {
+                "action": {
+                  "action_id": "bite",
+                  "count": 1
+                }
+              },
+              {
+                "choice": {
+                  "options": [
+                    {
+                      "action_id": "claw",
+                      "count": 1
+                    },
+                    {
+                      "action_id": "fire-breath",
+                      "count": 1
+                    }
+                  ],
+                  "pick": 1
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "id": "multiattack",
+      "kind": "modeled",
+      "name": "Multiattack"
+    },
+    {
+      "agent_clauses": [
+        "Conditional damage, not modeled: or 18 (4d6 + 4) Piercing damage if the chimera had Advantage on the attack roll."
+      ],
+      "desc": "Melee Attack Roll: +7, reach 5 ft. Hit: 11 (2d6 + 4) Piercing damage, or 18 (4d6 + 4) Piercing damage if the chimera had Advantage on the attack roll.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "2d6",
+                "magical": false,
+                "modifier": 4,
+                "type": "piercing"
+              }
+            ],
+            "modifier": 7,
+            "on_hit": [],
+            "range": null,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "bite",
+      "kind": "partly_modeled",
+      "name": "Bite"
+    },
+    {
+      "desc": "Melee Attack Roll: +7, reach 5 ft. Hit: 7 (1d6 + 4) Slashing damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "1d6",
+                "magical": false,
+                "modifier": 4,
+                "type": "slashing"
+              }
+            ],
+            "modifier": 7,
+            "on_hit": [],
+            "range": null,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "claw",
+      "kind": "modeled",
+      "name": "Claw"
+    },
+    {
+      "agent_clauses": [
+        "If the target is a Medium or smaller creature, it has the Prone condition."
+      ],
+      "desc": "Melee Attack Roll: +7, reach 5 ft. Hit: 10 (1d12 + 4) Bludgeoning damage. If the target is a Medium or smaller creature, it has the Prone condition.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "1d12",
+                "magical": false,
+                "modifier": 4,
+                "type": "bludgeoning"
+              }
+            ],
+            "modifier": 7,
+            "on_hit": [],
+            "range": null,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "ram",
+      "kind": "partly_modeled",
+      "name": "Ram"
+    },
+    {
+      "desc": "Dexterity Saving Throw: DC 15, each creature in a 15-foot Cone. Failure: 31 (7d8) Fire damage. Success: Half damage.",
+      "effects": [
+        {
+          "saving_throw": {
+            "ability": "dex",
+            "creature_type_gate": null,
+            "damage": [
+              {
+                "dice": "7d8",
+                "magical": false,
+                "modifier": 0,
+                "type": "fire"
+              }
+            ],
+            "dc": 15,
+            "half_on_success": true,
+            "hp_gate": null,
+            "immunity_after_success": false,
+            "no_damage_on_success": false,
+            "on_failure": [],
+            "repeat_save": null,
+            "two_stage": null
+          }
+        }
+      ],
+      "id": "fire-breath",
+      "kind": "modeled",
+      "name": "Fire Breath",
+      "usage": {
+        "recharge": {
+          "dice": "5-6"
+        }
+      }
+    }
+  ],
+  "alignment": "chaotic evil",
+  "armor_class": [
+    {
+      "value": 14
+    }
+  ],
+  "challenge_rating": 6,
+  "hit_points": {
+    "average": 114,
+    "dice": "12d10+48"
+  },
+  "id": "chimera",
+  "initiative": 0,
+  "languages": [
+    "Understands Draconic but can’t speak"
+  ],
+  "name": "Chimera",
+  "proficiency_bonus": 3,
+  "schema_version": "1",
+  "senses": {
+    "darkvision": 60,
+    "passive_perception": 18
+  },
+  "size": "large",
+  "skills": {
+    "perception": 8
+  },
+  "source": "srd-5.2.1",
+  "speeds": {
+    "fly": {
+      "feet": 60
+    },
+    "walk": {
+      "feet": 30
+    }
+  },
+  "type": "monstrosity",
+  "xp": 2300
+}

@@ -1,0 +1,92 @@
+{
+  "ability_scores": {
+    "charisma": 10,
+    "constitution": 14,
+    "dexterity": 18,
+    "intelligence": 7,
+    "strength": 19,
+    "wisdom": 14
+  },
+  "actions": [
+    {
+      "agent_clauses": [
+        "If the target is a Huge or smaller creature and the elk moved 20+ feet straight toward it immediately before the hit, the target takes an extra 5 (2d4) Bludgeoning damage and has the Prone condition."
+      ],
+      "desc": "Melee Attack Roll: +6, reach 10 ft. Hit: 11 (2d6 + 4) Bludgeoning damage plus 5 (2d4) Radiant damage. If the target is a Huge or smaller creature and the elk moved 20+ feet straight toward it immediately before the hit, the target takes an extra 5 (2d4) Bludgeoning damage and has the Prone condition.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "2d6",
+                "magical": false,
+                "modifier": 4,
+                "type": "bludgeoning"
+              },
+              {
+                "dice": "2d4",
+                "magical": false,
+                "modifier": 0,
+                "type": "radiant"
+              }
+            ],
+            "modifier": 6,
+            "on_hit": [],
+            "range": null,
+            "reach": 10,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "ram",
+      "kind": "partly_modeled",
+      "name": "Ram"
+    }
+  ],
+  "alignment": "neutral good",
+  "armor_class": [
+    {
+      "value": 14
+    }
+  ],
+  "challenge_rating": 2,
+  "damage_resistances": [
+    "necrotic",
+    "radiant"
+  ],
+  "hit_points": {
+    "average": 42,
+    "dice": "5d12+10"
+  },
+  "id": "giant-elk",
+  "initiative": 4,
+  "languages": [
+    "Celestial",
+    "understands Common",
+    "Elvish",
+    "and Sylvan but can’t speak them"
+  ],
+  "name": "Giant Elk",
+  "proficiency_bonus": 2,
+  "saving_throws": {
+    "dex": 6,
+    "str": 6
+  },
+  "schema_version": "1",
+  "senses": {
+    "darkvision": 90,
+    "passive_perception": 14
+  },
+  "size": "huge",
+  "skills": {
+    "perception": 4
+  },
+  "source": "srd-5.2.1",
+  "speeds": {
+    "walk": {
+      "feet": 60
+    }
+  },
+  "type": "celestial",
+  "xp": 450
+}

@@ -1,0 +1,71 @@
+{
+  "ability_scores": {
+    "charisma": 7,
+    "constitution": 13,
+    "dexterity": 12,
+    "intelligence": 2,
+    "strength": 18,
+    "wisdom": 12
+  },
+  "actions": [
+    {
+      "agent_clauses": [
+        "If the target is a Large or smaller creature and the horse moved 20+ feet straight toward it immediately before the hit, the target takes an extra 5 (2d4) Bludgeoning damage and has the Prone condition."
+      ],
+      "desc": "Melee Attack Roll: +6, reach 5 ft. Hit: 9 (2d4 + 4) Bludgeoning damage. If the target is a Large or smaller creature and the horse moved 20+ feet straight toward it immediately before the hit, the target takes an extra 5 (2d4) Bludgeoning damage and has the Prone condition.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "2d4",
+                "magical": false,
+                "modifier": 4,
+                "type": "bludgeoning"
+              }
+            ],
+            "modifier": 6,
+            "on_hit": [],
+            "range": null,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "hooves",
+      "kind": "partly_modeled",
+      "name": "Hooves"
+    }
+  ],
+  "alignment": "unaligned",
+  "armor_class": [
+    {
+      "value": 11
+    }
+  ],
+  "challenge_rating": 0.5,
+  "hit_points": {
+    "average": 19,
+    "dice": "3d10+3"
+  },
+  "id": "warhorse",
+  "initiative": 1,
+  "name": "Warhorse",
+  "proficiency_bonus": 2,
+  "saving_throws": {
+    "wis": 3
+  },
+  "schema_version": "1",
+  "senses": {
+    "passive_perception": 11
+  },
+  "size": "large",
+  "source": "srd-5.2.1",
+  "speeds": {
+    "walk": {
+      "feet": 60
+    }
+  },
+  "type": "beast",
+  "xp": 100
+}

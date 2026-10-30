@@ -269,12 +269,12 @@ fn resolve_effect(
                 });
                 if hit {
                     let mut damage = 0;
-                    for die in &attack.damage {
-                        damage += roll_dice(stream, &die.dice)? as i32 + die.modifier;
+                    for die in attack.damage.iter().filter(|d| damage_applies(&target, actor_id, d)) {
+                        let mut amount = roll_dice(stream, &die.dice)? as i32 + die.modifier;
                         if critical {
-                            damage += roll_dice(stream, &die.dice)? as i32;
+                            amount += roll_dice(stream, &die.dice)? as i32;
                         }
-                        damage = adjust_damage(state, &target, damage, die.damage_type);
+                        damage += adjust_damage(state, &target, amount, die.damage_type);
                     }
                     apply_damage(state, &target.id, damage, Some(actor_id), events)?;
                     for effect in &attack.on_hit {
@@ -287,6 +287,9 @@ fn resolve_effect(
             let amount = roll_dice(stream, &damage.dice)? as i32 + damage.modifier;
             for target_id in target_ids {
                 let target = state.combatants[index_of(state, target_id)?].clone();
+                if !damage_applies(&target, actor_id, &damage) {
+                    continue;
+                }
                 let amount = adjust_damage(state, &target, amount, damage.damage_type);
                 apply_damage(state, target_id, amount, Some(actor_id), events)?;
             }
@@ -452,7 +455,7 @@ fn resolve_save(
         damage: None,
     });
     if !success {
-        for damage in &save.damage {
+        for damage in save.damage.iter().filter(|d| damage_applies(&target, actor_id, d)) {
             let amount = roll_dice(stream, &damage.dice)? as i32 + damage.modifier;
             let amount = adjust_damage(state, &target, amount, damage.damage_type);
             apply_damage(state, target_id, amount, Some(actor_id), events)?;
@@ -460,13 +463,13 @@ fn resolve_save(
     } else if save.no_damage_on_success {
         // no damage on success
     } else if save.half_on_success {
-        for damage in &save.damage {
+        for damage in save.damage.iter().filter(|d| damage_applies(&target, actor_id, d)) {
             let rolled = roll_dice(stream, &damage.dice)? as i32 + damage.modifier;
-            let amount = rolled / 2;
+            let amount = adjust_damage(state, &target, rolled, damage.damage_type) / 2;
             apply_damage(state, target_id, amount, Some(actor_id), events)?;
         }
     } else {
-        for damage in &save.damage {
+        for damage in save.damage.iter().filter(|d| damage_applies(&target, actor_id, d)) {
             let amount = roll_dice(stream, &damage.dice)? as i32 + damage.modifier;
             let amount = adjust_damage(state, &target, amount, damage.damage_type);
             apply_damage(state, target_id, amount, Some(actor_id), events)?;
@@ -963,6 +966,17 @@ fn apply_forced_move(
     Ok(())
 }
 
+/// Whether a damage entry applies to this target: unconditional entries always do, gated entries need the
+/// condition on the target (and, for `if_target_from_actor`, applied by the damaging creature).
+fn damage_applies(target: &Combatant, actor_id: &str, damage: &crate::effect::Damage) -> bool {
+    match damage.if_target {
+        None => true,
+        Some(condition) => target.conditions.iter().any(|c| {
+            c.condition == condition && (!damage.if_target_from_actor || c.source.as_deref() == Some(actor_id))
+        }),
+    }
+}
+
 fn adjust_damage(state: &EncounterState, target: &Combatant, amount: i32, damage_type: DamageType) -> i32 {
     let block = stat_block(state, target).expect("combatant references a stat block");
     if block.damage_immunities.contains(&damage_type) { 0 }
@@ -1317,7 +1331,7 @@ mod tests {
                 reach: Some(5),
                 range: None,
                 target_count: 1,
-                damage: vec![Damage { dice: "1d6".into(), damage_type: DamageType::Slashing, modifier: 2, magical: false }],
+                damage: vec![Damage { dice: "1d6".into(), damage_type: DamageType::Slashing, modifier: 2, magical: false, if_target: None, if_target_from_actor: false }],
                 on_hit: vec![],
             })],
             agent_clauses: vec![],
@@ -1357,7 +1371,7 @@ mod tests {
                 reach: Some(5),
                 range: None,
                 target_count: 1,
-                damage: vec![Damage { dice: "10d6".into(), damage_type: DamageType::Bludgeoning, modifier: 10, magical: false }],
+                damage: vec![Damage { dice: "10d6".into(), damage_type: DamageType::Bludgeoning, modifier: 10, magical: false, if_target: None, if_target_from_actor: false }],
                 on_hit: vec![],
             })],
             agent_clauses: vec![],
@@ -1393,7 +1407,7 @@ mod tests {
                 reach: Some(5),
                 range: None,
                 target_count: 1,
-                damage: vec![Damage { dice: "10d6".into(), damage_type: DamageType::Bludgeoning, modifier: 10, magical: false }],
+                damage: vec![Damage { dice: "10d6".into(), damage_type: DamageType::Bludgeoning, modifier: 10, magical: false, if_target: None, if_target_from_actor: false }],
                 on_hit: vec![],
             })],
             agent_clauses: vec![],
@@ -1533,7 +1547,7 @@ mod tests {
                 reach: Some(5),
                 range: None,
                 target_count: 1,
-                damage: vec![Damage { dice: "1d6".into(), damage_type: DamageType::Slashing, modifier: 3, magical: false }],
+                damage: vec![Damage { dice: "1d6".into(), damage_type: DamageType::Slashing, modifier: 3, magical: false, if_target: None, if_target_from_actor: false }],
                 on_hit: vec![],
             })],
             agent_clauses: vec![],
@@ -1550,7 +1564,7 @@ mod tests {
                 reach: Some(5),
                 range: None,
                 target_count: 1,
-                damage: vec![Damage { dice: "1d8".into(), damage_type: DamageType::Piercing, modifier: 3, magical: false }],
+                damage: vec![Damage { dice: "1d8".into(), damage_type: DamageType::Piercing, modifier: 3, magical: false, if_target: None, if_target_from_actor: false }],
                 on_hit: vec![],
             })],
             agent_clauses: vec![],
@@ -1588,7 +1602,7 @@ mod tests {
                 reach: None,
                 range: Some((30, 120)),
                 target_count: 1,
-                damage: vec![Damage { dice: "2d6".into(), damage_type: DamageType::Piercing, modifier: 2, magical: false }],
+                damage: vec![Damage { dice: "2d6".into(), damage_type: DamageType::Piercing, modifier: 2, magical: false, if_target: None, if_target_from_actor: false }],
                 on_hit: vec![],
             })],
             agent_clauses: vec![],
@@ -1608,5 +1622,151 @@ mod tests {
         let req = StepRequest::Action { actor_id: "goblin".into(), action_id: "arrow".into(), target_ids: vec!["fighter".into()] };
         let resp = step(&mut state, req).unwrap();
         assert!(resp.events.iter().any(|e| e.kind == "concentration_save" || e.kind == "concentration"));
+    }
+
+    fn gated(dice: &str, modifier: i32, damage_type: DamageType, condition: Option<Condition>, from_actor: bool) -> Damage {
+        Damage { dice: dice.into(), damage_type, modifier, magical: false, if_target: condition, if_target_from_actor: from_actor }
+    }
+
+    /// A goblin that cannot miss a fighter with an attack made of `damage` and `on_hit` effects.
+    fn attack_state(damage: Vec<Damage>, on_hit: Vec<Effect>, setup: impl FnOnce(&mut StatBlock, &mut Combatant)) -> EncounterState {
+        let mut goblin_block = test_stat_block("goblin", "Goblin", 7, 15);
+        goblin_block.actions.push(crate::stat_block::AbilityEntry {
+            id: "bite".into(),
+            name: "Bite".into(),
+            desc: None,
+            kind: crate::stat_block::AbilityKind::Modeled,
+            effects: vec![Effect::Attack(Attack { modifier: 100, reach: Some(5), range: None, target_count: 1, damage, on_hit })],
+            agent_clauses: vec![],
+            default_resolution: None,
+            usage: None,
+        });
+        let mut fighter_block = test_stat_block("fighter", "Fighter", 100, 5);
+        let mut fighter = test_combatant("fighter", "fighter", 100, "ally");
+        setup(&mut fighter_block, &mut fighter);
+        let goblin = test_combatant("goblin", "goblin", 7, "enemy");
+        let mut state = test_encounter(vec![fighter_block, goblin_block], vec![fighter, goblin]);
+        state.combatants[0].engagement.push("goblin".into());
+        state.combatants[1].engagement.push("fighter".into());
+        state.active_turn = Some("goblin".into());
+        state
+    }
+
+    /// Hit points the fighter lost to one bite, asserting the attack was a plain (non-critical) hit.
+    fn bite_damage(state: &mut EncounterState) -> i32 {
+        let resp = step(state, StepRequest::Action { actor_id: "goblin".into(), action_id: "bite".into(), target_ids: vec!["fighter".into()] }).unwrap();
+        let attack = resp.events.iter().find(|e| e.kind == "attack").expect("attack event");
+        assert_ne!(attack.roll, Some(20), "seed produced a critical hit; pick another seed");
+        assert!(attack.message.ends_with("(hit)"), "{}", attack.message);
+        100 - state.combatants.iter().find(|c| c.id == "fighter").unwrap().hp
+    }
+
+    fn condition_from(condition: Condition, source: &str) -> ConditionInstance {
+        ConditionInstance { condition, duration: Duration::Permanent, source: Some(source.into()) }
+    }
+
+    #[test]
+    fn conditional_damage_is_skipped_without_the_condition() {
+        let mut state = attack_state(
+            vec![gated("1d1", 4, DamageType::Piercing, None, false), gated("1d1", 9, DamageType::Piercing, Some(Condition::Grappled), false)],
+            vec![],
+            |_, _| {},
+        );
+        assert_eq!(bite_damage(&mut state), 5);
+    }
+
+    #[test]
+    fn conditional_damage_applies_with_the_condition() {
+        let mut state = attack_state(
+            vec![gated("1d1", 4, DamageType::Piercing, None, false), gated("1d1", 9, DamageType::Piercing, Some(Condition::Grappled), false)],
+            vec![],
+            |_, fighter| fighter.conditions.push(condition_from(Condition::Grappled, "someone-else")),
+        );
+        assert_eq!(bite_damage(&mut state), 15);
+    }
+
+    #[test]
+    fn conditional_damage_from_actor_needs_the_condition_applied_by_the_actor() {
+        let damage = || vec![gated("1d1", 4, DamageType::Piercing, None, false), gated("1d1", 9, DamageType::Piercing, Some(Condition::Grappled), true)];
+        let mut by_other = attack_state(damage(), vec![], |_, fighter| fighter.conditions.push(condition_from(Condition::Grappled, "ogre")));
+        assert_eq!(bite_damage(&mut by_other), 5);
+        let mut by_actor = attack_state(damage(), vec![], |_, fighter| fighter.conditions.push(condition_from(Condition::Grappled, "goblin")));
+        assert_eq!(bite_damage(&mut by_actor), 15);
+    }
+
+    #[test]
+    fn resistance_applies_to_each_damage_entry_separately() {
+        let mut state = attack_state(
+            vec![gated("1d1", 9, DamageType::Piercing, None, false), gated("1d1", 9, DamageType::Slashing, None, false)],
+            vec![],
+            |block, _| block.damage_resistances.push(DamageType::Slashing),
+        );
+        assert_eq!(bite_damage(&mut state), 10 + 5);
+    }
+
+    #[test]
+    fn on_hit_damage_effect_resolves_after_the_attack() {
+        let mut state = attack_state(
+            vec![gated("1d1", 4, DamageType::Piercing, None, false)],
+            vec![Effect::Damage(gated("1d1", 3, DamageType::Fire, None, false))],
+            |_, _| {},
+        );
+        assert_eq!(bite_damage(&mut state), 5 + 4);
+    }
+
+    /// The goblin's "bite" is a saving throw against the fighter; returns the hit points the fighter lost.
+    fn save_damage(dc: i32, half_on_success: bool, damage: Vec<Damage>, setup: impl FnOnce(&mut StatBlock, &mut Combatant)) -> i32 {
+        let mut state = attack_state(vec![], vec![], setup);
+        let save = crate::effect::SavingThrow {
+            ability: Ability::Dex,
+            dc,
+            half_on_success,
+            no_damage_on_success: false,
+            repeat_save: None,
+            two_stage: None,
+            immunity_after_success: false,
+            hp_gate: None,
+            creature_type_gate: None,
+            damage,
+            on_failure: vec![],
+        };
+        let goblin = state.stat_blocks.iter_mut().find(|s| s.id == "goblin").unwrap();
+        goblin.stat_block.actions[0].effects = vec![Effect::SavingThrow(save)];
+        step(&mut state, StepRequest::Action { actor_id: "goblin".into(), action_id: "bite".into(), target_ids: vec!["fighter".into()] }).unwrap();
+        100 - state.combatants.iter().find(|c| c.id == "fighter").unwrap().hp
+    }
+
+    #[test]
+    fn conditional_damage_gates_failed_save_damage() {
+        let damage = || vec![gated("1d1", 4, DamageType::Fire, None, false), gated("1d1", 9, DamageType::Fire, Some(Condition::Restrained), false)];
+        assert_eq!(save_damage(1000, false, damage(), |_, _| {}), 5);
+        let restrained = |_: &mut StatBlock, fighter: &mut Combatant| fighter.conditions.push(condition_from(Condition::Restrained, "goblin"));
+        assert_eq!(save_damage(1000, false, damage(), restrained), 15);
+    }
+
+    #[test]
+    fn resistance_applies_before_halving_on_a_successful_save() {
+        let damage = vec![gated("1d1", 9, DamageType::Slashing, None, false)];
+        assert_eq!(save_damage(-1000, true, damage.clone(), |_, _| {}), 5);
+        assert_eq!(save_damage(-1000, true, damage, |block, _| block.damage_resistances.push(DamageType::Slashing)), 2);
+    }
+
+    #[test]
+    fn conditional_effect_damage_skips_targets_without_the_condition() {
+        let damage = || vec![gated("1d1", 4, DamageType::Piercing, None, false)];
+        let on_hit = || vec![Effect::Damage(gated("1d1", 9, DamageType::Fire, Some(Condition::Prone), false))];
+        assert_eq!(bite_damage(&mut attack_state(damage(), on_hit(), |_, _| {})), 5);
+        let prone = |_: &mut StatBlock, fighter: &mut Combatant| fighter.conditions.push(condition_from(Condition::Prone, "goblin"));
+        assert_eq!(bite_damage(&mut attack_state(damage(), on_hit(), prone)), 15);
+    }
+
+    #[test]
+    fn conditional_damage_serializes_only_when_set() {
+        let plain = serde_json::to_value(gated("1d6", 0, DamageType::Fire, None, false)).unwrap();
+        assert!(plain.get("if_target").is_none() && plain.get("if_target_from_actor").is_none());
+        let json = r#"{"dice":"1d6","type":"fire","if_target":"grappled","if_target_from_actor":true}"#;
+        let parsed: Damage = serde_json::from_str(json).unwrap();
+        assert_eq!(parsed.if_target, Some(Condition::Grappled));
+        assert!(parsed.if_target_from_actor);
     }
 }

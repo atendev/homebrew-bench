@@ -1,0 +1,93 @@
+{
+  "ability_scores": {
+    "charisma": 12,
+    "constitution": 12,
+    "dexterity": 13,
+    "intelligence": 11,
+    "strength": 10,
+    "wisdom": 14
+  },
+  "actions": [
+    {
+      "agent_clauses": [
+        "If the target is a creature, its Speed decreases by 10 feet until the end of its next turn. Hit or Miss: The spear magically returns to the merfolk’s hand immediately after a ranged attack."
+      ],
+      "desc": "Melee or Ranged Attack Roll: +2, reach 5 ft. or range 20/60 ft. Hit: 3 (1d6) Piercing damage plus 2 (1d4) Cold damage. If the target is a creature, its Speed decreases by 10 feet until the end of its next turn. Hit or Miss: The spear magically returns to the merfolk’s hand immediately after a ranged attack.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "1d6",
+                "magical": false,
+                "modifier": 0,
+                "type": "piercing"
+              },
+              {
+                "dice": "1d4",
+                "magical": false,
+                "modifier": 0,
+                "type": "cold"
+              }
+            ],
+            "modifier": 2,
+            "on_hit": [],
+            "range": [
+              20,
+              60
+            ],
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "ocean-spear",
+      "kind": "partly_modeled",
+      "name": "Ocean Spear"
+    }
+  ],
+  "alignment": "neutral",
+  "armor_class": [
+    {
+      "value": 11
+    }
+  ],
+  "challenge_rating": 0.125,
+  "hit_points": {
+    "average": 11,
+    "dice": "2d8+2"
+  },
+  "id": "merfolk-skirmisher",
+  "initiative": 1,
+  "languages": [
+    "Common",
+    "Primordial (Aquan)"
+  ],
+  "name": "Merfolk Skirmisher",
+  "proficiency_bonus": 2,
+  "schema_version": "1",
+  "senses": {
+    "passive_perception": 12
+  },
+  "size": "medium",
+  "source": "srd-5.2.1",
+  "speeds": {
+    "swim": {
+      "feet": 40
+    },
+    "walk": {
+      "feet": 10
+    }
+  },
+  "traits": [
+    {
+      "default_resolution": "skipped",
+      "desc": "The merfolk can breathe air and water.",
+      "id": "amphibious",
+      "kind": "unmodeled",
+      "name": "Amphibious"
+    }
+  ],
+  "type": "elemental",
+  "xp": 25
+}

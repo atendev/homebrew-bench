@@ -1,0 +1,107 @@
+{
+  "ability_scores": {
+    "charisma": 5,
+    "constitution": 15,
+    "dexterity": 11,
+    "intelligence": 6,
+    "strength": 18,
+    "wisdom": 8
+  },
+  "actions": [
+    {
+      "agent_clauses": [
+        "If the target is a Large or smaller creature and the skeleton moved 20+ feet straight toward it immediately before the hit, the target takes an extra 9 (2d8) Piercing damage and has the Prone condition."
+      ],
+      "desc": "Melee Attack Roll: +6, reach 5 ft. Hit: 11 (2d6 + 4) Piercing damage. If the target is a Large or smaller creature and the skeleton moved 20+ feet straight toward it immediately before the hit, the target takes an extra 9 (2d8) Piercing damage and has the Prone condition.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "2d6",
+                "magical": false,
+                "modifier": 4,
+                "type": "piercing"
+              }
+            ],
+            "modifier": 6,
+            "on_hit": [],
+            "range": null,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "gore",
+      "kind": "partly_modeled",
+      "name": "Gore"
+    },
+    {
+      "desc": "Melee Attack Roll: +6, reach 5 ft. Hit: 15 (2d10 + 4) Bludgeoning damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "2d10",
+                "magical": false,
+                "modifier": 4,
+                "type": "bludgeoning"
+              }
+            ],
+            "modifier": 6,
+            "on_hit": [],
+            "range": null,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "slam",
+      "kind": "modeled",
+      "name": "Slam"
+    }
+  ],
+  "alignment": "lawful evil",
+  "armor_class": [
+    {
+      "value": 12
+    }
+  ],
+  "challenge_rating": 2,
+  "condition_immunities": [
+    "exhaustion",
+    "poisoned"
+  ],
+  "damage_immunities": [
+    "poison"
+  ],
+  "damage_vulnerabilities": [
+    "bludgeoning"
+  ],
+  "hit_points": {
+    "average": 45,
+    "dice": "6d10+12"
+  },
+  "id": "minotaur-skeleton",
+  "initiative": 0,
+  "languages": [
+    "Understands Abyssal but can’t speak"
+  ],
+  "name": "Minotaur Skeleton",
+  "proficiency_bonus": 2,
+  "schema_version": "1",
+  "senses": {
+    "darkvision": 60,
+    "passive_perception": 9
+  },
+  "size": "large",
+  "source": "srd-5.2.1",
+  "speeds": {
+    "walk": {
+      "feet": 40
+    }
+  },
+  "type": "undead",
+  "xp": 450
+}

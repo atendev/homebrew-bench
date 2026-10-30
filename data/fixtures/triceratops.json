@@ -1,0 +1,88 @@
+{
+  "ability_scores": {
+    "charisma": 5,
+    "constitution": 17,
+    "dexterity": 9,
+    "intelligence": 2,
+    "strength": 22,
+    "wisdom": 11
+  },
+  "actions": [
+    {
+      "desc": "The triceratops makes two Gore attacks.",
+      "effects": [
+        {
+          "multiattack": {
+            "steps": [
+              {
+                "action": {
+                  "action_id": "gore",
+                  "count": 2
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "id": "multiattack",
+      "kind": "modeled",
+      "name": "Multiattack"
+    },
+    {
+      "agent_clauses": [
+        "If the target is Huge or smaller and the triceratops moved 20+ feet straight toward it immediately before the hit, the target takes an extra 9 (2d8) Piercing damage and has the Prone condition."
+      ],
+      "desc": "Melee Attack Roll: +9, reach 5 ft. Hit: 19 (2d12 + 6) Piercing damage. If the target is Huge or smaller and the triceratops moved 20+ feet straight toward it immediately before the hit, the target takes an extra 9 (2d8) Piercing damage and has the Prone condition.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "2d12",
+                "magical": false,
+                "modifier": 6,
+                "type": "piercing"
+              }
+            ],
+            "modifier": 9,
+            "on_hit": [],
+            "range": null,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "gore",
+      "kind": "partly_modeled",
+      "name": "Gore"
+    }
+  ],
+  "alignment": "unaligned",
+  "armor_class": [
+    {
+      "value": 14
+    }
+  ],
+  "challenge_rating": 5,
+  "hit_points": {
+    "average": 114,
+    "dice": "12d12+36"
+  },
+  "id": "triceratops",
+  "initiative": -1,
+  "name": "Triceratops",
+  "proficiency_bonus": 3,
+  "schema_version": "1",
+  "senses": {
+    "passive_perception": 10
+  },
+  "size": "huge",
+  "source": "srd-5.2.1",
+  "speeds": {
+    "walk": {
+      "feet": 50
+    }
+  },
+  "type": "beast",
+  "xp": 1800
+}

@@ -1,0 +1,102 @@
+{
+  "ability_scores": {
+    "charisma": 3,
+    "constitution": 11,
+    "dexterity": 18,
+    "intelligence": 1,
+    "strength": 8,
+    "wisdom": 10
+  },
+  "actions": [
+    {
+      "agent_clauses": [
+        "Conditional damage, not modeled: or 6 (1d4 + 4) Piercing damage if the swarm is Bloodied"
+      ],
+      "desc": "Melee Attack Roll: +6, reach 5 ft. Hit: 8 (1d8 + 4) Piercing damage—or 6 (1d4 + 4) Piercing damage if the swarm is Bloodied—plus 10 (3d6) Poison damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "1d8",
+                "magical": false,
+                "modifier": 4,
+                "type": "piercing"
+              },
+              {
+                "dice": "3d6",
+                "magical": false,
+                "modifier": 0,
+                "type": "poison"
+              }
+            ],
+            "modifier": 6,
+            "on_hit": [],
+            "range": null,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "bites",
+      "kind": "partly_modeled",
+      "name": "Bites"
+    }
+  ],
+  "alignment": "unaligned",
+  "armor_class": [
+    {
+      "value": 14
+    }
+  ],
+  "challenge_rating": 2,
+  "condition_immunities": [
+    "charmed",
+    "frightened",
+    "grappled",
+    "paralyzed",
+    "petrified",
+    "prone",
+    "restrained",
+    "stunned"
+  ],
+  "damage_resistances": [
+    "bludgeoning",
+    "piercing",
+    "slashing"
+  ],
+  "hit_points": {
+    "average": 36,
+    "dice": "8d8"
+  },
+  "id": "swarm-of-venomous-snakes",
+  "initiative": 4,
+  "name": "Swarm of Venomous Snakes",
+  "proficiency_bonus": 2,
+  "schema_version": "1",
+  "senses": {
+    "blindsight": 10,
+    "passive_perception": 10
+  },
+  "size": "medium",
+  "source": "srd-5.2.1",
+  "speeds": {
+    "swim": {
+      "feet": 30
+    },
+    "walk": {
+      "feet": 30
+    }
+  },
+  "traits": [
+    {
+      "default_resolution": "skipped",
+      "desc": "The swarm can occupy another creature’s space and vice versa, and the swarm can move through any opening large enough for a Tiny snake. The swarm can’t regain Hit Points or gain Temporary Hit Points.",
+      "id": "swarm",
+      "kind": "unmodeled",
+      "name": "Swarm"
+    }
+  ],
+  "type": "swarm of tiny beasts",
+  "xp": 450
+}

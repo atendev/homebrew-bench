@@ -147,6 +147,12 @@ pub struct Damage {
     pub modifier: i32,
     #[serde(default)]
     pub magical: bool,
+    /// The entry applies only while the target has this condition.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub if_target: Option<Condition>,
+    /// With `if_target`, the condition must have been applied by the damaging creature ("Grappled by the mimic").
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub if_target_from_actor: bool,
 }
 
 /// Apply a condition.

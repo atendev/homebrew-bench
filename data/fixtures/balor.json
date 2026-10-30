@@ -1,0 +1,232 @@
+{
+  "ability_scores": {
+    "charisma": 22,
+    "constitution": 22,
+    "dexterity": 15,
+    "intelligence": 20,
+    "strength": 26,
+    "wisdom": 16
+  },
+  "actions": [
+    {
+      "desc": "The balor makes one Flame Whip attack and one Lightning Blade attack.",
+      "effects": [
+        {
+          "multiattack": {
+            "steps": [
+              {
+                "action": {
+                  "action_id": "flame-whip",
+                  "count": 1
+                }
+              },
+              {
+                "action": {
+                  "action_id": "lightning-blade",
+                  "count": 1
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "id": "multiattack",
+      "kind": "modeled",
+      "name": "Multiattack"
+    },
+    {
+      "agent_clauses": [
+        "If the target is a Huge or smaller creature, the balor pulls the target up to 25 feet straight toward itself, and the target has the Prone condition."
+      ],
+      "desc": "Melee Attack Roll: +14, reach 30 ft. Hit: 18 (3d6 + 8) Force damage plus 17 (5d6) Fire damage. If the target is a Huge or smaller creature, the balor pulls the target up to 25 feet straight toward itself, and the target has the Prone condition.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "3d6",
+                "magical": false,
+                "modifier": 8,
+                "type": "force"
+              },
+              {
+                "dice": "5d6",
+                "magical": false,
+                "modifier": 0,
+                "type": "fire"
+              }
+            ],
+            "modifier": 14,
+            "on_hit": [],
+            "range": null,
+            "reach": 30,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "flame-whip",
+      "kind": "partly_modeled",
+      "name": "Flame Whip"
+    },
+    {
+      "desc": "Melee Attack Roll: +14, reach 10 ft. Hit: 21 (3d8 + 8) Force damage plus 22 (4d10) Lightning damage, and the target can’t take Reactions until the start of the balor’s next turn.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "3d8",
+                "magical": false,
+                "modifier": 8,
+                "type": "force"
+              },
+              {
+                "dice": "4d10",
+                "magical": false,
+                "modifier": 0,
+                "type": "lightning"
+              }
+            ],
+            "modifier": 14,
+            "on_hit": [],
+            "range": null,
+            "reach": 10,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "lightning-blade",
+      "kind": "modeled",
+      "name": "Lightning Blade"
+    }
+  ],
+  "alignment": "chaotic evil",
+  "armor_class": [
+    {
+      "value": 19
+    }
+  ],
+  "bonus_actions": [
+    {
+      "default_resolution": "skipped",
+      "desc": "The balor teleports itself or a willing demon within 10 feet of itself up to 60 feet to an unoccupied space the balor can see.",
+      "id": "teleport",
+      "kind": "unmodeled",
+      "name": "Teleport"
+    }
+  ],
+  "challenge_rating": 19,
+  "condition_immunities": [
+    "charmed",
+    "frightened",
+    "poisoned"
+  ],
+  "damage_immunities": [
+    "fire",
+    "poison"
+  ],
+  "damage_resistances": [
+    "cold",
+    "lightning"
+  ],
+  "hit_points": {
+    "average": 287,
+    "dice": "23d12+138"
+  },
+  "id": "balor",
+  "initiative": 2,
+  "languages": [
+    "Abyssal",
+    "telepathy 120 ft."
+  ],
+  "name": "Balor",
+  "proficiency_bonus": 6,
+  "saving_throws": {
+    "con": 12,
+    "wis": 9
+  },
+  "schema_version": "1",
+  "senses": {
+    "passive_perception": 19,
+    "truesight": 120
+  },
+  "size": "huge",
+  "skills": {
+    "perception": 9
+  },
+  "source": "srd-5.2.1",
+  "speeds": {
+    "fly": {
+      "feet": 80
+    },
+    "walk": {
+      "feet": 40
+    }
+  },
+  "traits": [
+    {
+      "desc": "The balor explodes when it dies. Dexterity Saving Throw: DC 20, each creature in a 30-foot Emanation originating from the balor. Failure: 31 (9d6) Fire damage plus 31 (9d6) Force damage. Success: Half damage. Failure or Success: If the balor dies outside the Abyss, it gains a new body instantly, reviving with all its Hit Points somewhere in the Abyss.",
+      "effects": [
+        {
+          "saving_throw": {
+            "ability": "dex",
+            "creature_type_gate": null,
+            "damage": [
+              {
+                "dice": "9d6",
+                "magical": false,
+                "modifier": 0,
+                "type": "fire"
+              },
+              {
+                "dice": "9d6",
+                "magical": false,
+                "modifier": 0,
+                "type": "force"
+              }
+            ],
+            "dc": 20,
+            "half_on_success": true,
+            "hp_gate": null,
+            "immunity_after_success": false,
+            "no_damage_on_success": false,
+            "on_failure": [],
+            "repeat_save": null,
+            "two_stage": null
+          }
+        }
+      ],
+      "id": "death-throes",
+      "kind": "modeled",
+      "name": "Death Throes"
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "At the end of each of the balor’s turns, each creature in a 5-foot Emanation originating from the balor takes 13 (3d8) Fire damage.",
+      "id": "fire-aura",
+      "kind": "unmodeled",
+      "name": "Fire Aura"
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "If the balor fails a saving throw, it can choose to succeed instead.",
+      "id": "legendary-resistance",
+      "kind": "unmodeled",
+      "name": "Legendary Resistance",
+      "usage": {
+        "per_day": {
+          "uses": 3
+        }
+      }
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "The balor has Advantage on saving throws against spells and other magical effects.",
+      "id": "magic-resistance",
+      "kind": "unmodeled",
+      "name": "Magic Resistance"
+    }
+  ],
+  "type": "fiend",
+  "xp": 22000
+}

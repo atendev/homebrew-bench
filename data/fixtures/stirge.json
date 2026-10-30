@@ -1,0 +1,72 @@
+{
+  "ability_scores": {
+    "charisma": 6,
+    "constitution": 11,
+    "dexterity": 16,
+    "intelligence": 2,
+    "strength": 4,
+    "wisdom": 8
+  },
+  "actions": [
+    {
+      "agent_clauses": [
+        "While attached, the stirge can’t make Proboscis attacks, and the target takes 5 (2d4) Necrotic damage at the start of each of the stirge’s turns. The stirge can detach itself by spending 5 feet of its movement. The target or a creature within 5 feet of it can detach the stirge as an action."
+      ],
+      "desc": "Melee Attack Roll: +5, reach 5 ft. Hit: 6 (1d6 + 3) Piercing damage, and the stirge attaches to the target. While attached, the stirge can’t make Proboscis attacks, and the target takes 5 (2d4) Necrotic damage at the start of each of the stirge’s turns. The stirge can detach itself by spending 5 feet of its movement. The target or a creature within 5 feet of it can detach the stirge as an action.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "1d6",
+                "magical": false,
+                "modifier": 3,
+                "type": "piercing"
+              }
+            ],
+            "modifier": 5,
+            "on_hit": [],
+            "range": null,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "proboscis",
+      "kind": "partly_modeled",
+      "name": "Proboscis"
+    }
+  ],
+  "alignment": "unaligned",
+  "armor_class": [
+    {
+      "value": 13
+    }
+  ],
+  "challenge_rating": 0.125,
+  "hit_points": {
+    "average": 5,
+    "dice": "2d4"
+  },
+  "id": "stirge",
+  "initiative": 3,
+  "name": "Stirge",
+  "proficiency_bonus": 2,
+  "schema_version": "1",
+  "senses": {
+    "darkvision": 60,
+    "passive_perception": 9
+  },
+  "size": "tiny",
+  "source": "srd-5.2.1",
+  "speeds": {
+    "fly": {
+      "feet": 40
+    },
+    "walk": {
+      "feet": 10
+    }
+  },
+  "type": "monstrosity",
+  "xp": 25
+}
