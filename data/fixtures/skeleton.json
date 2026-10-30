@@ -1,0 +1,107 @@
+{
+  "ability_scores": {
+    "charisma": 5,
+    "constitution": 15,
+    "dexterity": 16,
+    "intelligence": 6,
+    "strength": 10,
+    "wisdom": 8
+  },
+  "actions": [
+    {
+      "desc": "Melee Attack Roll: +5, reach 5 ft. Hit: 6 (1d6 + 3) Piercing damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "1d6",
+                "magical": false,
+                "modifier": 3,
+                "type": "piercing"
+              }
+            ],
+            "modifier": 5,
+            "on_hit": [],
+            "range": null,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "shortsword",
+      "kind": "modeled",
+      "name": "Shortsword"
+    },
+    {
+      "desc": "Ranged Attack Roll: +5, range 80/320 ft. Hit: 6 (1d6 + 3) Piercing damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "1d6",
+                "magical": false,
+                "modifier": 3,
+                "type": "piercing"
+              }
+            ],
+            "modifier": 5,
+            "on_hit": [],
+            "range": [
+              80,
+              320
+            ],
+            "reach": null,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "shortbow",
+      "kind": "modeled",
+      "name": "Shortbow"
+    }
+  ],
+  "alignment": "lawful evil",
+  "armor_class": [
+    {
+      "value": 14
+    }
+  ],
+  "challenge_rating": 0.25,
+  "condition_immunities": [
+    "exhaustion",
+    "poisoned"
+  ],
+  "damage_immunities": [
+    "poison"
+  ],
+  "damage_vulnerabilities": [
+    "bludgeoning"
+  ],
+  "hit_points": {
+    "average": 13,
+    "dice": "2d8+4"
+  },
+  "id": "skeleton",
+  "initiative": 3,
+  "languages": [
+    "Understands Common plus one other language but can’t speak"
+  ],
+  "name": "Skeleton",
+  "proficiency_bonus": 2,
+  "schema_version": "1",
+  "senses": {
+    "darkvision": 60,
+    "passive_perception": 9
+  },
+  "size": "medium",
+  "source": "srd-5.2.1",
+  "speeds": {
+    "walk": {
+      "feet": 30
+    }
+  },
+  "type": "undead",
+  "xp": 50
+}

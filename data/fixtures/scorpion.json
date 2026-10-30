@@ -1,0 +1,66 @@
+{
+  "ability_scores": {
+    "charisma": 2,
+    "constitution": 8,
+    "dexterity": 11,
+    "intelligence": 1,
+    "strength": 2,
+    "wisdom": 8
+  },
+  "actions": [
+    {
+      "desc": "Melee Attack Roll: +2, reach 5 ft. Hit: 1 Piercing damage plus 3 (1d6) Poison damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "1d6",
+                "magical": false,
+                "modifier": 0,
+                "type": "poison"
+              }
+            ],
+            "modifier": 2,
+            "on_hit": [],
+            "range": null,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "sting",
+      "kind": "modeled",
+      "name": "Sting"
+    }
+  ],
+  "alignment": "unaligned",
+  "armor_class": [
+    {
+      "value": 11
+    }
+  ],
+  "challenge_rating": 0,
+  "hit_points": {
+    "average": 1,
+    "dice": "1d4-1"
+  },
+  "id": "scorpion",
+  "initiative": 0,
+  "name": "Scorpion",
+  "proficiency_bonus": 2,
+  "schema_version": "1",
+  "senses": {
+    "blindsight": 10,
+    "passive_perception": 9
+  },
+  "size": "tiny",
+  "source": "srd-5.2.1",
+  "speeds": {
+    "walk": {
+      "feet": 10
+    }
+  },
+  "type": "beast",
+  "xp": 10
+}

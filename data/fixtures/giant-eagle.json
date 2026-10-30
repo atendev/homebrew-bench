@@ -1,0 +1,106 @@
+{
+  "ability_scores": {
+    "charisma": 10,
+    "constitution": 13,
+    "dexterity": 17,
+    "intelligence": 8,
+    "strength": 16,
+    "wisdom": 14
+  },
+  "actions": [
+    {
+      "desc": "The eagle makes two Rend attacks.",
+      "effects": [
+        {
+          "multiattack": {
+            "steps": [
+              {
+                "action": {
+                  "action_id": "rend",
+                  "count": 2
+                }
+              }
+            ],
+            "swap": false
+          }
+        }
+      ],
+      "id": "multiattack",
+      "kind": "modeled",
+      "name": "Multiattack"
+    },
+    {
+      "desc": "Melee Attack Roll: +5, reach 5 ft. Hit: 5 (1d4 + 3) Slashing damage plus 3 (1d6) Radiant damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "1d4",
+                "magical": false,
+                "modifier": 3,
+                "type": "slashing"
+              },
+              {
+                "dice": "1d6",
+                "magical": false,
+                "modifier": 0,
+                "type": "radiant"
+              }
+            ],
+            "modifier": 5,
+            "on_hit": [],
+            "range": null,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "rend",
+      "kind": "modeled",
+      "name": "Rend"
+    }
+  ],
+  "alignment": "neutral good",
+  "armor_class": [
+    {
+      "value": 13
+    }
+  ],
+  "challenge_rating": 1,
+  "damage_resistances": [
+    "necrotic",
+    "radiant"
+  ],
+  "hit_points": {
+    "average": 26,
+    "dice": "4d10+4"
+  },
+  "id": "giant-eagle",
+  "initiative": 3,
+  "languages": [
+    "Celestial",
+    "understands Common and Primordial (Auran) but can’t speak them"
+  ],
+  "name": "Giant Eagle",
+  "proficiency_bonus": 2,
+  "schema_version": "1",
+  "senses": {
+    "passive_perception": 16
+  },
+  "size": "large",
+  "skills": {
+    "perception": 6
+  },
+  "source": "srd-5.2.1",
+  "speeds": {
+    "fly": {
+      "feet": 80
+    },
+    "walk": {
+      "feet": 10
+    }
+  },
+  "type": "celestial",
+  "xp": 200
+}

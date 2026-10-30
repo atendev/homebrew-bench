@@ -1,0 +1,73 @@
+{
+  "ability_scores": {
+    "charisma": 8,
+    "constitution": 13,
+    "dexterity": 13,
+    "intelligence": 7,
+    "strength": 16,
+    "wisdom": 11
+  },
+  "actions": [
+    {
+      "desc": "Melee Attack Roll: +5, reach 5 ft. Hit: 7 (1d8 + 3) Piercing damage, and the next attack roll made against the target before the start of the worg’s next turn has Advantage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "1d8",
+                "magical": false,
+                "modifier": 3,
+                "type": "piercing"
+              }
+            ],
+            "modifier": 5,
+            "on_hit": [],
+            "range": null,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "bite",
+      "kind": "modeled",
+      "name": "Bite"
+    }
+  ],
+  "alignment": "neutral evil",
+  "armor_class": [
+    {
+      "value": 13
+    }
+  ],
+  "challenge_rating": 0.5,
+  "hit_points": {
+    "average": 26,
+    "dice": "4d10+4"
+  },
+  "id": "worg",
+  "initiative": 1,
+  "languages": [
+    "Goblin",
+    "Worg"
+  ],
+  "name": "Worg",
+  "proficiency_bonus": 2,
+  "schema_version": "1",
+  "senses": {
+    "darkvision": 60,
+    "passive_perception": 14
+  },
+  "size": "large",
+  "skills": {
+    "perception": 4
+  },
+  "source": "srd-5.2.1",
+  "speeds": {
+    "walk": {
+      "feet": 50
+    }
+  },
+  "type": "fey",
+  "xp": 100
+}

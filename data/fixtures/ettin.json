@@ -1,0 +1,135 @@
+{
+  "ability_scores": {
+    "charisma": 8,
+    "constitution": 17,
+    "dexterity": 8,
+    "intelligence": 6,
+    "strength": 21,
+    "wisdom": 10
+  },
+  "actions": [
+    {
+      "desc": "The ettin makes one Battleaxe attack and one Morningstar attack.",
+      "effects": [
+        {
+          "multiattack": {
+            "steps": [
+              {
+                "action": {
+                  "action_id": "battleaxe",
+                  "count": 1
+                }
+              },
+              {
+                "action": {
+                  "action_id": "morningstar",
+                  "count": 1
+                }
+              }
+            ],
+            "swap": false
+          }
+        }
+      ],
+      "id": "multiattack",
+      "kind": "modeled",
+      "name": "Multiattack"
+    },
+    {
+      "agent_clauses": [
+        "If the target is a Large or smaller creature, it has the Prone condition."
+      ],
+      "desc": "Melee Attack Roll: +7, reach 5 ft. Hit: 14 (2d8 + 5) Slashing damage. If the target is a Large or smaller creature, it has the Prone condition.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "2d8",
+                "magical": false,
+                "modifier": 5,
+                "type": "slashing"
+              }
+            ],
+            "modifier": 7,
+            "on_hit": [],
+            "range": null,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "battleaxe",
+      "kind": "partly_modeled",
+      "name": "Battleaxe"
+    },
+    {
+      "desc": "Melee Attack Roll: +7, reach 5 ft. Hit: 14 (2d8 + 5) Piercing damage, and the target has Disadvantage on the next attack roll it makes before the end of its next turn.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "2d8",
+                "magical": false,
+                "modifier": 5,
+                "type": "piercing"
+              }
+            ],
+            "modifier": 7,
+            "on_hit": [],
+            "range": null,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "morningstar",
+      "kind": "modeled",
+      "name": "Morningstar"
+    }
+  ],
+  "alignment": "chaotic evil",
+  "armor_class": [
+    {
+      "value": 12
+    }
+  ],
+  "challenge_rating": 4,
+  "condition_immunities": [
+    "blinded",
+    "charmed",
+    "deafened",
+    "frightened",
+    "stunned",
+    "unconscious"
+  ],
+  "hit_points": {
+    "average": 85,
+    "dice": "10d10+30"
+  },
+  "id": "ettin",
+  "initiative": -1,
+  "languages": [
+    "Giant"
+  ],
+  "name": "Ettin",
+  "proficiency_bonus": 2,
+  "schema_version": "1",
+  "senses": {
+    "darkvision": 60,
+    "passive_perception": 14
+  },
+  "size": "large",
+  "skills": {
+    "perception": 4
+  },
+  "source": "srd-5.2.1",
+  "speeds": {
+    "walk": {
+      "feet": 40
+    }
+  },
+  "type": "giant",
+  "xp": 1100
+}

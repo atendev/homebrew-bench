@@ -1,0 +1,89 @@
+{
+  "ability_scores": {
+    "charisma": 8,
+    "constitution": 9,
+    "dexterity": 15,
+    "intelligence": 8,
+    "strength": 7,
+    "wisdom": 7
+  },
+  "actions": [
+    {
+      "desc": "Melee or Ranged Attack Roll: +4, reach 5 ft. or range 20/60 ft. Hit: 4 (1d4 + 2) Piercing damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "1d4",
+                "magical": false,
+                "modifier": 2,
+                "type": "piercing"
+              }
+            ],
+            "modifier": 4,
+            "on_hit": [],
+            "range": [
+              20,
+              60
+            ],
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "dagger",
+      "kind": "modeled",
+      "name": "Dagger"
+    }
+  ],
+  "alignment": "neutral",
+  "armor_class": [
+    {
+      "value": 14
+    }
+  ],
+  "challenge_rating": 0.125,
+  "hit_points": {
+    "average": 7,
+    "dice": "3d6-3"
+  },
+  "id": "kobold-warrior",
+  "initiative": 2,
+  "languages": [
+    "Common",
+    "Draconic"
+  ],
+  "name": "Kobold Warrior",
+  "proficiency_bonus": 2,
+  "schema_version": "1",
+  "senses": {
+    "darkvision": 60,
+    "passive_perception": 8
+  },
+  "size": "small",
+  "source": "srd-5.2.1",
+  "speeds": {
+    "walk": {
+      "feet": 30
+    }
+  },
+  "traits": [
+    {
+      "default_resolution": "skipped",
+      "desc": "The kobold has Advantage on an attack roll against a creature if at least one of the kobold’s allies is within 5 feet of the creature and the ally doesn’t have the Incapacitated condition.",
+      "id": "pack-tactics",
+      "kind": "unmodeled",
+      "name": "Pack Tactics"
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "While in sunlight, the kobold has Disadvantage on ability checks and attack rolls.",
+      "id": "sunlight-sensitivity",
+      "kind": "unmodeled",
+      "name": "Sunlight Sensitivity"
+    }
+  ],
+  "type": "dragon",
+  "xp": 25
+}

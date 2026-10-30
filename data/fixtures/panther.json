@@ -1,0 +1,82 @@
+{
+  "ability_scores": {
+    "charisma": 7,
+    "constitution": 10,
+    "dexterity": 16,
+    "intelligence": 3,
+    "strength": 14,
+    "wisdom": 14
+  },
+  "actions": [
+    {
+      "desc": "Melee Attack Roll: +5, reach 5 ft. Hit: 6 (1d6 + 3) Slashing damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "1d6",
+                "magical": false,
+                "modifier": 3,
+                "type": "slashing"
+              }
+            ],
+            "modifier": 5,
+            "on_hit": [],
+            "range": null,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "rend",
+      "kind": "modeled",
+      "name": "Rend"
+    }
+  ],
+  "alignment": "unaligned",
+  "armor_class": [
+    {
+      "value": 13
+    }
+  ],
+  "bonus_actions": [
+    {
+      "default_resolution": "skipped",
+      "desc": "The panther takes the Disengage or Hide action.",
+      "id": "nimble-escape",
+      "kind": "unmodeled",
+      "name": "Nimble Escape"
+    }
+  ],
+  "challenge_rating": 0.25,
+  "hit_points": {
+    "average": 13,
+    "dice": "3d8"
+  },
+  "id": "panther",
+  "initiative": 3,
+  "name": "Panther",
+  "proficiency_bonus": 2,
+  "schema_version": "1",
+  "senses": {
+    "darkvision": 60,
+    "passive_perception": 14
+  },
+  "size": "medium",
+  "skills": {
+    "perception": 4,
+    "stealth": 7
+  },
+  "source": "srd-5.2.1",
+  "speeds": {
+    "climb": {
+      "feet": 40
+    },
+    "walk": {
+      "feet": 50
+    }
+  },
+  "type": "beast",
+  "xp": 50
+}

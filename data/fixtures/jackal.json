@@ -1,0 +1,70 @@
+{
+  "ability_scores": {
+    "charisma": 6,
+    "constitution": 11,
+    "dexterity": 15,
+    "intelligence": 3,
+    "strength": 8,
+    "wisdom": 12
+  },
+  "actions": [
+    {
+      "desc": "Melee Attack Roll: +1, reach 5 ft. Hit: 1 (1d4 – 1) Piercing damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "1d4",
+                "magical": false,
+                "modifier": -1,
+                "type": "piercing"
+              }
+            ],
+            "modifier": 1,
+            "on_hit": [],
+            "range": null,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "bite",
+      "kind": "modeled",
+      "name": "Bite"
+    }
+  ],
+  "alignment": "unaligned",
+  "armor_class": [
+    {
+      "value": 12
+    }
+  ],
+  "challenge_rating": 0,
+  "hit_points": {
+    "average": 3,
+    "dice": "1d6"
+  },
+  "id": "jackal",
+  "initiative": 2,
+  "name": "Jackal",
+  "proficiency_bonus": 2,
+  "schema_version": "1",
+  "senses": {
+    "darkvision": 90,
+    "passive_perception": 15
+  },
+  "size": "small",
+  "skills": {
+    "perception": 5,
+    "stealth": 4
+  },
+  "source": "srd-5.2.1",
+  "speeds": {
+    "walk": {
+      "feet": 40
+    }
+  },
+  "type": "beast",
+  "xp": 10
+}

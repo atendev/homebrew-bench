@@ -1,0 +1,75 @@
+{
+  "ability_scores": {
+    "charisma": 5,
+    "constitution": 12,
+    "dexterity": 12,
+    "intelligence": 2,
+    "strength": 6,
+    "wisdom": 13
+  },
+  "actions": [
+    {
+      "agent_clauses": [
+        "If the target is a creature, it is subjected to the following effect. Constitution Saving Throw: DC 11. First Failure: The target has the Restrained condition. The target repeats the save at the end of its next turn if it is still Restrained, ending the effect on itself on a success. Second Failure: The target has the Petrified condition, instead of the Restrained condition, for 24 hours."
+      ],
+      "desc": "Melee Attack Roll: +3, reach 5 ft. Hit: 3 (1d4 + 1) Piercing damage. If the target is a creature, it is subjected to the following effect. Constitution Saving Throw: DC 11. First Failure: The target has the Restrained condition. The target repeats the save at the end of its next turn if it is still Restrained, ending the effect on itself on a success. Second Failure: The target has the Petrified condition, instead of the Restrained condition, for 24 hours.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "1d4",
+                "magical": false,
+                "modifier": 1,
+                "type": "piercing"
+              }
+            ],
+            "modifier": 3,
+            "on_hit": [],
+            "range": null,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "petrifying-bite",
+      "kind": "partly_modeled",
+      "name": "Petrifying Bite"
+    }
+  ],
+  "alignment": "unaligned",
+  "armor_class": [
+    {
+      "value": 11
+    }
+  ],
+  "challenge_rating": 0.5,
+  "condition_immunities": [
+    "petrified"
+  ],
+  "hit_points": {
+    "average": 22,
+    "dice": "5d6+5"
+  },
+  "id": "cockatrice",
+  "initiative": 1,
+  "name": "Cockatrice",
+  "proficiency_bonus": 2,
+  "schema_version": "1",
+  "senses": {
+    "darkvision": 60,
+    "passive_perception": 11
+  },
+  "size": "small",
+  "source": "srd-5.2.1",
+  "speeds": {
+    "fly": {
+      "feet": 40
+    },
+    "walk": {
+      "feet": 20
+    }
+  },
+  "type": "monstrosity",
+  "xp": 100
+}

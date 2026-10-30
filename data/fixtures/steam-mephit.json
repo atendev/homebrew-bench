@@ -1,0 +1,167 @@
+{
+  "ability_scores": {
+    "charisma": 12,
+    "constitution": 10,
+    "dexterity": 11,
+    "intelligence": 11,
+    "strength": 5,
+    "wisdom": 10
+  },
+  "actions": [
+    {
+      "desc": "Melee Attack Roll: +2, reach 5 ft. Hit: 2 (1d4) Slashing damage plus 2 (1d4) Fire damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "1d4",
+                "magical": false,
+                "modifier": 0,
+                "type": "slashing"
+              },
+              {
+                "dice": "1d4",
+                "magical": false,
+                "modifier": 0,
+                "type": "fire"
+              }
+            ],
+            "modifier": 2,
+            "on_hit": [],
+            "range": null,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "claw",
+      "kind": "modeled",
+      "name": "Claw"
+    },
+    {
+      "agent_clauses": [
+        "and the target’s Speed decreases by 10 feet until the end of the mephit’s next turn"
+      ],
+      "desc": "Constitution Saving Throw: DC 10, each creature in a 15-foot Cone. Failure: 5 (2d4) Fire damage, and the target’s Speed decreases by 10 feet until the end of the mephit’s next turn. Success: Half damage only. Failure or Success: Being underwater doesn’t grant Resistance to this Fire damage.",
+      "effects": [
+        {
+          "saving_throw": {
+            "ability": "con",
+            "creature_type_gate": null,
+            "damage": [
+              {
+                "dice": "2d4",
+                "magical": false,
+                "modifier": 0,
+                "type": "fire"
+              }
+            ],
+            "dc": 10,
+            "half_on_success": true,
+            "hp_gate": null,
+            "immunity_after_success": false,
+            "no_damage_on_success": false,
+            "on_failure": [],
+            "repeat_save": null,
+            "two_stage": null
+          }
+        }
+      ],
+      "id": "steam-breath",
+      "kind": "partly_modeled",
+      "name": "Steam Breath",
+      "usage": {
+        "recharge": {
+          "dice": "6"
+        }
+      }
+    }
+  ],
+  "alignment": "neutral evil",
+  "armor_class": [
+    {
+      "value": 10
+    }
+  ],
+  "challenge_rating": 0.25,
+  "condition_immunities": [
+    "exhaustion",
+    "poisoned"
+  ],
+  "damage_immunities": [
+    "fire",
+    "poison"
+  ],
+  "hit_points": {
+    "average": 17,
+    "dice": "5d6"
+  },
+  "id": "steam-mephit",
+  "initiative": 0,
+  "languages": [
+    "Primordial (Aquan",
+    "Ignan)"
+  ],
+  "name": "Steam Mephit",
+  "proficiency_bonus": 2,
+  "schema_version": "1",
+  "senses": {
+    "darkvision": 60,
+    "passive_perception": 10
+  },
+  "size": "small",
+  "skills": {
+    "stealth": 2
+  },
+  "source": "srd-5.2.1",
+  "speeds": {
+    "fly": {
+      "feet": 30
+    },
+    "walk": {
+      "feet": 30
+    }
+  },
+  "traits": [
+    {
+      "default_resolution": "skipped",
+      "desc": "Attack rolls against the mephit are made with Disadvantage unless the mephit has the Incapacitated condition.",
+      "id": "blurred-form",
+      "kind": "unmodeled",
+      "name": "Blurred Form"
+    },
+    {
+      "desc": "The mephit explodes when it dies. Dexterity Saving Throw: DC 10, each creature in a 5-foot Emanation originating from the mephit. Failure: 5 (2d4) Fire damage. Success: Half damage.",
+      "effects": [
+        {
+          "saving_throw": {
+            "ability": "dex",
+            "creature_type_gate": null,
+            "damage": [
+              {
+                "dice": "2d4",
+                "magical": false,
+                "modifier": 0,
+                "type": "fire"
+              }
+            ],
+            "dc": 10,
+            "half_on_success": true,
+            "hp_gate": null,
+            "immunity_after_success": false,
+            "no_damage_on_success": false,
+            "on_failure": [],
+            "repeat_save": null,
+            "two_stage": null
+          }
+        }
+      ],
+      "id": "death-burst",
+      "kind": "modeled",
+      "name": "Death Burst"
+    }
+  ],
+  "type": "elemental",
+  "xp": 50
+}

@@ -1,0 +1,81 @@
+{
+  "ability_scores": {
+    "charisma": 5,
+    "constitution": 11,
+    "dexterity": 15,
+    "intelligence": 2,
+    "strength": 4,
+    "wisdom": 12
+  },
+  "actions": [
+    {
+      "desc": "Melee Attack Roll: +4, reach 5 ft. Hit: 1 Piercing damage plus 5 (2d4) Poison damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "2d4",
+                "magical": false,
+                "modifier": 0,
+                "type": "poison"
+              }
+            ],
+            "modifier": 4,
+            "on_hit": [],
+            "range": null,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "bite",
+      "kind": "modeled",
+      "name": "Bite"
+    }
+  ],
+  "alignment": "unaligned",
+  "armor_class": [
+    {
+      "value": 14
+    }
+  ],
+  "challenge_rating": 0.125,
+  "hit_points": {
+    "average": 5,
+    "dice": "2d4"
+  },
+  "id": "flying-snake",
+  "initiative": 2,
+  "name": "Flying Snake",
+  "proficiency_bonus": 2,
+  "schema_version": "1",
+  "senses": {
+    "blindsight": 10,
+    "passive_perception": 11
+  },
+  "size": "tiny",
+  "source": "srd-5.2.1",
+  "speeds": {
+    "fly": {
+      "feet": 60
+    },
+    "swim": {
+      "feet": 30
+    },
+    "walk": {
+      "feet": 30
+    }
+  },
+  "traits": [
+    {
+      "default_resolution": "skipped",
+      "desc": "The snake doesn’t provoke an Opportunity Attack when it flies out of an enemy’s reach.",
+      "id": "flyby",
+      "kind": "unmodeled",
+      "name": "Flyby"
+    }
+  ],
+  "type": "monstrosity",
+  "xp": 25
+}

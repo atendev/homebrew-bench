@@ -1,0 +1,119 @@
+{
+  "ability_scores": {
+    "charisma": 10,
+    "constitution": 10,
+    "dexterity": 17,
+    "intelligence": 7,
+    "strength": 5,
+    "wisdom": 10
+  },
+  "actions": [
+    {
+      "desc": "Melee Attack Roll: +5, reach 5 ft. Hit: 5 (1d4 + 3) Slashing damage, and the target has the Poisoned condition until the start of the quasit’s next turn.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "1d4",
+                "magical": false,
+                "modifier": 3,
+                "type": "slashing"
+              }
+            ],
+            "modifier": 5,
+            "on_hit": [],
+            "range": null,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "rend",
+      "kind": "modeled",
+      "name": "Rend"
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "The quasit casts Invisibility on itself, requiring no spell components and using Charisma as the spellcasting ability.",
+      "id": "invisibility",
+      "kind": "unmodeled",
+      "name": "Invisibility"
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "Wisdom Saving Throw: DC 10, one creature within 20 feet. Failure: The target has the Frightened condition. At the end of each of its turns, the target repeats the save, ending the effect on itself on a success. After 1 minute, it succeeds automatically.",
+      "id": "scare",
+      "kind": "unmodeled",
+      "name": "Scare",
+      "usage": {
+        "per_day": {
+          "uses": 1
+        }
+      }
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "The quasit shape-shifts to resemble a bat (Speed 10 ft., Fly 40 ft.), a centipede (40 ft., Climb 40 ft.), or a toad (40 ft., Swim 40 ft.), or it returns to its true form. Its game statistics are the same in each form, except for its Speed. Any equipment it is wearing or carrying isn’t transformed.",
+      "id": "shape-shift",
+      "kind": "unmodeled",
+      "name": "Shape-Shift"
+    }
+  ],
+  "alignment": "chaotic evil",
+  "armor_class": [
+    {
+      "value": 13
+    }
+  ],
+  "challenge_rating": 1,
+  "condition_immunities": [
+    "poisoned"
+  ],
+  "damage_immunities": [
+    "poison"
+  ],
+  "damage_resistances": [
+    "cold",
+    "fire",
+    "lightning"
+  ],
+  "hit_points": {
+    "average": 25,
+    "dice": "10d4"
+  },
+  "id": "quasit",
+  "initiative": 3,
+  "languages": [
+    "Abyssal",
+    "Common"
+  ],
+  "name": "Quasit",
+  "proficiency_bonus": 2,
+  "schema_version": "1",
+  "senses": {
+    "darkvision": 120,
+    "passive_perception": 10
+  },
+  "size": "tiny",
+  "skills": {
+    "stealth": 5
+  },
+  "source": "srd-5.2.1",
+  "speeds": {
+    "walk": {
+      "feet": 40
+    }
+  },
+  "traits": [
+    {
+      "default_resolution": "skipped",
+      "desc": "The quasit has Advantage on saving throws against spells and other magical effects.",
+      "id": "magic-resistance",
+      "kind": "unmodeled",
+      "name": "Magic Resistance"
+    }
+  ],
+  "type": "fiend",
+  "xp": 200
+}

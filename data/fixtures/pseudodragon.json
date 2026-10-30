@@ -1,0 +1,140 @@
+{
+  "ability_scores": {
+    "charisma": 10,
+    "constitution": 13,
+    "dexterity": 15,
+    "intelligence": 10,
+    "strength": 6,
+    "wisdom": 12
+  },
+  "actions": [
+    {
+      "desc": "The pseudodragon makes two Bite attacks.",
+      "effects": [
+        {
+          "multiattack": {
+            "steps": [
+              {
+                "action": {
+                  "action_id": "bite",
+                  "count": 2
+                }
+              }
+            ],
+            "swap": false
+          }
+        }
+      ],
+      "id": "multiattack",
+      "kind": "modeled",
+      "name": "Multiattack"
+    },
+    {
+      "desc": "Melee Attack Roll: +4, reach 5 ft. Hit: 4 (1d4 + 2) Piercing damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "1d4",
+                "magical": false,
+                "modifier": 2,
+                "type": "piercing"
+              }
+            ],
+            "modifier": 4,
+            "on_hit": [],
+            "range": null,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "bite",
+      "kind": "modeled",
+      "name": "Bite"
+    },
+    {
+      "agent_clauses": [
+        "and the target has the Poisoned condition for 1 hour. Failure by 5 or More: While Poisoned, the target also has the Unconscious condition, which ends early if the target takes damage or a creature within 5 feet of it takes an action to wake it"
+      ],
+      "desc": "Constitution Saving Throw: DC 12, one creature the pseudodragon can see within 5 feet. Failure: 5 (2d4) Poison damage, and the target has the Poisoned condition for 1 hour. Failure by 5 or More: While Poisoned, the target also has the Unconscious condition, which ends early if the target takes damage or a creature within 5 feet of it takes an action to wake it.",
+      "effects": [
+        {
+          "saving_throw": {
+            "ability": "con",
+            "creature_type_gate": null,
+            "damage": [
+              {
+                "dice": "2d4",
+                "magical": false,
+                "modifier": 0,
+                "type": "poison"
+              }
+            ],
+            "dc": 12,
+            "half_on_success": false,
+            "hp_gate": null,
+            "immunity_after_success": false,
+            "no_damage_on_success": true,
+            "on_failure": [],
+            "repeat_save": null,
+            "two_stage": null
+          }
+        }
+      ],
+      "id": "sting",
+      "kind": "partly_modeled",
+      "name": "Sting"
+    }
+  ],
+  "alignment": "neutral good",
+  "armor_class": [
+    {
+      "value": 14
+    }
+  ],
+  "challenge_rating": 0.25,
+  "hit_points": {
+    "average": 10,
+    "dice": "3d4+3"
+  },
+  "id": "pseudodragon",
+  "initiative": 2,
+  "languages": [
+    "Understands Common and Draconic but can’t speak"
+  ],
+  "name": "Pseudodragon",
+  "proficiency_bonus": 2,
+  "schema_version": "1",
+  "senses": {
+    "blindsight": 10,
+    "darkvision": 60,
+    "passive_perception": 15
+  },
+  "size": "tiny",
+  "skills": {
+    "perception": 5,
+    "stealth": 4
+  },
+  "source": "srd-5.2.1",
+  "speeds": {
+    "fly": {
+      "feet": 60
+    },
+    "walk": {
+      "feet": 15
+    }
+  },
+  "traits": [
+    {
+      "default_resolution": "skipped",
+      "desc": "The pseudodragon has Advantage on saving throws against spells and other magical effects.",
+      "id": "magic-resistance",
+      "kind": "unmodeled",
+      "name": "Magic Resistance"
+    }
+  ],
+  "type": "dragon",
+  "xp": 50
+}

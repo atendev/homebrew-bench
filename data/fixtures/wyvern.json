@@ -1,0 +1,130 @@
+{
+  "ability_scores": {
+    "charisma": 6,
+    "constitution": 16,
+    "dexterity": 10,
+    "intelligence": 5,
+    "strength": 19,
+    "wisdom": 12
+  },
+  "actions": [
+    {
+      "desc": "The wyvern makes one Bite attack and one Sting attack.",
+      "effects": [
+        {
+          "multiattack": {
+            "steps": [
+              {
+                "action": {
+                  "action_id": "bite",
+                  "count": 1
+                }
+              },
+              {
+                "action": {
+                  "action_id": "sting",
+                  "count": 1
+                }
+              }
+            ],
+            "swap": false
+          }
+        }
+      ],
+      "id": "multiattack",
+      "kind": "modeled",
+      "name": "Multiattack"
+    },
+    {
+      "desc": "Melee Attack Roll: +7, reach 5 ft. Hit: 13 (2d8 + 4) Piercing damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "2d8",
+                "magical": false,
+                "modifier": 4,
+                "type": "piercing"
+              }
+            ],
+            "modifier": 7,
+            "on_hit": [],
+            "range": null,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "bite",
+      "kind": "modeled",
+      "name": "Bite"
+    },
+    {
+      "desc": "Melee Attack Roll: +7, reach 10 ft. Hit: 11 (2d6 + 4) Piercing damage plus 24 (7d6) Poison damage, and the target has the Poisoned condition until the start of the wyvern’s next turn.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "2d6",
+                "magical": false,
+                "modifier": 4,
+                "type": "piercing"
+              },
+              {
+                "dice": "7d6",
+                "magical": false,
+                "modifier": 0,
+                "type": "poison"
+              }
+            ],
+            "modifier": 7,
+            "on_hit": [],
+            "range": null,
+            "reach": 10,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "sting",
+      "kind": "modeled",
+      "name": "Sting"
+    }
+  ],
+  "alignment": "unaligned",
+  "armor_class": [
+    {
+      "value": 14
+    }
+  ],
+  "challenge_rating": 6,
+  "hit_points": {
+    "average": 127,
+    "dice": "15d10+45"
+  },
+  "id": "wyvern",
+  "initiative": 0,
+  "name": "Wyvern",
+  "proficiency_bonus": 3,
+  "schema_version": "1",
+  "senses": {
+    "darkvision": 120,
+    "passive_perception": 14
+  },
+  "size": "large",
+  "skills": {
+    "perception": 4
+  },
+  "source": "srd-5.2.1",
+  "speeds": {
+    "fly": {
+      "feet": 80
+    },
+    "walk": {
+      "feet": 30
+    }
+  },
+  "type": "dragon",
+  "xp": 2300
+}

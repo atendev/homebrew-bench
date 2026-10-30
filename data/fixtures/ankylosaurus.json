@@ -1,0 +1,92 @@
+{
+  "ability_scores": {
+    "charisma": 5,
+    "constitution": 15,
+    "dexterity": 11,
+    "intelligence": 2,
+    "strength": 19,
+    "wisdom": 12
+  },
+  "actions": [
+    {
+      "desc": "The ankylosaurus makes two Tail attacks.",
+      "effects": [
+        {
+          "multiattack": {
+            "steps": [
+              {
+                "action": {
+                  "action_id": "tail",
+                  "count": 2
+                }
+              }
+            ],
+            "swap": false
+          }
+        }
+      ],
+      "id": "multiattack",
+      "kind": "modeled",
+      "name": "Multiattack"
+    },
+    {
+      "agent_clauses": [
+        "If the target is a Huge or smaller creature, it has the Prone condition."
+      ],
+      "desc": "Melee Attack Roll: +6, reach 10 ft. Hit: 9 (1d10 + 4) Bludgeoning damage. If the target is a Huge or smaller creature, it has the Prone condition.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "1d10",
+                "magical": false,
+                "modifier": 4,
+                "type": "bludgeoning"
+              }
+            ],
+            "modifier": 6,
+            "on_hit": [],
+            "range": null,
+            "reach": 10,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "tail",
+      "kind": "partly_modeled",
+      "name": "Tail"
+    }
+  ],
+  "alignment": "unaligned",
+  "armor_class": [
+    {
+      "value": 15
+    }
+  ],
+  "challenge_rating": 3,
+  "hit_points": {
+    "average": 68,
+    "dice": "8d12+16"
+  },
+  "id": "ankylosaurus",
+  "initiative": 0,
+  "name": "Ankylosaurus",
+  "proficiency_bonus": 2,
+  "saving_throws": {
+    "str": 6
+  },
+  "schema_version": "1",
+  "senses": {
+    "passive_perception": 11
+  },
+  "size": "huge",
+  "source": "srd-5.2.1",
+  "speeds": {
+    "walk": {
+      "feet": 30
+    }
+  },
+  "type": "beast",
+  "xp": 700
+}

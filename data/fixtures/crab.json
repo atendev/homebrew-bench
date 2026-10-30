@@ -1,0 +1,81 @@
+{
+  "ability_scores": {
+    "charisma": 2,
+    "constitution": 12,
+    "dexterity": 11,
+    "intelligence": 1,
+    "strength": 6,
+    "wisdom": 8
+  },
+  "actions": [
+    {
+      "desc": "Melee Attack Roll: +2, reach 5 ft. Hit: 1 Bludgeoning damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "1d1",
+                "magical": false,
+                "modifier": 0,
+                "type": "bludgeoning"
+              }
+            ],
+            "modifier": 2,
+            "on_hit": [],
+            "range": null,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "claw",
+      "kind": "modeled",
+      "name": "Claw"
+    }
+  ],
+  "alignment": "unaligned",
+  "armor_class": [
+    {
+      "value": 11
+    }
+  ],
+  "challenge_rating": 0,
+  "hit_points": {
+    "average": 3,
+    "dice": "1d4+1"
+  },
+  "id": "crab",
+  "initiative": 0,
+  "name": "Crab",
+  "proficiency_bonus": 2,
+  "schema_version": "1",
+  "senses": {
+    "blindsight": 30,
+    "passive_perception": 9
+  },
+  "size": "tiny",
+  "skills": {
+    "stealth": 2
+  },
+  "source": "srd-5.2.1",
+  "speeds": {
+    "swim": {
+      "feet": 20
+    },
+    "walk": {
+      "feet": 20
+    }
+  },
+  "traits": [
+    {
+      "default_resolution": "skipped",
+      "desc": "The crab can breathe air and water.",
+      "id": "amphibious",
+      "kind": "unmodeled",
+      "name": "Amphibious"
+    }
+  ],
+  "type": "beast",
+  "xp": 10
+}

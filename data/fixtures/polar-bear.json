@@ -1,0 +1,97 @@
+{
+  "ability_scores": {
+    "charisma": 7,
+    "constitution": 16,
+    "dexterity": 14,
+    "intelligence": 2,
+    "strength": 20,
+    "wisdom": 13
+  },
+  "actions": [
+    {
+      "desc": "The bear makes two Rend attacks.",
+      "effects": [
+        {
+          "multiattack": {
+            "steps": [
+              {
+                "action": {
+                  "action_id": "rend",
+                  "count": 2
+                }
+              }
+            ],
+            "swap": false
+          }
+        }
+      ],
+      "id": "multiattack",
+      "kind": "modeled",
+      "name": "Multiattack"
+    },
+    {
+      "desc": "Melee Attack Roll: +7, reach 5 ft. Hit: 9 (1d8 + 5) Slashing damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "1d8",
+                "magical": false,
+                "modifier": 5,
+                "type": "slashing"
+              }
+            ],
+            "modifier": 7,
+            "on_hit": [],
+            "range": null,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "rend",
+      "kind": "modeled",
+      "name": "Rend"
+    }
+  ],
+  "alignment": "unaligned",
+  "armor_class": [
+    {
+      "value": 12
+    }
+  ],
+  "challenge_rating": 2,
+  "damage_resistances": [
+    "cold"
+  ],
+  "hit_points": {
+    "average": 42,
+    "dice": "5d10+15"
+  },
+  "id": "polar-bear",
+  "initiative": 2,
+  "name": "Polar Bear",
+  "proficiency_bonus": 2,
+  "schema_version": "1",
+  "senses": {
+    "darkvision": 60,
+    "passive_perception": 15
+  },
+  "size": "large",
+  "skills": {
+    "perception": 5,
+    "stealth": 4
+  },
+  "source": "srd-5.2.1",
+  "speeds": {
+    "swim": {
+      "feet": 40
+    },
+    "walk": {
+      "feet": 40
+    }
+  },
+  "type": "beast",
+  "xp": 450
+}

@@ -1,0 +1,163 @@
+{
+  "ability_scores": {
+    "charisma": 12,
+    "constitution": 18,
+    "dexterity": 10,
+    "intelligence": 6,
+    "strength": 18,
+    "wisdom": 11
+  },
+  "actions": [
+    {
+      "desc": "The dragon makes three Rend attacks.",
+      "effects": [
+        {
+          "multiattack": {
+            "steps": [
+              {
+                "action": {
+                  "action_id": "rend",
+                  "count": 3
+                }
+              }
+            ],
+            "swap": false
+          }
+        }
+      ],
+      "id": "multiattack",
+      "kind": "modeled",
+      "name": "Multiattack"
+    },
+    {
+      "desc": "Melee Attack Roll: +7, reach 10 ft. Hit: 9 (2d4 + 4) Slashing damage plus 2 (1d4) Cold damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "2d4",
+                "magical": false,
+                "modifier": 4,
+                "type": "slashing"
+              },
+              {
+                "dice": "1d4",
+                "magical": false,
+                "modifier": 0,
+                "type": "cold"
+              }
+            ],
+            "modifier": 7,
+            "on_hit": [],
+            "range": null,
+            "reach": 10,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "rend",
+      "kind": "modeled",
+      "name": "Rend"
+    },
+    {
+      "desc": "Constitution Saving Throw: DC 15, each creature in a 30-foot Cone. Failure: 40 (9d8) Cold damage. Success: Half damage.",
+      "effects": [
+        {
+          "saving_throw": {
+            "ability": "con",
+            "creature_type_gate": null,
+            "damage": [
+              {
+                "dice": "9d8",
+                "magical": false,
+                "modifier": 0,
+                "type": "cold"
+              }
+            ],
+            "dc": 15,
+            "half_on_success": true,
+            "hp_gate": null,
+            "immunity_after_success": false,
+            "no_damage_on_success": false,
+            "on_failure": [],
+            "repeat_save": null,
+            "two_stage": null
+          }
+        }
+      ],
+      "id": "cold-breath",
+      "kind": "modeled",
+      "name": "Cold Breath",
+      "usage": {
+        "recharge": {
+          "dice": "5-6"
+        }
+      }
+    }
+  ],
+  "alignment": "chaotic evil",
+  "armor_class": [
+    {
+      "value": 17
+    }
+  ],
+  "challenge_rating": 6,
+  "damage_immunities": [
+    "cold"
+  ],
+  "hit_points": {
+    "average": 123,
+    "dice": "13d10+52"
+  },
+  "id": "young-white-dragon",
+  "initiative": 0,
+  "languages": [
+    "Common",
+    "Draconic"
+  ],
+  "name": "Young White Dragon",
+  "proficiency_bonus": 3,
+  "saving_throws": {
+    "dex": 3,
+    "int": 2,
+    "wis": 3
+  },
+  "schema_version": "1",
+  "senses": {
+    "blindsight": 30,
+    "darkvision": 120,
+    "passive_perception": 16
+  },
+  "size": "large",
+  "skills": {
+    "perception": 6,
+    "stealth": 3
+  },
+  "source": "srd-5.2.1",
+  "speeds": {
+    "burrow": {
+      "feet": 20
+    },
+    "fly": {
+      "feet": 80
+    },
+    "swim": {
+      "feet": 40
+    },
+    "walk": {
+      "feet": 40
+    }
+  },
+  "traits": [
+    {
+      "default_resolution": "skipped",
+      "desc": "The dragon can move across and climb icy surfaces without needing to make an ability check. Additionally, Difficult Terrain composed of ice or snow doesn’t cost it extra movement.",
+      "id": "ice-walk",
+      "kind": "unmodeled",
+      "name": "Ice Walk"
+    }
+  ],
+  "type": "dragon",
+  "xp": 2300
+}

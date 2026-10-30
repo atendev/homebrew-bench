@@ -1,0 +1,87 @@
+{
+  "ability_scores": {
+    "charisma": 7,
+    "constitution": 16,
+    "dexterity": 10,
+    "intelligence": 6,
+    "strength": 15,
+    "wisdom": 12
+  },
+  "actions": [
+    {
+      "desc": "Melee Attack Roll: +4, reach 5 ft. Hit: 9 (2d6 + 2) Piercing damage, and the target has the Poisoned condition until the end of its next turn.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "2d6",
+                "magical": false,
+                "modifier": 2,
+                "type": "piercing"
+              }
+            ],
+            "modifier": 4,
+            "on_hit": [],
+            "range": null,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "gouge",
+      "kind": "modeled",
+      "name": "Gouge"
+    }
+  ],
+  "alignment": "neutral evil",
+  "armor_class": [
+    {
+      "value": 10
+    }
+  ],
+  "challenge_rating": 1,
+  "damage_resistances": [
+    "necrotic"
+  ],
+  "hit_points": {
+    "average": 25,
+    "dice": "3d10+9"
+  },
+  "id": "giant-vulture",
+  "initiative": 0,
+  "languages": [
+    "Understands Common but can’t speak"
+  ],
+  "name": "Giant Vulture",
+  "proficiency_bonus": 2,
+  "schema_version": "1",
+  "senses": {
+    "darkvision": 60,
+    "passive_perception": 13
+  },
+  "size": "large",
+  "skills": {
+    "perception": 3
+  },
+  "source": "srd-5.2.1",
+  "speeds": {
+    "fly": {
+      "feet": 60
+    },
+    "walk": {
+      "feet": 10
+    }
+  },
+  "traits": [
+    {
+      "default_resolution": "skipped",
+      "desc": "The vulture has Advantage on an attack roll against a creature if at least one of the vulture’s allies is within 5 feet of the creature and the ally doesn’t have the Incapacitated condition.",
+      "id": "pack-tactics",
+      "kind": "unmodeled",
+      "name": "Pack Tactics"
+    }
+  ],
+  "type": "monstrosity",
+  "xp": 200
+}

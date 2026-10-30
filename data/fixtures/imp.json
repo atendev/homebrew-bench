@@ -1,0 +1,117 @@
+{
+  "ability_scores": {
+    "charisma": 14,
+    "constitution": 13,
+    "dexterity": 17,
+    "intelligence": 11,
+    "strength": 6,
+    "wisdom": 12
+  },
+  "actions": [
+    {
+      "desc": "Melee Attack Roll: +5, reach 5 ft. Hit: 6 (1d6 + 3) Piercing damage plus 7 (2d6) Poison damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "1d6",
+                "magical": false,
+                "modifier": 3,
+                "type": "piercing"
+              },
+              {
+                "dice": "2d6",
+                "magical": false,
+                "modifier": 0,
+                "type": "poison"
+              }
+            ],
+            "modifier": 5,
+            "on_hit": [],
+            "range": null,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "sting",
+      "kind": "modeled",
+      "name": "Sting"
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "The imp casts Invisibility on itself, requiring no spell components and using Charisma as the spellcasting ability.",
+      "id": "invisibility",
+      "kind": "unmodeled",
+      "name": "Invisibility"
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "The imp shape-shifts to resemble a rat (Speed 20 ft.), a raven (20 ft., Fly 60 ft.), or a spider (20 ft., Climb 20 ft.), or it returns to its true form. Its game statistics are the same in each form, except for its Speed. Any equipment it is wearing or carrying isn’t transformed.",
+      "id": "shape-shift",
+      "kind": "unmodeled",
+      "name": "Shape-Shift"
+    }
+  ],
+  "alignment": "lawful evil",
+  "armor_class": [
+    {
+      "value": 13
+    }
+  ],
+  "challenge_rating": 1,
+  "condition_immunities": [
+    "poisoned"
+  ],
+  "damage_immunities": [
+    "fire",
+    "poison"
+  ],
+  "damage_resistances": [
+    "cold"
+  ],
+  "hit_points": {
+    "average": 21,
+    "dice": "6d4+6"
+  },
+  "id": "imp",
+  "initiative": 3,
+  "languages": [
+    "Common",
+    "Infernal"
+  ],
+  "name": "Imp",
+  "proficiency_bonus": 2,
+  "schema_version": "1",
+  "senses": {
+    "darkvision": 120,
+    "passive_perception": 11
+  },
+  "size": "tiny",
+  "skills": {
+    "deception": 4,
+    "insight": 3,
+    "stealth": 5
+  },
+  "source": "srd-5.2.1",
+  "speeds": {
+    "fly": {
+      "feet": 40
+    },
+    "walk": {
+      "feet": 20
+    }
+  },
+  "traits": [
+    {
+      "default_resolution": "skipped",
+      "desc": "The imp has Advantage on saving throws against spells and other magical effects.",
+      "id": "magic-resistance",
+      "kind": "unmodeled",
+      "name": "Magic Resistance"
+    }
+  ],
+  "type": "fiend",
+  "xp": 200
+}

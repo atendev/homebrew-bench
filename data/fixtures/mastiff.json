@@ -1,0 +1,75 @@
+{
+  "ability_scores": {
+    "charisma": 7,
+    "constitution": 12,
+    "dexterity": 14,
+    "intelligence": 3,
+    "strength": 13,
+    "wisdom": 12
+  },
+  "actions": [
+    {
+      "agent_clauses": [
+        "If the target is a Medium or smaller creature, it has the Prone condition."
+      ],
+      "desc": "Melee Attack Roll: +3, reach 5 ft. Hit: 4 (1d6 + 1) Piercing damage. If the target is a Medium or smaller creature, it has the Prone condition.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "1d6",
+                "magical": false,
+                "modifier": 1,
+                "type": "piercing"
+              }
+            ],
+            "modifier": 3,
+            "on_hit": [],
+            "range": null,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "bite",
+      "kind": "partly_modeled",
+      "name": "Bite"
+    }
+  ],
+  "alignment": "unaligned",
+  "armor_class": [
+    {
+      "value": 12
+    }
+  ],
+  "challenge_rating": 0.125,
+  "hit_points": {
+    "average": 5,
+    "dice": "1d8+1"
+  },
+  "id": "mastiff",
+  "initiative": 2,
+  "name": "Mastiff",
+  "proficiency_bonus": 2,
+  "saving_throws": {
+    "wis": 3
+  },
+  "schema_version": "1",
+  "senses": {
+    "darkvision": 60,
+    "passive_perception": 15
+  },
+  "size": "medium",
+  "skills": {
+    "perception": 5
+  },
+  "source": "srd-5.2.1",
+  "speeds": {
+    "walk": {
+      "feet": 40
+    }
+  },
+  "type": "beast",
+  "xp": 25
+}

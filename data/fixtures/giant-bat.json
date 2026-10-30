@@ -1,0 +1,69 @@
+{
+  "ability_scores": {
+    "charisma": 6,
+    "constitution": 11,
+    "dexterity": 16,
+    "intelligence": 2,
+    "strength": 15,
+    "wisdom": 12
+  },
+  "actions": [
+    {
+      "desc": "Melee Attack Roll: +5, reach 5 ft. Hit: 6 (1d6 + 3) Piercing damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "1d6",
+                "magical": false,
+                "modifier": 3,
+                "type": "piercing"
+              }
+            ],
+            "modifier": 5,
+            "on_hit": [],
+            "range": null,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "bite",
+      "kind": "modeled",
+      "name": "Bite"
+    }
+  ],
+  "alignment": "unaligned",
+  "armor_class": [
+    {
+      "value": 13
+    }
+  ],
+  "challenge_rating": 0.25,
+  "hit_points": {
+    "average": 22,
+    "dice": "4d10"
+  },
+  "id": "giant-bat",
+  "initiative": 3,
+  "name": "Giant Bat",
+  "proficiency_bonus": 2,
+  "schema_version": "1",
+  "senses": {
+    "blindsight": 120,
+    "passive_perception": 11
+  },
+  "size": "large",
+  "source": "srd-5.2.1",
+  "speeds": {
+    "fly": {
+      "feet": 60
+    },
+    "walk": {
+      "feet": 10
+    }
+  },
+  "type": "beast",
+  "xp": 50
+}

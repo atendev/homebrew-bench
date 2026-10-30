@@ -1,0 +1,69 @@
+{
+  "ability_scores": {
+    "charisma": 3,
+    "constitution": 12,
+    "dexterity": 14,
+    "intelligence": 1,
+    "strength": 5,
+    "wisdom": 7
+  },
+  "actions": [
+    {
+      "desc": "Melee Attack Roll: +4, reach 5 ft. Hit: 4 (1d4 + 2) Piercing damage, and the target has the Poisoned condition until the start of the centipede’s next turn.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "1d4",
+                "magical": false,
+                "modifier": 2,
+                "type": "piercing"
+              }
+            ],
+            "modifier": 4,
+            "on_hit": [],
+            "range": null,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "bite",
+      "kind": "modeled",
+      "name": "Bite"
+    }
+  ],
+  "alignment": "unaligned",
+  "armor_class": [
+    {
+      "value": 14
+    }
+  ],
+  "challenge_rating": 0.25,
+  "hit_points": {
+    "average": 9,
+    "dice": "2d6+2"
+  },
+  "id": "giant-centipede",
+  "initiative": 2,
+  "name": "Giant Centipede",
+  "proficiency_bonus": 2,
+  "schema_version": "1",
+  "senses": {
+    "blindsight": 30,
+    "passive_perception": 8
+  },
+  "size": "small",
+  "source": "srd-5.2.1",
+  "speeds": {
+    "climb": {
+      "feet": 30
+    },
+    "walk": {
+      "feet": 30
+    }
+  },
+  "type": "beast",
+  "xp": 50
+}

@@ -1,0 +1,65 @@
+{
+  "ability_scores": {
+    "charisma": 5,
+    "constitution": 12,
+    "dexterity": 12,
+    "intelligence": 2,
+    "strength": 14,
+    "wisdom": 10
+  },
+  "actions": [
+    {
+      "desc": "Melee Attack Roll: +4, reach 5 ft. Hit: 6 (1d8 + 2) Slashing damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "1d8",
+                "magical": false,
+                "modifier": 2,
+                "type": "slashing"
+              }
+            ],
+            "modifier": 4,
+            "on_hit": [],
+            "range": null,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "beak",
+      "kind": "modeled",
+      "name": "Beak"
+    }
+  ],
+  "alignment": "unaligned",
+  "armor_class": [
+    {
+      "value": 11
+    }
+  ],
+  "challenge_rating": 0.25,
+  "hit_points": {
+    "average": 19,
+    "dice": "3d10+3"
+  },
+  "id": "axe-beak",
+  "initiative": 1,
+  "name": "Axe Beak",
+  "proficiency_bonus": 2,
+  "schema_version": "1",
+  "senses": {
+    "passive_perception": 10
+  },
+  "size": "large",
+  "source": "srd-5.2.1",
+  "speeds": {
+    "walk": {
+      "feet": 50
+    }
+  },
+  "type": "monstrosity",
+  "xp": 50
+}

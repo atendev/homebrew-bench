@@ -1,0 +1,80 @@
+{
+  "ability_scores": {
+    "charisma": 6,
+    "constitution": 10,
+    "dexterity": 14,
+    "intelligence": 5,
+    "strength": 2,
+    "wisdom": 13
+  },
+  "actions": [
+    {
+      "desc": "Melee Attack Roll: +4, reach 5 ft. Hit: 1 Piercing damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "1d1",
+                "magical": false,
+                "modifier": 0,
+                "type": "piercing"
+              }
+            ],
+            "modifier": 4,
+            "on_hit": [],
+            "range": null,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "beak",
+      "kind": "modeled",
+      "name": "Beak"
+    }
+  ],
+  "alignment": "unaligned",
+  "armor_class": [
+    {
+      "value": 12
+    }
+  ],
+  "challenge_rating": 0,
+  "hit_points": {
+    "average": 2,
+    "dice": "1d4"
+  },
+  "id": "raven",
+  "initiative": 2,
+  "name": "Raven",
+  "proficiency_bonus": 2,
+  "schema_version": "1",
+  "senses": {
+    "passive_perception": 13
+  },
+  "size": "tiny",
+  "skills": {
+    "perception": 3
+  },
+  "source": "srd-5.2.1",
+  "speeds": {
+    "fly": {
+      "feet": 50
+    },
+    "walk": {
+      "feet": 10
+    }
+  },
+  "traits": [
+    {
+      "default_resolution": "skipped",
+      "desc": "The raven can mimic simple sounds it has heard, such as a whisper or chitter. A hearer can discern the sounds are imitations with a successful DC 10 Wisdom (Insight) check.",
+      "id": "mimicry",
+      "kind": "unmodeled",
+      "name": "Mimicry"
+    }
+  ],
+  "type": "beast",
+  "xp": 10
+}

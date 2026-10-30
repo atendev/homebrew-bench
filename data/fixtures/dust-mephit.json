@@ -1,0 +1,143 @@
+{
+  "ability_scores": {
+    "charisma": 10,
+    "constitution": 10,
+    "dexterity": 14,
+    "intelligence": 9,
+    "strength": 5,
+    "wisdom": 11
+  },
+  "actions": [
+    {
+      "desc": "Melee Attack Roll: +4, reach 5 ft. Hit: 4 (1d4 + 2) Slashing damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "1d4",
+                "magical": false,
+                "modifier": 2,
+                "type": "slashing"
+              }
+            ],
+            "modifier": 4,
+            "on_hit": [],
+            "range": null,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "claw",
+      "kind": "modeled",
+      "name": "Claw"
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "Dexterity Saving Throw: DC 10, each creature in a 15-foot Cone. Failure: The target has the Blinded condition until the end of the mephit’s next turn.",
+      "id": "blinding-breath",
+      "kind": "unmodeled",
+      "name": "Blinding Breath",
+      "usage": {
+        "recharge": {
+          "dice": "6"
+        }
+      }
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "The mephit casts the Sleep spell, requiring no spell components and using Charisma as the spellcasting ability (spell save DC 10).",
+      "id": "sleep",
+      "kind": "unmodeled",
+      "name": "Sleep",
+      "usage": {
+        "per_day": {
+          "uses": 1
+        }
+      }
+    }
+  ],
+  "alignment": "neutral evil",
+  "armor_class": [
+    {
+      "value": 12
+    }
+  ],
+  "challenge_rating": 0.5,
+  "condition_immunities": [
+    "exhaustion",
+    "poisoned"
+  ],
+  "damage_immunities": [
+    "poison"
+  ],
+  "damage_vulnerabilities": [
+    "fire"
+  ],
+  "hit_points": {
+    "average": 17,
+    "dice": "5d6"
+  },
+  "id": "dust-mephit",
+  "initiative": 2,
+  "languages": [
+    "Primordial (Auran",
+    "Terran)"
+  ],
+  "name": "Dust Mephit",
+  "proficiency_bonus": 2,
+  "schema_version": "1",
+  "senses": {
+    "darkvision": 60,
+    "passive_perception": 12
+  },
+  "size": "small",
+  "skills": {
+    "perception": 2,
+    "stealth": 4
+  },
+  "source": "srd-5.2.1",
+  "speeds": {
+    "fly": {
+      "feet": 30
+    },
+    "walk": {
+      "feet": 30
+    }
+  },
+  "traits": [
+    {
+      "desc": "The mephit explodes when it dies. Dexterity Saving Throw: DC 10, each creature in a 5-foot Emanation originating from the mephit. Failure: 5 (2d4) Bludgeoning damage. Success: Half damage.",
+      "effects": [
+        {
+          "saving_throw": {
+            "ability": "dex",
+            "creature_type_gate": null,
+            "damage": [
+              {
+                "dice": "2d4",
+                "magical": false,
+                "modifier": 0,
+                "type": "bludgeoning"
+              }
+            ],
+            "dc": 10,
+            "half_on_success": true,
+            "hp_gate": null,
+            "immunity_after_success": false,
+            "no_damage_on_success": false,
+            "on_failure": [],
+            "repeat_save": null,
+            "two_stage": null
+          }
+        }
+      ],
+      "id": "death-burst",
+      "kind": "modeled",
+      "name": "Death Burst"
+    }
+  ],
+  "type": "elemental",
+  "xp": 100
+}

@@ -1,0 +1,143 @@
+{
+  "ability_scores": {
+    "charisma": 6,
+    "constitution": 17,
+    "dexterity": 8,
+    "intelligence": 7,
+    "strength": 18,
+    "wisdom": 16
+  },
+  "actions": [
+    {
+      "desc": "The roper makes two Tentacle attacks, uses Reel, and makes two Bite attacks.",
+      "effects": [
+        {
+          "multiattack": {
+            "steps": [
+              {
+                "action": {
+                  "action_id": "tentacle",
+                  "count": 2
+                }
+              },
+              {
+                "action": {
+                  "action_id": "reel",
+                  "count": 1
+                }
+              },
+              {
+                "action": {
+                  "action_id": "bite",
+                  "count": 2
+                }
+              }
+            ],
+            "swap": false
+          }
+        }
+      ],
+      "id": "multiattack",
+      "kind": "modeled",
+      "name": "Multiattack"
+    },
+    {
+      "desc": "Melee Attack Roll: +7, reach 5 ft. Hit: 17 (3d8 + 4) Piercing damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "3d8",
+                "magical": false,
+                "modifier": 4,
+                "type": "piercing"
+              }
+            ],
+            "modifier": 7,
+            "on_hit": [],
+            "range": null,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "bite",
+      "kind": "modeled",
+      "name": "Bite"
+    },
+    {
+      "agent_clauses": [
+        "The tentacle can be damaged, freeing a creature it has Grappled when destroyed (AC 20, HP 10, Immunity to Poison and Psychic damage). Damaging the tentacle deals no damage to the roper, and a destroyed tentacle regrows at the start of the roper’s next turn."
+      ],
+      "desc": "Melee Attack Roll: +7, reach 60 ft. Hit: The target has the Grappled condition (escape DC 14) from one of six tentacles, and the target has the Poisoned condition until the grapple ends. The tentacle can be damaged, freeing a creature it has Grappled when destroyed (AC 20, HP 10, Immunity to Poison and Psychic damage). Damaging the tentacle deals no damage to the roper, and a destroyed tentacle regrows at the start of the roper’s next turn.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [],
+            "modifier": 7,
+            "on_hit": [],
+            "range": null,
+            "reach": 60,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "tentacle",
+      "kind": "partly_modeled",
+      "name": "Tentacle"
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "The roper pulls each creature Grappled by it up to 30 feet straight toward it.",
+      "id": "reel",
+      "kind": "unmodeled",
+      "name": "Reel"
+    }
+  ],
+  "alignment": "neutral evil",
+  "armor_class": [
+    {
+      "value": 20
+    }
+  ],
+  "challenge_rating": 5,
+  "hit_points": {
+    "average": 93,
+    "dice": "11d10+33"
+  },
+  "id": "roper",
+  "initiative": -1,
+  "name": "Roper",
+  "proficiency_bonus": 3,
+  "schema_version": "1",
+  "senses": {
+    "darkvision": 60,
+    "passive_perception": 16
+  },
+  "size": "large",
+  "skills": {
+    "perception": 6,
+    "stealth": 5
+  },
+  "source": "srd-5.2.1",
+  "speeds": {
+    "climb": {
+      "feet": 20
+    },
+    "walk": {
+      "feet": 10
+    }
+  },
+  "traits": [
+    {
+      "default_resolution": "skipped",
+      "desc": "The roper can climb difficult surfaces, including along ceilings, without needing to make an ability check.",
+      "id": "spider-climb",
+      "kind": "unmodeled",
+      "name": "Spider Climb"
+    }
+  ],
+  "type": "aberration",
+  "xp": 1800
+}

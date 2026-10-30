@@ -1,0 +1,136 @@
+{
+  "ability_scores": {
+    "charisma": 5,
+    "constitution": 21,
+    "dexterity": 11,
+    "intelligence": 2,
+    "strength": 19,
+    "wisdom": 10
+  },
+  "actions": [
+    {
+      "desc": "The bulette makes two Bite attacks.",
+      "effects": [
+        {
+          "multiattack": {
+            "steps": [
+              {
+                "action": {
+                  "action_id": "bite",
+                  "count": 2
+                }
+              }
+            ],
+            "swap": false
+          }
+        }
+      ],
+      "id": "multiattack",
+      "kind": "modeled",
+      "name": "Multiattack"
+    },
+    {
+      "desc": "Melee Attack Roll: +7, reach 5 ft. Hit: 17 (2d12 + 4) Piercing damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "2d12",
+                "magical": false,
+                "modifier": 4,
+                "type": "piercing"
+              }
+            ],
+            "modifier": 7,
+            "on_hit": [],
+            "range": null,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "bite",
+      "kind": "modeled",
+      "name": "Bite"
+    },
+    {
+      "agent_clauses": [
+        "and the target has the Prone condition"
+      ],
+      "desc": "The bulette spends 5 feet of movement to jump to a space within 15 feet that contains one or more Large or smaller creatures. Dexterity Saving Throw: DC 15, each creature in the bulette’s destination space. Failure: 19 (3d12) Bludgeoning damage, and the target has the Prone condition. Success: Half damage, and the target is pushed 5 feet straight away from the bulette.",
+      "effects": [
+        {
+          "saving_throw": {
+            "ability": "dex",
+            "creature_type_gate": null,
+            "damage": [
+              {
+                "dice": "3d12",
+                "magical": false,
+                "modifier": 0,
+                "type": "bludgeoning"
+              }
+            ],
+            "dc": 15,
+            "half_on_success": true,
+            "hp_gate": null,
+            "immunity_after_success": false,
+            "no_damage_on_success": false,
+            "on_failure": [],
+            "repeat_save": null,
+            "two_stage": null
+          }
+        }
+      ],
+      "id": "deadly-leap",
+      "kind": "partly_modeled",
+      "name": "Deadly Leap"
+    }
+  ],
+  "alignment": "unaligned",
+  "armor_class": [
+    {
+      "value": 17
+    }
+  ],
+  "bonus_actions": [
+    {
+      "default_resolution": "skipped",
+      "desc": "The bulette jumps up to 30 feet by spending 10 feet of movement.",
+      "id": "leap",
+      "kind": "unmodeled",
+      "name": "Leap"
+    }
+  ],
+  "challenge_rating": 5,
+  "hit_points": {
+    "average": 94,
+    "dice": "9d10+45"
+  },
+  "id": "bulette",
+  "initiative": 0,
+  "name": "Bulette",
+  "proficiency_bonus": 3,
+  "schema_version": "1",
+  "senses": {
+    "darkvision": 60,
+    "passive_perception": 16,
+    "tremorsense": 120
+  },
+  "size": "large",
+  "skills": {
+    "perception": 6
+  },
+  "source": "srd-5.2.1",
+  "speeds": {
+    "burrow": {
+      "feet": 40
+    },
+    "walk": {
+      "feet": 40
+    }
+  },
+  "type": "monstrosity",
+  "xp": 1800
+}

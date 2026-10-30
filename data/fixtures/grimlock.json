@@ -1,0 +1,80 @@
+{
+  "ability_scores": {
+    "charisma": 6,
+    "constitution": 12,
+    "dexterity": 12,
+    "intelligence": 9,
+    "strength": 16,
+    "wisdom": 8
+  },
+  "actions": [
+    {
+      "desc": "Melee Attack Roll: +5, reach 5 ft. Hit: 6 (1d6 + 3) Bludgeoning damage plus 2 (1d4) Psychic damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "1d6",
+                "magical": false,
+                "modifier": 3,
+                "type": "bludgeoning"
+              },
+              {
+                "dice": "1d4",
+                "magical": false,
+                "modifier": 0,
+                "type": "psychic"
+              }
+            ],
+            "modifier": 5,
+            "on_hit": [],
+            "range": null,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "bone-cudgel",
+      "kind": "modeled",
+      "name": "Bone Cudgel"
+    }
+  ],
+  "alignment": "neutral evil",
+  "armor_class": [
+    {
+      "value": 11
+    }
+  ],
+  "challenge_rating": 0.25,
+  "hit_points": {
+    "average": 11,
+    "dice": "2d8+2"
+  },
+  "id": "grimlock",
+  "initiative": 1,
+  "name": "Grimlock",
+  "proficiency_bonus": 2,
+  "schema_version": "1",
+  "senses": {
+    "blindsight": 30,
+    "passive_perception": 13
+  },
+  "size": "medium",
+  "skills": {
+    "athletics": 5,
+    "perception": 3,
+    "stealth": 5
+  },
+  "source": "srd-5.2.1",
+  "speeds": {
+    "climb": {
+      "feet": 30
+    },
+    "walk": {
+      "feet": 30
+    }
+  },
+  "type": "aberration",
+  "xp": 50
+}

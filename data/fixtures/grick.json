@@ -1,0 +1,127 @@
+{
+  "ability_scores": {
+    "charisma": 5,
+    "constitution": 11,
+    "dexterity": 14,
+    "intelligence": 3,
+    "strength": 14,
+    "wisdom": 14
+  },
+  "actions": [
+    {
+      "desc": "The grick makes one Beak attack and one Tentacles attack.",
+      "effects": [
+        {
+          "multiattack": {
+            "steps": [
+              {
+                "action": {
+                  "action_id": "beak",
+                  "count": 1
+                }
+              },
+              {
+                "action": {
+                  "action_id": "tentacles",
+                  "count": 1
+                }
+              }
+            ],
+            "swap": false
+          }
+        }
+      ],
+      "id": "multiattack",
+      "kind": "modeled",
+      "name": "Multiattack"
+    },
+    {
+      "desc": "Melee Attack Roll: +4, reach 5 ft. Hit: 9 (2d6 + 2) Piercing damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "2d6",
+                "magical": false,
+                "modifier": 2,
+                "type": "piercing"
+              }
+            ],
+            "modifier": 4,
+            "on_hit": [],
+            "range": null,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "beak",
+      "kind": "modeled",
+      "name": "Beak"
+    },
+    {
+      "agent_clauses": [
+        "If the target is a Medium or smaller creature, it has the Grappled condition (escape DC 12) from all four tentacles."
+      ],
+      "desc": "Melee Attack Roll: +4, reach 5 ft. Hit: 7 (1d10 + 2) Slashing damage. If the target is a Medium or smaller creature, it has the Grappled condition (escape DC 12) from all four tentacles.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "1d10",
+                "magical": false,
+                "modifier": 2,
+                "type": "slashing"
+              }
+            ],
+            "modifier": 4,
+            "on_hit": [],
+            "range": null,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "tentacles",
+      "kind": "partly_modeled",
+      "name": "Tentacles"
+    }
+  ],
+  "alignment": "unaligned",
+  "armor_class": [
+    {
+      "value": 14
+    }
+  ],
+  "challenge_rating": 2,
+  "hit_points": {
+    "average": 54,
+    "dice": "12d8"
+  },
+  "id": "grick",
+  "initiative": 2,
+  "name": "Grick",
+  "proficiency_bonus": 2,
+  "schema_version": "1",
+  "senses": {
+    "darkvision": 60,
+    "passive_perception": 12
+  },
+  "size": "medium",
+  "skills": {
+    "stealth": 4
+  },
+  "source": "srd-5.2.1",
+  "speeds": {
+    "climb": {
+      "feet": 30
+    },
+    "walk": {
+      "feet": 30
+    }
+  },
+  "type": "aberration",
+  "xp": 450
+}

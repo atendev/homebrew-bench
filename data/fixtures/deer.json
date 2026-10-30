@@ -1,0 +1,78 @@
+{
+  "ability_scores": {
+    "charisma": 5,
+    "constitution": 11,
+    "dexterity": 16,
+    "intelligence": 2,
+    "strength": 11,
+    "wisdom": 14
+  },
+  "actions": [
+    {
+      "desc": "Melee Attack Roll: +2, reach 5 ft. Hit: 2 (1d4) Bludgeoning damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "1d4",
+                "magical": false,
+                "modifier": 0,
+                "type": "bludgeoning"
+              }
+            ],
+            "modifier": 2,
+            "on_hit": [],
+            "range": null,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "ram",
+      "kind": "modeled",
+      "name": "Ram"
+    }
+  ],
+  "alignment": "unaligned",
+  "armor_class": [
+    {
+      "value": 13
+    }
+  ],
+  "challenge_rating": 0,
+  "hit_points": {
+    "average": 4,
+    "dice": "1d8"
+  },
+  "id": "deer",
+  "initiative": 3,
+  "name": "Deer",
+  "proficiency_bonus": 2,
+  "schema_version": "1",
+  "senses": {
+    "darkvision": 60,
+    "passive_perception": 14
+  },
+  "size": "medium",
+  "skills": {
+    "perception": 4
+  },
+  "source": "srd-5.2.1",
+  "speeds": {
+    "walk": {
+      "feet": 50
+    }
+  },
+  "traits": [
+    {
+      "default_resolution": "skipped",
+      "desc": "The deer doesn’t provoke an Opportunity Attack when it moves out of an enemy’s reach.",
+      "id": "agile",
+      "kind": "unmodeled",
+      "name": "Agile"
+    }
+  ],
+  "type": "beast",
+  "xp": 10
+}

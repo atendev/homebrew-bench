@@ -1,0 +1,112 @@
+{
+  "ability_scores": {
+    "charisma": 11,
+    "constitution": 13,
+    "dexterity": 17,
+    "intelligence": 15,
+    "strength": 6,
+    "wisdom": 12
+  },
+  "actions": [
+    {
+      "desc": "Melee Attack Roll: +5, reach 5 ft. Hit: 5 (1d4 + 3) Slashing damage plus 7 (2d6) Radiant damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "1d4",
+                "magical": false,
+                "modifier": 3,
+                "type": "slashing"
+              },
+              {
+                "dice": "2d6",
+                "magical": false,
+                "modifier": 0,
+                "type": "radiant"
+              }
+            ],
+            "modifier": 5,
+            "on_hit": [],
+            "range": null,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "rend",
+      "kind": "modeled",
+      "name": "Rend"
+    }
+  ],
+  "alignment": "lawful good",
+  "armor_class": [
+    {
+      "value": 13
+    }
+  ],
+  "challenge_rating": 1,
+  "damage_resistances": [
+    "necrotic",
+    "psychic",
+    "radiant"
+  ],
+  "hit_points": {
+    "average": 24,
+    "dice": "7d4+7"
+  },
+  "id": "sphinx-of-wonder",
+  "initiative": 3,
+  "languages": [
+    "Celestial",
+    "Common"
+  ],
+  "name": "Sphinx of Wonder",
+  "proficiency_bonus": 2,
+  "reactions": [
+    {
+      "default_resolution": "skipped",
+      "desc": "Trigger: The sphinx or another creature within 30 feet makes an ability check or a saving throw. Response: The sphinx adds 2 to the roll.",
+      "id": "burst-of-ingenuity",
+      "kind": "unmodeled",
+      "name": "Burst of Ingenuity",
+      "usage": {
+        "per_day": {
+          "uses": 2
+        }
+      }
+    }
+  ],
+  "schema_version": "1",
+  "senses": {
+    "darkvision": 60,
+    "passive_perception": 11
+  },
+  "size": "tiny",
+  "skills": {
+    "arcana": 4,
+    "religion": 4,
+    "stealth": 5
+  },
+  "source": "srd-5.2.1",
+  "speeds": {
+    "fly": {
+      "feet": 40
+    },
+    "walk": {
+      "feet": 20
+    }
+  },
+  "traits": [
+    {
+      "default_resolution": "skipped",
+      "desc": "The sphinx has Advantage on saving throws against spells and other magical effects.",
+      "id": "magic-resistance",
+      "kind": "unmodeled",
+      "name": "Magic Resistance"
+    }
+  ],
+  "type": "celestial",
+  "xp": 200
+}

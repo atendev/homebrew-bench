@@ -1,0 +1,96 @@
+{
+  "ability_scores": {
+    "charisma": 8,
+    "constitution": 16,
+    "dexterity": 15,
+    "intelligence": 2,
+    "strength": 18,
+    "wisdom": 13
+  },
+  "actions": [
+    {
+      "desc": "The griffon makes two Rend attacks.",
+      "effects": [
+        {
+          "multiattack": {
+            "steps": [
+              {
+                "action": {
+                  "action_id": "rend",
+                  "count": 2
+                }
+              }
+            ],
+            "swap": false
+          }
+        }
+      ],
+      "id": "multiattack",
+      "kind": "modeled",
+      "name": "Multiattack"
+    },
+    {
+      "agent_clauses": [
+        "If the target is a Medium or smaller creature, it has the Grappled condition (escape DC 14) from both of the griffon’s front claws."
+      ],
+      "desc": "Melee Attack Roll: +6, reach 5 ft. Hit: 8 (1d8 + 4) Piercing damage. If the target is a Medium or smaller creature, it has the Grappled condition (escape DC 14) from both of the griffon’s front claws.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "1d8",
+                "magical": false,
+                "modifier": 4,
+                "type": "piercing"
+              }
+            ],
+            "modifier": 6,
+            "on_hit": [],
+            "range": null,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "rend",
+      "kind": "partly_modeled",
+      "name": "Rend"
+    }
+  ],
+  "alignment": "unaligned",
+  "armor_class": [
+    {
+      "value": 12
+    }
+  ],
+  "challenge_rating": 2,
+  "hit_points": {
+    "average": 59,
+    "dice": "7d10+21"
+  },
+  "id": "griffon",
+  "initiative": 2,
+  "name": "Griffon",
+  "proficiency_bonus": 2,
+  "schema_version": "1",
+  "senses": {
+    "darkvision": 60,
+    "passive_perception": 15
+  },
+  "size": "large",
+  "skills": {
+    "perception": 5
+  },
+  "source": "srd-5.2.1",
+  "speeds": {
+    "fly": {
+      "feet": 80
+    },
+    "walk": {
+      "feet": 30
+    }
+  },
+  "type": "monstrosity",
+  "xp": 450
+}

@@ -1,0 +1,74 @@
+{
+  "ability_scores": {
+    "charisma": 3,
+    "constitution": 8,
+    "dexterity": 16,
+    "intelligence": 2,
+    "strength": 3,
+    "wisdom": 12
+  },
+  "actions": [
+    {
+      "desc": "Melee Attack Roll: +5, reach 5 ft. Hit: 1 Piercing damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "1d1",
+                "magical": false,
+                "modifier": 0,
+                "type": "piercing"
+              }
+            ],
+            "modifier": 5,
+            "on_hit": [],
+            "range": null,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "bite",
+      "kind": "modeled",
+      "name": "Bite"
+    }
+  ],
+  "alignment": "unaligned",
+  "armor_class": [
+    {
+      "value": 13
+    }
+  ],
+  "challenge_rating": 0,
+  "hit_points": {
+    "average": 1,
+    "dice": "1d4-1"
+  },
+  "id": "weasel",
+  "initiative": 3,
+  "name": "Weasel",
+  "proficiency_bonus": 2,
+  "schema_version": "1",
+  "senses": {
+    "darkvision": 60,
+    "passive_perception": 13
+  },
+  "size": "tiny",
+  "skills": {
+    "acrobatics": 5,
+    "perception": 3,
+    "stealth": 5
+  },
+  "source": "srd-5.2.1",
+  "speeds": {
+    "climb": {
+      "feet": 30
+    },
+    "walk": {
+      "feet": 30
+    }
+  },
+  "type": "beast",
+  "xp": 10
+}

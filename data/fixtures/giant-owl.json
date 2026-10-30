@@ -1,0 +1,102 @@
+{
+  "ability_scores": {
+    "charisma": 10,
+    "constitution": 12,
+    "dexterity": 15,
+    "intelligence": 10,
+    "strength": 13,
+    "wisdom": 14
+  },
+  "actions": [
+    {
+      "desc": "Melee Attack Roll: +4, reach 5 ft. Hit: 7 (1d10 + 2) Slashing damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "1d10",
+                "magical": false,
+                "modifier": 2,
+                "type": "slashing"
+              }
+            ],
+            "modifier": 4,
+            "on_hit": [],
+            "range": null,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "talons",
+      "kind": "modeled",
+      "name": "Talons"
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "The owl casts one of the following spells, requiring no spell components and using Wisdom as the spellcasting ability:",
+      "id": "spellcasting",
+      "kind": "unmodeled",
+      "name": "Spellcasting"
+    }
+  ],
+  "alignment": "neutral",
+  "armor_class": [
+    {
+      "value": 12
+    }
+  ],
+  "challenge_rating": 0.25,
+  "damage_resistances": [
+    "necrotic",
+    "radiant"
+  ],
+  "hit_points": {
+    "average": 19,
+    "dice": "3d10+3"
+  },
+  "id": "giant-owl",
+  "initiative": 2,
+  "languages": [
+    "Celestial",
+    "understands Common",
+    "Elvish",
+    "and Sylvan but can’t speak them"
+  ],
+  "name": "Giant Owl",
+  "proficiency_bonus": 2,
+  "saving_throws": {
+    "wis": 4
+  },
+  "schema_version": "1",
+  "senses": {
+    "darkvision": 120,
+    "passive_perception": 16
+  },
+  "size": "large",
+  "skills": {
+    "perception": 6,
+    "stealth": 6
+  },
+  "source": "srd-5.2.1",
+  "speeds": {
+    "fly": {
+      "feet": 60
+    },
+    "walk": {
+      "feet": 5
+    }
+  },
+  "traits": [
+    {
+      "default_resolution": "skipped",
+      "desc": "The owl doesn’t provoke an Opportunity Attack when it flies out of an enemy’s reach.",
+      "id": "flyby",
+      "kind": "unmodeled",
+      "name": "Flyby"
+    }
+  ],
+  "type": "celestial",
+  "xp": 50
+}

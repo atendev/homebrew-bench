@@ -1,0 +1,132 @@
+{
+  "ability_scores": {
+    "charisma": 3,
+    "constitution": 12,
+    "dexterity": 14,
+    "intelligence": 1,
+    "strength": 19,
+    "wisdom": 10
+  },
+  "actions": [
+    {
+      "desc": "The snake makes one Bite attack and uses Constrict.",
+      "effects": [
+        {
+          "multiattack": {
+            "steps": [
+              {
+                "action": {
+                  "action_id": "bite",
+                  "count": 1
+                }
+              },
+              {
+                "action": {
+                  "action_id": "constrict",
+                  "count": 1
+                }
+              }
+            ],
+            "swap": false
+          }
+        }
+      ],
+      "id": "multiattack",
+      "kind": "modeled",
+      "name": "Multiattack"
+    },
+    {
+      "desc": "Melee Attack Roll: +6, reach 10 ft. Hit: 11 (2d6 + 4) Piercing damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "2d6",
+                "magical": false,
+                "modifier": 4,
+                "type": "piercing"
+              }
+            ],
+            "modifier": 6,
+            "on_hit": [],
+            "range": null,
+            "reach": 10,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "bite",
+      "kind": "modeled",
+      "name": "Bite"
+    },
+    {
+      "agent_clauses": [
+        "and the target has the Grappled condition (escape DC 14)"
+      ],
+      "desc": "Strength Saving Throw: DC 14, one Large or smaller creature the snake can see within 10 feet. Failure: 13 (2d8 + 4) Bludgeoning damage, and the target has the Grappled condition (escape DC 14).",
+      "effects": [
+        {
+          "saving_throw": {
+            "ability": "str",
+            "creature_type_gate": null,
+            "damage": [
+              {
+                "dice": "2d8",
+                "magical": false,
+                "modifier": 4,
+                "type": "bludgeoning"
+              }
+            ],
+            "dc": 14,
+            "half_on_success": false,
+            "hp_gate": null,
+            "immunity_after_success": false,
+            "no_damage_on_success": true,
+            "on_failure": [],
+            "repeat_save": null,
+            "two_stage": null
+          }
+        }
+      ],
+      "id": "constrict",
+      "kind": "partly_modeled",
+      "name": "Constrict"
+    }
+  ],
+  "alignment": "unaligned",
+  "armor_class": [
+    {
+      "value": 12
+    }
+  ],
+  "challenge_rating": 2,
+  "hit_points": {
+    "average": 60,
+    "dice": "8d12+8"
+  },
+  "id": "giant-constrictor-snake",
+  "initiative": 2,
+  "name": "Giant Constrictor Snake",
+  "proficiency_bonus": 2,
+  "schema_version": "1",
+  "senses": {
+    "blindsight": 10,
+    "passive_perception": 12
+  },
+  "size": "huge",
+  "skills": {
+    "perception": 2
+  },
+  "source": "srd-5.2.1",
+  "speeds": {
+    "swim": {
+      "feet": 30
+    },
+    "walk": {
+      "feet": 30
+    }
+  },
+  "type": "beast",
+  "xp": 450
+}

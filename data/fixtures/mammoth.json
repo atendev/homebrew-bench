@@ -1,0 +1,125 @@
+{
+  "ability_scores": {
+    "charisma": 6,
+    "constitution": 21,
+    "dexterity": 9,
+    "intelligence": 3,
+    "strength": 24,
+    "wisdom": 11
+  },
+  "actions": [
+    {
+      "desc": "The mammoth makes two Gore attacks.",
+      "effects": [
+        {
+          "multiattack": {
+            "steps": [
+              {
+                "action": {
+                  "action_id": "gore",
+                  "count": 2
+                }
+              }
+            ],
+            "swap": false
+          }
+        }
+      ],
+      "id": "multiattack",
+      "kind": "modeled",
+      "name": "Multiattack"
+    },
+    {
+      "agent_clauses": [
+        "If the target is a Huge or smaller creature and the mammoth moved 20+ feet straight toward it immediately before the hit, the target has the Prone condition."
+      ],
+      "desc": "Melee Attack Roll: +10, reach 10 ft. Hit: 18 (2d10 + 7) Piercing damage. If the target is a Huge or smaller creature and the mammoth moved 20+ feet straight toward it immediately before the hit, the target has the Prone condition.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "2d10",
+                "magical": false,
+                "modifier": 7,
+                "type": "piercing"
+              }
+            ],
+            "modifier": 10,
+            "on_hit": [],
+            "range": null,
+            "reach": 10,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "gore",
+      "kind": "partly_modeled",
+      "name": "Gore"
+    }
+  ],
+  "alignment": "unaligned",
+  "armor_class": [
+    {
+      "value": 13
+    }
+  ],
+  "bonus_actions": [
+    {
+      "desc": "Dexterity Saving Throw: DC 18, one creature within 5 feet that has the Prone condition. Failure: 29 (4d10 + 7) Bludgeoning damage. Success: Half damage.",
+      "effects": [
+        {
+          "saving_throw": {
+            "ability": "dex",
+            "creature_type_gate": null,
+            "damage": [
+              {
+                "dice": "4d10",
+                "magical": false,
+                "modifier": 7,
+                "type": "bludgeoning"
+              }
+            ],
+            "dc": 18,
+            "half_on_success": true,
+            "hp_gate": null,
+            "immunity_after_success": false,
+            "no_damage_on_success": false,
+            "on_failure": [],
+            "repeat_save": null,
+            "two_stage": null
+          }
+        }
+      ],
+      "id": "trample",
+      "kind": "modeled",
+      "name": "Trample"
+    }
+  ],
+  "challenge_rating": 6,
+  "hit_points": {
+    "average": 126,
+    "dice": "11d12+55"
+  },
+  "id": "mammoth",
+  "initiative": -1,
+  "name": "Mammoth",
+  "proficiency_bonus": 3,
+  "saving_throws": {
+    "con": 8,
+    "str": 10
+  },
+  "schema_version": "1",
+  "senses": {
+    "passive_perception": 10
+  },
+  "size": "huge",
+  "source": "srd-5.2.1",
+  "speeds": {
+    "walk": {
+      "feet": 50
+    }
+  },
+  "type": "beast",
+  "xp": 2300
+}

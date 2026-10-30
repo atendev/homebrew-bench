@@ -1,0 +1,101 @@
+{
+  "ability_scores": {
+    "charisma": 8,
+    "constitution": 13,
+    "dexterity": 13,
+    "intelligence": 2,
+    "strength": 17,
+    "wisdom": 12
+  },
+  "actions": [
+    {
+      "desc": "The hippogriff makes two Rend attacks.",
+      "effects": [
+        {
+          "multiattack": {
+            "steps": [
+              {
+                "action": {
+                  "action_id": "rend",
+                  "count": 2
+                }
+              }
+            ],
+            "swap": false
+          }
+        }
+      ],
+      "id": "multiattack",
+      "kind": "modeled",
+      "name": "Multiattack"
+    },
+    {
+      "desc": "Melee Attack Roll: +5, reach 5 ft. Hit: 7 (1d8 + 3) Slashing damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "1d8",
+                "magical": false,
+                "modifier": 3,
+                "type": "slashing"
+              }
+            ],
+            "modifier": 5,
+            "on_hit": [],
+            "range": null,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "rend",
+      "kind": "modeled",
+      "name": "Rend"
+    }
+  ],
+  "alignment": "unaligned",
+  "armor_class": [
+    {
+      "value": 11
+    }
+  ],
+  "challenge_rating": 1,
+  "hit_points": {
+    "average": 26,
+    "dice": "4d10+4"
+  },
+  "id": "hippogriff",
+  "initiative": 1,
+  "name": "Hippogriff",
+  "proficiency_bonus": 2,
+  "schema_version": "1",
+  "senses": {
+    "passive_perception": 15
+  },
+  "size": "large",
+  "skills": {
+    "perception": 5
+  },
+  "source": "srd-5.2.1",
+  "speeds": {
+    "fly": {
+      "feet": 60
+    },
+    "walk": {
+      "feet": 40
+    }
+  },
+  "traits": [
+    {
+      "default_resolution": "skipped",
+      "desc": "The hippogriff doesn’t provoke an Opportunity Attack when it flies out of an enemy’s reach.",
+      "id": "flyby",
+      "kind": "unmodeled",
+      "name": "Flyby"
+    }
+  ],
+  "type": "monstrosity",
+  "xp": 200
+}

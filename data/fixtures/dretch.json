@@ -1,0 +1,93 @@
+{
+  "ability_scores": {
+    "charisma": 3,
+    "constitution": 12,
+    "dexterity": 11,
+    "intelligence": 5,
+    "strength": 12,
+    "wisdom": 8
+  },
+  "actions": [
+    {
+      "desc": "Melee Attack Roll: +3, reach 5 ft. Hit: 4 (1d6 + 1) Slashing damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "1d6",
+                "magical": false,
+                "modifier": 1,
+                "type": "slashing"
+              }
+            ],
+            "modifier": 3,
+            "on_hit": [],
+            "range": null,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "rend",
+      "kind": "modeled",
+      "name": "Rend"
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "Constitution Saving Throw: DC 11, each creature in a 10-foot Emanation originating from the dretch. Failure: The target has the Poisoned condition until the end of its next turn. While Poisoned, the creature can take either an action or a Bonus Action on its turn, not both, and it can’t take Reactions.",
+      "id": "fetid-cloud",
+      "kind": "unmodeled",
+      "name": "Fetid Cloud",
+      "usage": {
+        "per_day": {
+          "uses": 1
+        }
+      }
+    }
+  ],
+  "alignment": "chaotic evil",
+  "armor_class": [
+    {
+      "value": 11
+    }
+  ],
+  "challenge_rating": 0.25,
+  "condition_immunities": [
+    "poisoned"
+  ],
+  "damage_immunities": [
+    "poison"
+  ],
+  "damage_resistances": [
+    "cold",
+    "fire",
+    "lightning"
+  ],
+  "hit_points": {
+    "average": 18,
+    "dice": "4d6+4"
+  },
+  "id": "dretch",
+  "initiative": 0,
+  "languages": [
+    "Abyssal",
+    "telepathy 60 ft. (works only with creatures that understand Abyssal)"
+  ],
+  "name": "Dretch",
+  "proficiency_bonus": 2,
+  "schema_version": "1",
+  "senses": {
+    "darkvision": 60,
+    "passive_perception": 9
+  },
+  "size": "small",
+  "source": "srd-5.2.1",
+  "speeds": {
+    "walk": {
+      "feet": 20
+    }
+  },
+  "type": "fiend",
+  "xp": 50
+}

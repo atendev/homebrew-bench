@@ -1,0 +1,140 @@
+{
+  "ability_scores": {
+    "charisma": 3,
+    "constitution": 18,
+    "dexterity": 8,
+    "intelligence": 7,
+    "strength": 18,
+    "wisdom": 10
+  },
+  "actions": [
+    {
+      "desc": "The guardian makes two Fist attacks.",
+      "effects": [
+        {
+          "multiattack": {
+            "steps": [
+              {
+                "action": {
+                  "action_id": "fist",
+                  "count": 2
+                }
+              }
+            ],
+            "swap": false
+          }
+        }
+      ],
+      "id": "multiattack",
+      "kind": "modeled",
+      "name": "Multiattack"
+    },
+    {
+      "desc": "Melee Attack Roll: +7, reach 10 ft. Hit: 11 (2d6 + 4) Bludgeoning damage plus 7 (2d6) Force damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "2d6",
+                "magical": false,
+                "modifier": 4,
+                "type": "bludgeoning"
+              },
+              {
+                "dice": "2d6",
+                "magical": false,
+                "modifier": 0,
+                "type": "force"
+              }
+            ],
+            "modifier": 7,
+            "on_hit": [],
+            "range": null,
+            "reach": 10,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "fist",
+      "kind": "modeled",
+      "name": "Fist"
+    }
+  ],
+  "alignment": "unaligned",
+  "armor_class": [
+    {
+      "value": 17
+    }
+  ],
+  "challenge_rating": 7,
+  "condition_immunities": [
+    "charmed",
+    "exhaustion",
+    "frightened",
+    "paralyzed",
+    "petrified",
+    "poisoned"
+  ],
+  "damage_immunities": [
+    "poison"
+  ],
+  "hit_points": {
+    "average": 142,
+    "dice": "15d10+60"
+  },
+  "id": "shield-guardian",
+  "initiative": -1,
+  "languages": [
+    "Understands commands given in any language but can’t speak"
+  ],
+  "name": "Shield Guardian",
+  "proficiency_bonus": 3,
+  "reactions": [
+    {
+      "default_resolution": "skipped",
+      "desc": "Trigger: An attack roll hits the wearer of the guardian’s amulet while the wearer is within 5 feet of the guardian. Response: The wearer gains a +5 bonus to AC, including against the triggering attack and possibly causing it to miss, until the start of the guardian’s next turn.",
+      "id": "protection",
+      "kind": "unmodeled",
+      "name": "Protection"
+    }
+  ],
+  "schema_version": "1",
+  "senses": {
+    "blindsight": 10,
+    "darkvision": 60,
+    "passive_perception": 10
+  },
+  "size": "large",
+  "source": "srd-5.2.1",
+  "speeds": {
+    "walk": {
+      "feet": 30
+    }
+  },
+  "traits": [
+    {
+      "default_resolution": "skipped",
+      "desc": "The guardian is magically bound to an amulet. While the guardian and its amulet are on the same plane of existence, the amulet’s wearer can telepathically call the guardian to travel to it, and the guardian knows the distance and direction to the amulet. If the guardian is within 60 feet of the amulet’s wearer, half of any damage the wearer takes (round up) is transferred to the guardian.",
+      "id": "bound",
+      "kind": "unmodeled",
+      "name": "Bound"
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "The guardian regains 10 Hit Points at the start of each of its turns if it has at least 1 Hit Point.",
+      "id": "regeneration",
+      "kind": "unmodeled",
+      "name": "Regeneration"
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "A spellcaster who wears the guardian’s amulet can cause the guardian to store one spell of level 4 or lower. To do so, the wearer must cast the spell on the guardian while within 5 feet of it. The spell has no effect but is stored within the guardian. Any previously stored spell is lost when a new spell is stored. The guardian can cast the spell stored with any parameters set by the original caster, requiring no spell components and using the caster’s spellcasting ability. The stored spell is then lost.",
+      "id": "spell-storing",
+      "kind": "unmodeled",
+      "name": "Spell Storing"
+    }
+  ],
+  "type": "construct",
+  "xp": 2900
+}

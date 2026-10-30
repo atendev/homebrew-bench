@@ -1,0 +1,74 @@
+{
+  "ability_scores": {
+    "charisma": 6,
+    "constitution": 11,
+    "dexterity": 8,
+    "intelligence": 10,
+    "strength": 3,
+    "wisdom": 10
+  },
+  "actions": [
+    {
+      "desc": "Melee Attack Roll: +1, reach 5 ft. Hit: 1 Slashing damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "1d1",
+                "magical": false,
+                "modifier": 0,
+                "type": "slashing"
+              }
+            ],
+            "modifier": 1,
+            "on_hit": [],
+            "range": null,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "rake",
+      "kind": "modeled",
+      "name": "Rake"
+    }
+  ],
+  "alignment": "neutral",
+  "armor_class": [
+    {
+      "value": 9
+    }
+  ],
+  "challenge_rating": 0,
+  "damage_resistances": [
+    "piercing"
+  ],
+  "damage_vulnerabilities": [
+    "fire"
+  ],
+  "hit_points": {
+    "average": 10,
+    "dice": "3d6"
+  },
+  "id": "awakened-shrub",
+  "initiative": -1,
+  "languages": [
+    "Common plus one other language"
+  ],
+  "name": "Awakened Shrub",
+  "proficiency_bonus": 2,
+  "schema_version": "1",
+  "senses": {
+    "passive_perception": 10
+  },
+  "size": "small",
+  "source": "srd-5.2.1",
+  "speeds": {
+    "walk": {
+      "feet": 20
+    }
+  },
+  "type": "plant",
+  "xp": 10
+}

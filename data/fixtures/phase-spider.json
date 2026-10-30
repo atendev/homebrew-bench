@@ -1,0 +1,134 @@
+{
+  "ability_scores": {
+    "charisma": 6,
+    "constitution": 12,
+    "dexterity": 16,
+    "intelligence": 6,
+    "strength": 15,
+    "wisdom": 10
+  },
+  "actions": [
+    {
+      "desc": "The spider makes two Bite attacks.",
+      "effects": [
+        {
+          "multiattack": {
+            "steps": [
+              {
+                "action": {
+                  "action_id": "bite",
+                  "count": 2
+                }
+              }
+            ],
+            "swap": false
+          }
+        }
+      ],
+      "id": "multiattack",
+      "kind": "modeled",
+      "name": "Multiattack"
+    },
+    {
+      "agent_clauses": [
+        "If this damage reduces the target to 0 Hit Points, the target becomes Stable, and it has the Poisoned condition for 1 hour. While Poisoned, the target also has the Paralyzed condition."
+      ],
+      "desc": "Melee Attack Roll: +5, reach 5 ft. Hit: 8 (1d10 + 3) Piercing damage plus 9 (2d8) Poison damage. If this damage reduces the target to 0 Hit Points, the target becomes Stable, and it has the Poisoned condition for 1 hour. While Poisoned, the target also has the Paralyzed condition.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "1d10",
+                "magical": false,
+                "modifier": 3,
+                "type": "piercing"
+              },
+              {
+                "dice": "2d8",
+                "magical": false,
+                "modifier": 0,
+                "type": "poison"
+              }
+            ],
+            "modifier": 5,
+            "on_hit": [],
+            "range": null,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "bite",
+      "kind": "partly_modeled",
+      "name": "Bite"
+    }
+  ],
+  "alignment": "unaligned",
+  "armor_class": [
+    {
+      "value": 14
+    }
+  ],
+  "bonus_actions": [
+    {
+      "default_resolution": "skipped",
+      "desc": "The spider teleports from the Material Plane to the Ethereal Plane or vice versa.",
+      "id": "ethereal-jaunt",
+      "kind": "unmodeled",
+      "name": "Ethereal Jaunt"
+    }
+  ],
+  "challenge_rating": 3,
+  "hit_points": {
+    "average": 45,
+    "dice": "7d10+7"
+  },
+  "id": "phase-spider",
+  "initiative": 3,
+  "name": "Phase Spider",
+  "proficiency_bonus": 2,
+  "schema_version": "1",
+  "senses": {
+    "darkvision": 60,
+    "passive_perception": 10
+  },
+  "size": "large",
+  "skills": {
+    "stealth": 7
+  },
+  "source": "srd-5.2.1",
+  "speeds": {
+    "climb": {
+      "feet": 30
+    },
+    "walk": {
+      "feet": 30
+    }
+  },
+  "traits": [
+    {
+      "default_resolution": "skipped",
+      "desc": "The spider can see 60 feet into the Ethereal Plane while on the Material Plane and vice versa.",
+      "id": "ethereal-sight",
+      "kind": "unmodeled",
+      "name": "Ethereal Sight"
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "The spider can climb difficult surfaces, including along ceilings, without needing to make an ability check.",
+      "id": "spider-climb",
+      "kind": "unmodeled",
+      "name": "Spider Climb"
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "The spider ignores movement restrictions caused by webs, and the spider knows the location of any other creature in contact with the same web.",
+      "id": "web-walker",
+      "kind": "unmodeled",
+      "name": "Web Walker"
+    }
+  ],
+  "type": "monstrosity",
+  "xp": 700
+}

@@ -1,0 +1,148 @@
+{
+  "ability_scores": {
+    "charisma": 12,
+    "constitution": 21,
+    "dexterity": 8,
+    "intelligence": 12,
+    "strength": 23,
+    "wisdom": 16
+  },
+  "actions": [
+    {
+      "desc": "The treant makes two Slam attacks.",
+      "effects": [
+        {
+          "multiattack": {
+            "steps": [
+              {
+                "action": {
+                  "action_id": "slam",
+                  "count": 2
+                }
+              }
+            ],
+            "swap": false
+          }
+        }
+      ],
+      "id": "multiattack",
+      "kind": "modeled",
+      "name": "Multiattack"
+    },
+    {
+      "desc": "Melee Attack Roll: +10, reach 5 ft. Hit: 16 (3d6 + 6) Bludgeoning damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "3d6",
+                "magical": false,
+                "modifier": 6,
+                "type": "bludgeoning"
+              }
+            ],
+            "modifier": 10,
+            "on_hit": [],
+            "range": null,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "slam",
+      "kind": "modeled",
+      "name": "Slam"
+    },
+    {
+      "desc": "Ranged Attack Roll: +10, range 180 ft. Hit: 28 (4d10 + 6) Piercing damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "4d10",
+                "magical": false,
+                "modifier": 6,
+                "type": "piercing"
+              }
+            ],
+            "modifier": 10,
+            "on_hit": [],
+            "range": [
+              180,
+              180
+            ],
+            "reach": null,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "hail-of-bark",
+      "kind": "modeled",
+      "name": "Hail of Bark"
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "The treant magically animates up to two trees it can see within 60 feet of itself. Each tree uses the Treant stat block, except it has Intelligence and Charisma scores of 1, it can’t speak, and it lacks this action. The tree takes its turn immediately after the treant on the same Initiative count, and it obeys the treant. A tree remains animate for 1 day or until it dies, the treant dies, or it is more than 120 feet from the treant. The tree then takes root if possible.",
+      "id": "animate-trees",
+      "kind": "unmodeled",
+      "name": "Animate Trees",
+      "usage": {
+        "per_day": {
+          "uses": 1
+        }
+      }
+    }
+  ],
+  "alignment": "chaotic good",
+  "armor_class": [
+    {
+      "value": 16
+    }
+  ],
+  "challenge_rating": 9,
+  "damage_resistances": [
+    "bludgeoning",
+    "piercing"
+  ],
+  "damage_vulnerabilities": [
+    "fire"
+  ],
+  "hit_points": {
+    "average": 138,
+    "dice": "12d12+60"
+  },
+  "id": "treant",
+  "initiative": -1,
+  "languages": [
+    "Common",
+    "Druidic",
+    "Elvish",
+    "Sylvan"
+  ],
+  "name": "Treant",
+  "proficiency_bonus": 4,
+  "schema_version": "1",
+  "senses": {
+    "passive_perception": 13
+  },
+  "size": "huge",
+  "source": "srd-5.2.1",
+  "speeds": {
+    "walk": {
+      "feet": 30
+    }
+  },
+  "traits": [
+    {
+      "default_resolution": "skipped",
+      "desc": "The treant deals double damage to objects and structures.",
+      "id": "siege-monster",
+      "kind": "unmodeled",
+      "name": "Siege Monster"
+    }
+  ],
+  "type": "plant",
+  "xp": 5000
+}

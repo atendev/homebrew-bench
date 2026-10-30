@@ -1,0 +1,168 @@
+{
+  "ability_scores": {
+    "charisma": 20,
+    "constitution": 13,
+    "dexterity": 17,
+    "intelligence": 15,
+    "strength": 8,
+    "wisdom": 12
+  },
+  "actions": [
+    {
+      "desc": "The incubus makes two Restless Touch attacks.",
+      "effects": [
+        {
+          "multiattack": {
+            "steps": [
+              {
+                "action": {
+                  "action_id": "restless-touch",
+                  "count": 2
+                }
+              }
+            ],
+            "swap": false
+          }
+        }
+      ],
+      "id": "multiattack",
+      "kind": "modeled",
+      "name": "Multiattack"
+    },
+    {
+      "agent_clauses": [
+        "Until the curse ends, the target gains no benefit from finishing Short Rests."
+      ],
+      "desc": "Melee Attack Roll: +7, reach 5 ft. Hit: 15 (3d6 + 5) Psychic damage, and the target is cursed for 24 hours or until the incubus dies. Until the curse ends, the target gains no benefit from finishing Short Rests.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "3d6",
+                "magical": false,
+                "modifier": 5,
+                "type": "psychic"
+              }
+            ],
+            "modifier": 7,
+            "on_hit": [],
+            "range": null,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "restless-touch",
+      "kind": "partly_modeled",
+      "name": "Restless Touch"
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "The incubus casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 15):",
+      "id": "spellcasting",
+      "kind": "unmodeled",
+      "name": "Spellcasting"
+    }
+  ],
+  "alignment": "neutral evil",
+  "armor_class": [
+    {
+      "value": 15
+    }
+  ],
+  "bonus_actions": [
+    {
+      "agent_clauses": [
+        "If the target has 20 Hit Points or fewer, it has the Unconscious condition for 1 hour, until it takes damage, or until a creature within 5 feet of it takes an action to wake it. Otherwise, the target takes"
+      ],
+      "desc": "Wisdom Saving Throw: DC 15, one creature the incubus can see within 60 feet. Failure: If the target has 20 Hit Points or fewer, it has the Unconscious condition for 1 hour, until it takes damage, or until a creature within 5 feet of it takes an action to wake it. Otherwise, the target takes 18 (4d8) Psychic damage.",
+      "effects": [
+        {
+          "saving_throw": {
+            "ability": "wis",
+            "creature_type_gate": null,
+            "damage": [
+              {
+                "dice": "4d8",
+                "magical": false,
+                "modifier": 0,
+                "type": "psychic"
+              }
+            ],
+            "dc": 15,
+            "half_on_success": false,
+            "hp_gate": null,
+            "immunity_after_success": false,
+            "no_damage_on_success": true,
+            "on_failure": [],
+            "repeat_save": null,
+            "two_stage": null
+          }
+        }
+      ],
+      "id": "nightmare",
+      "kind": "partly_modeled",
+      "name": "Nightmare",
+      "usage": {
+        "recharge": {
+          "dice": "6"
+        }
+      }
+    }
+  ],
+  "challenge_rating": 4,
+  "damage_resistances": [
+    "cold",
+    "fire",
+    "poison",
+    "psychic"
+  ],
+  "hit_points": {
+    "average": 66,
+    "dice": "12d8+12"
+  },
+  "id": "incubus",
+  "initiative": 3,
+  "languages": [
+    "Abyssal",
+    "Common",
+    "Infernal",
+    "telepathy 60 ft."
+  ],
+  "name": "Incubus",
+  "proficiency_bonus": 2,
+  "schema_version": "1",
+  "senses": {
+    "darkvision": 60,
+    "passive_perception": 15
+  },
+  "size": "medium",
+  "skills": {
+    "deception": 9,
+    "insight": 5,
+    "perception": 5,
+    "persuasion": 9,
+    "stealth": 7
+  },
+  "source": "srd-5.2.1",
+  "speeds": {
+    "fly": {
+      "feet": 60
+    },
+    "walk": {
+      "feet": 30
+    }
+  },
+  "traits": [
+    {
+      "default_resolution": "skipped",
+      "desc": "When the incubus finishes a Long Rest, it can shape-shift into a Succubus, using that stat block instead of this one. Any equipment it is wearing or carrying isn’t transformed.",
+      "id": "succubus-form",
+      "kind": "unmodeled",
+      "name": "Succubus Form"
+    }
+  ],
+  "type": "fiend",
+  "xp": 1100
+}

@@ -1,0 +1,107 @@
+{
+  "ability_scores": {
+    "charisma": 4,
+    "constitution": 12,
+    "dexterity": 16,
+    "intelligence": 2,
+    "strength": 14,
+    "wisdom": 11
+  },
+  "actions": [
+    {
+      "desc": "Melee Attack Roll: +5, reach 5 ft. Hit: 7 (1d8 + 3) Piercing damage plus 7 (2d6) Poison damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "1d8",
+                "magical": false,
+                "modifier": 3,
+                "type": "piercing"
+              },
+              {
+                "dice": "2d6",
+                "magical": false,
+                "modifier": 0,
+                "type": "poison"
+              }
+            ],
+            "modifier": 5,
+            "on_hit": [],
+            "range": null,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "bite",
+      "kind": "modeled",
+      "name": "Bite"
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "Dexterity Saving Throw: DC 13, one creature the spider can see within 60 feet. Failure: The target has the Restrained condition until the web is destroyed (AC 10; HP 5; Vulnerability to Fire damage; Immunity to Poison and Psychic damage).",
+      "id": "web",
+      "kind": "unmodeled",
+      "name": "Web",
+      "usage": {
+        "recharge": {
+          "dice": "5-6"
+        }
+      }
+    }
+  ],
+  "alignment": "unaligned",
+  "armor_class": [
+    {
+      "value": 14
+    }
+  ],
+  "challenge_rating": 1,
+  "hit_points": {
+    "average": 26,
+    "dice": "4d10+4"
+  },
+  "id": "giant-spider",
+  "initiative": 3,
+  "name": "Giant Spider",
+  "proficiency_bonus": 2,
+  "schema_version": "1",
+  "senses": {
+    "darkvision": 60,
+    "passive_perception": 14
+  },
+  "size": "large",
+  "skills": {
+    "perception": 4,
+    "stealth": 7
+  },
+  "source": "srd-5.2.1",
+  "speeds": {
+    "climb": {
+      "feet": 30
+    },
+    "walk": {
+      "feet": 30
+    }
+  },
+  "traits": [
+    {
+      "default_resolution": "skipped",
+      "desc": "The spider can climb difficult surfaces, including along ceilings, without needing to make an ability check.",
+      "id": "spider-climb",
+      "kind": "unmodeled",
+      "name": "Spider Climb"
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "The spider ignores movement restrictions caused by webs, and it knows the location of any other creature in contact with the same web.",
+      "id": "web-walker",
+      "kind": "unmodeled",
+      "name": "Web Walker"
+    }
+  ],
+  "type": "beast",
+  "xp": 200
+}

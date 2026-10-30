@@ -1,0 +1,149 @@
+{
+  "ability_scores": {
+    "charisma": 18,
+    "constitution": 17,
+    "dexterity": 20,
+    "intelligence": 18,
+    "strength": 16,
+    "wisdom": 20
+  },
+  "actions": [
+    {
+      "desc": "Melee Attack Roll: +7, reach 5 ft. Hit: 11 (1d12 + 5) Piercing damage, and the target has the Poisoned condition until the end of the couatl’s next turn.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "1d12",
+                "magical": false,
+                "modifier": 5,
+                "type": "piercing"
+              }
+            ],
+            "modifier": 7,
+            "on_hit": [],
+            "range": null,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "bite",
+      "kind": "modeled",
+      "name": "Bite"
+    },
+    {
+      "agent_clauses": [
+        "The target has the Grappled condition (escape DC 13), and it has the Restrained condition until the grapple ends"
+      ],
+      "desc": "Strength Saving Throw: DC 15, one Medium or smaller creature the couatl can see within 5 feet. Failure: 8 (1d6 + 5) Bludgeoning damage. The target has the Grappled condition (escape DC 13), and it has the Restrained condition until the grapple ends.",
+      "effects": [
+        {
+          "saving_throw": {
+            "ability": "str",
+            "creature_type_gate": null,
+            "damage": [
+              {
+                "dice": "1d6",
+                "magical": false,
+                "modifier": 5,
+                "type": "bludgeoning"
+              }
+            ],
+            "dc": 15,
+            "half_on_success": false,
+            "hp_gate": null,
+            "immunity_after_success": false,
+            "no_damage_on_success": true,
+            "on_failure": [],
+            "repeat_save": null,
+            "two_stage": null
+          }
+        }
+      ],
+      "id": "constrict",
+      "kind": "partly_modeled",
+      "name": "Constrict"
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "The couatl casts one of the following spells, requiring no spell components and using Wisdom as the spellcasting ability (spell save DC 15):",
+      "id": "spellcasting",
+      "kind": "unmodeled",
+      "name": "Spellcasting"
+    }
+  ],
+  "alignment": "lawful good",
+  "armor_class": [
+    {
+      "value": 19
+    }
+  ],
+  "bonus_actions": [
+    {
+      "default_resolution": "skipped",
+      "desc": "The couatl casts Bless, Lesser Restoration, or Sanctuary, requiring no spell components and using the same spellcasting ability as Spellcasting.",
+      "id": "divine-aid",
+      "kind": "unmodeled",
+      "name": "Divine Aid",
+      "usage": {
+        "per_day": {
+          "uses": 2
+        }
+      }
+    }
+  ],
+  "challenge_rating": 4,
+  "damage_immunities": [
+    "psychic",
+    "radiant"
+  ],
+  "damage_resistances": [
+    "bludgeoning",
+    "piercing",
+    "slashing"
+  ],
+  "hit_points": {
+    "average": 60,
+    "dice": "8d8+24"
+  },
+  "id": "couatl",
+  "initiative": 5,
+  "languages": [
+    "All",
+    "telepathy 120 ft."
+  ],
+  "name": "Couatl",
+  "proficiency_bonus": 2,
+  "saving_throws": {
+    "con": 5,
+    "wis": 7
+  },
+  "schema_version": "1",
+  "senses": {
+    "passive_perception": 15,
+    "truesight": 120
+  },
+  "size": "medium",
+  "source": "srd-5.2.1",
+  "speeds": {
+    "fly": {
+      "feet": 90
+    },
+    "walk": {
+      "feet": 30
+    }
+  },
+  "traits": [
+    {
+      "default_resolution": "skipped",
+      "desc": "The couatl’s thoughts can’t be read by any means, and other creatures can communicate with it telepathically only if it allows them.",
+      "id": "shielded-mind",
+      "kind": "unmodeled",
+      "name": "Shielded Mind"
+    }
+  ],
+  "type": "celestial",
+  "xp": 1100
+}

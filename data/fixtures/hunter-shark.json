@@ -1,0 +1,81 @@
+{
+  "ability_scores": {
+    "charisma": 4,
+    "constitution": 15,
+    "dexterity": 14,
+    "intelligence": 1,
+    "strength": 18,
+    "wisdom": 10
+  },
+  "actions": [
+    {
+      "desc": "Melee Attack Roll: +6 (with Advantage if the target doesn’t have all its Hit Points), reach 5 ft. Hit: 14 (3d6 + 4) Piercing damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "3d6",
+                "magical": false,
+                "modifier": 4,
+                "type": "piercing"
+              }
+            ],
+            "modifier": 6,
+            "on_hit": [],
+            "range": null,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "bite",
+      "kind": "modeled",
+      "name": "Bite"
+    }
+  ],
+  "alignment": "unaligned",
+  "armor_class": [
+    {
+      "value": 12
+    }
+  ],
+  "challenge_rating": 2,
+  "hit_points": {
+    "average": 45,
+    "dice": "6d10+12"
+  },
+  "id": "hunter-shark",
+  "initiative": 2,
+  "name": "Hunter Shark",
+  "proficiency_bonus": 2,
+  "schema_version": "1",
+  "senses": {
+    "blindsight": 60,
+    "passive_perception": 12
+  },
+  "size": "large",
+  "skills": {
+    "perception": 2
+  },
+  "source": "srd-5.2.1",
+  "speeds": {
+    "swim": {
+      "feet": 40
+    },
+    "walk": {
+      "feet": 5
+    }
+  },
+  "traits": [
+    {
+      "default_resolution": "skipped",
+      "desc": "The shark can breathe only underwater.",
+      "id": "water-breathing",
+      "kind": "unmodeled",
+      "name": "Water Breathing"
+    }
+  ],
+  "type": "beast",
+  "xp": 450
+}

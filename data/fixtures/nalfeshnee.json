@@ -1,0 +1,190 @@
+{
+  "ability_scores": {
+    "charisma": 15,
+    "constitution": 22,
+    "dexterity": 10,
+    "intelligence": 19,
+    "strength": 21,
+    "wisdom": 12
+  },
+  "actions": [
+    {
+      "desc": "The nalfeshnee makes three Rend attacks.",
+      "effects": [
+        {
+          "multiattack": {
+            "steps": [
+              {
+                "action": {
+                  "action_id": "rend",
+                  "count": 3
+                }
+              }
+            ],
+            "swap": false
+          }
+        }
+      ],
+      "id": "multiattack",
+      "kind": "modeled",
+      "name": "Multiattack"
+    },
+    {
+      "desc": "Melee Attack Roll: +10, reach 10 ft. Hit: 16 (2d10 + 5) Slashing damage plus 11 (2d10) Force damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "2d10",
+                "magical": false,
+                "modifier": 5,
+                "type": "slashing"
+              },
+              {
+                "dice": "2d10",
+                "magical": false,
+                "modifier": 0,
+                "type": "force"
+              }
+            ],
+            "modifier": 10,
+            "on_hit": [],
+            "range": null,
+            "reach": 10,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "rend",
+      "kind": "modeled",
+      "name": "Rend"
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "The nalfeshnee teleports up to 120 feet to an unoccupied space it can see.",
+      "id": "teleport",
+      "kind": "unmodeled",
+      "name": "Teleport"
+    }
+  ],
+  "alignment": "chaotic evil",
+  "armor_class": [
+    {
+      "value": 18
+    }
+  ],
+  "bonus_actions": [
+    {
+      "agent_clauses": [
+        "and the target has the Frightened condition for 1 minute, until it takes damage, or until it ends its turn with the nalfeshnee out of line of sight"
+      ],
+      "desc": "Wisdom Saving Throw: DC 15, each creature in a 15-foot Emanation originating from the nalfeshnee. Failure: 28 (8d6) Psychic damage, and the target has the Frightened condition for 1 minute, until it takes damage, or until it ends its turn with the nalfeshnee out of line of sight. Success: The target is immune to this nalfeshnee’s Horror Nimbus for 24 hours.",
+      "effects": [
+        {
+          "saving_throw": {
+            "ability": "wis",
+            "creature_type_gate": null,
+            "damage": [
+              {
+                "dice": "8d6",
+                "magical": false,
+                "modifier": 0,
+                "type": "psychic"
+              }
+            ],
+            "dc": 15,
+            "half_on_success": false,
+            "hp_gate": null,
+            "immunity_after_success": false,
+            "no_damage_on_success": true,
+            "on_failure": [],
+            "repeat_save": null,
+            "two_stage": null
+          }
+        }
+      ],
+      "id": "horror-nimbus",
+      "kind": "partly_modeled",
+      "name": "Horror Nimbus",
+      "usage": {
+        "recharge": {
+          "dice": "5-6"
+        }
+      }
+    }
+  ],
+  "challenge_rating": 13,
+  "condition_immunities": [
+    "frightened",
+    "poisoned"
+  ],
+  "damage_immunities": [
+    "poison"
+  ],
+  "damage_resistances": [
+    "cold",
+    "fire",
+    "lightning"
+  ],
+  "hit_points": {
+    "average": 184,
+    "dice": "16d10+96"
+  },
+  "id": "nalfeshnee",
+  "initiative": 0,
+  "languages": [
+    "Abyssal",
+    "telepathy 120 ft."
+  ],
+  "name": "Nalfeshnee",
+  "proficiency_bonus": 5,
+  "reactions": [
+    {
+      "default_resolution": "skipped",
+      "desc": "Trigger: Another creature the nalfeshnee can see ends its move within 120 feet of the nalfeshnee. Response: The nalfeshnee uses Teleport, but its destination space must be within 10 feet of the triggering creature.",
+      "id": "pursuit",
+      "kind": "unmodeled",
+      "name": "Pursuit"
+    }
+  ],
+  "saving_throws": {
+    "cha": 7,
+    "con": 11,
+    "int": 9,
+    "wis": 6
+  },
+  "schema_version": "1",
+  "senses": {
+    "passive_perception": 11,
+    "truesight": 120
+  },
+  "size": "large",
+  "source": "srd-5.2.1",
+  "speeds": {
+    "fly": {
+      "feet": 30
+    },
+    "walk": {
+      "feet": 20
+    }
+  },
+  "traits": [
+    {
+      "default_resolution": "skipped",
+      "desc": "If the nalfeshnee dies outside the Abyss, its body dissolves into ichor, and it gains a new body instantly, reviving with all its Hit Points somewhere in the Abyss.",
+      "id": "demonic-restoration",
+      "kind": "unmodeled",
+      "name": "Demonic Restoration"
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "The nalfeshnee has Advantage on saving throws against spells and other magical effects.",
+      "id": "magic-resistance",
+      "kind": "unmodeled",
+      "name": "Magic Resistance"
+    }
+  ],
+  "type": "fiend",
+  "xp": 10000
+}

@@ -1,0 +1,106 @@
+{
+  "ability_scores": {
+    "charisma": 15,
+    "constitution": 16,
+    "dexterity": 15,
+    "intelligence": 10,
+    "strength": 18,
+    "wisdom": 13
+  },
+  "actions": [
+    {
+      "desc": "Melee Attack Roll: +6, reach 5 ft. Hit: 13 (2d8 + 4) Bludgeoning damage plus 10 (3d6) Fire damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "2d8",
+                "magical": false,
+                "modifier": 4,
+                "type": "bludgeoning"
+              },
+              {
+                "dice": "3d6",
+                "magical": false,
+                "modifier": 0,
+                "type": "fire"
+              }
+            ],
+            "modifier": 6,
+            "on_hit": [],
+            "range": null,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "hooves",
+      "kind": "modeled",
+      "name": "Hooves"
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "The nightmare and up to three willing creatures within 5 feet of it teleport to the Ethereal Plane from the Material Plane or vice versa.",
+      "id": "ethereal-stride",
+      "kind": "unmodeled",
+      "name": "Ethereal Stride"
+    }
+  ],
+  "alignment": "neutral evil",
+  "armor_class": [
+    {
+      "value": 13
+    }
+  ],
+  "challenge_rating": 3,
+  "damage_immunities": [
+    "fire"
+  ],
+  "hit_points": {
+    "average": 68,
+    "dice": "8d10+24"
+  },
+  "id": "nightmare",
+  "initiative": 2,
+  "languages": [
+    "Understands Abyssal",
+    "Common",
+    "and Infernal but can’t speak"
+  ],
+  "name": "Nightmare",
+  "proficiency_bonus": 2,
+  "schema_version": "1",
+  "senses": {
+    "passive_perception": 11
+  },
+  "size": "large",
+  "source": "srd-5.2.1",
+  "speeds": {
+    "fly": {
+      "feet": 90,
+      "hover": true
+    },
+    "walk": {
+      "feet": 60
+    }
+  },
+  "traits": [
+    {
+      "default_resolution": "skipped",
+      "desc": "The nightmare can grant Resistance to Fire damage to a rider while it is on the nightmare.",
+      "id": "confer-fire-resistance",
+      "kind": "unmodeled",
+      "name": "Confer Fire Resistance"
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "The nightmare sheds Bright Light in a 10foot radius and Dim Light for an additional 10 feet.",
+      "id": "illumination",
+      "kind": "unmodeled",
+      "name": "Illumination"
+    }
+  ],
+  "type": "fiend",
+  "xp": 700
+}

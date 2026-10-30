@@ -1,0 +1,82 @@
+{
+  "ability_scores": {
+    "charisma": 1,
+    "constitution": 10,
+    "dexterity": 12,
+    "intelligence": 1,
+    "strength": 18,
+    "wisdom": 9
+  },
+  "actions": [
+    {
+      "desc": "Melee Attack Roll: +6, reach 5 ft. Hit: 9 (2d4 + 4) Slashing damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "2d4",
+                "magical": false,
+                "modifier": 4,
+                "type": "slashing"
+              }
+            ],
+            "modifier": 6,
+            "on_hit": [],
+            "range": null,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "rend",
+      "kind": "modeled",
+      "name": "Rend"
+    }
+  ],
+  "alignment": "chaotic evil",
+  "armor_class": [
+    {
+      "value": 13
+    }
+  ],
+  "challenge_rating": 0.5,
+  "hit_points": {
+    "average": 14,
+    "dice": "4d6"
+  },
+  "id": "troll-limb",
+  "initiative": 1,
+  "name": "Troll Limb",
+  "proficiency_bonus": 2,
+  "schema_version": "1",
+  "senses": {
+    "darkvision": 60,
+    "passive_perception": 9
+  },
+  "size": "small",
+  "source": "srd-5.2.1",
+  "speeds": {
+    "walk": {
+      "feet": 20
+    }
+  },
+  "traits": [
+    {
+      "default_resolution": "skipped",
+      "desc": "The limb regains 5 Hit Points at the start of each of its turns. If the limb takes Acid or Fire damage, this trait doesn’t function on the limb’s next turn. The limb dies only if it starts its turn with 0 Hit Points and doesn’t regenerate.",
+      "id": "regeneration",
+      "kind": "unmodeled",
+      "name": "Regeneration"
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "The limb uncannily has the same senses as a whole troll. If the limb isn’t destroyed within 24 hours, roll 1d12. On a 12, the limb turns into a Troll. Otherwise, the limb withers away.",
+      "id": "troll-spawn",
+      "kind": "unmodeled",
+      "name": "Troll Spawn"
+    }
+  ],
+  "type": "giant",
+  "xp": 100
+}

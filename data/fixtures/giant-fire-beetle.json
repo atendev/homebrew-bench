@@ -1,0 +1,81 @@
+{
+  "ability_scores": {
+    "charisma": 3,
+    "constitution": 12,
+    "dexterity": 10,
+    "intelligence": 1,
+    "strength": 8,
+    "wisdom": 7
+  },
+  "actions": [
+    {
+      "desc": "Melee Attack Roll: +1, reach 5 ft. Hit: 1 Fire damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "1d1",
+                "magical": false,
+                "modifier": 0,
+                "type": "fire"
+              }
+            ],
+            "modifier": 1,
+            "on_hit": [],
+            "range": null,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "bite",
+      "kind": "modeled",
+      "name": "Bite"
+    }
+  ],
+  "alignment": "unaligned",
+  "armor_class": [
+    {
+      "value": 13
+    }
+  ],
+  "challenge_rating": 0,
+  "damage_resistances": [
+    "fire"
+  ],
+  "hit_points": {
+    "average": 4,
+    "dice": "1d6+1"
+  },
+  "id": "giant-fire-beetle",
+  "initiative": 0,
+  "name": "Giant Fire Beetle",
+  "proficiency_bonus": 2,
+  "schema_version": "1",
+  "senses": {
+    "blindsight": 30,
+    "passive_perception": 8
+  },
+  "size": "small",
+  "source": "srd-5.2.1",
+  "speeds": {
+    "climb": {
+      "feet": 30
+    },
+    "walk": {
+      "feet": 30
+    }
+  },
+  "traits": [
+    {
+      "default_resolution": "skipped",
+      "desc": "The beetle sheds Bright Light in a 10-foot radius and Dim Light for an additional 10 feet.",
+      "id": "illumination",
+      "kind": "unmodeled",
+      "name": "Illumination"
+    }
+  ],
+  "type": "beast",
+  "xp": 10
+}

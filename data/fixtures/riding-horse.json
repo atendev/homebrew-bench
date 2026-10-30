@@ -1,0 +1,65 @@
+{
+  "ability_scores": {
+    "charisma": 7,
+    "constitution": 12,
+    "dexterity": 13,
+    "intelligence": 2,
+    "strength": 16,
+    "wisdom": 11
+  },
+  "actions": [
+    {
+      "desc": "Melee Attack Roll: +5, reach 5 ft. Hit: 7 (1d8 + 3) Bludgeoning damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "1d8",
+                "magical": false,
+                "modifier": 3,
+                "type": "bludgeoning"
+              }
+            ],
+            "modifier": 5,
+            "on_hit": [],
+            "range": null,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "hooves",
+      "kind": "modeled",
+      "name": "Hooves"
+    }
+  ],
+  "alignment": "unaligned",
+  "armor_class": [
+    {
+      "value": 11
+    }
+  ],
+  "challenge_rating": 0.25,
+  "hit_points": {
+    "average": 13,
+    "dice": "2d10+2"
+  },
+  "id": "riding-horse",
+  "initiative": 1,
+  "name": "Riding Horse",
+  "proficiency_bonus": 2,
+  "schema_version": "1",
+  "senses": {
+    "passive_perception": 10
+  },
+  "size": "large",
+  "source": "srd-5.2.1",
+  "speeds": {
+    "walk": {
+      "feet": 60
+    }
+  },
+  "type": "beast",
+  "xp": 50
+}

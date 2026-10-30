@@ -15,7 +15,7 @@
         "id": "beast-of-burden",
         "name": "Beast of Burden",
         "desc": "The mule counts as one size larger for the purpose of determining its carrying capacity.",
-        "state": "inert"
+        "kind": "inert"
       }
     ],
     "reason": "Upstream 5e-database splices Octopus's special_abilities (Compression, Water Breathing) onto Mule.",
@@ -30,19 +30,24 @@
         "id": "hooves",
         "name": "Hooves",
         "desc": "Melee Attack Roll: +4, reach 5 ft. Hit: 4 (1d4 + 2) Bludgeoning damage.",
-        "state": "modeled",
+        "kind": "modeled",
         "effects": [
           {
-            "kind": "attack",
-            "reach": 5,
-            "bonus": 4,
-            "on_hit": [
-              {
-                "kind": "damage",
-                "dice": "1d4+2",
-                "damage_type": "bludgeoning"
-              }
-            ]
+            "attack": {
+              "modifier": 4,
+              "reach": 5,
+              "range": null,
+              "target_count": 1,
+              "damage": [
+                {
+                  "dice": "1d4",
+                  "type": "bludgeoning",
+                  "modifier": 2,
+                  "magical": false
+                }
+              ],
+              "on_hit": []
+            }
           }
         ]
       }
@@ -63,9 +68,10 @@
     "monster_id": "brass-dragon-wyrmling",
     "path": "actions.fire-breath.usage",
     "value": {
-      "kind": "recharge",
-      "min": 5,
-      "group": "breath_weapons"
+      "recharge": {
+        "dice": "5-6",
+        "group": "breath_weapons"
+      }
     },
     "reason": "Link Fire Breath to the shared breath_weapons recharge group with Sleep Breath.",
     "citation": "SRD 5.2.1 (Brass Dragon Wyrmling: Breath Weapons (Recharge 5-6))",
@@ -75,9 +81,10 @@
     "monster_id": "brass-dragon-wyrmling",
     "path": "actions.sleep-breath.usage",
     "value": {
-      "kind": "recharge",
-      "min": 5,
-      "group": "breath_weapons"
+      "recharge": {
+        "dice": "5-6",
+        "group": "breath_weapons"
+      }
     },
     "reason": "Restore Recharge 5-6 lost when upstream split Breath Weapons (Recharge 5-6) and share recharge group with Fire Breath.",
     "citation": "SRD 5.2.1 (Brass Dragon Wyrmling: Breath Weapons (Recharge 5-6))",
@@ -87,9 +94,10 @@
     "monster_id": "young-brass-dragon",
     "path": "actions.fire-breath.usage",
     "value": {
-      "kind": "recharge",
-      "min": 5,
-      "group": "breath_weapons"
+      "recharge": {
+        "dice": "5-6",
+        "group": "breath_weapons"
+      }
     },
     "reason": "Link Fire Breath to the shared breath_weapons recharge group with Sleep Breath.",
     "citation": "SRD 5.2.1 (Young Brass Dragon: Breath Weapons (Recharge 5-6))",
@@ -99,9 +107,10 @@
     "monster_id": "young-brass-dragon",
     "path": "actions.sleep-breath.usage",
     "value": {
-      "kind": "recharge",
-      "min": 5,
-      "group": "breath_weapons"
+      "recharge": {
+        "dice": "5-6",
+        "group": "breath_weapons"
+      }
     },
     "reason": "Restore Recharge 5-6 lost when upstream split Breath Weapons (Recharge 5-6) and share recharge group with Fire Breath.",
     "citation": "SRD 5.2.1 (Young Brass Dragon: Breath Weapons (Recharge 5-6))",
@@ -111,9 +120,10 @@
     "monster_id": "adult-brass-dragon",
     "path": "actions.fire-breath.usage",
     "value": {
-      "kind": "recharge",
-      "min": 5,
-      "group": "breath_weapons"
+      "recharge": {
+        "dice": "5-6",
+        "group": "breath_weapons"
+      }
     },
     "reason": "Link Fire Breath to the shared breath_weapons recharge group with Sleep Breath.",
     "citation": "SRD 5.2.1 (Adult Brass Dragon: Breath Weapons (Recharge 5-6))",
@@ -123,9 +133,10 @@
     "monster_id": "adult-brass-dragon",
     "path": "actions.sleep-breath.usage",
     "value": {
-      "kind": "recharge",
-      "min": 5,
-      "group": "breath_weapons"
+      "recharge": {
+        "dice": "5-6",
+        "group": "breath_weapons"
+      }
     },
     "reason": "Restore Recharge 5-6 lost when upstream split Breath Weapons (Recharge 5-6) and share recharge group with Fire Breath.",
     "citation": "SRD 5.2.1 (Adult Brass Dragon: Breath Weapons (Recharge 5-6))",
@@ -135,9 +146,10 @@
     "monster_id": "ancient-brass-dragon",
     "path": "actions.fire-breath.usage",
     "value": {
-      "kind": "recharge",
-      "min": 5,
-      "group": "breath_weapons"
+      "recharge": {
+        "dice": "5-6",
+        "group": "breath_weapons"
+      }
     },
     "reason": "Link Fire Breath to the shared breath_weapons recharge group with Sleep Breath.",
     "citation": "SRD 5.2.1 (Ancient Brass Dragon: Breath Weapons (Recharge 5-6))",
@@ -147,9 +159,10 @@
     "monster_id": "ancient-brass-dragon",
     "path": "actions.sleep-breath.usage",
     "value": {
-      "kind": "recharge",
-      "min": 5,
-      "group": "breath_weapons"
+      "recharge": {
+        "dice": "5-6",
+        "group": "breath_weapons"
+      }
     },
     "reason": "Restore Recharge 5-6 lost when upstream split Breath Weapons (Recharge 5-6) and share recharge group with Fire Breath.",
     "citation": "SRD 5.2.1 (Ancient Brass Dragon: Breath Weapons (Recharge 5-6))",
@@ -159,9 +172,10 @@
     "monster_id": "bronze-dragon-wyrmling",
     "path": "actions.lightning-breath.usage",
     "value": {
-      "kind": "recharge",
-      "min": 5,
-      "group": "breath_weapons"
+      "recharge": {
+        "dice": "5-6",
+        "group": "breath_weapons"
+      }
     },
     "reason": "Link Lightning Breath to the shared breath_weapons recharge group with Repulsion Breath.",
     "citation": "SRD 5.2.1 (Bronze Dragon Wyrmling: Breath Weapons (Recharge 5-6))",
@@ -171,9 +185,10 @@
     "monster_id": "bronze-dragon-wyrmling",
     "path": "actions.repulsion-breath.usage",
     "value": {
-      "kind": "recharge",
-      "min": 5,
-      "group": "breath_weapons"
+      "recharge": {
+        "dice": "5-6",
+        "group": "breath_weapons"
+      }
     },
     "reason": "Restore Recharge 5-6 lost when upstream split Breath Weapons (Recharge 5-6) and share recharge group with Lightning Breath.",
     "citation": "SRD 5.2.1 (Bronze Dragon Wyrmling: Breath Weapons (Recharge 5-6))",
@@ -183,9 +198,10 @@
     "monster_id": "young-bronze-dragon",
     "path": "actions.lightning-breath.usage",
     "value": {
-      "kind": "recharge",
-      "min": 5,
-      "group": "breath_weapons"
+      "recharge": {
+        "dice": "5-6",
+        "group": "breath_weapons"
+      }
     },
     "reason": "Link Lightning Breath to the shared breath_weapons recharge group with Repulsion Breath.",
     "citation": "SRD 5.2.1 (Young Bronze Dragon: Breath Weapons (Recharge 5-6))",
@@ -195,9 +211,10 @@
     "monster_id": "young-bronze-dragon",
     "path": "actions.repulsion-breath.usage",
     "value": {
-      "kind": "recharge",
-      "min": 5,
-      "group": "breath_weapons"
+      "recharge": {
+        "dice": "5-6",
+        "group": "breath_weapons"
+      }
     },
     "reason": "Restore Recharge 5-6 lost when upstream split Breath Weapons (Recharge 5-6) and share recharge group with Lightning Breath.",
     "citation": "SRD 5.2.1 (Young Bronze Dragon: Breath Weapons (Recharge 5-6))",
@@ -207,9 +224,10 @@
     "monster_id": "adult-bronze-dragon",
     "path": "actions.lightning-breath.usage",
     "value": {
-      "kind": "recharge",
-      "min": 5,
-      "group": "breath_weapons"
+      "recharge": {
+        "dice": "5-6",
+        "group": "breath_weapons"
+      }
     },
     "reason": "Link Lightning Breath to the shared breath_weapons recharge group with Repulsion Breath.",
     "citation": "SRD 5.2.1 (Adult Bronze Dragon: Breath Weapons (Recharge 5-6))",
@@ -219,9 +237,10 @@
     "monster_id": "adult-bronze-dragon",
     "path": "actions.repulsion-breath.usage",
     "value": {
-      "kind": "recharge",
-      "min": 5,
-      "group": "breath_weapons"
+      "recharge": {
+        "dice": "5-6",
+        "group": "breath_weapons"
+      }
     },
     "reason": "Restore Recharge 5-6 lost when upstream split Breath Weapons (Recharge 5-6) and share recharge group with Lightning Breath.",
     "citation": "SRD 5.2.1 (Adult Bronze Dragon: Breath Weapons (Recharge 5-6))",
@@ -231,9 +250,10 @@
     "monster_id": "ancient-bronze-dragon",
     "path": "actions.lightning-breath.usage",
     "value": {
-      "kind": "recharge",
-      "min": 5,
-      "group": "breath_weapons"
+      "recharge": {
+        "dice": "5-6",
+        "group": "breath_weapons"
+      }
     },
     "reason": "Link Lightning Breath to the shared breath_weapons recharge group with Repulsion Breath.",
     "citation": "SRD 5.2.1 (Ancient Bronze Dragon: Breath Weapons (Recharge 5-6))",
@@ -243,9 +263,10 @@
     "monster_id": "ancient-bronze-dragon",
     "path": "actions.repulsion-breath.usage",
     "value": {
-      "kind": "recharge",
-      "min": 5,
-      "group": "breath_weapons"
+      "recharge": {
+        "dice": "5-6",
+        "group": "breath_weapons"
+      }
     },
     "reason": "Restore Recharge 5-6 lost when upstream split Breath Weapons (Recharge 5-6) and share recharge group with Lightning Breath.",
     "citation": "SRD 5.2.1 (Ancient Bronze Dragon: Breath Weapons (Recharge 5-6))",
@@ -255,9 +276,10 @@
     "monster_id": "copper-dragon-wyrmling",
     "path": "actions.acid-breath.usage",
     "value": {
-      "kind": "recharge",
-      "min": 5,
-      "group": "breath_weapons"
+      "recharge": {
+        "dice": "5-6",
+        "group": "breath_weapons"
+      }
     },
     "reason": "Link Acid Breath to the shared breath_weapons recharge group with Slowing Breath.",
     "citation": "SRD 5.2.1 (Copper Dragon Wyrmling: Breath Weapons (Recharge 5-6))",
@@ -267,9 +289,10 @@
     "monster_id": "copper-dragon-wyrmling",
     "path": "actions.slowing-breath.usage",
     "value": {
-      "kind": "recharge",
-      "min": 5,
-      "group": "breath_weapons"
+      "recharge": {
+        "dice": "5-6",
+        "group": "breath_weapons"
+      }
     },
     "reason": "Restore Recharge 5-6 lost when upstream split Breath Weapons (Recharge 5-6) and share recharge group with Acid Breath.",
     "citation": "SRD 5.2.1 (Copper Dragon Wyrmling: Breath Weapons (Recharge 5-6))",
@@ -279,9 +302,10 @@
     "monster_id": "young-copper-dragon",
     "path": "actions.acid-breath.usage",
     "value": {
-      "kind": "recharge",
-      "min": 5,
-      "group": "breath_weapons"
+      "recharge": {
+        "dice": "5-6",
+        "group": "breath_weapons"
+      }
     },
     "reason": "Link Acid Breath to the shared breath_weapons recharge group with Slowing Breath.",
     "citation": "SRD 5.2.1 (Young Copper Dragon: Breath Weapons (Recharge 5-6))",
@@ -291,9 +315,10 @@
     "monster_id": "young-copper-dragon",
     "path": "actions.slowing-breath.usage",
     "value": {
-      "kind": "recharge",
-      "min": 5,
-      "group": "breath_weapons"
+      "recharge": {
+        "dice": "5-6",
+        "group": "breath_weapons"
+      }
     },
     "reason": "Restore Recharge 5-6 lost when upstream split Breath Weapons (Recharge 5-6) and share recharge group with Acid Breath.",
     "citation": "SRD 5.2.1 (Young Copper Dragon: Breath Weapons (Recharge 5-6))",
@@ -303,9 +328,10 @@
     "monster_id": "adult-copper-dragon",
     "path": "actions.acid-breath.usage",
     "value": {
-      "kind": "recharge",
-      "min": 5,
-      "group": "breath_weapons"
+      "recharge": {
+        "dice": "5-6",
+        "group": "breath_weapons"
+      }
     },
     "reason": "Link Acid Breath to the shared breath_weapons recharge group with Slowing Breath.",
     "citation": "SRD 5.2.1 (Adult Copper Dragon: Breath Weapons (Recharge 5-6))",
@@ -315,9 +341,10 @@
     "monster_id": "adult-copper-dragon",
     "path": "actions.slowing-breath.usage",
     "value": {
-      "kind": "recharge",
-      "min": 5,
-      "group": "breath_weapons"
+      "recharge": {
+        "dice": "5-6",
+        "group": "breath_weapons"
+      }
     },
     "reason": "Restore Recharge 5-6 lost when upstream split Breath Weapons (Recharge 5-6) and share recharge group with Acid Breath.",
     "citation": "SRD 5.2.1 (Adult Copper Dragon: Breath Weapons (Recharge 5-6))",
@@ -327,9 +354,10 @@
     "monster_id": "ancient-copper-dragon",
     "path": "actions.acid-breath.usage",
     "value": {
-      "kind": "recharge",
-      "min": 5,
-      "group": "breath_weapons"
+      "recharge": {
+        "dice": "5-6",
+        "group": "breath_weapons"
+      }
     },
     "reason": "Link Acid Breath to the shared breath_weapons recharge group with Slowing Breath.",
     "citation": "SRD 5.2.1 (Ancient Copper Dragon: Breath Weapons (Recharge 5-6))",
@@ -339,9 +367,10 @@
     "monster_id": "ancient-copper-dragon",
     "path": "actions.slowing-breath.usage",
     "value": {
-      "kind": "recharge",
-      "min": 5,
-      "group": "breath_weapons"
+      "recharge": {
+        "dice": "5-6",
+        "group": "breath_weapons"
+      }
     },
     "reason": "Restore Recharge 5-6 lost when upstream split Breath Weapons (Recharge 5-6) and share recharge group with Acid Breath.",
     "citation": "SRD 5.2.1 (Ancient Copper Dragon: Breath Weapons (Recharge 5-6))",
@@ -351,9 +380,10 @@
     "monster_id": "gold-dragon-wyrmling",
     "path": "actions.fire-breath.usage",
     "value": {
-      "kind": "recharge",
-      "min": 5,
-      "group": "breath_weapons"
+      "recharge": {
+        "dice": "5-6",
+        "group": "breath_weapons"
+      }
     },
     "reason": "Link Fire Breath to the shared breath_weapons recharge group with Weakening Breath.",
     "citation": "SRD 5.2.1 (Gold Dragon Wyrmling: Breath Weapons (Recharge 5-6))",
@@ -363,9 +393,10 @@
     "monster_id": "gold-dragon-wyrmling",
     "path": "actions.weakening-breath.usage",
     "value": {
-      "kind": "recharge",
-      "min": 5,
-      "group": "breath_weapons"
+      "recharge": {
+        "dice": "5-6",
+        "group": "breath_weapons"
+      }
     },
     "reason": "Restore Recharge 5-6 lost when upstream split Breath Weapons (Recharge 5-6) and share recharge group with Fire Breath.",
     "citation": "SRD 5.2.1 (Gold Dragon Wyrmling: Breath Weapons (Recharge 5-6))",
@@ -375,9 +406,10 @@
     "monster_id": "young-gold-dragon",
     "path": "actions.fire-breath.usage",
     "value": {
-      "kind": "recharge",
-      "min": 5,
-      "group": "breath_weapons"
+      "recharge": {
+        "dice": "5-6",
+        "group": "breath_weapons"
+      }
     },
     "reason": "Link Fire Breath to the shared breath_weapons recharge group with Weakening Breath.",
     "citation": "SRD 5.2.1 (Young Gold Dragon: Breath Weapons (Recharge 5-6))",
@@ -387,9 +419,10 @@
     "monster_id": "young-gold-dragon",
     "path": "actions.weakening-breath.usage",
     "value": {
-      "kind": "recharge",
-      "min": 5,
-      "group": "breath_weapons"
+      "recharge": {
+        "dice": "5-6",
+        "group": "breath_weapons"
+      }
     },
     "reason": "Restore Recharge 5-6 lost when upstream split Breath Weapons (Recharge 5-6) and share recharge group with Fire Breath.",
     "citation": "SRD 5.2.1 (Young Gold Dragon: Breath Weapons (Recharge 5-6))",
@@ -399,9 +432,10 @@
     "monster_id": "adult-gold-dragon",
     "path": "actions.fire-breath.usage",
     "value": {
-      "kind": "recharge",
-      "min": 5,
-      "group": "breath_weapons"
+      "recharge": {
+        "dice": "5-6",
+        "group": "breath_weapons"
+      }
     },
     "reason": "Link Fire Breath to the shared breath_weapons recharge group with Weakening Breath.",
     "citation": "SRD 5.2.1 (Adult Gold Dragon: Breath Weapons (Recharge 5-6))",
@@ -411,9 +445,10 @@
     "monster_id": "adult-gold-dragon",
     "path": "actions.weakening-breath.usage",
     "value": {
-      "kind": "recharge",
-      "min": 5,
-      "group": "breath_weapons"
+      "recharge": {
+        "dice": "5-6",
+        "group": "breath_weapons"
+      }
     },
     "reason": "Restore Recharge 5-6 lost when upstream split Breath Weapons (Recharge 5-6) and share recharge group with Fire Breath.",
     "citation": "SRD 5.2.1 (Adult Gold Dragon: Breath Weapons (Recharge 5-6))",
@@ -423,9 +458,10 @@
     "monster_id": "ancient-gold-dragon",
     "path": "actions.fire-breath.usage",
     "value": {
-      "kind": "recharge",
-      "min": 5,
-      "group": "breath_weapons"
+      "recharge": {
+        "dice": "5-6",
+        "group": "breath_weapons"
+      }
     },
     "reason": "Link Fire Breath to the shared breath_weapons recharge group with Weakening Breath.",
     "citation": "SRD 5.2.1 (Ancient Gold Dragon: Breath Weapons (Recharge 5-6))",
@@ -435,9 +471,10 @@
     "monster_id": "ancient-gold-dragon",
     "path": "actions.weakening-breath.usage",
     "value": {
-      "kind": "recharge",
-      "min": 5,
-      "group": "breath_weapons"
+      "recharge": {
+        "dice": "5-6",
+        "group": "breath_weapons"
+      }
     },
     "reason": "Restore Recharge 5-6 lost when upstream split Breath Weapons (Recharge 5-6) and share recharge group with Fire Breath.",
     "citation": "SRD 5.2.1 (Ancient Gold Dragon: Breath Weapons (Recharge 5-6))",
@@ -447,9 +484,10 @@
     "monster_id": "silver-dragon-wyrmling",
     "path": "actions.cold-breath.usage",
     "value": {
-      "kind": "recharge",
-      "min": 5,
-      "group": "breath_weapons"
+      "recharge": {
+        "dice": "5-6",
+        "group": "breath_weapons"
+      }
     },
     "reason": "Link Cold Breath to the shared breath_weapons recharge group with Paralyzing Breath.",
     "citation": "SRD 5.2.1 (Silver Dragon Wyrmling: Breath Weapons (Recharge 5-6))",
@@ -459,9 +497,10 @@
     "monster_id": "silver-dragon-wyrmling",
     "path": "actions.paralyzing-breath.usage",
     "value": {
-      "kind": "recharge",
-      "min": 5,
-      "group": "breath_weapons"
+      "recharge": {
+        "dice": "5-6",
+        "group": "breath_weapons"
+      }
     },
     "reason": "Restore Recharge 5-6 lost when upstream split Breath Weapons (Recharge 5-6) and share recharge group with Cold Breath.",
     "citation": "SRD 5.2.1 (Silver Dragon Wyrmling: Breath Weapons (Recharge 5-6))",
@@ -471,9 +510,10 @@
     "monster_id": "young-silver-dragon",
     "path": "actions.cold-breath.usage",
     "value": {
-      "kind": "recharge",
-      "min": 5,
-      "group": "breath_weapons"
+      "recharge": {
+        "dice": "5-6",
+        "group": "breath_weapons"
+      }
     },
     "reason": "Link Cold Breath to the shared breath_weapons recharge group with Paralyzing Breath.",
     "citation": "SRD 5.2.1 (Young Silver Dragon: Breath Weapons (Recharge 5-6))",
@@ -483,9 +523,10 @@
     "monster_id": "young-silver-dragon",
     "path": "actions.paralyzing-breath.usage",
     "value": {
-      "kind": "recharge",
-      "min": 5,
-      "group": "breath_weapons"
+      "recharge": {
+        "dice": "5-6",
+        "group": "breath_weapons"
+      }
     },
     "reason": "Restore Recharge 5-6 lost when upstream split Breath Weapons (Recharge 5-6) and share recharge group with Cold Breath.",
     "citation": "SRD 5.2.1 (Young Silver Dragon: Breath Weapons (Recharge 5-6))",
@@ -495,9 +536,10 @@
     "monster_id": "adult-silver-dragon",
     "path": "actions.cold-breath.usage",
     "value": {
-      "kind": "recharge",
-      "min": 5,
-      "group": "breath_weapons"
+      "recharge": {
+        "dice": "5-6",
+        "group": "breath_weapons"
+      }
     },
     "reason": "Link Cold Breath to the shared breath_weapons recharge group with Paralyzing Breath.",
     "citation": "SRD 5.2.1 (Adult Silver Dragon: Breath Weapons (Recharge 5-6))",
@@ -507,9 +549,10 @@
     "monster_id": "adult-silver-dragon",
     "path": "actions.paralyzing-breath.usage",
     "value": {
-      "kind": "recharge",
-      "min": 5,
-      "group": "breath_weapons"
+      "recharge": {
+        "dice": "5-6",
+        "group": "breath_weapons"
+      }
     },
     "reason": "Restore Recharge 5-6 lost when upstream split Breath Weapons (Recharge 5-6) and share recharge group with Cold Breath.",
     "citation": "SRD 5.2.1 (Adult Silver Dragon: Breath Weapons (Recharge 5-6))",
@@ -519,9 +562,10 @@
     "monster_id": "ancient-silver-dragon",
     "path": "actions.cold-breath.usage",
     "value": {
-      "kind": "recharge",
-      "min": 5,
-      "group": "breath_weapons"
+      "recharge": {
+        "dice": "5-6",
+        "group": "breath_weapons"
+      }
     },
     "reason": "Link Cold Breath to the shared breath_weapons recharge group with Paralyzing Breath.",
     "citation": "SRD 5.2.1 (Ancient Silver Dragon: Breath Weapons (Recharge 5-6))",
@@ -531,9 +575,10 @@
     "monster_id": "ancient-silver-dragon",
     "path": "actions.paralyzing-breath.usage",
     "value": {
-      "kind": "recharge",
-      "min": 5,
-      "group": "breath_weapons"
+      "recharge": {
+        "dice": "5-6",
+        "group": "breath_weapons"
+      }
     },
     "reason": "Restore Recharge 5-6 lost when upstream split Breath Weapons (Recharge 5-6) and share recharge group with Cold Breath.",
     "citation": "SRD 5.2.1 (Ancient Silver Dragon: Breath Weapons (Recharge 5-6))",
@@ -544,8 +589,10 @@
     "path": "actions.rake.damage",
     "value": [
       {
-        "amount": 1,
-        "damage_type": "slashing"
+        "dice": "1d1",
+        "type": "slashing",
+        "modifier": 0,
+        "magical": false
       }
     ],
     "reason": "Upstream omits structured damage array for flat 1 Slashing damage.",
@@ -557,12 +604,14 @@
     "path": "actions.bite.damage",
     "value": [
       {
-        "amount": 1,
-        "damage_type": "piercing"
+        "dice": "1d1",
+        "type": "piercing",
+        "modifier": 0,
+        "magical": false
       }
     ],
     "reason": "Upstream omits structured damage array for flat 1 Piercing damage.",
-    "citation": "homunculus actions.bite.desc: \"Melee Attack Roll: +4, reach 5 ft. Hit: 1 Piercing damage, and the target is subjected to the following effect. Constitution Saving Throw: DC 12. Failure: The target has the Poisoned condition until the end of the homunculus\u2019s next turn. Failure by 5 or More: The target has the Poisoned condition for 1 minute. While Poisoned, the target has the Unconscious condition, which ends early if the target takes any damage.\"",
+    "citation": "homunculus actions.bite.desc: \"Melee Attack Roll: +4, reach 5 ft. Hit: 1 Piercing damage, and the target is subjected to the following effect. Constitution Saving Throw: DC 12. Failure: The target has the Poisoned condition until the end of the homunculus’s next turn. Failure by 5 or More: The target has the Poisoned condition for 1 minute. While Poisoned, the target has the Unconscious condition, which ends early if the target takes any damage.\"",
     "commit": "a6212beb4b278917c2cff41c2b04c4ef4f3e0d6f"
   },
   {
@@ -570,12 +619,14 @@
     "path": "actions.enchanting-bow.damage",
     "value": [
       {
-        "amount": 1,
-        "damage_type": "piercing"
+        "dice": "1d1",
+        "type": "piercing",
+        "modifier": 0,
+        "magical": false
       }
     ],
     "reason": "Upstream omits structured damage array for flat 1 Piercing damage.",
-    "citation": "sprite actions.enchanting-bow.desc: \"Ranged Attack Roll: +6, range 40/160 ft. Hit: 1 Piercing damage, and the target has the Charmed condition until the start of the sprite\u2019s next turn.\"",
+    "citation": "sprite actions.enchanting-bow.desc: \"Ranged Attack Roll: +6, range 40/160 ft. Hit: 1 Piercing damage, and the target has the Charmed condition until the start of the sprite’s next turn.\"",
     "commit": "a6212beb4b278917c2cff41c2b04c4ef4f3e0d6f"
   },
   {
@@ -583,8 +634,10 @@
     "path": "actions.bite.damage",
     "value": [
       {
-        "amount": 1,
-        "damage_type": "piercing"
+        "dice": "1d1",
+        "type": "piercing",
+        "modifier": 0,
+        "magical": false
       }
     ],
     "reason": "Upstream omits structured damage array for flat 1 Piercing damage.",
@@ -596,8 +649,10 @@
     "path": "actions.bite.damage",
     "value": [
       {
-        "amount": 1,
-        "damage_type": "piercing"
+        "dice": "1d1",
+        "type": "piercing",
+        "modifier": 0,
+        "magical": false
       }
     ],
     "reason": "Upstream omits structured damage array for flat 1 Piercing damage.",
@@ -609,8 +664,10 @@
     "path": "actions.scratch.damage",
     "value": [
       {
-        "amount": 1,
-        "damage_type": "slashing"
+        "dice": "1d1",
+        "type": "slashing",
+        "modifier": 0,
+        "magical": false
       }
     ],
     "reason": "Upstream omits structured damage array for flat 1 Slashing damage.",
@@ -622,8 +679,10 @@
     "path": "actions.claw.damage",
     "value": [
       {
-        "amount": 1,
-        "damage_type": "bludgeoning"
+        "dice": "1d1",
+        "type": "bludgeoning",
+        "modifier": 0,
+        "magical": false
       }
     ],
     "reason": "Upstream omits structured damage array for flat 1 Bludgeoning damage.",
@@ -635,8 +694,10 @@
     "path": "actions.bite.damage",
     "value": [
       {
-        "amount": 1,
-        "damage_type": "piercing"
+        "dice": "1d1",
+        "type": "piercing",
+        "modifier": 0,
+        "magical": false
       }
     ],
     "reason": "Upstream omits structured damage array for flat 1 Piercing damage.",
@@ -648,8 +709,10 @@
     "path": "actions.bite.damage",
     "value": [
       {
-        "amount": 1,
-        "damage_type": "fire"
+        "dice": "1d1",
+        "type": "fire",
+        "modifier": 0,
+        "magical": false
       }
     ],
     "reason": "Upstream omits structured damage array for flat 1 Fire damage.",
@@ -661,8 +724,10 @@
     "path": "actions.talons.damage",
     "value": [
       {
-        "amount": 1,
-        "damage_type": "slashing"
+        "dice": "1d1",
+        "type": "slashing",
+        "modifier": 0,
+        "magical": false
       }
     ],
     "reason": "Upstream omits structured damage array for flat 1 Slashing damage.",
@@ -674,8 +739,10 @@
     "path": "actions.bite.damage",
     "value": [
       {
-        "amount": 1,
-        "damage_type": "piercing"
+        "dice": "1d1",
+        "type": "piercing",
+        "modifier": 0,
+        "magical": false
       }
     ],
     "reason": "Upstream omits structured damage array for flat 1 Piercing damage.",
@@ -687,8 +754,10 @@
     "path": "actions.talons.damage",
     "value": [
       {
-        "amount": 1,
-        "damage_type": "slashing"
+        "dice": "1d1",
+        "type": "slashing",
+        "modifier": 0,
+        "magical": false
       }
     ],
     "reason": "Upstream omits structured damage array for flat 1 Slashing damage.",
@@ -700,12 +769,14 @@
     "path": "actions.bite.damage",
     "value": [
       {
-        "amount": 1,
-        "damage_type": "piercing"
+        "dice": "1d1",
+        "type": "piercing",
+        "modifier": 0,
+        "magical": false
       }
     ],
     "reason": "Upstream omits structured damage array for flat 1 Piercing damage.",
-    "citation": "piranha actions.bite.desc: \"Melee Attack Roll: +5 (with Advantage if the target doesn\u2019t have all its Hit Points), reach 5 ft. Hit: 1 Piercing damage.\"",
+    "citation": "piranha actions.bite.desc: \"Melee Attack Roll: +5 (with Advantage if the target doesn’t have all its Hit Points), reach 5 ft. Hit: 1 Piercing damage.\"",
     "commit": "a6212beb4b278917c2cff41c2b04c4ef4f3e0d6f"
   },
   {
@@ -713,8 +784,10 @@
     "path": "actions.bite.damage",
     "value": [
       {
-        "amount": 1,
-        "damage_type": "piercing"
+        "dice": "1d1",
+        "type": "piercing",
+        "modifier": 0,
+        "magical": false
       }
     ],
     "reason": "Upstream omits structured damage array for flat 1 Piercing damage.",
@@ -726,8 +799,10 @@
     "path": "actions.beak.damage",
     "value": [
       {
-        "amount": 1,
-        "damage_type": "piercing"
+        "dice": "1d1",
+        "type": "piercing",
+        "modifier": 0,
+        "magical": false
       }
     ],
     "reason": "Upstream omits structured damage array for flat 1 Piercing damage.",
@@ -739,8 +814,10 @@
     "path": "actions.bite.damage",
     "value": [
       {
-        "amount": 1,
-        "damage_type": "piercing"
+        "dice": "1d1",
+        "type": "piercing",
+        "modifier": 0,
+        "magical": false
       }
     ],
     "reason": "Upstream omits structured damage array for flat 1 Piercing damage.",
@@ -776,7 +853,8 @@
     ],
     "reason": "Upstream puts Vine Lash, Thorn Burst, and Charm Monster inside one choose-1 option set, but prose says one Vine Lash or Thorn Burst attack AND it can cast Charm Monster.",
     "citation": "dryad actions.multiattack.desc: \"The dryad makes one Vine Lash or Thorn Burst attack, and it can use Spellcasting to cast Charm Monster.\"",
-    "commit": "a6212beb4b278917c2cff41c2b04c4ef4f3e0d6f"
+    "commit": "a6212beb4b278917c2cff41c2b04c4ef4f3e0d6f",
+    "applies": false
   },
   {
     "monster_id": "erinyes",
@@ -799,7 +877,8 @@
     ],
     "reason": "Upstream Multiattack references 'Entangling Rope', whereas the action on the stat block is named 'Entangling Rope (Requires Magic Rope)'.",
     "citation": "erinyes actions.multiattack.desc: \"The erinyes makes three Withering Sword attacks and can use Entangling Rope.\"",
-    "commit": "a6212beb4b278917c2cff41c2b04c4ef4f3e0d6f"
+    "commit": "a6212beb4b278917c2cff41c2b04c4ef4f3e0d6f",
+    "applies": false
   },
   {
     "monster_id": "werebear-human",
@@ -817,7 +896,8 @@
     ],
     "reason": "Werebear human form only has the Handaxe action; upstream Multiattack prose retains hybrid/bear Rend and Bite references.",
     "citation": "SRD 5.2.1 (werebear-human form actions vs. shared Multiattack prose)",
-    "commit": "a6212beb4b278917c2cff41c2b04c4ef4f3e0d6f"
+    "commit": "a6212beb4b278917c2cff41c2b04c4ef4f3e0d6f",
+    "applies": false
   },
   {
     "monster_id": "werebear-bear",
@@ -842,7 +922,8 @@
     ],
     "reason": "Werebear bear form only has Rend and Bite actions; upstream Multiattack prose retains the human/hybrid Handaxe reference.",
     "citation": "SRD 5.2.1 (werebear-bear form actions vs. shared Multiattack prose)",
-    "commit": "a6212beb4b278917c2cff41c2b04c4ef4f3e0d6f"
+    "commit": "a6212beb4b278917c2cff41c2b04c4ef4f3e0d6f",
+    "applies": false
   },
   {
     "monster_id": "wereboar-human",
@@ -860,7 +941,8 @@
     ],
     "reason": "Wereboar human form only has the Javelin action; upstream Multiattack prose retains hybrid/boar Tusk and Gore references.",
     "citation": "SRD 5.2.1 (wereboar-human form actions vs. shared Multiattack prose)",
-    "commit": "a6212beb4b278917c2cff41c2b04c4ef4f3e0d6f"
+    "commit": "a6212beb4b278917c2cff41c2b04c4ef4f3e0d6f",
+    "applies": false
   },
   {
     "monster_id": "wereboar-boar",
@@ -885,7 +967,8 @@
     ],
     "reason": "Wereboar boar form only has Tusk and Gore actions; upstream Multiattack prose retains the human/hybrid Javelin reference.",
     "citation": "SRD 5.2.1 (wereboar-boar form actions vs. shared Multiattack prose)",
-    "commit": "a6212beb4b278917c2cff41c2b04c4ef4f3e0d6f"
+    "commit": "a6212beb4b278917c2cff41c2b04c4ef4f3e0d6f",
+    "applies": false
   },
   {
     "monster_id": "wererat-human",
@@ -912,7 +995,8 @@
     ],
     "reason": "Wererat human form only has Scratch and Hand Crossbow actions; upstream Multiattack prose retains the hybrid/rat Bite replacement.",
     "citation": "SRD 5.2.1 (wererat-human form actions vs. shared Multiattack prose)",
-    "commit": "a6212beb4b278917c2cff41c2b04c4ef4f3e0d6f"
+    "commit": "a6212beb4b278917c2cff41c2b04c4ef4f3e0d6f",
+    "applies": false
   },
   {
     "monster_id": "wererat-rat",
@@ -937,7 +1021,8 @@
     ],
     "reason": "Wererat rat form only has Scratch and Bite actions; upstream Multiattack prose retains the human/hybrid Hand Crossbow reference.",
     "citation": "SRD 5.2.1 (wererat-rat form actions vs. shared Multiattack prose)",
-    "commit": "a6212beb4b278917c2cff41c2b04c4ef4f3e0d6f"
+    "commit": "a6212beb4b278917c2cff41c2b04c4ef4f3e0d6f",
+    "applies": false
   },
   {
     "monster_id": "weretiger-human",
@@ -964,7 +1049,8 @@
     ],
     "reason": "Weretiger human form only has Scratch and Longbow actions; upstream Multiattack prose retains the hybrid/tiger Bite replacement.",
     "citation": "SRD 5.2.1 (weretiger-human form actions vs. shared Multiattack prose)",
-    "commit": "a6212beb4b278917c2cff41c2b04c4ef4f3e0d6f"
+    "commit": "a6212beb4b278917c2cff41c2b04c4ef4f3e0d6f",
+    "applies": false
   },
   {
     "monster_id": "weretiger-tiger",
@@ -989,7 +1075,8 @@
     ],
     "reason": "Weretiger tiger form only has Scratch and Bite actions; upstream Multiattack prose retains the human/hybrid Longbow reference.",
     "citation": "SRD 5.2.1 (weretiger-tiger form actions vs. shared Multiattack prose)",
-    "commit": "a6212beb4b278917c2cff41c2b04c4ef4f3e0d6f"
+    "commit": "a6212beb4b278917c2cff41c2b04c4ef4f3e0d6f",
+    "applies": false
   },
   {
     "monster_id": "werewolf-human",
@@ -1016,7 +1103,8 @@
     ],
     "reason": "Werewolf human form only has Scratch and Longbow actions; upstream Multiattack prose retains the hybrid/wolf Bite replacement.",
     "citation": "SRD 5.2.1 (werewolf-human form actions vs. shared Multiattack prose)",
-    "commit": "a6212beb4b278917c2cff41c2b04c4ef4f3e0d6f"
+    "commit": "a6212beb4b278917c2cff41c2b04c4ef4f3e0d6f",
+    "applies": false
   },
   {
     "monster_id": "werewolf-wolf",
@@ -1041,6 +1129,7 @@
     ],
     "reason": "Werewolf wolf form only has Scratch and Bite actions; upstream Multiattack prose retains the human/hybrid Longbow reference.",
     "citation": "SRD 5.2.1 (werewolf-wolf form actions vs. shared Multiattack prose)",
-    "commit": "a6212beb4b278917c2cff41c2b04c4ef4f3e0d6f"
+    "commit": "a6212beb4b278917c2cff41c2b04c4ef4f3e0d6f",
+    "applies": false
   }
 ]

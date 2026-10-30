@@ -1,0 +1,71 @@
+{
+  "ability_scores": {
+    "charisma": 7,
+    "constitution": 12,
+    "dexterity": 15,
+    "intelligence": 2,
+    "strength": 6,
+    "wisdom": 14
+  },
+  "actions": [
+    {
+      "desc": "Melee Attack Roll: +4, reach 5 feet. Hit: 4 (1d4 + 2) Slashing damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "1d4",
+                "magical": false,
+                "modifier": 2,
+                "type": "slashing"
+              }
+            ],
+            "modifier": 4,
+            "on_hit": [],
+            "range": null,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "talons",
+      "kind": "modeled",
+      "name": "Talons"
+    }
+  ],
+  "alignment": "unaligned",
+  "armor_class": [
+    {
+      "value": 12
+    }
+  ],
+  "challenge_rating": 0,
+  "hit_points": {
+    "average": 4,
+    "dice": "1d6+1"
+  },
+  "id": "eagle",
+  "initiative": 2,
+  "name": "Eagle",
+  "proficiency_bonus": 2,
+  "schema_version": "1",
+  "senses": {
+    "passive_perception": 16
+  },
+  "size": "small",
+  "skills": {
+    "perception": 6
+  },
+  "source": "srd-5.2.1",
+  "speeds": {
+    "fly": {
+      "feet": 60
+    },
+    "walk": {
+      "feet": 10
+    }
+  },
+  "type": "beast",
+  "xp": 10
+}

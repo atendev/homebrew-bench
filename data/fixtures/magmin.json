@@ -1,0 +1,116 @@
+{
+  "ability_scores": {
+    "charisma": 10,
+    "constitution": 12,
+    "dexterity": 15,
+    "intelligence": 8,
+    "strength": 7,
+    "wisdom": 11
+  },
+  "actions": [
+    {
+      "agent_clauses": [
+        "If the target is a creature or a flammable object that isn’t being worn or carried, it starts burning."
+      ],
+      "desc": "Melee Attack Roll: +4, reach 5 ft. Hit: 7 (2d4 + 2) Fire damage. If the target is a creature or a flammable object that isn’t being worn or carried, it starts burning.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "2d4",
+                "magical": false,
+                "modifier": 2,
+                "type": "fire"
+              }
+            ],
+            "modifier": 4,
+            "on_hit": [],
+            "range": null,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "touch",
+      "kind": "partly_modeled",
+      "name": "Touch"
+    }
+  ],
+  "alignment": "chaotic neutral",
+  "armor_class": [
+    {
+      "value": 14
+    }
+  ],
+  "bonus_actions": [
+    {
+      "default_resolution": "skipped",
+      "desc": "The magmin sets itself ablaze or extinguishes its flames. While ablaze, the magmin sheds Bright Light in a 10-foot radius and Dim Light for an additional 10 feet.",
+      "id": "ignited-illumination",
+      "kind": "unmodeled",
+      "name": "Ignited Illumination"
+    }
+  ],
+  "challenge_rating": 0.5,
+  "damage_immunities": [
+    "fire"
+  ],
+  "hit_points": {
+    "average": 13,
+    "dice": "3d6+3"
+  },
+  "id": "magmin",
+  "initiative": 2,
+  "languages": [
+    "Primordial (Ignan)"
+  ],
+  "name": "Magmin",
+  "proficiency_bonus": 2,
+  "schema_version": "1",
+  "senses": {
+    "darkvision": 60,
+    "passive_perception": 10
+  },
+  "size": "small",
+  "source": "srd-5.2.1",
+  "speeds": {
+    "walk": {
+      "feet": 30
+    }
+  },
+  "traits": [
+    {
+      "desc": "The magmin explodes when it dies. Dexterity Saving Throw: DC 11, each creature in a 10-foot Emanation originating from the magmin. Failure: 7 (2d6) Fire damage. Success: Half damage.",
+      "effects": [
+        {
+          "saving_throw": {
+            "ability": "dex",
+            "creature_type_gate": null,
+            "damage": [
+              {
+                "dice": "2d6",
+                "magical": false,
+                "modifier": 0,
+                "type": "fire"
+              }
+            ],
+            "dc": 11,
+            "half_on_success": true,
+            "hp_gate": null,
+            "immunity_after_success": false,
+            "no_damage_on_success": false,
+            "on_failure": [],
+            "repeat_save": null,
+            "two_stage": null
+          }
+        }
+      ],
+      "id": "death-burst",
+      "kind": "modeled",
+      "name": "Death Burst"
+    }
+  ],
+  "type": "elemental",
+  "xp": 100
+}

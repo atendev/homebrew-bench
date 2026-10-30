@@ -1,0 +1,71 @@
+{
+  "ability_scores": {
+    "charisma": 6,
+    "constitution": 8,
+    "dexterity": 16,
+    "intelligence": 2,
+    "strength": 5,
+    "wisdom": 14
+  },
+  "actions": [
+    {
+      "desc": "Melee Attack Roll: +5, reach 5 ft. Hit: 1 Slashing damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "1d1",
+                "magical": false,
+                "modifier": 0,
+                "type": "slashing"
+              }
+            ],
+            "modifier": 5,
+            "on_hit": [],
+            "range": null,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "talons",
+      "kind": "modeled",
+      "name": "Talons"
+    }
+  ],
+  "alignment": "unaligned",
+  "armor_class": [
+    {
+      "value": 13
+    }
+  ],
+  "challenge_rating": 0,
+  "hit_points": {
+    "average": 1,
+    "dice": "1d4-1"
+  },
+  "id": "hawk",
+  "initiative": 3,
+  "name": "Hawk",
+  "proficiency_bonus": 2,
+  "schema_version": "1",
+  "senses": {
+    "passive_perception": 16
+  },
+  "size": "tiny",
+  "skills": {
+    "perception": 6
+  },
+  "source": "srd-5.2.1",
+  "speeds": {
+    "fly": {
+      "feet": 60
+    },
+    "walk": {
+      "feet": 10
+    }
+  },
+  "type": "beast",
+  "xp": 10
+}

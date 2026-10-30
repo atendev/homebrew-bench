@@ -1,0 +1,113 @@
+{
+  "ability_scores": {
+    "charisma": 7,
+    "constitution": 16,
+    "dexterity": 11,
+    "intelligence": 6,
+    "strength": 15,
+    "wisdom": 11
+  },
+  "actions": [
+    {
+      "desc": "The gargoyle makes two Claw attacks.",
+      "effects": [
+        {
+          "multiattack": {
+            "steps": [
+              {
+                "action": {
+                  "action_id": "claw",
+                  "count": 2
+                }
+              }
+            ],
+            "swap": false
+          }
+        }
+      ],
+      "id": "multiattack",
+      "kind": "modeled",
+      "name": "Multiattack"
+    },
+    {
+      "desc": "Melee Attack Roll: +4, reach 5 ft. Hit: 7 (2d4 + 2) Slashing damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "2d4",
+                "magical": false,
+                "modifier": 2,
+                "type": "slashing"
+              }
+            ],
+            "modifier": 4,
+            "on_hit": [],
+            "range": null,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "claw",
+      "kind": "modeled",
+      "name": "Claw"
+    }
+  ],
+  "alignment": "chaotic evil",
+  "armor_class": [
+    {
+      "value": 15
+    }
+  ],
+  "challenge_rating": 2,
+  "condition_immunities": [
+    "exhaustion",
+    "petrified",
+    "poisoned"
+  ],
+  "damage_immunities": [
+    "poison"
+  ],
+  "hit_points": {
+    "average": 67,
+    "dice": "9d8+27"
+  },
+  "id": "gargoyle",
+  "initiative": 0,
+  "languages": [
+    "Primordial (Terran)"
+  ],
+  "name": "Gargoyle",
+  "proficiency_bonus": 2,
+  "schema_version": "1",
+  "senses": {
+    "darkvision": 60,
+    "passive_perception": 10
+  },
+  "size": "medium",
+  "skills": {
+    "stealth": 4
+  },
+  "source": "srd-5.2.1",
+  "speeds": {
+    "fly": {
+      "feet": 60
+    },
+    "walk": {
+      "feet": 30
+    }
+  },
+  "traits": [
+    {
+      "default_resolution": "skipped",
+      "desc": "The gargoyle doesn’t provoke an Opportunity Attack when it flies out of an enemy’s reach.",
+      "id": "flyby",
+      "kind": "unmodeled",
+      "name": "Flyby"
+    }
+  ],
+  "type": "elemental",
+  "xp": 450
+}

@@ -1,0 +1,117 @@
+{
+  "ability_scores": {
+    "charisma": 14,
+    "constitution": 11,
+    "dexterity": 16,
+    "intelligence": 12,
+    "strength": 12,
+    "wisdom": 10
+  },
+  "actions": [
+    {
+      "agent_clauses": [
+        "If the target is a Medium or smaller creature, the satyr pushes the target up to 10 feet straight away from itself."
+      ],
+      "desc": "Melee Attack Roll: +5, reach 5 ft. Hit: 5 (1d4 + 3) Bludgeoning damage. If the target is a Medium or smaller creature, the satyr pushes the target up to 10 feet straight away from itself.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "1d4",
+                "magical": false,
+                "modifier": 3,
+                "type": "bludgeoning"
+              }
+            ],
+            "modifier": 5,
+            "on_hit": [],
+            "range": null,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "hooves",
+      "kind": "partly_modeled",
+      "name": "Hooves"
+    },
+    {
+      "desc": "Wisdom Saving Throw: DC 12, one creature the satyr can see within 90 feet. Failure: 5 (1d6 + 2) Psychic damage.",
+      "effects": [
+        {
+          "saving_throw": {
+            "ability": "wis",
+            "creature_type_gate": null,
+            "damage": [
+              {
+                "dice": "1d6",
+                "magical": false,
+                "modifier": 2,
+                "type": "psychic"
+              }
+            ],
+            "dc": 12,
+            "half_on_success": false,
+            "hp_gate": null,
+            "immunity_after_success": false,
+            "no_damage_on_success": true,
+            "on_failure": [],
+            "repeat_save": null,
+            "two_stage": null
+          }
+        }
+      ],
+      "id": "mockery",
+      "kind": "modeled",
+      "name": "Mockery"
+    }
+  ],
+  "alignment": "chaotic neutral",
+  "armor_class": [
+    {
+      "value": 13
+    }
+  ],
+  "challenge_rating": 0.5,
+  "hit_points": {
+    "average": 31,
+    "dice": "7d8"
+  },
+  "id": "satyr",
+  "initiative": 3,
+  "languages": [
+    "Common",
+    "Elvish",
+    "Sylvan"
+  ],
+  "name": "Satyr",
+  "proficiency_bonus": 2,
+  "schema_version": "1",
+  "senses": {
+    "passive_perception": 12
+  },
+  "size": "medium",
+  "skills": {
+    "perception": 2,
+    "performance": 6,
+    "stealth": 5
+  },
+  "source": "srd-5.2.1",
+  "speeds": {
+    "walk": {
+      "feet": 40
+    }
+  },
+  "traits": [
+    {
+      "default_resolution": "skipped",
+      "desc": "The satyr has Advantage on saving throws against spells and other magical effects.",
+      "id": "magic-resistance",
+      "kind": "unmodeled",
+      "name": "Magic Resistance"
+    }
+  ],
+  "type": "fey",
+  "xp": 100
+}

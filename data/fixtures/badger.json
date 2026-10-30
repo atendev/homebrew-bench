@@ -1,0 +1,75 @@
+{
+  "ability_scores": {
+    "charisma": 5,
+    "constitution": 16,
+    "dexterity": 11,
+    "intelligence": 2,
+    "strength": 10,
+    "wisdom": 12
+  },
+  "actions": [
+    {
+      "desc": "Melee Attack Roll: +2, reach 5 ft. Hit: 1 Piercing damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "1d1",
+                "magical": false,
+                "modifier": 0,
+                "type": "piercing"
+              }
+            ],
+            "modifier": 2,
+            "on_hit": [],
+            "range": null,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "bite",
+      "kind": "modeled",
+      "name": "Bite"
+    }
+  ],
+  "alignment": "unaligned",
+  "armor_class": [
+    {
+      "value": 11
+    }
+  ],
+  "challenge_rating": 0,
+  "damage_resistances": [
+    "poison"
+  ],
+  "hit_points": {
+    "average": 5,
+    "dice": "1d4+3"
+  },
+  "id": "badger",
+  "initiative": 0,
+  "name": "Badger",
+  "proficiency_bonus": 2,
+  "schema_version": "1",
+  "senses": {
+    "darkvision": 30,
+    "passive_perception": 13
+  },
+  "size": "tiny",
+  "skills": {
+    "perception": 3
+  },
+  "source": "srd-5.2.1",
+  "speeds": {
+    "burrow": {
+      "feet": 5
+    },
+    "walk": {
+      "feet": 20
+    }
+  },
+  "type": "beast",
+  "xp": 10
+}

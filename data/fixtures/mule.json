@@ -1,0 +1,77 @@
+{
+  "ability_scores": {
+    "charisma": 5,
+    "constitution": 13,
+    "dexterity": 10,
+    "intelligence": 2,
+    "strength": 14,
+    "wisdom": 10
+  },
+  "actions": [
+    {
+      "desc": "Melee Attack Roll: +4, reach 5 ft. Hit: 4 (1d4 + 2) Bludgeoning damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "1d4",
+                "magical": false,
+                "modifier": 2,
+                "type": "bludgeoning"
+              }
+            ],
+            "modifier": 4,
+            "on_hit": [],
+            "range": null,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "hooves",
+      "kind": "modeled",
+      "name": "Hooves"
+    }
+  ],
+  "alignment": "unaligned",
+  "armor_class": [
+    {
+      "value": 10
+    }
+  ],
+  "challenge_rating": 0.125,
+  "hit_points": {
+    "average": 11,
+    "dice": "2d8+2"
+  },
+  "id": "mule",
+  "initiative": 0,
+  "name": "Mule",
+  "proficiency_bonus": 2,
+  "reactions": [],
+  "saving_throws": {
+    "str": 4
+  },
+  "schema_version": "1",
+  "senses": {
+    "passive_perception": 10
+  },
+  "size": "medium",
+  "source": "srd-5.2.1",
+  "speeds": {
+    "walk": {
+      "feet": 40
+    }
+  },
+  "traits": [
+    {
+      "desc": "The mule counts as one size larger for the purpose of determining its carrying capacity.",
+      "id": "beast-of-burden",
+      "kind": "inert",
+      "name": "Beast of Burden"
+    }
+  ],
+  "type": "beast",
+  "xp": 25
+}

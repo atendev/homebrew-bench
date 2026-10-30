@@ -1,0 +1,82 @@
+{
+  "ability_scores": {
+    "charisma": 8,
+    "constitution": 14,
+    "dexterity": 16,
+    "intelligence": 3,
+    "strength": 17,
+    "wisdom": 12
+  },
+  "actions": [
+    {
+      "agent_clauses": [
+        "If the target is a Large or smaller creature, it has the Prone condition."
+      ],
+      "desc": "Melee Attack Roll: +5, reach 5 ft. Hit: 10 (2d6 + 3) Slashing damage. If the target is a Large or smaller creature, it has the Prone condition.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "2d6",
+                "magical": false,
+                "modifier": 3,
+                "type": "slashing"
+              }
+            ],
+            "modifier": 5,
+            "on_hit": [],
+            "range": null,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "rend",
+      "kind": "partly_modeled",
+      "name": "Rend"
+    }
+  ],
+  "alignment": "unaligned",
+  "armor_class": [
+    {
+      "value": 13
+    }
+  ],
+  "bonus_actions": [
+    {
+      "default_resolution": "skipped",
+      "desc": "The tiger takes the Disengage or Hide action.",
+      "id": "nimble-escape",
+      "kind": "unmodeled",
+      "name": "Nimble Escape"
+    }
+  ],
+  "challenge_rating": 1,
+  "hit_points": {
+    "average": 30,
+    "dice": "4d10+8"
+  },
+  "id": "tiger",
+  "initiative": 3,
+  "name": "Tiger",
+  "proficiency_bonus": 2,
+  "schema_version": "1",
+  "senses": {
+    "darkvision": 60,
+    "passive_perception": 13
+  },
+  "size": "large",
+  "skills": {
+    "perception": 3,
+    "stealth": 7
+  },
+  "source": "srd-5.2.1",
+  "speeds": {
+    "walk": {
+      "feet": 40
+    }
+  },
+  "type": "beast",
+  "xp": 200
+}

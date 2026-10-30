@@ -1,0 +1,83 @@
+{
+  "ability_scores": {
+    "charisma": 3,
+    "constitution": 10,
+    "dexterity": 14,
+    "intelligence": 1,
+    "strength": 10,
+    "wisdom": 10
+  },
+  "actions": [
+    {
+      "desc": "Melee Attack Roll: +4, reach 5 ft. Hit: 5 (1d6 + 2) Piercing damage plus 5 (2d4) Poison damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "1d6",
+                "magical": false,
+                "modifier": 2,
+                "type": "piercing"
+              },
+              {
+                "dice": "2d4",
+                "magical": false,
+                "modifier": 0,
+                "type": "poison"
+              }
+            ],
+            "modifier": 4,
+            "on_hit": [],
+            "range": null,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "sting",
+      "kind": "modeled",
+      "name": "Sting"
+    }
+  ],
+  "alignment": "unaligned",
+  "armor_class": [
+    {
+      "value": 13
+    }
+  ],
+  "challenge_rating": 0.5,
+  "hit_points": {
+    "average": 22,
+    "dice": "5d8"
+  },
+  "id": "giant-wasp",
+  "initiative": 2,
+  "name": "Giant Wasp",
+  "proficiency_bonus": 2,
+  "schema_version": "1",
+  "senses": {
+    "passive_perception": 10
+  },
+  "size": "medium",
+  "source": "srd-5.2.1",
+  "speeds": {
+    "fly": {
+      "feet": 50
+    },
+    "walk": {
+      "feet": 10
+    }
+  },
+  "traits": [
+    {
+      "default_resolution": "skipped",
+      "desc": "The wasp doesn’t provoke an Opportunity Attack when it flies out of an enemy’s reach.",
+      "id": "flyby",
+      "kind": "unmodeled",
+      "name": "Flyby"
+    }
+  ],
+  "type": "beast",
+  "xp": 100
+}

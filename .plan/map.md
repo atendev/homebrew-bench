@@ -47,6 +47,7 @@ Both modes ship in phase 1. Everything the engine can't model is labeled agent j
 - [Spell effects scaffold and data file](closed/026-spell-effects-scaffold-and-data-file.md): `scripts/scaffold-spells.py` scaffolds entries from SRD structured fields, `data/spells/effects.json` covers the standard party caster/healer list and core SRD monster combat spells in the closed effect vocabulary, `data/party/standard-spells.json` coverage statuses are updated, and `scripts/check-spell-effects.py` keeps the file honest against upstream SRD text. See `docs/adr/0014-spell-effects-file-authorship.md`.
 - [Step engine and combat rules](closed/029-step-engine-and-combat-rules.md): `bench-core/src/engine.rs` implements the deterministic step function with initiative, abstract engagement and range bands, action resolution, the closed effect vocabulary, all 15 conditions, usage tracking, PC death saves, concentration checks, and turn lifecycle. Schema adds `active_modifiers` to `EncounterState` and `death_saves` to `Combatant`.
 - [Standard party progression tables and generator](closed/027-standard-party-progression-tables-and-generator.md): four step-based progression tables in `data/party/progression/`, `scripts/generate-party.py` (with `--check`) writing 80 stat blocks to `data/party/standard/`, casters cast effects-file ids, `StatBlock` gains `spellcasting` and `notes`, and the party exposes engine gaps (spell slots, save DC, cantrip scaling, bonus actions, death-save hits) handed to the batch runner ticket.
+- [SRD importer vocabulary gaps](closed/035-srd-importer-vocabulary-gaps.md): multiattack `Choice` takes per-option counts and K distinct picks (swap retired), `size_choice` beside `size`, `Damage.if_target` plus `on_hit` for later-clause damage, recharge dice N-6 or N for N in 2 to 6, recharge after rest maps to `PerRest` short once. To be built in tickets 036 to 039.
 
 ## Not yet specified
 
@@ -64,11 +65,15 @@ Both modes ship in phase 1. Everything the engine can't model is labeled agent j
 
 Takeable now, in order:
 
-- SRD importer, review pipeline and fixtures (task)
+- Multiattack choice with per-option counts (task)
+- Conditional and later-clause attack damage (task)
+- Size choice field on stat blocks (task)
+- Recharge ranges and recharge after rest (task)
 - Live mode CLI, overrides, log, public view and replay (task)
 
 Blocked:
 
+- SRD importer, review pipeline and fixtures (task), blocked by the four importer vocabulary tickets above; first pass built, 186 of 341 graduated
 - Batch tactics policy and batch runner (task), blocked by SRD importer, review pipeline and fixtures and Live mode CLI, overrides, log, public view and replay
 - Empirical CR baseline curve and embedded reference data (task), blocked by Batch tactics policy and batch runner
 - Agent skill and house-rule templates (task), blocked by Live mode CLI, overrides, log, public view and replay and Empirical CR baseline curve and embedded reference data

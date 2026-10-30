@@ -1,0 +1,100 @@
+{
+  "ability_scores": {
+    "charisma": 1,
+    "constitution": 13,
+    "dexterity": 11,
+    "intelligence": 1,
+    "strength": 14,
+    "wisdom": 3
+  },
+  "actions": [
+    {
+      "desc": "The armor makes two Slam attacks.",
+      "effects": [
+        {
+          "multiattack": {
+            "steps": [
+              {
+                "action": {
+                  "action_id": "slam",
+                  "count": 2
+                }
+              }
+            ],
+            "swap": false
+          }
+        }
+      ],
+      "id": "multiattack",
+      "kind": "modeled",
+      "name": "Multiattack"
+    },
+    {
+      "desc": "Melee Attack Roll: +4, reach 5 ft. Hit: 5 (1d6 + 2) Bludgeoning damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "1d6",
+                "magical": false,
+                "modifier": 2,
+                "type": "bludgeoning"
+              }
+            ],
+            "modifier": 4,
+            "on_hit": [],
+            "range": null,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "slam",
+      "kind": "modeled",
+      "name": "Slam"
+    }
+  ],
+  "alignment": "unaligned",
+  "armor_class": [
+    {
+      "value": 18
+    }
+  ],
+  "challenge_rating": 1,
+  "condition_immunities": [
+    "charmed",
+    "deafened",
+    "exhaustion",
+    "frightened",
+    "paralyzed",
+    "petrified",
+    "poisoned"
+  ],
+  "damage_immunities": [
+    "poison",
+    "psychic"
+  ],
+  "hit_points": {
+    "average": 33,
+    "dice": "6d8+6"
+  },
+  "id": "animated-armor",
+  "initiative": 0,
+  "name": "Animated Armor",
+  "proficiency_bonus": 2,
+  "schema_version": "1",
+  "senses": {
+    "blindsight": 60,
+    "passive_perception": 6
+  },
+  "size": "medium",
+  "source": "srd-5.2.1",
+  "speeds": {
+    "walk": {
+      "feet": 25
+    }
+  },
+  "type": "construct",
+  "xp": 200
+}

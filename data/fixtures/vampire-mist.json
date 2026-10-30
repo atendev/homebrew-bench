@@ -1,0 +1,161 @@
+{
+  "ability_scores": {
+    "charisma": 18,
+    "constitution": 18,
+    "dexterity": 18,
+    "intelligence": 17,
+    "strength": 18,
+    "wisdom": 15
+  },
+  "alignment": "lawful evil",
+  "armor_class": [
+    {
+      "value": 16
+    }
+  ],
+  "bonus_actions": [
+    {
+      "default_resolution": "skipped",
+      "desc": "The vampire casts Charm Person, requiring no spell components and using Charisma as the spellcasting ability (spell save DC 17), and the duration is 24 hours. The Charmed target is a willing recipient of the vampire’s Bite, the damage of which doesn’t end the spell. When the spell ends, the target is unaware it was Charmed by the vampire.",
+      "id": "charm",
+      "kind": "unmodeled",
+      "name": "Charm",
+      "usage": {
+        "recharge": {
+          "dice": "5-6"
+        }
+      }
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "If the vampire isn’t in sunlight or running water, it shape-shifts into a Tiny bat (Speed 5 ft., Fly Speed 30 ft.) or a Medium cloud of mist (Speed 5 ft., Fly Speed 20 ft. [hover]), or it returns to its vampire form. Anything it is wearing transforms with it. While in bat form, the vampire can’t speak. Its game statistics, other than its size and Speed, are unchanged. While in mist form, the vampire can’t take any actions, speak, or manipulate objects. It is weightless and can enter an enemy’s space and stop there. If air can pass through a space, the mist can do so, but it can’t pass through liquid. It has Resistance to all damage, except the damage it takes from sunlight.",
+      "id": "shape-shift",
+      "kind": "unmodeled",
+      "name": "Shape-Shift"
+    }
+  ],
+  "challenge_rating": 13,
+  "damage_resistances": [
+    "necrotic"
+  ],
+  "hit_points": {
+    "average": 195,
+    "dice": "23d8+92"
+  },
+  "id": "vampire-mist",
+  "initiative": 4,
+  "lair_xp": 11500,
+  "languages": [
+    "Common plus two other languages"
+  ],
+  "legendary_actions": [
+    {
+      "default_resolution": "skipped",
+      "desc": "The vampire casts Command, requiring no spell components and using Charisma as the spellcasting ability (spell save DC 17). The vampire can’t take this action again until the start of its next turn.",
+      "id": "beguile",
+      "kind": "unmodeled",
+      "name": "Beguile"
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "The vampire moves up to half its Speed, and it makes one Grave Strike attack.",
+      "id": "deathless-strike",
+      "kind": "unmodeled",
+      "name": "Deathless Strike"
+    }
+  ],
+  "legendary_uses_per_round": 3,
+  "name": "Vampire, Mist Form",
+  "proficiency_bonus": 5,
+  "saving_throws": {
+    "cha": 9,
+    "con": 9,
+    "dex": 9,
+    "wis": 7
+  },
+  "schema_version": "1",
+  "senses": {
+    "darkvision": 120,
+    "passive_perception": 17
+  },
+  "size": "medium",
+  "skills": {
+    "perception": 7,
+    "stealth": 9
+  },
+  "source": "srd-5.2.1",
+  "speeds": {
+    "fly": {
+      "feet": 20,
+      "hover": true
+    },
+    "walk": {
+      "feet": 5
+    }
+  },
+  "traits": [
+    {
+      "default_resolution": "skipped",
+      "desc": "If the vampire fails a saving throw, it can choose to succeed instead.",
+      "id": "legendary-resistance",
+      "kind": "unmodeled",
+      "name": "Legendary Resistance",
+      "usage": {
+        "per_day": {
+          "uses": 3
+        }
+      }
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "If the vampire drops to 0 Hit Points outside its resting place, the vampire uses Shape-Shift to become mist (no action required). If it can’t use ShapeShift, it is destroyed. While it has 0 Hit Points in mist form, it can’t return to its vampire form, and it must reach its resting place within 2 hours or be destroyed. Once in its resting place, it returns to its vampire form and has the Paralyzed condition until it regains any Hit Points, and it regains 1 Hit Point after spending 1 hour there.",
+      "id": "misty-escape",
+      "kind": "unmodeled",
+      "name": "Misty Escape"
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "The vampire can climb difficult surfaces, including along ceilings, without needing to make an ability check.",
+      "id": "spider-climb",
+      "kind": "unmodeled",
+      "name": "Spider Climb"
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "The vampire has these weaknesses:",
+      "id": "vampire-weakness",
+      "kind": "unmodeled",
+      "name": "Vampire Weakness"
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "The vampire can’t enter a residence without an invitation from an occupant.",
+      "id": "forbiddance",
+      "kind": "unmodeled",
+      "name": "Forbiddance"
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "The vampire takes 20 Acid damage if it ends its turn in running water.",
+      "id": "running-water",
+      "kind": "unmodeled",
+      "name": "Running Water"
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "If a weapon that deals Piercing damage is driven into the vampire’s heart while the vampire has the Incapacitated condition in its resting place, the vampire has the Paralyzed condition until the weapon is removed.",
+      "id": "stake-to-the-heart",
+      "kind": "unmodeled",
+      "name": "Stake to the Heart"
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "The vampire takes 20 Radiant damage if it starts its turn in sunlight. While in sunlight, it has Disadvantage on attack rolls and ability checks.",
+      "id": "sunlight",
+      "kind": "unmodeled",
+      "name": "Sunlight"
+    }
+  ],
+  "type": "undead",
+  "xp": 10000
+}

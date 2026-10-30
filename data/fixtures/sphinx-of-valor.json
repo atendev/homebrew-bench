@@ -1,0 +1,227 @@
+{
+  "ability_scores": {
+    "charisma": 18,
+    "constitution": 20,
+    "dexterity": 10,
+    "intelligence": 16,
+    "strength": 22,
+    "wisdom": 23
+  },
+  "actions": [
+    {
+      "desc": "The sphinx makes two Claw attacks and uses Roar.",
+      "effects": [
+        {
+          "multiattack": {
+            "steps": [
+              {
+                "action": {
+                  "action_id": "claw",
+                  "count": 2
+                }
+              },
+              {
+                "action": {
+                  "action_id": "roar",
+                  "count": 1
+                }
+              }
+            ],
+            "swap": false
+          }
+        }
+      ],
+      "id": "multiattack",
+      "kind": "modeled",
+      "name": "Multiattack"
+    },
+    {
+      "desc": "Melee Attack Roll: +12, reach 5 ft. Hit: 20 (4d6 + 6) Slashing damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "4d6",
+                "magical": false,
+                "modifier": 6,
+                "type": "slashing"
+              }
+            ],
+            "modifier": 12,
+            "on_hit": [],
+            "range": null,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "claw",
+      "kind": "modeled",
+      "name": "Claw"
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "The sphinx emits a magical roar. Whenever it roars, the roar has a different effect, as detailed below (the sequence resets when it takes a Long Rest):",
+      "id": "roar",
+      "kind": "unmodeled",
+      "name": "Roar",
+      "usage": {
+        "per_day": {
+          "uses": 3
+        }
+      }
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "Wisdom Saving Throw: DC 20, each enemy in a 500-foot Emanation originating from the sphinx. Failure: The target has the Frightened condition for 1 minute.",
+      "id": "first-roar",
+      "kind": "unmodeled",
+      "name": "First Roar"
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "Wisdom Saving Throw: DC 20, each enemy in a 500-foot Emanation originating from the sphinx. Failure: The target has the Paralyzed condition, and it repeats the save at the end of each of its turns, ending the effect on itself on a success. After 1 minute, it succeeds automatically.",
+      "id": "second-roar",
+      "kind": "unmodeled",
+      "name": "Second Roar"
+    },
+    {
+      "agent_clauses": [
+        "and the target has the Prone condition"
+      ],
+      "desc": "Constitution Saving Throw: DC 20, each enemy in a 500-foot Emanation originating from the sphinx. Failure: 44 (8d10) Thunder damage, and the target has the Prone condition. Success: Half damage only.",
+      "effects": [
+        {
+          "saving_throw": {
+            "ability": "con",
+            "creature_type_gate": null,
+            "damage": [
+              {
+                "dice": "8d10",
+                "magical": false,
+                "modifier": 0,
+                "type": "thunder"
+              }
+            ],
+            "dc": 20,
+            "half_on_success": true,
+            "hp_gate": null,
+            "immunity_after_success": false,
+            "no_damage_on_success": false,
+            "on_failure": [],
+            "repeat_save": null,
+            "two_stage": null
+          }
+        }
+      ],
+      "id": "third-roar",
+      "kind": "partly_modeled",
+      "name": "Third Roar"
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "The sphinx casts one of the following spells, requiring no Material components and using Wisdom as the spellcasting ability (spell save DC 20):",
+      "id": "spellcasting",
+      "kind": "unmodeled",
+      "name": "Spellcasting"
+    }
+  ],
+  "alignment": "lawful neutral",
+  "armor_class": [
+    {
+      "value": 17
+    }
+  ],
+  "challenge_rating": 17,
+  "condition_immunities": [
+    "charmed",
+    "frightened"
+  ],
+  "damage_immunities": [
+    "psychic"
+  ],
+  "damage_resistances": [
+    "necrotic",
+    "radiant"
+  ],
+  "hit_points": {
+    "average": 199,
+    "dice": "19d10+95"
+  },
+  "id": "sphinx-of-valor",
+  "initiative": 0,
+  "lair_xp": 20000,
+  "languages": [
+    "Celestial",
+    "Common"
+  ],
+  "legendary_actions": [
+    {
+      "default_resolution": "skipped",
+      "desc": "The sphinx can teleport up to 30 feet to an unoccupied space it can see, and it makes one Claw attack.",
+      "id": "arcane-prowl",
+      "kind": "unmodeled",
+      "name": "Arcane Prowl"
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "Constitution Saving Throw: DC 16, one creature the sphinx can see within 120 feet. Failure: The target gains 1 Exhaustion level. While the target has any Exhaustion levels, it appears 3d10 years older. Failure or Success: The sphinx can’t take this action again until the start of its next turn.",
+      "id": "weight-of-years",
+      "kind": "unmodeled",
+      "name": "Weight of Years"
+    }
+  ],
+  "legendary_uses_per_round": 3,
+  "name": "Sphinx of Valor",
+  "proficiency_bonus": 6,
+  "saving_throws": {
+    "con": 11,
+    "dex": 6,
+    "int": 9,
+    "wis": 12
+  },
+  "schema_version": "1",
+  "senses": {
+    "passive_perception": 22,
+    "truesight": 120
+  },
+  "size": "large",
+  "skills": {
+    "arcana": 9,
+    "perception": 12,
+    "religion": 15
+  },
+  "source": "srd-5.2.1",
+  "speeds": {
+    "fly": {
+      "feet": 60
+    },
+    "walk": {
+      "feet": 40
+    }
+  },
+  "traits": [
+    {
+      "default_resolution": "skipped",
+      "desc": "No magic can observe the sphinx remotely or detect its thoughts without its permission. Wisdom (Insight) checks made to ascertain its intentions or sincerity are made with Disadvantage.",
+      "id": "inscrutable",
+      "kind": "unmodeled",
+      "name": "Inscrutable"
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "If the sphinx fails a saving throw, it can choose to succeed instead.",
+      "id": "legendary-resistance",
+      "kind": "unmodeled",
+      "name": "Legendary Resistance",
+      "usage": {
+        "per_day": {
+          "uses": 3
+        }
+      }
+    }
+  ],
+  "type": "celestial",
+  "xp": 18000
+}

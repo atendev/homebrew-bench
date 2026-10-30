@@ -1,0 +1,102 @@
+{
+  "ability_scores": {
+    "charisma": 5,
+    "constitution": 21,
+    "dexterity": 11,
+    "intelligence": 1,
+    "strength": 23,
+    "wisdom": 10
+  },
+  "actions": [
+    {
+      "desc": "The shark makes two Bite attacks.",
+      "effects": [
+        {
+          "multiattack": {
+            "steps": [
+              {
+                "action": {
+                  "action_id": "bite",
+                  "count": 2
+                }
+              }
+            ],
+            "swap": false
+          }
+        }
+      ],
+      "id": "multiattack",
+      "kind": "modeled",
+      "name": "Multiattack"
+    },
+    {
+      "desc": "Melee Attack Roll: +9 (with Advantage if the target doesn’t have all its Hit Points), reach 5 ft. Hit: 22 (3d10 + 6) Piercing damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "3d10",
+                "magical": false,
+                "modifier": 6,
+                "type": "piercing"
+              }
+            ],
+            "modifier": 9,
+            "on_hit": [],
+            "range": null,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "bite",
+      "kind": "modeled",
+      "name": "Bite"
+    }
+  ],
+  "alignment": "unaligned",
+  "armor_class": [
+    {
+      "value": 13
+    }
+  ],
+  "challenge_rating": 5,
+  "hit_points": {
+    "average": 92,
+    "dice": "8d12+40"
+  },
+  "id": "giant-shark",
+  "initiative": 0,
+  "name": "Giant Shark",
+  "proficiency_bonus": 3,
+  "schema_version": "1",
+  "senses": {
+    "blindsight": 60,
+    "passive_perception": 13
+  },
+  "size": "huge",
+  "skills": {
+    "perception": 3
+  },
+  "source": "srd-5.2.1",
+  "speeds": {
+    "swim": {
+      "feet": 60
+    },
+    "walk": {
+      "feet": 5
+    }
+  },
+  "traits": [
+    {
+      "default_resolution": "skipped",
+      "desc": "The shark can breathe only underwater.",
+      "id": "water-breathing",
+      "kind": "unmodeled",
+      "name": "Water Breathing"
+    }
+  ],
+  "type": "beast",
+  "xp": 1800
+}

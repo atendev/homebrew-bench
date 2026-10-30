@@ -1,0 +1,162 @@
+{
+  "ability_scores": {
+    "charisma": 11,
+    "constitution": 22,
+    "dexterity": 10,
+    "intelligence": 11,
+    "strength": 17,
+    "wisdom": 10
+  },
+  "actions": [
+    {
+      "desc": "The xorn makes one Bite attack and three Claw attacks.",
+      "effects": [
+        {
+          "multiattack": {
+            "steps": [
+              {
+                "action": {
+                  "action_id": "bite",
+                  "count": 1
+                }
+              },
+              {
+                "action": {
+                  "action_id": "claw",
+                  "count": 3
+                }
+              }
+            ],
+            "swap": false
+          }
+        }
+      ],
+      "id": "multiattack",
+      "kind": "modeled",
+      "name": "Multiattack"
+    },
+    {
+      "desc": "Melee Attack Roll: +6, reach 5 ft. Hit: 17 (4d6 + 3) Piercing damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "4d6",
+                "magical": false,
+                "modifier": 3,
+                "type": "piercing"
+              }
+            ],
+            "modifier": 6,
+            "on_hit": [],
+            "range": null,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "bite",
+      "kind": "modeled",
+      "name": "Bite"
+    },
+    {
+      "desc": "Melee Attack Roll: +6, reach 5 ft. Hit: 8 (1d10 + 3) Slashing damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "1d10",
+                "magical": false,
+                "modifier": 3,
+                "type": "slashing"
+              }
+            ],
+            "modifier": 6,
+            "on_hit": [],
+            "range": null,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "claw",
+      "kind": "modeled",
+      "name": "Claw"
+    }
+  ],
+  "alignment": "neutral",
+  "armor_class": [
+    {
+      "value": 19
+    }
+  ],
+  "bonus_actions": [
+    {
+      "default_resolution": "skipped",
+      "desc": "The xorn moves up to its Speed or Burrow Speed straight toward an enemy it can sense.",
+      "id": "charge",
+      "kind": "unmodeled",
+      "name": "Charge"
+    }
+  ],
+  "challenge_rating": 5,
+  "condition_immunities": [
+    "paralyzed",
+    "petrified",
+    "poisoned"
+  ],
+  "damage_immunities": [
+    "poison"
+  ],
+  "hit_points": {
+    "average": 84,
+    "dice": "8d8+48"
+  },
+  "id": "xorn",
+  "initiative": 0,
+  "languages": [
+    "Primordial (Terran)"
+  ],
+  "name": "Xorn",
+  "proficiency_bonus": 3,
+  "schema_version": "1",
+  "senses": {
+    "darkvision": 60,
+    "passive_perception": 16,
+    "tremorsense": 60
+  },
+  "size": "medium",
+  "skills": {
+    "perception": 6,
+    "stealth": 6
+  },
+  "source": "srd-5.2.1",
+  "speeds": {
+    "burrow": {
+      "feet": 20
+    },
+    "walk": {
+      "feet": 20
+    }
+  },
+  "traits": [
+    {
+      "default_resolution": "skipped",
+      "desc": "The xorn can burrow through nonmagical, unworked earth and stone. While doing so, the xorn doesn’t disturb the material it moves through.",
+      "id": "earth-glide",
+      "kind": "unmodeled",
+      "name": "Earth Glide"
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "The xorn can pinpoint the location of precious metals and stones within 60 feet of itself.",
+      "id": "treasure-sense",
+      "kind": "unmodeled",
+      "name": "Treasure Sense"
+    }
+  ],
+  "type": "elemental",
+  "xp": 1800
+}

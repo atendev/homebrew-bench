@@ -1,0 +1,54 @@
+{
+  "ability_scores": {
+    "charisma": 1,
+    "constitution": 10,
+    "dexterity": 1,
+    "intelligence": 1,
+    "strength": 1,
+    "wisdom": 3
+  },
+  "alignment": "unaligned",
+  "armor_class": [
+    {
+      "value": 5
+    }
+  ],
+  "challenge_rating": 0,
+  "condition_immunities": [
+    "blinded",
+    "charmed",
+    "deafened",
+    "frightened"
+  ],
+  "hit_points": {
+    "average": 13,
+    "dice": "3d8"
+  },
+  "id": "shrieker-fungus",
+  "initiative": -5,
+  "name": "Shrieker Fungus",
+  "proficiency_bonus": 2,
+  "reactions": [
+    {
+      "default_resolution": "skipped",
+      "desc": "Trigger: A creature or a source of Bright Light moves within 30 feet of the shrieker. Response: The shrieker emits a shriek audible within 300 feet of itself for 1 minute or until the shrieker dies.",
+      "id": "shriek",
+      "kind": "unmodeled",
+      "name": "Shriek"
+    }
+  ],
+  "schema_version": "1",
+  "senses": {
+    "blindsight": 30,
+    "passive_perception": 6
+  },
+  "size": "medium",
+  "source": "srd-5.2.1",
+  "speeds": {
+    "walk": {
+      "feet": 5
+    }
+  },
+  "type": "plant",
+  "xp": 0
+}

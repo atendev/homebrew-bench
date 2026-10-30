@@ -1,0 +1,65 @@
+{
+  "ability_scores": {
+    "charisma": 7,
+    "constitution": 15,
+    "dexterity": 10,
+    "intelligence": 2,
+    "strength": 18,
+    "wisdom": 11
+  },
+  "actions": [
+    {
+      "desc": "Melee Attack Roll: +6, reach 5 ft. Hit: 6 (1d4 + 4) Bludgeoning damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "1d4",
+                "magical": false,
+                "modifier": 4,
+                "type": "bludgeoning"
+              }
+            ],
+            "modifier": 6,
+            "on_hit": [],
+            "range": null,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "hooves",
+      "kind": "modeled",
+      "name": "Hooves"
+    }
+  ],
+  "alignment": "unaligned",
+  "armor_class": [
+    {
+      "value": 10
+    }
+  ],
+  "challenge_rating": 0.25,
+  "hit_points": {
+    "average": 15,
+    "dice": "2d10+4"
+  },
+  "id": "draft-horse",
+  "initiative": 0,
+  "name": "Draft Horse",
+  "proficiency_bonus": 2,
+  "schema_version": "1",
+  "senses": {
+    "passive_perception": 10
+  },
+  "size": "large",
+  "source": "srd-5.2.1",
+  "speeds": {
+    "walk": {
+      "feet": 40
+    }
+  },
+  "type": "beast",
+  "xp": 50
+}

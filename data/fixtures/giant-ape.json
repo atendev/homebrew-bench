@@ -1,0 +1,141 @@
+{
+  "ability_scores": {
+    "charisma": 7,
+    "constitution": 18,
+    "dexterity": 14,
+    "intelligence": 5,
+    "strength": 23,
+    "wisdom": 12
+  },
+  "actions": [
+    {
+      "desc": "The ape makes two Fist attacks.",
+      "effects": [
+        {
+          "multiattack": {
+            "steps": [
+              {
+                "action": {
+                  "action_id": "fist",
+                  "count": 2
+                }
+              }
+            ],
+            "swap": false
+          }
+        }
+      ],
+      "id": "multiattack",
+      "kind": "modeled",
+      "name": "Multiattack"
+    },
+    {
+      "desc": "Melee Attack Roll: +9, reach 10 ft. Hit: 22 (3d10 + 6) Bludgeoning damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "3d10",
+                "magical": false,
+                "modifier": 6,
+                "type": "bludgeoning"
+              }
+            ],
+            "modifier": 9,
+            "on_hit": [],
+            "range": null,
+            "reach": 10,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "fist",
+      "kind": "modeled",
+      "name": "Fist"
+    },
+    {
+      "agent_clauses": [
+        "If the target is a Large or smaller creature, it has the Prone condition"
+      ],
+      "desc": "The ape hurls a boulder at a point it can see within 90 feet. Dexterity Saving Throw: DC 17, each creature in a 5-foot-radius Sphere centered on that point. Failure: 24 (7d6) Bludgeoning damage. If the target is a Large or smaller creature, it has the Prone condition. Success: Half damage only.",
+      "effects": [
+        {
+          "saving_throw": {
+            "ability": "dex",
+            "creature_type_gate": null,
+            "damage": [
+              {
+                "dice": "7d6",
+                "magical": false,
+                "modifier": 0,
+                "type": "bludgeoning"
+              }
+            ],
+            "dc": 17,
+            "half_on_success": true,
+            "hp_gate": null,
+            "immunity_after_success": false,
+            "no_damage_on_success": false,
+            "on_failure": [],
+            "repeat_save": null,
+            "two_stage": null
+          }
+        }
+      ],
+      "id": "boulder-toss",
+      "kind": "partly_modeled",
+      "name": "Boulder Toss",
+      "usage": {
+        "recharge": {
+          "dice": "6"
+        }
+      }
+    }
+  ],
+  "alignment": "unaligned",
+  "armor_class": [
+    {
+      "value": 12
+    }
+  ],
+  "bonus_actions": [
+    {
+      "default_resolution": "skipped",
+      "desc": "The ape jumps up to 30 feet by spending 10 feet of movement.",
+      "id": "leap",
+      "kind": "unmodeled",
+      "name": "Leap"
+    }
+  ],
+  "challenge_rating": 7,
+  "hit_points": {
+    "average": 168,
+    "dice": "16d12+64"
+  },
+  "id": "giant-ape",
+  "initiative": 2,
+  "name": "Giant Ape",
+  "proficiency_bonus": 3,
+  "schema_version": "1",
+  "senses": {
+    "passive_perception": 14
+  },
+  "size": "huge",
+  "skills": {
+    "athletics": 9,
+    "perception": 4,
+    "survival": 4
+  },
+  "source": "srd-5.2.1",
+  "speeds": {
+    "climb": {
+      "feet": 40
+    },
+    "walk": {
+      "feet": 40
+    }
+  },
+  "type": "beast",
+  "xp": 2900
+}

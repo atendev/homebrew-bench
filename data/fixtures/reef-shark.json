@@ -1,0 +1,88 @@
+{
+  "ability_scores": {
+    "charisma": 4,
+    "constitution": 13,
+    "dexterity": 15,
+    "intelligence": 1,
+    "strength": 14,
+    "wisdom": 10
+  },
+  "actions": [
+    {
+      "desc": "Melee Attack Roll: +4, reach 5 ft. Hit: 7 (2d4 + 2) Piercing damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "2d4",
+                "magical": false,
+                "modifier": 2,
+                "type": "piercing"
+              }
+            ],
+            "modifier": 4,
+            "on_hit": [],
+            "range": null,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "bite",
+      "kind": "modeled",
+      "name": "Bite"
+    }
+  ],
+  "alignment": "unaligned",
+  "armor_class": [
+    {
+      "value": 12
+    }
+  ],
+  "challenge_rating": 0.5,
+  "hit_points": {
+    "average": 22,
+    "dice": "4d8+4"
+  },
+  "id": "reef-shark",
+  "initiative": 2,
+  "name": "Reef Shark",
+  "proficiency_bonus": 2,
+  "schema_version": "1",
+  "senses": {
+    "blindsight": 30,
+    "passive_perception": 12
+  },
+  "size": "medium",
+  "skills": {
+    "perception": 2
+  },
+  "source": "srd-5.2.1",
+  "speeds": {
+    "swim": {
+      "feet": 30
+    },
+    "walk": {
+      "feet": 5
+    }
+  },
+  "traits": [
+    {
+      "default_resolution": "skipped",
+      "desc": "The shark has Advantage on an attack roll against a creature if at least one of the shark’s allies is within 5 feet of the creature and the ally doesn’t have the Incapacitated condition.",
+      "id": "pack-tactics",
+      "kind": "unmodeled",
+      "name": "Pack Tactics"
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "The shark can breathe only underwater.",
+      "id": "water-breathing",
+      "kind": "unmodeled",
+      "name": "Water Breathing"
+    }
+  ],
+  "type": "beast",
+  "xp": 100
+}

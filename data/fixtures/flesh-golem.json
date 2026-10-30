@@ -1,0 +1,145 @@
+{
+  "ability_scores": {
+    "charisma": 5,
+    "constitution": 18,
+    "dexterity": 9,
+    "intelligence": 6,
+    "strength": 19,
+    "wisdom": 10
+  },
+  "actions": [
+    {
+      "desc": "The golem makes two Slam attacks.",
+      "effects": [
+        {
+          "multiattack": {
+            "steps": [
+              {
+                "action": {
+                  "action_id": "slam",
+                  "count": 2
+                }
+              }
+            ],
+            "swap": false
+          }
+        }
+      ],
+      "id": "multiattack",
+      "kind": "modeled",
+      "name": "Multiattack"
+    },
+    {
+      "desc": "Melee Attack Roll: +7, reach 5 ft. Hit: 13 (2d8 + 4) Bludgeoning damage plus 4 (1d8) Lightning damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "2d8",
+                "magical": false,
+                "modifier": 4,
+                "type": "bludgeoning"
+              },
+              {
+                "dice": "1d8",
+                "magical": false,
+                "modifier": 0,
+                "type": "lightning"
+              }
+            ],
+            "modifier": 7,
+            "on_hit": [],
+            "range": null,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "slam",
+      "kind": "modeled",
+      "name": "Slam"
+    }
+  ],
+  "alignment": "neutral",
+  "armor_class": [
+    {
+      "value": 9
+    }
+  ],
+  "challenge_rating": 5,
+  "condition_immunities": [
+    "charmed",
+    "exhaustion",
+    "frightened",
+    "paralyzed",
+    "petrified",
+    "poisoned"
+  ],
+  "damage_immunities": [
+    "lightning",
+    "poison"
+  ],
+  "hit_points": {
+    "average": 127,
+    "dice": "15d8+60"
+  },
+  "id": "flesh-golem",
+  "initiative": -1,
+  "languages": [
+    "Understands Common plus one other language but can’t speak"
+  ],
+  "name": "Flesh Golem",
+  "proficiency_bonus": 3,
+  "schema_version": "1",
+  "senses": {
+    "darkvision": 60,
+    "passive_perception": 10
+  },
+  "size": "medium",
+  "source": "srd-5.2.1",
+  "speeds": {
+    "walk": {
+      "feet": 30
+    }
+  },
+  "traits": [
+    {
+      "default_resolution": "skipped",
+      "desc": "If the golem takes Fire damage, it has Disadvantage on attack rolls and ability checks until the end of its next turn.",
+      "id": "aversion-to-fire",
+      "kind": "unmodeled",
+      "name": "Aversion to Fire"
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "Whenever the golem starts its turn Bloodied, roll 1d6. On a 6, the golem goes berserk. On each of its turns while berserk, the golem attacks the nearest creature it can see. If no creature is near enough to move to and attack, the golem attacks an object. Once the golem goes berserk, it remains so until it is destroyed or it is no longer Bloodied. The golem’s creator, if within 60 feet of the berserk golem, can try to calm it by taking an action to make a DC 15 Charisma (Persuasion) check; the golem must be able to hear its creator. If this check succeeds, the golem ceases being berserk until the start of its next turn, at which point it resumes rolling for the Berserk trait again if it is still Bloodied.",
+      "id": "berserk",
+      "kind": "unmodeled",
+      "name": "Berserk"
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "The golem can’t shape-shift.",
+      "id": "immutable-form",
+      "kind": "unmodeled",
+      "name": "Immutable Form"
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "Whenever the golem is subjected to Lightning damage, it regains a number of Hit Points equal to the Lightning damage dealt.",
+      "id": "lightning-absorption",
+      "kind": "unmodeled",
+      "name": "Lightning Absorption"
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "The golem has Advantage on saving throws against spells and other magical effects.",
+      "id": "magic-resistance",
+      "kind": "unmodeled",
+      "name": "Magic Resistance"
+    }
+  ],
+  "type": "construct",
+  "xp": 1800
+}

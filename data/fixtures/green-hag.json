@@ -1,0 +1,137 @@
+{
+  "ability_scores": {
+    "charisma": 14,
+    "constitution": 16,
+    "dexterity": 12,
+    "intelligence": 13,
+    "strength": 18,
+    "wisdom": 14
+  },
+  "actions": [
+    {
+      "desc": "The hag makes two Claw attacks.",
+      "effects": [
+        {
+          "multiattack": {
+            "steps": [
+              {
+                "action": {
+                  "action_id": "claw",
+                  "count": 2
+                }
+              }
+            ],
+            "swap": false
+          }
+        }
+      ],
+      "id": "multiattack",
+      "kind": "modeled",
+      "name": "Multiattack"
+    },
+    {
+      "desc": "Melee Attack Roll: +6, reach 5 ft. Hit: 8 (1d8 + 4) Slashing damage plus 3 (1d6) Poison damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "1d8",
+                "magical": false,
+                "modifier": 4,
+                "type": "slashing"
+              },
+              {
+                "dice": "1d6",
+                "magical": false,
+                "modifier": 0,
+                "type": "poison"
+              }
+            ],
+            "modifier": 6,
+            "on_hit": [],
+            "range": null,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "claw",
+      "kind": "modeled",
+      "name": "Claw"
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "The hag casts one of the following spells, requiring no Material components and using Wisdom as the spellcasting ability (spell save DC 12, +4 to hit with spell attacks):",
+      "id": "spellcasting",
+      "kind": "unmodeled",
+      "name": "Spellcasting"
+    }
+  ],
+  "alignment": "neutral evil",
+  "armor_class": [
+    {
+      "value": 17
+    }
+  ],
+  "challenge_rating": 3,
+  "hit_points": {
+    "average": 82,
+    "dice": "11d8+33"
+  },
+  "id": "green-hag",
+  "initiative": 1,
+  "languages": [
+    "Common",
+    "Elvish",
+    "Sylvan"
+  ],
+  "name": "Green Hag",
+  "proficiency_bonus": 2,
+  "schema_version": "1",
+  "senses": {
+    "darkvision": 60,
+    "passive_perception": 14
+  },
+  "size": "medium",
+  "skills": {
+    "arcana": 5,
+    "deception": 4,
+    "perception": 4,
+    "stealth": 3
+  },
+  "source": "srd-5.2.1",
+  "speeds": {
+    "swim": {
+      "feet": 30
+    },
+    "walk": {
+      "feet": 30
+    }
+  },
+  "traits": [
+    {
+      "default_resolution": "skipped",
+      "desc": "The hag can breathe air and water.",
+      "id": "amphibious",
+      "kind": "unmodeled",
+      "name": "Amphibious"
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "While within 30 feet of at least two hag allies, the hag can cast one of the following spells, requiring no Material components, using the spell’s normal casting time, and using Intelligence as the spellcasting ability (spell save DC 11): Augury, Find Familiar, Identify, Locate Object, Scrying, or Unseen Servant. The hag must finish a Long Rest before using this trait to cast that spell again.",
+      "id": "coven-magic",
+      "kind": "unmodeled",
+      "name": "Coven Magic"
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "The hag can mimic animal sounds and humanoid voices. A creature that hears the sounds can tell they are imitations only with a successful DC 14 Wisdom (Insight) check.",
+      "id": "mimicry",
+      "kind": "unmodeled",
+      "name": "Mimicry"
+    }
+  ],
+  "type": "fey",
+  "xp": 700
+}

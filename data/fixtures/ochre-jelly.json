@@ -1,0 +1,110 @@
+{
+  "ability_scores": {
+    "charisma": 1,
+    "constitution": 14,
+    "dexterity": 6,
+    "intelligence": 2,
+    "strength": 15,
+    "wisdom": 6
+  },
+  "actions": [
+    {
+      "desc": "Melee Attack Roll: +4, reach 5 ft. Hit: 12 (3d6 + 2) Acid damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "3d6",
+                "magical": false,
+                "modifier": 2,
+                "type": "acid"
+              }
+            ],
+            "modifier": 4,
+            "on_hit": [],
+            "range": null,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "pseudopod",
+      "kind": "modeled",
+      "name": "Pseudopod"
+    }
+  ],
+  "alignment": "unaligned",
+  "armor_class": [
+    {
+      "value": 8
+    }
+  ],
+  "challenge_rating": 2,
+  "condition_immunities": [
+    "charmed",
+    "deafened",
+    "exhaustion",
+    "frightened",
+    "grappled",
+    "prone",
+    "restrained"
+  ],
+  "damage_immunities": [
+    "lightning",
+    "slashing"
+  ],
+  "damage_resistances": [
+    "acid"
+  ],
+  "hit_points": {
+    "average": 52,
+    "dice": "7d10+14"
+  },
+  "id": "ochre-jelly",
+  "initiative": -2,
+  "name": "Ochre Jelly",
+  "proficiency_bonus": 2,
+  "reactions": [
+    {
+      "default_resolution": "skipped",
+      "desc": "Trigger: While the jelly is Large or Medium and has 10+ Hit Points, it becomes Bloodied or is subjected to Lightning or Slashing damage. Response: The jelly splits into two new Ochre Jellies. Each new jelly is one size smaller than the original jelly and acts on its Initiative. The original jelly’s Hit Points are divided evenly between the new jellies (round down).",
+      "id": "split",
+      "kind": "unmodeled",
+      "name": "Split"
+    }
+  ],
+  "schema_version": "1",
+  "senses": {
+    "blindsight": 60,
+    "passive_perception": 8
+  },
+  "size": "large",
+  "source": "srd-5.2.1",
+  "speeds": {
+    "climb": {
+      "feet": 20
+    },
+    "walk": {
+      "feet": 20
+    }
+  },
+  "traits": [
+    {
+      "default_resolution": "skipped",
+      "desc": "The jelly can move through a space as narrow as 1 inch without expending extra movement to do so.",
+      "id": "amorphous",
+      "kind": "unmodeled",
+      "name": "Amorphous"
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "The jelly can climb difficult surfaces, including along ceilings, without needing to make an ability check.",
+      "id": "spider-climb",
+      "kind": "unmodeled",
+      "name": "Spider Climb"
+    }
+  ],
+  "type": "ooze",
+  "xp": 450
+}

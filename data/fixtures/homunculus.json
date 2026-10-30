@@ -1,0 +1,95 @@
+{
+  "ability_scores": {
+    "charisma": 7,
+    "constitution": 14,
+    "dexterity": 15,
+    "intelligence": 10,
+    "strength": 4,
+    "wisdom": 10
+  },
+  "actions": [
+    {
+      "agent_clauses": [
+        "Constitution Saving Throw: DC 12. Failure: The target has the Poisoned condition until the end of the homunculus’s next turn. Failure by 5 or More: The target has the Poisoned condition for 1 minute. While Poisoned, the target has the Unconscious condition, which ends early if the target takes any damage."
+      ],
+      "desc": "Melee Attack Roll: +4, reach 5 ft. Hit: 1 Piercing damage, and the target is subjected to the following effect. Constitution Saving Throw: DC 12. Failure: The target has the Poisoned condition until the end of the homunculus’s next turn. Failure by 5 or More: The target has the Poisoned condition for 1 minute. While Poisoned, the target has the Unconscious condition, which ends early if the target takes any damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "1d1",
+                "magical": false,
+                "modifier": 0,
+                "type": "piercing"
+              }
+            ],
+            "modifier": 4,
+            "on_hit": [],
+            "range": null,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "bite",
+      "kind": "partly_modeled",
+      "name": "Bite"
+    }
+  ],
+  "alignment": "neutral",
+  "armor_class": [
+    {
+      "value": 13
+    }
+  ],
+  "challenge_rating": 0,
+  "condition_immunities": [
+    "charmed",
+    "poisoned"
+  ],
+  "damage_immunities": [
+    "poison"
+  ],
+  "hit_points": {
+    "average": 4,
+    "dice": "1d4+2"
+  },
+  "id": "homunculus",
+  "initiative": 2,
+  "languages": [
+    "Understands Common plus one other language but can’t speak"
+  ],
+  "name": "Homunculus",
+  "proficiency_bonus": 2,
+  "saving_throws": {
+    "cha": 0,
+    "wis": 2
+  },
+  "schema_version": "1",
+  "senses": {
+    "darkvision": 60,
+    "passive_perception": 10
+  },
+  "size": "tiny",
+  "source": "srd-5.2.1",
+  "speeds": {
+    "fly": {
+      "feet": 40
+    },
+    "walk": {
+      "feet": 20
+    }
+  },
+  "traits": [
+    {
+      "default_resolution": "skipped",
+      "desc": "While the homunculus is on the same plane of existence as its master, the two of them can communicate telepathically with each other.",
+      "id": "telepathic-bond",
+      "kind": "unmodeled",
+      "name": "Telepathic Bond"
+    }
+  ],
+  "type": "construct",
+  "xp": 10
+}

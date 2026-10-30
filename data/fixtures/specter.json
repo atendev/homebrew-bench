@@ -1,0 +1,117 @@
+{
+  "ability_scores": {
+    "charisma": 11,
+    "constitution": 11,
+    "dexterity": 14,
+    "intelligence": 10,
+    "strength": 1,
+    "wisdom": 10
+  },
+  "actions": [
+    {
+      "agent_clauses": [
+        "If the target is a creature, its Hit Point maximum decreases by an amount equal to the damage taken."
+      ],
+      "desc": "Melee Attack Roll: +4, reach 5 ft. Hit: 7 (2d6) Necrotic damage. If the target is a creature, its Hit Point maximum decreases by an amount equal to the damage taken.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "2d6",
+                "magical": false,
+                "modifier": 0,
+                "type": "necrotic"
+              }
+            ],
+            "modifier": 4,
+            "on_hit": [],
+            "range": null,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "life-drain",
+      "kind": "partly_modeled",
+      "name": "Life Drain"
+    }
+  ],
+  "alignment": "chaotic evil",
+  "armor_class": [
+    {
+      "value": 12
+    }
+  ],
+  "challenge_rating": 1,
+  "condition_immunities": [
+    "charmed",
+    "exhaustion",
+    "grappled",
+    "paralyzed",
+    "petrified",
+    "poisoned",
+    "prone",
+    "restrained",
+    "unconscious"
+  ],
+  "damage_immunities": [
+    "necrotic",
+    "poison"
+  ],
+  "damage_resistances": [
+    "acid",
+    "bludgeoning",
+    "cold",
+    "fire",
+    "lightning",
+    "piercing",
+    "slashing",
+    "thunder"
+  ],
+  "hit_points": {
+    "average": 22,
+    "dice": "5d8"
+  },
+  "id": "specter",
+  "initiative": 2,
+  "languages": [
+    "Understands Common plus one other language but can’t speak"
+  ],
+  "name": "Specter",
+  "proficiency_bonus": 2,
+  "schema_version": "1",
+  "senses": {
+    "darkvision": 60,
+    "passive_perception": 10
+  },
+  "size": "medium",
+  "source": "srd-5.2.1",
+  "speeds": {
+    "fly": {
+      "feet": 50,
+      "hover": true
+    },
+    "walk": {
+      "feet": 30
+    }
+  },
+  "traits": [
+    {
+      "default_resolution": "skipped",
+      "desc": "The specter can move through other creatures and objects as if they were Difficult Terrain. It takes 5 (1d10) Force damage if it ends its turn inside an object.",
+      "id": "incorporeal-movement",
+      "kind": "unmodeled",
+      "name": "Incorporeal Movement"
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "While in sunlight, the specter has Disadvantage on ability checks and attack rolls.",
+      "id": "sunlight-sensitivity",
+      "kind": "unmodeled",
+      "name": "Sunlight Sensitivity"
+    }
+  ],
+  "type": "undead",
+  "xp": 200
+}

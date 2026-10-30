@@ -1,0 +1,85 @@
+{
+  "ability_scores": {
+    "charisma": 7,
+    "constitution": 10,
+    "dexterity": 15,
+    "intelligence": 3,
+    "strength": 3,
+    "wisdom": 12
+  },
+  "actions": [
+    {
+      "desc": "Melee Attack Roll: +4, reach 5 ft. Hit: 1 Slashing damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "1d1",
+                "magical": false,
+                "modifier": 0,
+                "type": "slashing"
+              }
+            ],
+            "modifier": 4,
+            "on_hit": [],
+            "range": null,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "scratch",
+      "kind": "modeled",
+      "name": "Scratch"
+    }
+  ],
+  "alignment": "unaligned",
+  "armor_class": [
+    {
+      "value": 12
+    }
+  ],
+  "challenge_rating": 0,
+  "hit_points": {
+    "average": 2,
+    "dice": "1d4"
+  },
+  "id": "cat",
+  "initiative": 2,
+  "name": "Cat",
+  "proficiency_bonus": 2,
+  "saving_throws": {
+    "dex": 4
+  },
+  "schema_version": "1",
+  "senses": {
+    "darkvision": 60,
+    "passive_perception": 13
+  },
+  "size": "tiny",
+  "skills": {
+    "perception": 3,
+    "stealth": 4
+  },
+  "source": "srd-5.2.1",
+  "speeds": {
+    "climb": {
+      "feet": 40
+    },
+    "walk": {
+      "feet": 40
+    }
+  },
+  "traits": [
+    {
+      "default_resolution": "skipped",
+      "desc": "The cat’s jump distance is determined using its Dexterity rather than its Strength.",
+      "id": "jumper",
+      "kind": "unmodeled",
+      "name": "Jumper"
+    }
+  ],
+  "type": "beast",
+  "xp": 10
+}

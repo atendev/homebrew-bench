@@ -1,0 +1,154 @@
+{
+  "ability_scores": {
+    "charisma": 20,
+    "constitution": 18,
+    "dexterity": 18,
+    "intelligence": 17,
+    "strength": 18,
+    "wisdom": 20
+  },
+  "actions": [
+    {
+      "desc": "The deva makes two Holy Mace attacks.",
+      "effects": [
+        {
+          "multiattack": {
+            "steps": [
+              {
+                "action": {
+                  "action_id": "holy-mace",
+                  "count": 2
+                }
+              }
+            ],
+            "swap": false
+          }
+        }
+      ],
+      "id": "multiattack",
+      "kind": "modeled",
+      "name": "Multiattack"
+    },
+    {
+      "desc": "Melee Attack Roll: +8, reach 5 ft. Hit: 7 (1d6 + 4) Bludgeoning damage plus 18 (4d8) Radiant damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "1d6",
+                "magical": false,
+                "modifier": 4,
+                "type": "bludgeoning"
+              },
+              {
+                "dice": "4d8",
+                "magical": false,
+                "modifier": 0,
+                "type": "radiant"
+              }
+            ],
+            "modifier": 8,
+            "on_hit": [],
+            "range": null,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "holy-mace",
+      "kind": "modeled",
+      "name": "Holy Mace"
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "The deva casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 17):",
+      "id": "spellcasting",
+      "kind": "unmodeled",
+      "name": "Spellcasting"
+    }
+  ],
+  "alignment": "lawful good",
+  "armor_class": [
+    {
+      "value": 17
+    }
+  ],
+  "bonus_actions": [
+    {
+      "default_resolution": "skipped",
+      "desc": "The deva casts Cure Wounds, Lesser Restoration, or Remove Curse, using the same spellcasting ability as Spellcasting.",
+      "id": "divine-aid",
+      "kind": "unmodeled",
+      "name": "Divine Aid",
+      "usage": {
+        "per_day": {
+          "uses": 2
+        }
+      }
+    }
+  ],
+  "challenge_rating": 10,
+  "condition_immunities": [
+    "charmed",
+    "exhaustion",
+    "frightened"
+  ],
+  "damage_resistances": [
+    "radiant"
+  ],
+  "hit_points": {
+    "average": 229,
+    "dice": "27d8+108"
+  },
+  "id": "deva",
+  "initiative": 4,
+  "languages": [
+    "All",
+    "telepathy 120 ft."
+  ],
+  "name": "Deva",
+  "proficiency_bonus": 4,
+  "saving_throws": {
+    "cha": 9,
+    "wis": 9
+  },
+  "schema_version": "1",
+  "senses": {
+    "darkvision": 120,
+    "passive_perception": 19
+  },
+  "size": "medium",
+  "skills": {
+    "insight": 9,
+    "perception": 9
+  },
+  "source": "srd-5.2.1",
+  "speeds": {
+    "fly": {
+      "feet": 90,
+      "hover": true
+    },
+    "walk": {
+      "feet": 30
+    }
+  },
+  "traits": [
+    {
+      "default_resolution": "skipped",
+      "desc": "If the deva dies outside Mount Celestia, its body disappears, and it gains a new body instantly, reviving with all its Hit Points somewhere in Mount Celestia.",
+      "id": "exalted-restoration",
+      "kind": "unmodeled",
+      "name": "Exalted Restoration"
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "The deva has Advantage on saving throws against spells and other magical effects.",
+      "id": "magic-resistance",
+      "kind": "unmodeled",
+      "name": "Magic Resistance"
+    }
+  ],
+  "type": "celestial",
+  "xp": 5900
+}

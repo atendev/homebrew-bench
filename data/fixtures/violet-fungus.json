@@ -1,0 +1,93 @@
+{
+  "ability_scores": {
+    "charisma": 1,
+    "constitution": 10,
+    "dexterity": 1,
+    "intelligence": 1,
+    "strength": 3,
+    "wisdom": 3
+  },
+  "actions": [
+    {
+      "desc": "The fungus makes two Rotting Touch attacks.",
+      "effects": [
+        {
+          "multiattack": {
+            "steps": [
+              {
+                "action": {
+                  "action_id": "rotting-touch",
+                  "count": 2
+                }
+              }
+            ],
+            "swap": false
+          }
+        }
+      ],
+      "id": "multiattack",
+      "kind": "modeled",
+      "name": "Multiattack"
+    },
+    {
+      "desc": "Melee Attack Roll: +2, reach 10 ft. Hit: 4 (1d8) Necrotic damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "1d8",
+                "magical": false,
+                "modifier": 0,
+                "type": "necrotic"
+              }
+            ],
+            "modifier": 2,
+            "on_hit": [],
+            "range": null,
+            "reach": 10,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "rotting-touch",
+      "kind": "modeled",
+      "name": "Rotting Touch"
+    }
+  ],
+  "alignment": "unaligned",
+  "armor_class": [
+    {
+      "value": 5
+    }
+  ],
+  "challenge_rating": 0.25,
+  "condition_immunities": [
+    "blinded",
+    "charmed",
+    "deafened",
+    "frightened"
+  ],
+  "hit_points": {
+    "average": 18,
+    "dice": "4d8"
+  },
+  "id": "violet-fungus",
+  "initiative": -5,
+  "name": "Violet Fungus",
+  "proficiency_bonus": 2,
+  "schema_version": "1",
+  "senses": {
+    "blindsight": 30,
+    "passive_perception": 6
+  },
+  "size": "medium",
+  "source": "srd-5.2.1",
+  "speeds": {
+    "walk": {
+      "feet": 5
+    }
+  },
+  "type": "plant",
+  "xp": 50
+}

@@ -1,0 +1,63 @@
+{
+  "ability_scores": {
+    "charisma": 2,
+    "constitution": 8,
+    "dexterity": 12,
+    "intelligence": 1,
+    "strength": 1,
+    "wisdom": 10
+  },
+  "actions": [
+    {
+      "default_resolution": "skipped",
+      "desc": "While underwater, the seahorse moves up to its Swim Speed without provoking Opportunity Attacks.",
+      "id": "bubble-dash",
+      "kind": "unmodeled",
+      "name": "Bubble Dash"
+    }
+  ],
+  "alignment": "unaligned",
+  "armor_class": [
+    {
+      "value": 12
+    }
+  ],
+  "challenge_rating": 0,
+  "hit_points": {
+    "average": 1,
+    "dice": "1d4-1"
+  },
+  "id": "seahorse",
+  "initiative": 1,
+  "name": "Seahorse",
+  "proficiency_bonus": 2,
+  "schema_version": "1",
+  "senses": {
+    "passive_perception": 12
+  },
+  "size": "tiny",
+  "skills": {
+    "perception": 2,
+    "stealth": 5
+  },
+  "source": "srd-5.2.1",
+  "speeds": {
+    "swim": {
+      "feet": 20
+    },
+    "walk": {
+      "feet": 5
+    }
+  },
+  "traits": [
+    {
+      "default_resolution": "skipped",
+      "desc": "The seahorse can breathe only underwater.",
+      "id": "water-breathing",
+      "kind": "unmodeled",
+      "name": "Water Breathing"
+    }
+  ],
+  "type": "beast",
+  "xp": 0
+}

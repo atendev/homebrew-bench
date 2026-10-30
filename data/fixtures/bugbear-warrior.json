@@ -1,0 +1,115 @@
+{
+  "ability_scores": {
+    "charisma": 9,
+    "constitution": 13,
+    "dexterity": 14,
+    "intelligence": 8,
+    "strength": 15,
+    "wisdom": 11
+  },
+  "actions": [
+    {
+      "agent_clauses": [
+        "If the target is a Medium or smaller creature, it has the Grappled condition (escape DC 12)."
+      ],
+      "desc": "Melee Attack Roll: +4, reach 10 ft. Hit: 9 (2d6 + 2) Bludgeoning damage. If the target is a Medium or smaller creature, it has the Grappled condition (escape DC 12).",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "2d6",
+                "magical": false,
+                "modifier": 2,
+                "type": "bludgeoning"
+              }
+            ],
+            "modifier": 4,
+            "on_hit": [],
+            "range": null,
+            "reach": 10,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "grab",
+      "kind": "partly_modeled",
+      "name": "Grab"
+    },
+    {
+      "desc": "Melee or Ranged Attack Roll: +4 (with Advantage if the target is Grappled by the bugbear), reach 10 ft. or range 20/60 ft. Hit: 9 (3d4 + 2) Bludgeoning damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "3d4",
+                "magical": false,
+                "modifier": 2,
+                "type": "bludgeoning"
+              }
+            ],
+            "modifier": 4,
+            "on_hit": [],
+            "range": [
+              20,
+              60
+            ],
+            "reach": 10,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "light-hammer",
+      "kind": "modeled",
+      "name": "Light Hammer"
+    }
+  ],
+  "alignment": "chaotic evil",
+  "armor_class": [
+    {
+      "source": "Hide Armor",
+      "value": 14
+    }
+  ],
+  "challenge_rating": 1,
+  "hit_points": {
+    "average": 33,
+    "dice": "6d8+6"
+  },
+  "id": "bugbear-warrior",
+  "initiative": 2,
+  "languages": [
+    "Common",
+    "Goblin"
+  ],
+  "name": "Bugbear Warrior",
+  "proficiency_bonus": 2,
+  "schema_version": "1",
+  "senses": {
+    "darkvision": 60,
+    "passive_perception": 10
+  },
+  "size": "medium",
+  "skills": {
+    "stealth": 6,
+    "survival": 2
+  },
+  "source": "srd-5.2.1",
+  "speeds": {
+    "walk": {
+      "feet": 30
+    }
+  },
+  "traits": [
+    {
+      "default_resolution": "skipped",
+      "desc": "The bugbear needn’t spend extra movement to move a creature it is grappling.",
+      "id": "abduct",
+      "kind": "unmodeled",
+      "name": "Abduct"
+    }
+  ],
+  "type": "fey",
+  "xp": 200
+}

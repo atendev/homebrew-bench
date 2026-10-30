@@ -1,0 +1,81 @@
+{
+  "ability_scores": {
+    "charisma": 5,
+    "constitution": 16,
+    "dexterity": 15,
+    "intelligence": 2,
+    "strength": 18,
+    "wisdom": 12
+  },
+  "actions": [
+    {
+      "desc": "Melee Attack Roll: +6, reach 10 ft. Hit: 11 (2d6 + 4) Piercing damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "2d6",
+                "magical": false,
+                "modifier": 4,
+                "type": "piercing"
+              }
+            ],
+            "modifier": 6,
+            "on_hit": [],
+            "range": null,
+            "reach": 10,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "bite",
+      "kind": "modeled",
+      "name": "Bite"
+    }
+  ],
+  "alignment": "unaligned",
+  "armor_class": [
+    {
+      "value": 13
+    }
+  ],
+  "challenge_rating": 2,
+  "hit_points": {
+    "average": 68,
+    "dice": "8d10+24"
+  },
+  "id": "plesiosaurus",
+  "initiative": 2,
+  "name": "Plesiosaurus",
+  "proficiency_bonus": 2,
+  "schema_version": "1",
+  "senses": {
+    "passive_perception": 13
+  },
+  "size": "large",
+  "skills": {
+    "perception": 3,
+    "stealth": 4
+  },
+  "source": "srd-5.2.1",
+  "speeds": {
+    "swim": {
+      "feet": 40
+    },
+    "walk": {
+      "feet": 20
+    }
+  },
+  "traits": [
+    {
+      "default_resolution": "skipped",
+      "desc": "The plesiosaurus can hold its breath for 1 hour.",
+      "id": "hold-breath",
+      "kind": "unmodeled",
+      "name": "Hold Breath"
+    }
+  ],
+  "type": "beast",
+  "xp": 450
+}

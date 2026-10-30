@@ -1,0 +1,142 @@
+{
+  "ability_scores": {
+    "charisma": 7,
+    "constitution": 16,
+    "dexterity": 17,
+    "intelligence": 6,
+    "strength": 10,
+    "wisdom": 10
+  },
+  "actions": [
+    {
+      "desc": "The elemental makes two Burn attacks.",
+      "effects": [
+        {
+          "multiattack": {
+            "steps": [
+              {
+                "action": {
+                  "action_id": "burn",
+                  "count": 2
+                }
+              }
+            ],
+            "swap": false
+          }
+        }
+      ],
+      "id": "multiattack",
+      "kind": "modeled",
+      "name": "Multiattack"
+    },
+    {
+      "agent_clauses": [
+        "If the target is a creature or a flammable object, it starts burning."
+      ],
+      "desc": "Melee Attack Roll: +6, reach 5 ft. Hit: 10 (2d6 + 3) Fire damage. If the target is a creature or a flammable object, it starts burning.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "2d6",
+                "magical": false,
+                "modifier": 3,
+                "type": "fire"
+              }
+            ],
+            "modifier": 6,
+            "on_hit": [],
+            "range": null,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "burn",
+      "kind": "partly_modeled",
+      "name": "Burn"
+    }
+  ],
+  "alignment": "neutral",
+  "armor_class": [
+    {
+      "value": 13
+    }
+  ],
+  "challenge_rating": 5,
+  "condition_immunities": [
+    "exhaustion",
+    "grappled",
+    "paralyzed",
+    "petrified",
+    "poisoned",
+    "prone",
+    "restrained",
+    "unconscious"
+  ],
+  "damage_immunities": [
+    "fire",
+    "poison"
+  ],
+  "damage_resistances": [
+    "bludgeoning",
+    "piercing",
+    "slashing"
+  ],
+  "hit_points": {
+    "average": 93,
+    "dice": "11d10+33"
+  },
+  "id": "fire-elemental",
+  "initiative": 3,
+  "languages": [
+    "Primordial (Ignan)"
+  ],
+  "name": "Fire Elemental",
+  "proficiency_bonus": 3,
+  "schema_version": "1",
+  "senses": {
+    "darkvision": 60,
+    "passive_perception": 10
+  },
+  "size": "large",
+  "source": "srd-5.2.1",
+  "speeds": {
+    "walk": {
+      "feet": 50
+    }
+  },
+  "traits": [
+    {
+      "default_resolution": "skipped",
+      "desc": "At the end of each of the elemental’s turns, each creature in a 10-foot Emanation originating from the elemental takes 5 (1d10) Fire damage. Creatures and flammable objects in the Emanation start burning.",
+      "id": "fire-aura",
+      "kind": "unmodeled",
+      "name": "Fire Aura"
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "The elemental can move through a space as narrow as 1 inch without expending extra movement to do so, and it can enter a creature’s space and stop there. The first time it enters a creature’s space on a turn, that creature takes 5 (1d10) Fire damage.",
+      "id": "fire-form",
+      "kind": "unmodeled",
+      "name": "Fire Form"
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "The elemental sheds Bright Light in a 30foot radius and Dim Light for an additional 30 feet.",
+      "id": "illumination",
+      "kind": "unmodeled",
+      "name": "Illumination"
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "The elemental takes 3 (1d6) Cold damage for every 5 feet the elemental moves in water or for every gallon of water splashed on it.",
+      "id": "water-susceptibility",
+      "kind": "unmodeled",
+      "name": "Water Susceptibility"
+    }
+  ],
+  "type": "elemental",
+  "xp": 1800
+}

@@ -1,0 +1,82 @@
+{
+  "ability_scores": {
+    "charisma": 7,
+    "constitution": 13,
+    "dexterity": 14,
+    "intelligence": 3,
+    "strength": 19,
+    "wisdom": 12
+  },
+  "actions": [
+    {
+      "desc": "Melee Attack Roll: +6, reach 5 ft. Hit: 21 (5d6 + 4) Piercing damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "5d6",
+                "magical": false,
+                "modifier": 4,
+                "type": "piercing"
+              }
+            ],
+            "modifier": 6,
+            "on_hit": [],
+            "range": null,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "bite",
+      "kind": "modeled",
+      "name": "Bite"
+    }
+  ],
+  "alignment": "unaligned",
+  "armor_class": [
+    {
+      "value": 12
+    }
+  ],
+  "challenge_rating": 3,
+  "hit_points": {
+    "average": 90,
+    "dice": "12d12+12"
+  },
+  "id": "killer-whale",
+  "initiative": 2,
+  "name": "Killer Whale",
+  "proficiency_bonus": 2,
+  "schema_version": "1",
+  "senses": {
+    "blindsight": 120,
+    "passive_perception": 13
+  },
+  "size": "huge",
+  "skills": {
+    "perception": 3,
+    "stealth": 4
+  },
+  "source": "srd-5.2.1",
+  "speeds": {
+    "swim": {
+      "feet": 60
+    },
+    "walk": {
+      "feet": 5
+    }
+  },
+  "traits": [
+    {
+      "default_resolution": "skipped",
+      "desc": "The whale can hold its breath for 30 minutes.",
+      "id": "hold-breath",
+      "kind": "unmodeled",
+      "name": "Hold Breath"
+    }
+  ],
+  "type": "beast",
+  "xp": 700
+}

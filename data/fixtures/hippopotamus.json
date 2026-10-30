@@ -1,0 +1,104 @@
+{
+  "ability_scores": {
+    "charisma": 4,
+    "constitution": 15,
+    "dexterity": 7,
+    "intelligence": 2,
+    "strength": 21,
+    "wisdom": 12
+  },
+  "actions": [
+    {
+      "desc": "The hippopotamus makes two Bite attacks.",
+      "effects": [
+        {
+          "multiattack": {
+            "steps": [
+              {
+                "action": {
+                  "action_id": "bite",
+                  "count": 2
+                }
+              }
+            ],
+            "swap": false
+          }
+        }
+      ],
+      "id": "multiattack",
+      "kind": "modeled",
+      "name": "Multiattack"
+    },
+    {
+      "desc": "Melee Attack Roll: +7, reach 5 ft. Hit: 16 (2d10 + 5) Piercing damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "2d10",
+                "magical": false,
+                "modifier": 5,
+                "type": "piercing"
+              }
+            ],
+            "modifier": 7,
+            "on_hit": [],
+            "range": null,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "bite",
+      "kind": "modeled",
+      "name": "Bite"
+    }
+  ],
+  "alignment": "unaligned",
+  "armor_class": [
+    {
+      "value": 14
+    }
+  ],
+  "challenge_rating": 4,
+  "hit_points": {
+    "average": 82,
+    "dice": "11d10+22"
+  },
+  "id": "hippopotamus",
+  "initiative": -2,
+  "name": "Hippopotamus",
+  "proficiency_bonus": 2,
+  "saving_throws": {
+    "str": 7
+  },
+  "schema_version": "1",
+  "senses": {
+    "passive_perception": 13
+  },
+  "size": "large",
+  "skills": {
+    "perception": 3
+  },
+  "source": "srd-5.2.1",
+  "speeds": {
+    "swim": {
+      "feet": 30
+    },
+    "walk": {
+      "feet": 30
+    }
+  },
+  "traits": [
+    {
+      "default_resolution": "skipped",
+      "desc": "The hippopotamus can hold its breath for 10 minutes.",
+      "id": "hold-breath",
+      "kind": "unmodeled",
+      "name": "Hold Breath"
+    }
+  ],
+  "type": "beast",
+  "xp": 1100
+}

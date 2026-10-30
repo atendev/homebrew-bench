@@ -1,0 +1,122 @@
+{
+  "ability_scores": {
+    "charisma": 8,
+    "constitution": 13,
+    "dexterity": 14,
+    "intelligence": 6,
+    "strength": 6,
+    "wisdom": 10
+  },
+  "actions": [
+    {
+      "agent_clauses": [
+        "The target dies if this reduces that score to 0. If a Humanoid is slain by this attack, a Shadow rises from the corpse 1d4 hours later."
+      ],
+      "desc": "Melee Attack Roll: +4, reach 5 ft. Hit: 5 (1d6 + 2) Necrotic damage, and the target’s Strength score decreases by 1d4. The target dies if this reduces that score to 0. If a Humanoid is slain by this attack, a Shadow rises from the corpse 1d4 hours later.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "1d6",
+                "magical": false,
+                "modifier": 2,
+                "type": "necrotic"
+              }
+            ],
+            "modifier": 4,
+            "on_hit": [],
+            "range": null,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "draining-swipe",
+      "kind": "partly_modeled",
+      "name": "Draining Swipe"
+    }
+  ],
+  "alignment": "chaotic evil",
+  "armor_class": [
+    {
+      "value": 12
+    }
+  ],
+  "bonus_actions": [
+    {
+      "default_resolution": "skipped",
+      "desc": "While in Dim Light or Darkness, the shadow takes the Hide action.",
+      "id": "shadow-stealth",
+      "kind": "unmodeled",
+      "name": "Shadow Stealth"
+    }
+  ],
+  "challenge_rating": 0.5,
+  "condition_immunities": [
+    "exhaustion",
+    "frightened",
+    "grappled",
+    "paralyzed",
+    "petrified",
+    "poisoned",
+    "prone",
+    "restrained",
+    "unconscious"
+  ],
+  "damage_immunities": [
+    "necrotic",
+    "poison"
+  ],
+  "damage_resistances": [
+    "acid",
+    "cold",
+    "fire",
+    "lightning",
+    "thunder"
+  ],
+  "damage_vulnerabilities": [
+    "radiant"
+  ],
+  "hit_points": {
+    "average": 27,
+    "dice": "5d8+5"
+  },
+  "id": "shadow",
+  "initiative": 2,
+  "name": "Shadow",
+  "proficiency_bonus": 2,
+  "schema_version": "1",
+  "senses": {
+    "darkvision": 60,
+    "passive_perception": 10
+  },
+  "size": "medium",
+  "skills": {
+    "stealth": 6
+  },
+  "source": "srd-5.2.1",
+  "speeds": {
+    "walk": {
+      "feet": 40
+    }
+  },
+  "traits": [
+    {
+      "default_resolution": "skipped",
+      "desc": "The shadow can move through a space as narrow as 1 inch without expending extra movement to do so.",
+      "id": "amorphous",
+      "kind": "unmodeled",
+      "name": "Amorphous"
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "While in sunlight, the shadow has Disadvantage on D20 Tests.",
+      "id": "sunlight-weakness",
+      "kind": "unmodeled",
+      "name": "Sunlight Weakness"
+    }
+  ],
+  "type": "undead",
+  "xp": 100
+}

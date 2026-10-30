@@ -1,0 +1,126 @@
+{
+  "ability_scores": {
+    "charisma": 7,
+    "constitution": 14,
+    "dexterity": 14,
+    "intelligence": 6,
+    "strength": 16,
+    "wisdom": 12
+  },
+  "actions": [
+    {
+      "desc": "The ape makes two Fist attacks.",
+      "effects": [
+        {
+          "multiattack": {
+            "steps": [
+              {
+                "action": {
+                  "action_id": "fist",
+                  "count": 2
+                }
+              }
+            ],
+            "swap": false
+          }
+        }
+      ],
+      "id": "multiattack",
+      "kind": "modeled",
+      "name": "Multiattack"
+    },
+    {
+      "desc": "Melee Attack Roll: +5, reach 5 ft. Hit: 5 (1d4 + 3) Bludgeoning damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "1d4",
+                "magical": false,
+                "modifier": 3,
+                "type": "bludgeoning"
+              }
+            ],
+            "modifier": 5,
+            "on_hit": [],
+            "range": null,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "fist",
+      "kind": "modeled",
+      "name": "Fist"
+    },
+    {
+      "desc": "Ranged Attack Roll: +5, range 25/50 ft. Hit: 10 (2d6 + 3) Bludgeoning damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "2d6",
+                "magical": false,
+                "modifier": 3,
+                "type": "bludgeoning"
+              }
+            ],
+            "modifier": 5,
+            "on_hit": [],
+            "range": [
+              25,
+              50
+            ],
+            "reach": null,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "rock",
+      "kind": "modeled",
+      "name": "Rock",
+      "usage": {
+        "recharge": {
+          "dice": "6"
+        }
+      }
+    }
+  ],
+  "alignment": "unaligned",
+  "armor_class": [
+    {
+      "value": 12
+    }
+  ],
+  "challenge_rating": 0.5,
+  "hit_points": {
+    "average": 19,
+    "dice": "3d8+6"
+  },
+  "id": "ape",
+  "initiative": 2,
+  "name": "Ape",
+  "proficiency_bonus": 2,
+  "schema_version": "1",
+  "senses": {
+    "passive_perception": 13
+  },
+  "size": "medium",
+  "skills": {
+    "athletics": 5,
+    "perception": 3
+  },
+  "source": "srd-5.2.1",
+  "speeds": {
+    "climb": {
+      "feet": 30
+    },
+    "walk": {
+      "feet": 30
+    }
+  },
+  "type": "beast",
+  "xp": 100
+}

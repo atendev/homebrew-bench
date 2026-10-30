@@ -7,6 +7,10 @@ status: open
 blocked_by:
   - 025
   - 026
+  - 036
+  - 037
+  - 038
+  - 039
 claimed: false
 ---
 
@@ -32,5 +36,9 @@ Key decisions to implement:
   - Regenerate and commit `data/srd/import-review.md` and `data/srd/import-review.json`.
   - Exit non-zero if any blocking mismatch (classes a–c) remains open.
   - Graduate all 341 passing monsters to `data/fixtures/` and verify that every fixture validates against the `bench-core` stat block schema.
+
+## Progress
+
+Importer, review pipeline and fixture schema test are built (`scripts/import-srd-monsters.py`, `bench-core/tests/fixtures.rs`, `data/srd/import-review.{md,json}`, `data/fixtures/`). First pass graduated 186 of 341 monsters with 234 open blocking entries. The remaining blockers are vocabulary gaps decided in [closed/035](../closed/035-srd-importer-vocabulary-gaps.md) and built in tickets 036 to 039. After they land, rerun the importer, review the remaining entries (variable counts: hydra, medusa, barbed-devil; known audit gaps: self-reference detection beyond upstream names, spell id existence, `applies: false` path validation), and close this ticket when exit status is zero.
 
 ## Resolution

@@ -1,0 +1,90 @@
+{
+  "ability_scores": {
+    "charisma": 3,
+    "constitution": 11,
+    "dexterity": 5,
+    "intelligence": 1,
+    "strength": 10,
+    "wisdom": 11
+  },
+  "actions": [
+    {
+      "desc": "Melee Attack Roll: +2, reach 5 ft. Hit: 2 (1d4) Poison damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "1d4",
+                "magical": false,
+                "modifier": 0,
+                "type": "poison"
+              }
+            ],
+            "modifier": 2,
+            "on_hit": [],
+            "range": null,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "vile-slime",
+      "kind": "modeled",
+      "name": "Vile Slime"
+    }
+  ],
+  "alignment": "lawful evil",
+  "armor_class": [
+    {
+      "value": 9
+    }
+  ],
+  "challenge_rating": 0,
+  "condition_immunities": [
+    "charmed",
+    "frightened",
+    "poisoned"
+  ],
+  "damage_immunities": [
+    "fire",
+    "poison"
+  ],
+  "damage_resistances": [
+    "cold"
+  ],
+  "hit_points": {
+    "average": 9,
+    "dice": "2d8"
+  },
+  "id": "lemure",
+  "initiative": -3,
+  "languages": [
+    "Understands Infernal but can’t speak"
+  ],
+  "name": "Lemure",
+  "proficiency_bonus": 2,
+  "schema_version": "1",
+  "senses": {
+    "darkvision": 120,
+    "passive_perception": 10
+  },
+  "size": "medium",
+  "source": "srd-5.2.1",
+  "speeds": {
+    "walk": {
+      "feet": 20
+    }
+  },
+  "traits": [
+    {
+      "default_resolution": "skipped",
+      "desc": "If the lemure dies in the Nine Hells, it revives with all its Hit Points in 1d10 days unless it is killed by a creature under the effects of a Bless spell or its remains are sprinkled with Holy Water.",
+      "id": "hellish-restoration",
+      "kind": "unmodeled",
+      "name": "Hellish Restoration"
+    }
+  ],
+  "type": "fiend",
+  "xp": 10
+}

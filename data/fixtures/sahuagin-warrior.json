@@ -1,0 +1,132 @@
+{
+  "ability_scores": {
+    "charisma": 9,
+    "constitution": 12,
+    "dexterity": 11,
+    "intelligence": 12,
+    "strength": 13,
+    "wisdom": 13
+  },
+  "actions": [
+    {
+      "desc": "The sahuagin makes two Claw attacks.",
+      "effects": [
+        {
+          "multiattack": {
+            "steps": [
+              {
+                "action": {
+                  "action_id": "claw",
+                  "count": 2
+                }
+              }
+            ],
+            "swap": false
+          }
+        }
+      ],
+      "id": "multiattack",
+      "kind": "modeled",
+      "name": "Multiattack"
+    },
+    {
+      "desc": "Melee Attack Roll: +3, reach 5 ft. Hit: 4 (1d6 + 1) Slashing damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "1d6",
+                "magical": false,
+                "modifier": 1,
+                "type": "slashing"
+              }
+            ],
+            "modifier": 3,
+            "on_hit": [],
+            "range": null,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "claw",
+      "kind": "modeled",
+      "name": "Claw"
+    }
+  ],
+  "alignment": "lawful evil",
+  "armor_class": [
+    {
+      "value": 12
+    }
+  ],
+  "bonus_actions": [
+    {
+      "default_resolution": "skipped",
+      "desc": "The sahuagin swims up to its Swim Speed straight toward an enemy it can see.",
+      "id": "aquatic-charge",
+      "kind": "unmodeled",
+      "name": "Aquatic Charge"
+    }
+  ],
+  "challenge_rating": 0.5,
+  "damage_resistances": [
+    "acid",
+    "cold"
+  ],
+  "hit_points": {
+    "average": 22,
+    "dice": "4d8+4"
+  },
+  "id": "sahuagin-warrior",
+  "initiative": 0,
+  "languages": [
+    "Sahuagin"
+  ],
+  "name": "Sahuagin Warrior",
+  "proficiency_bonus": 2,
+  "schema_version": "1",
+  "senses": {
+    "darkvision": 120,
+    "passive_perception": 15
+  },
+  "size": "medium",
+  "skills": {
+    "perception": 5
+  },
+  "source": "srd-5.2.1",
+  "speeds": {
+    "swim": {
+      "feet": 40
+    },
+    "walk": {
+      "feet": 30
+    }
+  },
+  "traits": [
+    {
+      "default_resolution": "skipped",
+      "desc": "The sahuagin has Advantage on attack rolls against any creature that doesn’t have all its Hit Points.",
+      "id": "blood-frenzy",
+      "kind": "unmodeled",
+      "name": "Blood Frenzy"
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "The sahuagin can breathe air and water, but it must be submerged at least once every 4 hours to avoid suffocating outside water.",
+      "id": "limited-amphibiousness",
+      "kind": "unmodeled",
+      "name": "Limited Amphibiousness"
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "The sahuagin can magically control sharks within 120 feet of itself, using a special telepathy.",
+      "id": "shark-telepathy",
+      "kind": "unmodeled",
+      "name": "Shark Telepathy"
+    }
+  ],
+  "type": "fiend",
+  "xp": 100
+}

@@ -1,0 +1,145 @@
+{
+  "ability_scores": {
+    "charisma": 13,
+    "constitution": 20,
+    "dexterity": 17,
+    "intelligence": 5,
+    "strength": 19,
+    "wisdom": 12
+  },
+  "actions": [
+    {
+      "desc": "The hezrou makes three Rend attacks.",
+      "effects": [
+        {
+          "multiattack": {
+            "steps": [
+              {
+                "action": {
+                  "action_id": "rend",
+                  "count": 3
+                }
+              }
+            ],
+            "swap": false
+          }
+        }
+      ],
+      "id": "multiattack",
+      "kind": "modeled",
+      "name": "Multiattack"
+    },
+    {
+      "desc": "Melee Attack Roll: +7, reach 5 ft. Hit: 6 (1d4 + 4) Slashing damage plus 9 (2d8) Poison damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "1d4",
+                "magical": false,
+                "modifier": 4,
+                "type": "slashing"
+              },
+              {
+                "dice": "2d8",
+                "magical": false,
+                "modifier": 0,
+                "type": "poison"
+              }
+            ],
+            "modifier": 7,
+            "on_hit": [],
+            "range": null,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "rend",
+      "kind": "modeled",
+      "name": "Rend"
+    }
+  ],
+  "alignment": "chaotic evil",
+  "armor_class": [
+    {
+      "value": 18
+    }
+  ],
+  "bonus_actions": [
+    {
+      "default_resolution": "skipped",
+      "desc": "The hezrou jumps up to 30 feet by spending 10 feet of movement.",
+      "id": "leap",
+      "kind": "unmodeled",
+      "name": "Leap"
+    }
+  ],
+  "challenge_rating": 8,
+  "condition_immunities": [
+    "poisoned"
+  ],
+  "damage_immunities": [
+    "poison"
+  ],
+  "damage_resistances": [
+    "cold",
+    "fire",
+    "lightning"
+  ],
+  "hit_points": {
+    "average": 157,
+    "dice": "15d10+75"
+  },
+  "id": "hezrou",
+  "initiative": 3,
+  "languages": [
+    "Abyssal",
+    "telepathy 120 ft."
+  ],
+  "name": "Hezrou",
+  "proficiency_bonus": 3,
+  "saving_throws": {
+    "con": 8,
+    "str": 7,
+    "wis": 4
+  },
+  "schema_version": "1",
+  "senses": {
+    "darkvision": 120,
+    "passive_perception": 11
+  },
+  "size": "large",
+  "source": "srd-5.2.1",
+  "speeds": {
+    "walk": {
+      "feet": 30
+    }
+  },
+  "traits": [
+    {
+      "default_resolution": "skipped",
+      "desc": "If the hezrou dies outside the Abyss, its body dissolves into ichor, and it gains a new body instantly, reviving with all its Hit Points somewhere in the Abyss.",
+      "id": "demonic-restoration",
+      "kind": "unmodeled",
+      "name": "Demonic Restoration"
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "The hezrou has Advantage on saving throws against spells and other magical effects.",
+      "id": "magic-resistance",
+      "kind": "unmodeled",
+      "name": "Magic Resistance"
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "Constitution Saving Throw: DC 16, any creature that starts its turn in a 10-foot Emanation originating from the hezrou. Failure: The target has the Poisoned condition until the start of its next turn.",
+      "id": "stench",
+      "kind": "unmodeled",
+      "name": "Stench"
+    }
+  ],
+  "type": "fiend",
+  "xp": 3900
+}

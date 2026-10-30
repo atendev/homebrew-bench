@@ -1,0 +1,119 @@
+{
+  "ability_scores": {
+    "charisma": 11,
+    "constitution": 10,
+    "dexterity": 18,
+    "intelligence": 14,
+    "strength": 3,
+    "wisdom": 13
+  },
+  "actions": [
+    {
+      "desc": "Melee Attack Roll: +6, reach 5 ft. Hit: 6 (1d4 + 4) Piercing damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "1d4",
+                "magical": false,
+                "modifier": 4,
+                "type": "piercing"
+              }
+            ],
+            "modifier": 6,
+            "on_hit": [],
+            "range": null,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "needle-sword",
+      "kind": "modeled",
+      "name": "Needle Sword"
+    },
+    {
+      "desc": "Ranged Attack Roll: +6, range 40/160 ft. Hit: 1 Piercing damage, and the target has the Charmed condition until the start of the sprite’s next turn.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "1d1",
+                "magical": false,
+                "modifier": 0,
+                "type": "piercing"
+              }
+            ],
+            "modifier": 6,
+            "on_hit": [],
+            "range": [
+              40,
+              160
+            ],
+            "reach": null,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "enchanting-bow",
+      "kind": "modeled",
+      "name": "Enchanting Bow"
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "Charisma Saving Throw: DC 10, one creature within 5 feet the sprite can see (Celestials, Fiends, and Undead automatically fail the save). Failure: The sprite knows the target’s emotions and alignment.",
+      "id": "heart-sight",
+      "kind": "unmodeled",
+      "name": "Heart Sight"
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "The sprite casts Invisibility on itself, requiring no spell components and using Charisma as the spellcasting ability.",
+      "id": "invisibility",
+      "kind": "unmodeled",
+      "name": "Invisibility"
+    }
+  ],
+  "alignment": "neutral good",
+  "armor_class": [
+    {
+      "value": 15
+    }
+  ],
+  "challenge_rating": 0.25,
+  "hit_points": {
+    "average": 10,
+    "dice": "4d4"
+  },
+  "id": "sprite",
+  "initiative": 4,
+  "languages": [
+    "Common",
+    "Elvish",
+    "Sylvan"
+  ],
+  "name": "Sprite",
+  "proficiency_bonus": 2,
+  "schema_version": "1",
+  "senses": {
+    "passive_perception": 13
+  },
+  "size": "tiny",
+  "skills": {
+    "perception": 3,
+    "stealth": 8
+  },
+  "source": "srd-5.2.1",
+  "speeds": {
+    "fly": {
+      "feet": 40
+    },
+    "walk": {
+      "feet": 10
+    }
+  },
+  "type": "fey",
+  "xp": 50
+}

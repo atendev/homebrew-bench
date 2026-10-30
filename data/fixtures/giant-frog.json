@@ -1,0 +1,99 @@
+{
+  "ability_scores": {
+    "charisma": 3,
+    "constitution": 11,
+    "dexterity": 13,
+    "intelligence": 2,
+    "strength": 12,
+    "wisdom": 10
+  },
+  "actions": [
+    {
+      "agent_clauses": [
+        "If the target is a Medium or smaller creature, it has the Grappled condition (escape DC 11)."
+      ],
+      "desc": "Melee Attack Roll: +3, reach 5 ft. Hit: 5 (1d6 + 2) Piercing damage. If the target is a Medium or smaller creature, it has the Grappled condition (escape DC 11).",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "1d6",
+                "magical": false,
+                "modifier": 2,
+                "type": "piercing"
+              }
+            ],
+            "modifier": 3,
+            "on_hit": [],
+            "range": null,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "bite",
+      "kind": "partly_modeled",
+      "name": "Bite"
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "The frog swallows a Small or smaller target it is grappling. While swallowed, the target isn’t Grappled but has the Blinded and Restrained conditions, and it has Total Cover against attacks and other effects outside the frog. While swallowing the target, the frog can’t use Bite, and if the frog dies, the swallowed target is no longer Restrained and can escape from the corpse using 5 feet of movement, exiting with the Prone condition. At the end of the frog’s next turn, the swallowed target takes 5 (2d4) Acid damage. If that damage doesn’t kill it, the frog disgorges it, causing it to exit Prone.",
+      "id": "swallow",
+      "kind": "unmodeled",
+      "name": "Swallow"
+    }
+  ],
+  "alignment": "unaligned",
+  "armor_class": [
+    {
+      "value": 11
+    }
+  ],
+  "challenge_rating": 0.25,
+  "hit_points": {
+    "average": 18,
+    "dice": "4d8"
+  },
+  "id": "giant-frog",
+  "initiative": 1,
+  "name": "Giant Frog",
+  "proficiency_bonus": 2,
+  "schema_version": "1",
+  "senses": {
+    "darkvision": 30,
+    "passive_perception": 12
+  },
+  "size": "medium",
+  "skills": {
+    "perception": 2,
+    "stealth": 4
+  },
+  "source": "srd-5.2.1",
+  "speeds": {
+    "swim": {
+      "feet": 30
+    },
+    "walk": {
+      "feet": 30
+    }
+  },
+  "traits": [
+    {
+      "default_resolution": "skipped",
+      "desc": "The frog can breathe air and water.",
+      "id": "amphibious",
+      "kind": "unmodeled",
+      "name": "Amphibious"
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "The frog’s Long Jump is up to 20 feet and its High Jump is up to 10 feet with or without a running start.",
+      "id": "standing-leap",
+      "kind": "unmodeled",
+      "name": "Standing Leap"
+    }
+  ],
+  "type": "beast",
+  "xp": 50
+}

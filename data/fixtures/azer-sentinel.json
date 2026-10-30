@@ -1,0 +1,100 @@
+{
+  "ability_scores": {
+    "charisma": 10,
+    "constitution": 15,
+    "dexterity": 12,
+    "intelligence": 12,
+    "strength": 17,
+    "wisdom": 13
+  },
+  "actions": [
+    {
+      "desc": "Melee Attack Roll: +5, reach 5 ft. Hit: 8 (1d10 + 3) Bludgeoning damage plus 3 (1d6) Fire damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "1d10",
+                "magical": false,
+                "modifier": 3,
+                "type": "bludgeoning"
+              },
+              {
+                "dice": "1d6",
+                "magical": false,
+                "modifier": 0,
+                "type": "fire"
+              }
+            ],
+            "modifier": 5,
+            "on_hit": [],
+            "range": null,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "burning-hammer",
+      "kind": "modeled",
+      "name": "Burning Hammer"
+    }
+  ],
+  "alignment": "lawful neutral",
+  "armor_class": [
+    {
+      "value": 17
+    }
+  ],
+  "challenge_rating": 2,
+  "condition_immunities": [
+    "poisoned"
+  ],
+  "damage_immunities": [
+    "fire",
+    "poison"
+  ],
+  "hit_points": {
+    "average": 39,
+    "dice": "6d8+12"
+  },
+  "id": "azer-sentinel",
+  "initiative": 1,
+  "languages": [
+    "Primordial (Ignan)"
+  ],
+  "name": "Azer Sentinel",
+  "proficiency_bonus": 2,
+  "saving_throws": {
+    "con": 4
+  },
+  "schema_version": "1",
+  "senses": {
+    "passive_perception": 11
+  },
+  "size": "medium",
+  "source": "srd-5.2.1",
+  "speeds": {
+    "walk": {
+      "feet": 30
+    }
+  },
+  "traits": [
+    {
+      "default_resolution": "skipped",
+      "desc": "At the end of each of the azer’s turns, each creature of the azer’s choice in a 5-foot Emanation originating from the azer takes 5 (1d10) Fire damage unless the azer has the Incapacitated condition.",
+      "id": "fire-aura",
+      "kind": "unmodeled",
+      "name": "Fire Aura"
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "The azer sheds Bright Light in a 10-foot radius and Dim Light for an additional 10 feet.",
+      "id": "illumination",
+      "kind": "unmodeled",
+      "name": "Illumination"
+    }
+  ],
+  "type": "elemental",
+  "xp": 450
+}

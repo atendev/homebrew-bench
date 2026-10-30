@@ -1,0 +1,85 @@
+{
+  "ability_scores": {
+    "charisma": 8,
+    "constitution": 10,
+    "dexterity": 15,
+    "intelligence": 10,
+    "strength": 8,
+    "wisdom": 8
+  },
+  "actions": [
+    {
+      "desc": "Melee or Ranged Attack Roll: +4, reach 5 ft. or range 20/60 ft. Hit: 4 (1d4 + 2) Piercing damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "1d4",
+                "magical": false,
+                "modifier": 2,
+                "type": "piercing"
+              }
+            ],
+            "modifier": 4,
+            "on_hit": [],
+            "range": [
+              20,
+              60
+            ],
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "dagger",
+      "kind": "modeled",
+      "name": "Dagger"
+    }
+  ],
+  "alignment": "chaotic neutral",
+  "armor_class": [
+    {
+      "value": 12
+    }
+  ],
+  "bonus_actions": [
+    {
+      "default_resolution": "skipped",
+      "desc": "The goblin takes the Disengage or Hide action.",
+      "id": "nimble-escape",
+      "kind": "unmodeled",
+      "name": "Nimble Escape"
+    }
+  ],
+  "challenge_rating": 0.125,
+  "hit_points": {
+    "average": 7,
+    "dice": "2d6"
+  },
+  "id": "goblin-minion",
+  "initiative": 2,
+  "languages": [
+    "Common",
+    "Goblin"
+  ],
+  "name": "Goblin Minion",
+  "proficiency_bonus": 2,
+  "schema_version": "1",
+  "senses": {
+    "darkvision": 60,
+    "passive_perception": 9
+  },
+  "size": "small",
+  "skills": {
+    "stealth": 6
+  },
+  "source": "srd-5.2.1",
+  "speeds": {
+    "walk": {
+      "feet": 30
+    }
+  },
+  "type": "fey",
+  "xp": 25
+}

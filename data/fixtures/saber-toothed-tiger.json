@@ -1,0 +1,113 @@
+{
+  "ability_scores": {
+    "charisma": 8,
+    "constitution": 15,
+    "dexterity": 17,
+    "intelligence": 3,
+    "strength": 18,
+    "wisdom": 12
+  },
+  "actions": [
+    {
+      "desc": "The tiger makes two Rend attacks.",
+      "effects": [
+        {
+          "multiattack": {
+            "steps": [
+              {
+                "action": {
+                  "action_id": "rend",
+                  "count": 2
+                }
+              }
+            ],
+            "swap": false
+          }
+        }
+      ],
+      "id": "multiattack",
+      "kind": "modeled",
+      "name": "Multiattack"
+    },
+    {
+      "desc": "Melee Attack Roll: +6, reach 5 ft. Hit: 11 (2d6 + 4) Slashing damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "2d6",
+                "magical": false,
+                "modifier": 4,
+                "type": "slashing"
+              }
+            ],
+            "modifier": 6,
+            "on_hit": [],
+            "range": null,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "rend",
+      "kind": "modeled",
+      "name": "Rend"
+    }
+  ],
+  "alignment": "unaligned",
+  "armor_class": [
+    {
+      "value": 13
+    }
+  ],
+  "bonus_actions": [
+    {
+      "default_resolution": "skipped",
+      "desc": "The tiger takes the Disengage or Hide action.",
+      "id": "nimble-escape",
+      "kind": "unmodeled",
+      "name": "Nimble Escape"
+    }
+  ],
+  "challenge_rating": 2,
+  "hit_points": {
+    "average": 52,
+    "dice": "7d10+14"
+  },
+  "id": "saber-toothed-tiger",
+  "initiative": 3,
+  "name": "Saber-Toothed Tiger",
+  "proficiency_bonus": 2,
+  "saving_throws": {
+    "dex": 5,
+    "str": 6
+  },
+  "schema_version": "1",
+  "senses": {
+    "darkvision": 60,
+    "passive_perception": 15
+  },
+  "size": "large",
+  "skills": {
+    "perception": 5,
+    "stealth": 7
+  },
+  "source": "srd-5.2.1",
+  "speeds": {
+    "walk": {
+      "feet": 40
+    }
+  },
+  "traits": [
+    {
+      "default_resolution": "skipped",
+      "desc": "With a 10-foot running start, the tiger can Long Jump up to 25 feet.",
+      "id": "running-leap",
+      "kind": "unmodeled",
+      "name": "Running Leap"
+    }
+  ],
+  "type": "beast",
+  "xp": 450
+}

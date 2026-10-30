@@ -1,0 +1,131 @@
+{
+  "ability_scores": {
+    "charisma": 14,
+    "constitution": 14,
+    "dexterity": 18,
+    "intelligence": 11,
+    "strength": 11,
+    "wisdom": 12
+  },
+  "actions": [
+    {
+      "desc": "The doppelganger makes two Slam attacks and uses Unsettling Visage if available.",
+      "effects": [
+        {
+          "multiattack": {
+            "steps": [
+              {
+                "action": {
+                  "action_id": "slam",
+                  "count": 2
+                }
+              },
+              {
+                "action": {
+                  "action_id": "unsettling-visage",
+                  "count": 1
+                }
+              }
+            ],
+            "swap": false
+          }
+        }
+      ],
+      "id": "multiattack",
+      "kind": "modeled",
+      "name": "Multiattack"
+    },
+    {
+      "desc": "Melee Attack Roll: +6 (with Advantage during the first round of each combat), reach 5 ft. Hit: 11 (2d6 + 4) Bludgeoning damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "2d6",
+                "magical": false,
+                "modifier": 4,
+                "type": "bludgeoning"
+              }
+            ],
+            "modifier": 6,
+            "on_hit": [],
+            "range": null,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "slam",
+      "kind": "modeled",
+      "name": "Slam"
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "The doppelganger casts Detect Thoughts, requiring no spell components and using Charisma as the spellcasting ability (spell save DC 12).",
+      "id": "read-thoughts",
+      "kind": "unmodeled",
+      "name": "Read Thoughts"
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "Wisdom Saving Throw: DC 12, each creature in a 15-foot Emanation originating from the doppelganger that can see the doppelganger. Failure: The target has the Frightened condition and repeats the save at the end of each of its turns, ending the effect on itself on a success. After 1 minute, it succeeds automatically.",
+      "id": "unsettling-visage",
+      "kind": "unmodeled",
+      "name": "Unsettling Visage",
+      "usage": {
+        "recharge": {
+          "dice": "6"
+        }
+      }
+    }
+  ],
+  "alignment": "neutral",
+  "armor_class": [
+    {
+      "value": 14
+    }
+  ],
+  "bonus_actions": [
+    {
+      "default_resolution": "skipped",
+      "desc": "The doppelganger shape-shifts into a Medium or Small Humanoid, or it returns to its true form. Its game statistics, other than its size, are the same in each form. Any equipment it is wearing or carrying isn’t transformed.",
+      "id": "shape-shift",
+      "kind": "unmodeled",
+      "name": "Shape-Shift"
+    }
+  ],
+  "challenge_rating": 3,
+  "condition_immunities": [
+    "charmed"
+  ],
+  "hit_points": {
+    "average": 52,
+    "dice": "8d8+16"
+  },
+  "id": "doppelganger",
+  "initiative": 4,
+  "languages": [
+    "Common plus three other languages"
+  ],
+  "name": "Doppelganger",
+  "proficiency_bonus": 2,
+  "schema_version": "1",
+  "senses": {
+    "darkvision": 60,
+    "passive_perception": 11
+  },
+  "size": "medium",
+  "skills": {
+    "deception": 6,
+    "insight": 3
+  },
+  "source": "srd-5.2.1",
+  "speeds": {
+    "walk": {
+      "feet": 30
+    }
+  },
+  "type": "monstrosity",
+  "xp": 700
+}

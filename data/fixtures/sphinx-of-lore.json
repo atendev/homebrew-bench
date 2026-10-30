@@ -1,0 +1,195 @@
+{
+  "ability_scores": {
+    "charisma": 18,
+    "constitution": 16,
+    "dexterity": 15,
+    "intelligence": 18,
+    "strength": 18,
+    "wisdom": 18
+  },
+  "actions": [
+    {
+      "desc": "The sphinx makes three Claw attacks.",
+      "effects": [
+        {
+          "multiattack": {
+            "steps": [
+              {
+                "action": {
+                  "action_id": "claw",
+                  "count": 3
+                }
+              }
+            ],
+            "swap": false
+          }
+        }
+      ],
+      "id": "multiattack",
+      "kind": "modeled",
+      "name": "Multiattack"
+    },
+    {
+      "desc": "Melee Attack Roll: +8, reach 5 ft. Hit: 14 (3d6 + 4) Slashing damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "3d6",
+                "magical": false,
+                "modifier": 4,
+                "type": "slashing"
+              }
+            ],
+            "modifier": 8,
+            "on_hit": [],
+            "range": null,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "claw",
+      "kind": "modeled",
+      "name": "Claw"
+    },
+    {
+      "agent_clauses": [
+        "and the target has the Incapacitated condition until the start of the sphinx’s next turn"
+      ],
+      "desc": "Wisdom Saving Throw: DC 16, each enemy in a 300-foot Emanation originating from the sphinx. Failure: 35 (10d6) Psychic damage, and the target has the Incapacitated condition until the start of the sphinx’s next turn.",
+      "effects": [
+        {
+          "saving_throw": {
+            "ability": "wis",
+            "creature_type_gate": null,
+            "damage": [
+              {
+                "dice": "10d6",
+                "magical": false,
+                "modifier": 0,
+                "type": "psychic"
+              }
+            ],
+            "dc": 16,
+            "half_on_success": false,
+            "hp_gate": null,
+            "immunity_after_success": false,
+            "no_damage_on_success": true,
+            "on_failure": [],
+            "repeat_save": null,
+            "two_stage": null
+          }
+        }
+      ],
+      "id": "mind-rending-roar",
+      "kind": "partly_modeled",
+      "name": "Mind-Rending Roar",
+      "usage": {
+        "recharge": {
+          "dice": "5-6"
+        }
+      }
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "The sphinx casts one of the following spells, requiring no Material components and using Intelligence as the spellcasting ability (spell save DC 16):",
+      "id": "spellcasting",
+      "kind": "unmodeled",
+      "name": "Spellcasting"
+    }
+  ],
+  "alignment": "lawful neutral",
+  "armor_class": [
+    {
+      "value": 17
+    }
+  ],
+  "challenge_rating": 11,
+  "condition_immunities": [
+    "charmed",
+    "frightened"
+  ],
+  "damage_immunities": [
+    "psychic"
+  ],
+  "damage_resistances": [
+    "necrotic",
+    "radiant"
+  ],
+  "hit_points": {
+    "average": 170,
+    "dice": "20d10+60"
+  },
+  "id": "sphinx-of-lore",
+  "initiative": 2,
+  "lair_xp": 8400,
+  "languages": [
+    "Celestial",
+    "Common"
+  ],
+  "legendary_actions": [
+    {
+      "default_resolution": "skipped",
+      "desc": "The sphinx can teleport up to 30 feet to an unoccupied space it can see, and it makes one Claw attack.",
+      "id": "arcane-prowl",
+      "kind": "unmodeled",
+      "name": "Arcane Prowl"
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "Constitution Saving Throw: DC 16, one creature the sphinx can see within 120 feet. Failure: The target gains 1 Exhaustion level. While the target has any Exhaustion levels, it appears 3d10 years older. Failure or Success: The sphinx can’t take this action again until the start of its next turn.",
+      "id": "weight-of-years",
+      "kind": "unmodeled",
+      "name": "Weight of Years"
+    }
+  ],
+  "legendary_uses_per_round": 3,
+  "name": "Sphinx of Lore",
+  "proficiency_bonus": 4,
+  "schema_version": "1",
+  "senses": {
+    "passive_perception": 18,
+    "truesight": 120
+  },
+  "size": "large",
+  "skills": {
+    "arcana": 12,
+    "history": 12,
+    "perception": 8,
+    "religion": 12
+  },
+  "source": "srd-5.2.1",
+  "speeds": {
+    "fly": {
+      "feet": 60
+    },
+    "walk": {
+      "feet": 40
+    }
+  },
+  "traits": [
+    {
+      "default_resolution": "skipped",
+      "desc": "No magic can observe the sphinx remotely or detect its thoughts without its permission. Wisdom (Insight) checks made to ascertain its intentions or sincerity are made with Disadvantage.",
+      "id": "inscrutable",
+      "kind": "unmodeled",
+      "name": "Inscrutable"
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "If the sphinx fails a saving throw, it can choose to succeed instead.",
+      "id": "legendary-resistance",
+      "kind": "unmodeled",
+      "name": "Legendary Resistance",
+      "usage": {
+        "per_day": {
+          "uses": 3
+        }
+      }
+    }
+  ],
+  "type": "celestial",
+  "xp": 7200
+}

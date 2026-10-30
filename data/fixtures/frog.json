@@ -1,0 +1,89 @@
+{
+  "ability_scores": {
+    "charisma": 3,
+    "constitution": 8,
+    "dexterity": 13,
+    "intelligence": 1,
+    "strength": 1,
+    "wisdom": 8
+  },
+  "actions": [
+    {
+      "desc": "Melee Attack Roll: +3, reach 5 ft. Hit: 1 Piercing damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "1d1",
+                "magical": false,
+                "modifier": 0,
+                "type": "piercing"
+              }
+            ],
+            "modifier": 3,
+            "on_hit": [],
+            "range": null,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "bite",
+      "kind": "modeled",
+      "name": "Bite"
+    }
+  ],
+  "alignment": "unaligned",
+  "armor_class": [
+    {
+      "value": 11
+    }
+  ],
+  "challenge_rating": 0,
+  "hit_points": {
+    "average": 1,
+    "dice": "1d4-1"
+  },
+  "id": "frog",
+  "initiative": 1,
+  "name": "Frog",
+  "proficiency_bonus": 2,
+  "schema_version": "1",
+  "senses": {
+    "darkvision": 30,
+    "passive_perception": 11
+  },
+  "size": "tiny",
+  "skills": {
+    "perception": 1,
+    "stealth": 3
+  },
+  "source": "srd-5.2.1",
+  "speeds": {
+    "swim": {
+      "feet": 20
+    },
+    "walk": {
+      "feet": 20
+    }
+  },
+  "traits": [
+    {
+      "default_resolution": "skipped",
+      "desc": "The frog can breathe air and water.",
+      "id": "amphibious",
+      "kind": "unmodeled",
+      "name": "Amphibious"
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "The frog’s Long Jump is up to 10 feet and its High Jump is up to 5 feet with or without a running start.",
+      "id": "standing-leap",
+      "kind": "unmodeled",
+      "name": "Standing Leap"
+    }
+  ],
+  "type": "beast",
+  "xp": 10
+}
