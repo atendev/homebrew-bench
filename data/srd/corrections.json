@@ -1131,5 +1131,64 @@
     "citation": "SRD 5.2.1 (werewolf-wolf form actions vs. shared Multiattack prose)",
     "commit": "a6212beb4b278917c2cff41c2b04c4ef4f3e0d6f",
     "applies": false
+  },
+  {
+    "monster_id": "goat",
+    "path": "actions.ram.damage",
+    "value": [
+      {
+        "dice": "1d1",
+        "type": "bludgeoning",
+        "modifier": 0,
+        "magical": false
+      }
+    ],
+    "reason": "Upstream structured damage lists only the conditional 1d4 and omits the flat 1 Bludgeoning damage; the charge bonus stays an agent clause.",
+    "citation": "goat actions.ram.desc: \"Melee Attack Roll: +2, reach 5 ft. Hit: 1 Bludgeoning damage, or 2 (1d4) Bludgeoning damage if the goat moved 20+ feet straight toward the target immediately before the hit.\"",
+    "commit": "a6212beb4b278917c2cff41c2b04c4ef4f3e0d6f"
+  },
+  {
+    "monster_id": "cultist",
+    "path": "actions.ritual-sickle.damage",
+    "value": [
+      {"dice": "1d4", "type": "slashing", "modifier": 1, "magical": false},
+      {"dice": "1d1", "type": "necrotic", "modifier": 0, "magical": false}
+    ],
+    "reason": "Upstream structured damage omits the flat 1 Necrotic damage that follows the dice damage.",
+    "citation": "cultist actions.ritual-sickle.desc: \"Melee Attack Roll: +3, reach 5 ft. Hit: 3 (1d4 + 1) Slashing damage plus 1 Necrotic damage.\"",
+    "commit": "a6212beb4b278917c2cff41c2b04c4ef4f3e0d6f"
+  },
+  {
+    "monster_id": "flying-snake",
+    "path": "actions.bite.damage",
+    "value": [
+      {"dice": "1d1", "type": "piercing", "modifier": 0, "magical": false},
+      {"dice": "2d4", "type": "poison", "modifier": 0, "magical": false}
+    ],
+    "reason": "Upstream structured damage omits the flat 1 Piercing damage that precedes the dice damage.",
+    "citation": "flying-snake actions.bite.desc: \"Melee Attack Roll: +4, reach 5 ft. Hit: 1 Piercing damage plus 5 (2d4) Poison damage.\"",
+    "commit": "a6212beb4b278917c2cff41c2b04c4ef4f3e0d6f"
+  },
+  {
+    "monster_id": "scorpion",
+    "path": "actions.sting.damage",
+    "value": [
+      {"dice": "1d1", "type": "piercing", "modifier": 0, "magical": false},
+      {"dice": "1d6", "type": "poison", "modifier": 0, "magical": false}
+    ],
+    "reason": "Upstream structured damage omits the flat 1 Piercing damage that precedes the dice damage.",
+    "citation": "scorpion actions.sting.desc: \"Melee Attack Roll: +2, reach 5 ft. Hit: 1 Piercing damage plus 3 (1d6) Poison damage.\"",
+    "commit": "a6212beb4b278917c2cff41c2b04c4ef4f3e0d6f"
+  },
+  {
+    "monster_id": "spider",
+    "path": "actions.bite.damage",
+    "value": [
+      {"dice": "1d1", "type": "piercing", "modifier": 0, "magical": false},
+      {"dice": "1d4", "type": "poison", "modifier": 0, "magical": false}
+    ],
+    "reason": "Upstream structured damage omits the flat 1 Piercing damage that precedes the dice damage.",
+    "citation": "spider actions.bite.desc: \"Melee Attack Roll: +4, reach 5 ft. Hit: 1 Piercing damage plus 2 (1d4) Poison damage.\"",
+    "commit": "a6212beb4b278917c2cff41c2b04c4ef4f3e0d6f"
   }
 ]

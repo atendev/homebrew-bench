@@ -1,0 +1,195 @@
+{
+  "ability_scores": {
+    "charisma": 18,
+    "constitution": 18,
+    "dexterity": 14,
+    "intelligence": 18,
+    "strength": 21,
+    "wisdom": 15
+  },
+  "actions": [
+    {
+      "desc": "The devil makes three Ice Spear attacks. It can replace one attack with a Tail attack.",
+      "effects": [
+        {
+          "multiattack": {
+            "steps": [
+              {
+                "action": {
+                  "action_id": "ice-spear",
+                  "count": 2
+                }
+              },
+              {
+                "choice": {
+                  "options": [
+                    {
+                      "action_id": "ice-spear",
+                      "count": 1
+                    },
+                    {
+                      "action_id": "tail",
+                      "count": 1
+                    }
+                  ],
+                  "pick": 1
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "id": "multiattack",
+      "kind": "modeled",
+      "name": "Multiattack"
+    },
+    {
+      "agent_clauses": [
+        "Until the end of its next turn, the target can’t take a Bonus Action or Reaction, its Speed decreases by 10 feet, and it can move or take one action on its turn, not both. Hit or Miss: The spear magically returns to the devil’s hand immediately after a ranged attack."
+      ],
+      "desc": "Melee or Ranged Attack Roll: +10, reach 5 ft. or range 30/120 ft. Hit: 14 (2d8 + 5) Piercing damage plus 10 (3d6) Cold damage. Until the end of its next turn, the target can’t take a Bonus Action or Reaction, its Speed decreases by 10 feet, and it can move or take one action on its turn, not both. Hit or Miss: The spear magically returns to the devil’s hand immediately after a ranged attack.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "2d8",
+                "magical": false,
+                "modifier": 5,
+                "type": "piercing"
+              },
+              {
+                "dice": "3d6",
+                "magical": false,
+                "modifier": 0,
+                "type": "cold"
+              }
+            ],
+            "modifier": 10,
+            "on_hit": [],
+            "range": [
+              30,
+              120
+            ],
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "ice-spear",
+      "kind": "partly_modeled",
+      "name": "Ice Spear"
+    },
+    {
+      "desc": "Melee Attack Roll: +10, reach 10 ft. Hit: 15 (3d6 + 5) Bludgeoning damage plus 18 (4d8) Cold damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "3d6",
+                "magical": false,
+                "modifier": 5,
+                "type": "bludgeoning"
+              },
+              {
+                "dice": "4d8",
+                "magical": false,
+                "modifier": 0,
+                "type": "cold"
+              }
+            ],
+            "modifier": 10,
+            "on_hit": [],
+            "range": null,
+            "reach": 10,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "tail",
+      "kind": "modeled",
+      "name": "Tail"
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "The devil casts Wall of Ice (level 8 version), requiring no spell components and using Intelligence as the spellcasting ability (spell save DC 17).",
+      "id": "ice-wall",
+      "kind": "unmodeled",
+      "name": "Ice Wall",
+      "usage": {
+        "recharge": {
+          "dice": "6"
+        }
+      }
+    }
+  ],
+  "alignment": "lawful evil",
+  "armor_class": [
+    {
+      "value": 18
+    }
+  ],
+  "challenge_rating": 14,
+  "condition_immunities": [
+    "poisoned"
+  ],
+  "damage_immunities": [
+    "cold",
+    "fire",
+    "poison"
+  ],
+  "hit_points": {
+    "average": 228,
+    "dice": "24d10+96"
+  },
+  "id": "ice-devil",
+  "initiative": 2,
+  "languages": [
+    "Infernal",
+    "telepathy 120 ft."
+  ],
+  "name": "Ice Devil",
+  "proficiency_bonus": 5,
+  "saving_throws": {
+    "cha": 9,
+    "con": 9,
+    "dex": 7,
+    "wis": 7
+  },
+  "schema_version": "1",
+  "senses": {
+    "blindsight": 120,
+    "passive_perception": 17
+  },
+  "size": "large",
+  "skills": {
+    "insight": 7,
+    "perception": 7,
+    "persuasion": 9
+  },
+  "source": "srd-5.2.1",
+  "speeds": {
+    "walk": {
+      "feet": 40
+    }
+  },
+  "traits": [
+    {
+      "default_resolution": "skipped",
+      "desc": "If the devil dies outside the Nine Hells, its body disappears in sulfurous smoke, and it gains a new body instantly, reviving with all its Hit Points somewhere in the Nine Hells.",
+      "id": "diabolical-restoration",
+      "kind": "unmodeled",
+      "name": "Diabolical Restoration"
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "The devil has Advantage on saving throws against spells and other magical effects.",
+      "id": "magic-resistance",
+      "kind": "unmodeled",
+      "name": "Magic Resistance"
+    }
+  ],
+  "type": "fiend",
+  "xp": 11500
+}

@@ -9,13 +9,16 @@
   },
   "actions": [
     {
+      "agent_clauses": [
+        "Conditional damage, not modeled: or 2 (1d4) Bludgeoning damage if the goat moved 20+ feet straight toward the target immediately before the hit."
+      ],
       "desc": "Melee Attack Roll: +2, reach 5 ft. Hit: 1 Bludgeoning damage, or 2 (1d4) Bludgeoning damage if the goat moved 20+ feet straight toward the target immediately before the hit.",
       "effects": [
         {
           "attack": {
             "damage": [
               {
-                "dice": "1d4",
+                "dice": "1d1",
                 "magical": false,
                 "modifier": 0,
                 "type": "bludgeoning"
@@ -30,7 +33,7 @@
         }
       ],
       "id": "ram",
-      "kind": "modeled",
+      "kind": "partly_modeled",
       "name": "Ram"
     }
   ],

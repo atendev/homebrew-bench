@@ -1,0 +1,78 @@
+{
+  "ability_scores": {
+    "charisma": 6,
+    "constitution": 12,
+    "dexterity": 13,
+    "intelligence": 3,
+    "strength": 17,
+    "wisdom": 12
+  },
+  "actions": [
+    {
+      "agent_clauses": [
+        "If the target is a Large or smaller creature and the goat moved 20+ feet straight toward it immediately before the hit, the target takes an extra 5 (2d4) Bludgeoning damage and has the Prone condition."
+      ],
+      "desc": "Melee Attack Roll: +5, reach 5 ft. Hit: 6 (1d6 + 3) Bludgeoning damage. If the target is a Large or smaller creature and the goat moved 20+ feet straight toward it immediately before the hit, the target takes an extra 5 (2d4) Bludgeoning damage and has the Prone condition.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "1d6",
+                "magical": false,
+                "modifier": 3,
+                "type": "bludgeoning"
+              }
+            ],
+            "modifier": 5,
+            "on_hit": [],
+            "range": null,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "ram",
+      "kind": "partly_modeled",
+      "name": "Ram"
+    }
+  ],
+  "alignment": "unaligned",
+  "armor_class": [
+    {
+      "value": 11
+    }
+  ],
+  "challenge_rating": 0.5,
+  "hit_points": {
+    "average": 19,
+    "dice": "3d10+3"
+  },
+  "id": "giant-goat",
+  "initiative": 1,
+  "name": "Giant Goat",
+  "proficiency_bonus": 2,
+  "saving_throws": {
+    "str": 5
+  },
+  "schema_version": "1",
+  "senses": {
+    "darkvision": 60,
+    "passive_perception": 13
+  },
+  "size": "large",
+  "skills": {
+    "perception": 3
+  },
+  "source": "srd-5.2.1",
+  "speeds": {
+    "climb": {
+      "feet": 30
+    },
+    "walk": {
+      "feet": 40
+    }
+  },
+  "type": "beast",
+  "xp": 100
+}

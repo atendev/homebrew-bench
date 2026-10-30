@@ -1,0 +1,99 @@
+{
+  "ability_scores": {
+    "charisma": 3,
+    "constitution": 9,
+    "dexterity": 11,
+    "intelligence": 2,
+    "strength": 9,
+    "wisdom": 10
+  },
+  "actions": [
+    {
+      "agent_clauses": [
+        "Conditional damage, not modeled: or 2 (1d4) Piercing damage if the swarm is Bloodied."
+      ],
+      "desc": "Melee Attack Roll: +2, reach 5 ft. Hit: 5 (2d4) Piercing damage, or 2 (1d4) Piercing damage if the swarm is Bloodied.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "2d4",
+                "magical": false,
+                "modifier": 0,
+                "type": "piercing"
+              }
+            ],
+            "modifier": 2,
+            "on_hit": [],
+            "range": null,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "bites",
+      "kind": "partly_modeled",
+      "name": "Bites"
+    }
+  ],
+  "alignment": "unaligned",
+  "armor_class": [
+    {
+      "value": 10
+    }
+  ],
+  "challenge_rating": 0.25,
+  "condition_immunities": [
+    "charmed",
+    "frightened",
+    "grappled",
+    "paralyzed",
+    "petrified",
+    "prone",
+    "restrained",
+    "stunned"
+  ],
+  "damage_resistances": [
+    "bludgeoning",
+    "piercing",
+    "slashing"
+  ],
+  "hit_points": {
+    "average": 14,
+    "dice": "4d8-4"
+  },
+  "id": "swarm-of-rats",
+  "initiative": 0,
+  "name": "Swarm of Rats",
+  "proficiency_bonus": 2,
+  "saving_throws": {
+    "dex": 2
+  },
+  "schema_version": "1",
+  "senses": {
+    "darkvision": 30,
+    "passive_perception": 10
+  },
+  "size": "medium",
+  "source": "srd-5.2.1",
+  "speeds": {
+    "climb": {
+      "feet": 30
+    },
+    "walk": {
+      "feet": 30
+    }
+  },
+  "traits": [
+    {
+      "default_resolution": "skipped",
+      "desc": "The swarm can occupy another creature’s space and vice versa, and the swarm can move through any opening large enough for a Tiny rat. The swarm can’t regain Hit Points or gain Temporary Hit Points.",
+      "id": "swarm",
+      "kind": "unmodeled",
+      "name": "Swarm"
+    }
+  ],
+  "type": "swarm of tiny beasts",
+  "xp": 50
+}

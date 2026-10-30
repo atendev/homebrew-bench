@@ -2,10 +2,10 @@
   "summary": {
     "commit": "a6212beb4b278917c2cff41c2b04c4ef4f3e0d6f",
     "monsters": 341,
-    "graduated": 227,
-    "blocked": 114,
-    "open_blocking": 161,
-    "corrections": 72
+    "graduated": 269,
+    "blocked": 72,
+    "open_blocking": 75,
+    "corrections": 77
   },
   "entries": [
     {
@@ -83,7 +83,21 @@
       "class": "d",
       "path": "traits.mucus-cloud",
       "status": "open",
-      "summary": "classified partly_modeled"
+      "summary": "classified unmodeled (default skipped)"
+    },
+    {
+      "monster": "aboleth",
+      "class": "d",
+      "path": "traits.mucus-cloud",
+      "status": "open",
+      "summary": "damage array without an attack or save; left unmodeled"
+    },
+    {
+      "monster": "aboleth",
+      "class": "d",
+      "path": "traits.mucus-cloud.damage",
+      "status": "open",
+      "summary": "Failure clause states damage only as recurring or conditional later clauses; left unmodeled"
     },
     {
       "monster": "aboleth",
@@ -1963,38 +1977,10 @@
     },
     {
       "monster": "animated-rug-of-smothering",
-      "class": "a",
-      "path": "actions.smother.damage",
-      "status": "open",
-      "summary": "Hit clause dice ['2d6+3'] vs structured ['2d6+3', '2d6+3']"
-    },
-    {
-      "monster": "animated-rug-of-smothering",
-      "class": "b",
-      "path": "actions.smother.damage",
-      "status": "open",
-      "summary": "damage in a later clause is not representable"
-    },
-    {
-      "monster": "animated-rug-of-smothering",
-      "class": "b",
-      "path": "actions.smother.damage",
-      "status": "open",
-      "summary": "several damage entries, not all stated unconditionally in the Hit clause"
-    },
-    {
-      "monster": "animated-rug-of-smothering",
       "class": "d",
       "path": "actions.smother",
       "status": "open",
       "summary": "classified partly_modeled"
-    },
-    {
-      "monster": "ankheg",
-      "class": "b",
-      "path": "actions.bite.damage",
-      "status": "open",
-      "summary": "several damage entries, not all stated unconditionally in the Hit clause"
     },
     {
       "monster": "ankheg",
@@ -2299,13 +2285,6 @@
     },
     {
       "monster": "balor",
-      "class": "b",
-      "path": "actions.flame-whip.damage",
-      "status": "open",
-      "summary": "several damage entries, not all stated unconditionally in the Hit clause"
-    },
-    {
-      "monster": "balor",
       "class": "d",
       "path": "actions.flame-whip",
       "status": "open",
@@ -2337,7 +2316,7 @@
       "class": "d",
       "path": "traits.death-throes",
       "status": "open",
-      "summary": "classified partly_modeled"
+      "summary": "classified modeled"
     },
     {
       "monster": "balor",
@@ -2530,13 +2509,6 @@
     },
     {
       "monster": "bearded-devil",
-      "class": "b",
-      "path": "actions.infernal-glaive.damage",
-      "status": "open",
-      "summary": "damage in a later clause is not representable"
-    },
-    {
-      "monster": "bearded-devil",
       "class": "d",
       "path": "actions.beard",
       "status": "open",
@@ -2596,7 +2568,21 @@
       "class": "d",
       "path": "bonus_actions.swallow",
       "status": "open",
-      "summary": "classified partly_modeled"
+      "summary": "classified unmodeled (default skipped)"
+    },
+    {
+      "monster": "behir",
+      "class": "d",
+      "path": "bonus_actions.swallow",
+      "status": "open",
+      "summary": "damage array without an attack or save; left unmodeled"
+    },
+    {
+      "monster": "behir",
+      "class": "d",
+      "path": "bonus_actions.swallow.damage",
+      "status": "open",
+      "summary": "Failure clause states damage only as recurring or conditional later clauses; left unmodeled"
     },
     {
       "monster": "berserker",
@@ -2726,17 +2712,10 @@
     },
     {
       "monster": "blood-hawk",
-      "class": "b",
-      "path": "actions.beak.damage",
-      "status": "open",
-      "summary": "several damage entries, not all stated unconditionally in the Hit clause"
-    },
-    {
-      "monster": "blood-hawk",
       "class": "d",
       "path": "actions.beak",
       "status": "open",
-      "summary": "classified modeled"
+      "summary": "classified partly_modeled"
     },
     {
       "monster": "blood-hawk",
@@ -2765,27 +2744,6 @@
       "path": "actions.rend",
       "status": "open",
       "summary": "classified modeled"
-    },
-    {
-      "monster": "boar",
-      "class": "a",
-      "path": "actions.gore.damage",
-      "status": "open",
-      "summary": "Hit clause dice ['1d6+1'] vs structured ['1d6+1', '1d6']"
-    },
-    {
-      "monster": "boar",
-      "class": "b",
-      "path": "actions.gore.damage",
-      "status": "open",
-      "summary": "damage in a later clause is not representable"
-    },
-    {
-      "monster": "boar",
-      "class": "b",
-      "path": "actions.gore.damage",
-      "status": "open",
-      "summary": "several damage entries, not all stated unconditionally in the Hit clause"
     },
     {
       "monster": "boar",
@@ -3132,17 +3090,10 @@
     },
     {
       "monster": "chimera",
-      "class": "b",
-      "path": "actions.bite.damage",
-      "status": "open",
-      "summary": "several damage entries, not all stated unconditionally in the Hit clause"
-    },
-    {
-      "monster": "chimera",
       "class": "d",
       "path": "actions.bite",
       "status": "open",
-      "summary": "classified modeled"
+      "summary": "classified partly_modeled"
     },
     {
       "monster": "chimera",
@@ -3539,6 +3490,13 @@
     {
       "monster": "cultist",
       "class": "b",
+      "path": "actions.ritual-sickle.damage",
+      "status": "corrected",
+      "summary": "Hit clause states flat damage but structured damage is missing (corrected: Upstream structured damage omits the flat 1 Necrotic damage that follows the dice damage.)"
+    },
+    {
+      "monster": "cultist",
+      "class": "b",
       "path": "size",
       "status": "open",
       "summary": "size 'Medium or small' is not representable"
@@ -3549,6 +3507,13 @@
       "path": "actions.ritual-sickle",
       "status": "open",
       "summary": "classified modeled"
+    },
+    {
+      "monster": "cultist",
+      "class": "d",
+      "path": "actions.ritual-sickle.damage",
+      "status": "open",
+      "summary": "correction applied: Upstream structured damage omits the flat 1 Necrotic damage that follows the dice damage. [cultist actions.ritual-sickle.desc: \"Melee Attack Roll: +3, reach 5 ft. Hit: 3 (1d4 + 1) Slashing damage plus 1 Necrotic damage.\"]"
     },
     {
       "monster": "cultist-fanatic",
@@ -3605,13 +3570,6 @@
       "path": "actions.darkness-aura",
       "status": "open",
       "summary": "classified unmodeled (default skipped)"
-    },
-    {
-      "monster": "death-dog",
-      "class": "b",
-      "path": "actions.bite.damage",
-      "status": "open",
-      "summary": "damage in a later clause is not representable"
     },
     {
       "monster": "death-dog",
@@ -3716,7 +3674,21 @@
       "class": "d",
       "path": "actions.create-whirlwind",
       "status": "open",
-      "summary": "classified partly_modeled"
+      "summary": "classified unmodeled (default skipped)"
+    },
+    {
+      "monster": "djinni",
+      "class": "d",
+      "path": "actions.create-whirlwind",
+      "status": "open",
+      "summary": "damage array without an attack or save; left unmodeled"
+    },
+    {
+      "monster": "djinni",
+      "class": "d",
+      "path": "actions.create-whirlwind.damage",
+      "status": "open",
+      "summary": "Failure clause states damage only as recurring or conditional later clauses; left unmodeled"
     },
     {
       "monster": "djinni",
@@ -4196,27 +4168,6 @@
     },
     {
       "monster": "elk",
-      "class": "a",
-      "path": "actions.ram.damage",
-      "status": "open",
-      "summary": "Hit clause dice ['1d6+3'] vs structured ['1d6+3', '1d6']"
-    },
-    {
-      "monster": "elk",
-      "class": "b",
-      "path": "actions.ram.damage",
-      "status": "open",
-      "summary": "damage in a later clause is not representable"
-    },
-    {
-      "monster": "elk",
-      "class": "b",
-      "path": "actions.ram.damage",
-      "status": "open",
-      "summary": "several damage entries, not all stated unconditionally in the Hit clause"
-    },
-    {
-      "monster": "elk",
       "class": "d",
       "path": "actions.ram",
       "status": "open",
@@ -4490,10 +4441,24 @@
     },
     {
       "monster": "flying-snake",
+      "class": "b",
+      "path": "actions.bite.damage",
+      "status": "corrected",
+      "summary": "Hit clause states flat damage but structured damage is missing (corrected: Upstream structured damage omits the flat 1 Piercing damage that precedes the dice damage.)"
+    },
+    {
+      "monster": "flying-snake",
       "class": "d",
       "path": "actions.bite",
       "status": "open",
       "summary": "classified modeled"
+    },
+    {
+      "monster": "flying-snake",
+      "class": "d",
+      "path": "actions.bite.damage",
+      "status": "open",
+      "summary": "correction applied: Upstream structured damage omits the flat 1 Piercing damage that precedes the dice damage. [flying-snake actions.bite.desc: \"Melee Attack Roll: +4, reach 5 ft. Hit: 1 Piercing damage plus 5 (2d4) Poison damage.\"]"
     },
     {
       "monster": "flying-snake",
@@ -4588,13 +4553,6 @@
     },
     {
       "monster": "gelatinous-cube",
-      "class": "b",
-      "path": "actions.engulf.damage",
-      "status": "open",
-      "summary": "several damage entries, not all stated unconditionally in the Failure clause"
-    },
-    {
-      "monster": "gelatinous-cube",
       "class": "d",
       "path": "actions.engulf",
       "status": "open",
@@ -4612,7 +4570,21 @@
       "class": "d",
       "path": "traits.ooze-cube",
       "status": "open",
-      "summary": "classified modeled"
+      "summary": "classified unmodeled (default skipped)"
+    },
+    {
+      "monster": "gelatinous-cube",
+      "class": "d",
+      "path": "traits.ooze-cube",
+      "status": "open",
+      "summary": "damage array without an attack or save; left unmodeled"
+    },
+    {
+      "monster": "gelatinous-cube",
+      "class": "d",
+      "path": "traits.ooze-cube.damage",
+      "status": "open",
+      "summary": "dc without a Failure clause is an ability check, not a saving throw; left unmodeled"
     },
     {
       "monster": "gelatinous-cube",
@@ -4770,27 +4742,6 @@
     },
     {
       "monster": "giant-boar",
-      "class": "a",
-      "path": "actions.gore.damage",
-      "status": "open",
-      "summary": "Hit clause dice ['2d6+3'] vs structured ['2d6+3', '2d6']"
-    },
-    {
-      "monster": "giant-boar",
-      "class": "b",
-      "path": "actions.gore.damage",
-      "status": "open",
-      "summary": "damage in a later clause is not representable"
-    },
-    {
-      "monster": "giant-boar",
-      "class": "b",
-      "path": "actions.gore.damage",
-      "status": "open",
-      "summary": "several damage entries, not all stated unconditionally in the Hit clause"
-    },
-    {
-      "monster": "giant-boar",
       "class": "d",
       "path": "actions.gore",
       "status": "open",
@@ -4889,27 +4840,6 @@
     },
     {
       "monster": "giant-elk",
-      "class": "a",
-      "path": "actions.ram.damage",
-      "status": "open",
-      "summary": "Hit clause dice ['2d6+4', '2d4'] vs structured ['2d6+4', '2d4', '2d4']"
-    },
-    {
-      "monster": "giant-elk",
-      "class": "b",
-      "path": "actions.ram.damage",
-      "status": "open",
-      "summary": "damage in a later clause is not representable"
-    },
-    {
-      "monster": "giant-elk",
-      "class": "b",
-      "path": "actions.ram.damage",
-      "status": "open",
-      "summary": "several damage entries, not all stated unconditionally in the Hit clause"
-    },
-    {
-      "monster": "giant-elk",
       "class": "d",
       "path": "actions.ram",
       "status": "open",
@@ -4977,27 +4907,6 @@
       "path": "traits.standing-leap",
       "status": "open",
       "summary": "classified unmodeled (default skipped)"
-    },
-    {
-      "monster": "giant-goat",
-      "class": "a",
-      "path": "actions.ram.damage",
-      "status": "open",
-      "summary": "Hit clause dice ['1d6+3'] vs structured ['1d6+3', '2d4']"
-    },
-    {
-      "monster": "giant-goat",
-      "class": "b",
-      "path": "actions.ram.damage",
-      "status": "open",
-      "summary": "damage in a later clause is not representable"
-    },
-    {
-      "monster": "giant-goat",
-      "class": "b",
-      "path": "actions.ram.damage",
-      "status": "open",
-      "summary": "several damage entries, not all stated unconditionally in the Hit clause"
     },
     {
       "monster": "giant-goat",
@@ -5120,17 +5029,10 @@
     },
     {
       "monster": "giant-seahorse",
-      "class": "b",
-      "path": "actions.ram.damage",
-      "status": "open",
-      "summary": "several damage entries, not all stated unconditionally in the Hit clause"
-    },
-    {
-      "monster": "giant-seahorse",
       "class": "d",
       "path": "actions.ram",
       "status": "open",
-      "summary": "classified modeled"
+      "summary": "classified partly_modeled"
     },
     {
       "monster": "giant-seahorse",
@@ -5194,13 +5096,6 @@
       "path": "traits.web-walker",
       "status": "open",
       "summary": "classified unmodeled (default skipped)"
-    },
-    {
-      "monster": "giant-toad",
-      "class": "b",
-      "path": "actions.bite.damage",
-      "status": "open",
-      "summary": "several damage entries, not all stated unconditionally in the Hit clause"
     },
     {
       "monster": "giant-toad",
@@ -5428,24 +5323,24 @@
     },
     {
       "monster": "goat",
+      "class": "b",
+      "path": "actions.ram.damage",
+      "status": "corrected",
+      "summary": "Hit clause states flat damage but structured damage is missing (corrected: Upstream structured damage lists only the conditional 1d4 and omits the flat 1 Bludgeoning damage; the charge bonus stays an agent clause.)"
+    },
+    {
+      "monster": "goat",
       "class": "d",
       "path": "actions.ram",
       "status": "open",
-      "summary": "classified modeled"
+      "summary": "classified partly_modeled"
     },
     {
-      "monster": "goblin-boss",
-      "class": "b",
-      "path": "actions.scimitar.damage",
+      "monster": "goat",
+      "class": "d",
+      "path": "actions.ram.damage",
       "status": "open",
-      "summary": "several damage entries, not all stated unconditionally in the Hit clause"
-    },
-    {
-      "monster": "goblin-boss",
-      "class": "b",
-      "path": "actions.shortbow.damage",
-      "status": "open",
-      "summary": "several damage entries, not all stated unconditionally in the Hit clause"
+      "summary": "correction applied: Upstream structured damage lists only the conditional 1d4 and omits the flat 1 Bludgeoning damage; the charge bonus stays an agent clause. [goat actions.ram.desc: \"Melee Attack Roll: +2, reach 5 ft. Hit: 1 Bludgeoning damage, or 2 (1d4) Bludgeoning damage if the goat moved 20+ feet straight toward the target immediately before the hit.\"]"
     },
     {
       "monster": "goblin-boss",
@@ -5459,14 +5354,14 @@
       "class": "d",
       "path": "actions.scimitar",
       "status": "open",
-      "summary": "classified modeled"
+      "summary": "classified partly_modeled"
     },
     {
       "monster": "goblin-boss",
       "class": "d",
       "path": "actions.shortbow",
       "status": "open",
-      "summary": "classified modeled"
+      "summary": "classified partly_modeled"
     },
     {
       "monster": "goblin-boss",
@@ -5498,31 +5393,17 @@
     },
     {
       "monster": "goblin-warrior",
-      "class": "b",
-      "path": "actions.scimitar.damage",
-      "status": "open",
-      "summary": "several damage entries, not all stated unconditionally in the Hit clause"
-    },
-    {
-      "monster": "goblin-warrior",
-      "class": "b",
-      "path": "actions.shortbow.damage",
-      "status": "open",
-      "summary": "several damage entries, not all stated unconditionally in the Hit clause"
-    },
-    {
-      "monster": "goblin-warrior",
       "class": "d",
       "path": "actions.scimitar",
       "status": "open",
-      "summary": "classified modeled"
+      "summary": "classified partly_modeled"
     },
     {
       "monster": "goblin-warrior",
       "class": "d",
       "path": "actions.shortbow",
       "status": "open",
-      "summary": "classified modeled"
+      "summary": "classified partly_modeled"
     },
     {
       "monster": "goblin-warrior",
@@ -5837,7 +5718,7 @@
       "class": "b",
       "path": "actions.claw.damage",
       "status": "open",
-      "summary": "Hit clause dice ['1d4+4', '2d6'] but structured damage has ['1d4+4']"
+      "summary": "Hit clause dice 2d6 are not in the structured damage"
     },
     {
       "monster": "half-dragon",
@@ -6240,13 +6121,6 @@
     },
     {
       "monster": "ice-devil",
-      "class": "b",
-      "path": "actions.ice-spear.damage",
-      "status": "open",
-      "summary": "several damage entries, not all stated unconditionally in the Hit clause"
-    },
-    {
-      "monster": "ice-devil",
       "class": "d",
       "path": "actions.ice-spear",
       "status": "open",
@@ -6408,13 +6282,6 @@
     },
     {
       "monster": "invisible-stalker",
-      "class": "b",
-      "path": "actions.vortex.damage",
-      "status": "open",
-      "summary": "several damage entries, not all stated unconditionally in the Failure clause"
-    },
-    {
-      "monster": "invisible-stalker",
       "class": "d",
       "path": "actions.multiattack",
       "status": "open",
@@ -6573,13 +6440,6 @@
       "path": "traits.sunlight-sensitivity",
       "status": "open",
       "summary": "classified unmodeled (default skipped)"
-    },
-    {
-      "monster": "kraken",
-      "class": "b",
-      "path": "actions.swallow.damage",
-      "status": "open",
-      "summary": "several damage entries, not all stated unconditionally in the Failure clause"
     },
     {
       "monster": "kraken",
@@ -7136,13 +6996,6 @@
     },
     {
       "monster": "merfolk-skirmisher",
-      "class": "b",
-      "path": "actions.ocean-spear.damage",
-      "status": "open",
-      "summary": "several damage entries, not all stated unconditionally in the Hit clause"
-    },
-    {
-      "monster": "merfolk-skirmisher",
       "class": "d",
       "path": "actions.ocean-spear",
       "status": "open",
@@ -7192,20 +7045,6 @@
     },
     {
       "monster": "mimic",
-      "class": "b",
-      "path": "actions.bite.damage",
-      "status": "open",
-      "summary": "several damage entries, not all stated unconditionally in the Hit clause"
-    },
-    {
-      "monster": "mimic",
-      "class": "b",
-      "path": "actions.pseudopod.damage",
-      "status": "open",
-      "summary": "several damage entries, not all stated unconditionally in the Hit clause"
-    },
-    {
-      "monster": "mimic",
       "class": "d",
       "path": "actions.bite",
       "status": "open",
@@ -7234,27 +7073,6 @@
     },
     {
       "monster": "minotaur-of-baphomet",
-      "class": "a",
-      "path": "actions.gore.damage",
-      "status": "open",
-      "summary": "Hit clause dice ['4d6+4'] vs structured ['4d6+4', '3d6']"
-    },
-    {
-      "monster": "minotaur-of-baphomet",
-      "class": "b",
-      "path": "actions.gore.damage",
-      "status": "open",
-      "summary": "damage in a later clause is not representable"
-    },
-    {
-      "monster": "minotaur-of-baphomet",
-      "class": "b",
-      "path": "actions.gore.damage",
-      "status": "open",
-      "summary": "several damage entries, not all stated unconditionally in the Hit clause"
-    },
-    {
-      "monster": "minotaur-of-baphomet",
       "class": "d",
       "path": "actions.abyssal-glaive",
       "status": "open",
@@ -7266,27 +7084,6 @@
       "path": "actions.gore",
       "status": "open",
       "summary": "classified partly_modeled"
-    },
-    {
-      "monster": "minotaur-skeleton",
-      "class": "a",
-      "path": "actions.gore.damage",
-      "status": "open",
-      "summary": "Hit clause dice ['2d6+4'] vs structured ['2d6+4', '2d8']"
-    },
-    {
-      "monster": "minotaur-skeleton",
-      "class": "b",
-      "path": "actions.gore.damage",
-      "status": "open",
-      "summary": "damage in a later clause is not representable"
-    },
-    {
-      "monster": "minotaur-skeleton",
-      "class": "b",
-      "path": "actions.gore.damage",
-      "status": "open",
-      "summary": "several damage entries, not all stated unconditionally in the Hit clause"
     },
     {
       "monster": "minotaur-skeleton",
@@ -7361,20 +7158,6 @@
     {
       "monster": "mummy",
       "class": "b",
-      "path": "actions.rotting-fist.damage",
-      "status": "open",
-      "summary": "damage in a later clause is not representable"
-    },
-    {
-      "monster": "mummy",
-      "class": "b",
-      "path": "actions.rotting-fist.damage",
-      "status": "open",
-      "summary": "several damage entries, not all stated unconditionally in the Hit clause"
-    },
-    {
-      "monster": "mummy",
-      "class": "b",
       "path": "size",
       "status": "open",
       "summary": "size 'Medium or small' is not representable"
@@ -7399,20 +7182,6 @@
       "path": "actions.rotting-fist",
       "status": "open",
       "summary": "classified partly_modeled"
-    },
-    {
-      "monster": "mummy-lord",
-      "class": "b",
-      "path": "actions.rotting-fist.damage",
-      "status": "open",
-      "summary": "damage in a later clause is not representable"
-    },
-    {
-      "monster": "mummy-lord",
-      "class": "b",
-      "path": "actions.rotting-fist.damage",
-      "status": "open",
-      "summary": "several damage entries, not all stated unconditionally in the Hit clause"
     },
     {
       "monster": "mummy-lord",
@@ -7822,13 +7591,6 @@
     },
     {
       "monster": "otyugh",
-      "class": "b",
-      "path": "actions.bite.damage",
-      "status": "open",
-      "summary": "damage in a later clause is not representable"
-    },
-    {
-      "monster": "otyugh",
       "class": "d",
       "path": "actions.bite",
       "status": "open",
@@ -8050,27 +7812,6 @@
       "path": "reactions.riposte",
       "status": "open",
       "summary": "classified unmodeled (default skipped)"
-    },
-    {
-      "monster": "pit-fiend",
-      "class": "a",
-      "path": "actions.bite.damage",
-      "status": "open",
-      "summary": "Hit clause dice ['3d6+8'] vs structured ['3d6+8', '6d6']"
-    },
-    {
-      "monster": "pit-fiend",
-      "class": "b",
-      "path": "actions.bite.damage",
-      "status": "open",
-      "summary": "damage in a later clause is not representable"
-    },
-    {
-      "monster": "pit-fiend",
-      "class": "b",
-      "path": "actions.bite.damage",
-      "status": "open",
-      "summary": "several damage entries, not all stated unconditionally in the Hit clause"
     },
     {
       "monster": "pit-fiend",
@@ -8427,7 +8168,21 @@
       "class": "d",
       "path": "bonus_actions.swallow",
       "status": "open",
-      "summary": "classified partly_modeled"
+      "summary": "classified unmodeled (default skipped)"
+    },
+    {
+      "monster": "purple-worm",
+      "class": "d",
+      "path": "bonus_actions.swallow",
+      "status": "open",
+      "summary": "damage array without an attack or save; left unmodeled"
+    },
+    {
+      "monster": "purple-worm",
+      "class": "d",
+      "path": "bonus_actions.swallow.damage",
+      "status": "open",
+      "summary": "Failure clause states damage only as recurring or conditional later clauses; left unmodeled"
     },
     {
       "monster": "purple-worm",
@@ -8477,13 +8232,6 @@
       "path": "traits.magic-resistance",
       "status": "open",
       "summary": "classified unmodeled (default skipped)"
-    },
-    {
-      "monster": "rakshasa",
-      "class": "b",
-      "path": "actions.cursed-touch.damage",
-      "status": "open",
-      "summary": "several damage entries, not all stated unconditionally in the Hit clause"
     },
     {
       "monster": "rakshasa",
@@ -8641,20 +8389,6 @@
     },
     {
       "monster": "remorhaz",
-      "class": "b",
-      "path": "actions.bite.damage",
-      "status": "open",
-      "summary": "several damage entries, not all stated unconditionally in the Hit clause"
-    },
-    {
-      "monster": "remorhaz",
-      "class": "b",
-      "path": "bonus_actions.swallow.damage",
-      "status": "open",
-      "summary": "several damage entries, not all stated unconditionally in the Failure clause"
-    },
-    {
-      "monster": "remorhaz",
       "class": "d",
       "path": "actions.bite",
       "status": "open",
@@ -8665,7 +8399,21 @@
       "class": "d",
       "path": "bonus_actions.swallow",
       "status": "open",
-      "summary": "classified partly_modeled"
+      "summary": "classified unmodeled (default skipped)"
+    },
+    {
+      "monster": "remorhaz",
+      "class": "d",
+      "path": "bonus_actions.swallow",
+      "status": "open",
+      "summary": "damage array without an attack or save; left unmodeled"
+    },
+    {
+      "monster": "remorhaz",
+      "class": "d",
+      "path": "bonus_actions.swallow.damage",
+      "status": "open",
+      "summary": "Failure clause states damage only as recurring or conditional later clauses; left unmodeled"
     },
     {
       "monster": "remorhaz",
@@ -8680,27 +8428,6 @@
       "path": "traits.heat-aura",
       "status": "open",
       "summary": "damage array without an attack or save; left unmodeled"
-    },
-    {
-      "monster": "rhinoceros",
-      "class": "a",
-      "path": "actions.gore.damage",
-      "status": "open",
-      "summary": "Hit clause dice ['2d8+5'] vs structured ['2d8+5', '2d8']"
-    },
-    {
-      "monster": "rhinoceros",
-      "class": "b",
-      "path": "actions.gore.damage",
-      "status": "open",
-      "summary": "damage in a later clause is not representable"
-    },
-    {
-      "monster": "rhinoceros",
-      "class": "b",
-      "path": "actions.gore.damage",
-      "status": "open",
-      "summary": "several damage entries, not all stated unconditionally in the Hit clause"
     },
     {
       "monster": "rhinoceros",
@@ -8893,13 +8620,6 @@
     },
     {
       "monster": "salamander",
-      "class": "b",
-      "path": "actions.flame-spear.damage",
-      "status": "open",
-      "summary": "several damage entries, not all stated unconditionally in the Hit clause"
-    },
-    {
-      "monster": "salamander",
       "class": "d",
       "path": "actions.constrict",
       "status": "open",
@@ -8956,10 +8676,24 @@
     },
     {
       "monster": "scorpion",
+      "class": "b",
+      "path": "actions.sting.damage",
+      "status": "corrected",
+      "summary": "Hit clause states flat damage but structured damage is missing (corrected: Upstream structured damage omits the flat 1 Piercing damage that precedes the dice damage.)"
+    },
+    {
+      "monster": "scorpion",
       "class": "d",
       "path": "actions.sting",
       "status": "open",
       "summary": "classified modeled"
+    },
+    {
+      "monster": "scorpion",
+      "class": "d",
+      "path": "actions.sting.damage",
+      "status": "open",
+      "summary": "correction applied: Upstream structured damage omits the flat 1 Piercing damage that precedes the dice damage. [scorpion actions.sting.desc: \"Melee Attack Roll: +2, reach 5 ft. Hit: 1 Piercing damage plus 3 (1d6) Poison damage.\"]"
     },
     {
       "monster": "scout",
@@ -9089,13 +8823,6 @@
     },
     {
       "monster": "shambling-mound",
-      "class": "b",
-      "path": "actions.charged-tendril.damage",
-      "status": "open",
-      "summary": "several damage entries, not all stated unconditionally in the Hit clause"
-    },
-    {
-      "monster": "shambling-mound",
       "class": "d",
       "path": "actions.charged-tendril",
       "status": "open",
@@ -9106,7 +8833,21 @@
       "class": "d",
       "path": "actions.engulf",
       "status": "open",
-      "summary": "classified partly_modeled"
+      "summary": "classified unmodeled (default skipped)"
+    },
+    {
+      "monster": "shambling-mound",
+      "class": "d",
+      "path": "actions.engulf",
+      "status": "open",
+      "summary": "damage array without an attack or save; left unmodeled"
+    },
+    {
+      "monster": "shambling-mound",
+      "class": "d",
+      "path": "actions.engulf.damage",
+      "status": "open",
+      "summary": "Failure clause states damage only as recurring or conditional later clauses; left unmodeled"
     },
     {
       "monster": "shambling-mound",
@@ -9226,20 +8967,6 @@
       "path": "actions.shortsword",
       "status": "open",
       "summary": "classified modeled"
-    },
-    {
-      "monster": "solar",
-      "class": "b",
-      "path": "actions.flying-sword.damage",
-      "status": "open",
-      "summary": "several damage entries, not all stated unconditionally in the Hit clause"
-    },
-    {
-      "monster": "solar",
-      "class": "b",
-      "path": "actions.slaying-bow.damage",
-      "status": "open",
-      "summary": "several damage entries, not all stated unconditionally in the Failure clause"
     },
     {
       "monster": "solar",
@@ -9551,10 +9278,24 @@
     },
     {
       "monster": "spider",
+      "class": "b",
+      "path": "actions.bite.damage",
+      "status": "corrected",
+      "summary": "Hit clause states flat damage but structured damage is missing (corrected: Upstream structured damage omits the flat 1 Piercing damage that precedes the dice damage.)"
+    },
+    {
+      "monster": "spider",
       "class": "d",
       "path": "actions.bite",
       "status": "open",
       "summary": "classified modeled"
+    },
+    {
+      "monster": "spider",
+      "class": "d",
+      "path": "actions.bite.damage",
+      "status": "open",
+      "summary": "correction applied: Upstream structured damage omits the flat 1 Piercing damage that precedes the dice damage. [spider actions.bite.desc: \"Melee Attack Roll: +4, reach 5 ft. Hit: 1 Piercing damage plus 2 (1d4) Poison damage.\"]"
     },
     {
       "monster": "spider",
@@ -9716,27 +9457,6 @@
       "path": "traits.death-burst",
       "status": "open",
       "summary": "classified modeled"
-    },
-    {
-      "monster": "stirge",
-      "class": "a",
-      "path": "actions.proboscis.damage",
-      "status": "open",
-      "summary": "Hit clause dice ['1d6+3'] vs structured ['1d6+3', '2d4']"
-    },
-    {
-      "monster": "stirge",
-      "class": "b",
-      "path": "actions.proboscis.damage",
-      "status": "open",
-      "summary": "damage in a later clause is not representable"
-    },
-    {
-      "monster": "stirge",
-      "class": "b",
-      "path": "actions.proboscis.damage",
-      "status": "open",
-      "summary": "several damage entries, not all stated unconditionally in the Hit clause"
     },
     {
       "monster": "stirge",
@@ -9922,17 +9642,10 @@
     },
     {
       "monster": "swarm-of-bats",
-      "class": "b",
-      "path": "actions.bites.damage",
-      "status": "open",
-      "summary": "several damage entries, not all stated unconditionally in the Hit clause"
-    },
-    {
-      "monster": "swarm-of-bats",
       "class": "d",
       "path": "actions.bites",
       "status": "open",
-      "summary": "classified modeled"
+      "summary": "classified partly_modeled"
     },
     {
       "monster": "swarm-of-bats",
@@ -9940,13 +9653,6 @@
       "path": "traits.swarm",
       "status": "open",
       "summary": "classified unmodeled (default skipped)"
-    },
-    {
-      "monster": "swarm-of-crawling-claws",
-      "class": "b",
-      "path": "actions.swarm-of-grasping-hands.damage",
-      "status": "open",
-      "summary": "several damage entries, not all stated unconditionally in the Hit clause"
     },
     {
       "monster": "swarm-of-crawling-claws",
@@ -9964,17 +9670,10 @@
     },
     {
       "monster": "swarm-of-insects",
-      "class": "b",
-      "path": "actions.bites.damage",
-      "status": "open",
-      "summary": "several damage entries, not all stated unconditionally in the Hit clause"
-    },
-    {
-      "monster": "swarm-of-insects",
       "class": "d",
       "path": "actions.bites",
       "status": "open",
-      "summary": "classified modeled"
+      "summary": "classified partly_modeled"
     },
     {
       "monster": "swarm-of-insects",
@@ -9992,17 +9691,10 @@
     },
     {
       "monster": "swarm-of-piranhas",
-      "class": "b",
-      "path": "actions.bites.damage",
-      "status": "open",
-      "summary": "several damage entries, not all stated unconditionally in the Hit clause"
-    },
-    {
-      "monster": "swarm-of-piranhas",
       "class": "d",
       "path": "actions.bites",
       "status": "open",
-      "summary": "classified modeled"
+      "summary": "classified partly_modeled"
     },
     {
       "monster": "swarm-of-piranhas",
@@ -10020,17 +9712,10 @@
     },
     {
       "monster": "swarm-of-rats",
-      "class": "b",
-      "path": "actions.bites.damage",
-      "status": "open",
-      "summary": "several damage entries, not all stated unconditionally in the Hit clause"
-    },
-    {
-      "monster": "swarm-of-rats",
       "class": "d",
       "path": "actions.bites",
       "status": "open",
-      "summary": "classified modeled"
+      "summary": "classified partly_modeled"
     },
     {
       "monster": "swarm-of-rats",
@@ -10041,17 +9726,10 @@
     },
     {
       "monster": "swarm-of-ravens",
-      "class": "b",
-      "path": "actions.beaks.damage",
-      "status": "open",
-      "summary": "several damage entries, not all stated unconditionally in the Hit clause"
-    },
-    {
-      "monster": "swarm-of-ravens",
       "class": "d",
       "path": "actions.beaks",
       "status": "open",
-      "summary": "classified modeled"
+      "summary": "classified partly_modeled"
     },
     {
       "monster": "swarm-of-ravens",
@@ -10069,17 +9747,10 @@
     },
     {
       "monster": "swarm-of-venomous-snakes",
-      "class": "b",
-      "path": "actions.bites.damage",
-      "status": "open",
-      "summary": "several damage entries, not all stated unconditionally in the Hit clause"
-    },
-    {
-      "monster": "swarm-of-venomous-snakes",
       "class": "d",
       "path": "actions.bites",
       "status": "open",
-      "summary": "classified modeled"
+      "summary": "classified partly_modeled"
     },
     {
       "monster": "swarm-of-venomous-snakes",
@@ -10128,7 +9799,21 @@
       "class": "d",
       "path": "bonus_actions.swallow",
       "status": "open",
-      "summary": "classified partly_modeled"
+      "summary": "classified unmodeled (default skipped)"
+    },
+    {
+      "monster": "tarrasque",
+      "class": "d",
+      "path": "bonus_actions.swallow",
+      "status": "open",
+      "summary": "damage array without an attack or save; left unmodeled"
+    },
+    {
+      "monster": "tarrasque",
+      "class": "d",
+      "path": "bonus_actions.swallow.damage",
+      "status": "open",
+      "summary": "Failure clause states damage only as recurring or conditional later clauses; left unmodeled"
     },
     {
       "monster": "tarrasque",
@@ -10290,27 +9975,6 @@
       "path": "traits.siege-monster",
       "status": "open",
       "summary": "classified unmodeled (default skipped)"
-    },
-    {
-      "monster": "triceratops",
-      "class": "a",
-      "path": "actions.gore.damage",
-      "status": "open",
-      "summary": "Hit clause dice ['2d12+6'] vs structured ['2d12+6', '2d8']"
-    },
-    {
-      "monster": "triceratops",
-      "class": "b",
-      "path": "actions.gore.damage",
-      "status": "open",
-      "summary": "damage in a later clause is not representable"
-    },
-    {
-      "monster": "triceratops",
-      "class": "b",
-      "path": "actions.gore.damage",
-      "status": "open",
-      "summary": "several damage entries, not all stated unconditionally in the Hit clause"
     },
     {
       "monster": "triceratops",
@@ -10588,13 +10252,6 @@
     {
       "monster": "vampire-familiar",
       "class": "b",
-      "path": "actions.umbral-dagger.damage",
-      "status": "open",
-      "summary": "several damage entries, not all stated unconditionally in the Hit clause"
-    },
-    {
-      "monster": "vampire-familiar",
-      "class": "b",
       "path": "size",
       "status": "open",
       "summary": "size 'Medium or small' is not representable"
@@ -10811,13 +10468,6 @@
     },
     {
       "monster": "vampire-vampire",
-      "class": "b",
-      "path": "actions.grave-strike.damage",
-      "status": "open",
-      "summary": "several damage entries, not all stated unconditionally in the Hit clause"
-    },
-    {
-      "monster": "vampire-vampire",
       "class": "d",
       "path": "actions.bite",
       "status": "open",
@@ -10982,7 +10632,21 @@
       "class": "d",
       "path": "actions.spores",
       "status": "open",
-      "summary": "classified partly_modeled"
+      "summary": "classified unmodeled (default skipped)"
+    },
+    {
+      "monster": "vrock",
+      "class": "d",
+      "path": "actions.spores",
+      "status": "open",
+      "summary": "damage array without an attack or save; left unmodeled"
+    },
+    {
+      "monster": "vrock",
+      "class": "d",
+      "path": "actions.spores.damage",
+      "status": "open",
+      "summary": "Failure clause states damage only as recurring or conditional later clauses; left unmodeled"
     },
     {
       "monster": "vrock",
@@ -11018,27 +10682,6 @@
       "path": "traits.pack-tactics",
       "status": "open",
       "summary": "classified unmodeled (default skipped)"
-    },
-    {
-      "monster": "warhorse",
-      "class": "a",
-      "path": "actions.hooves.damage",
-      "status": "open",
-      "summary": "Hit clause dice ['2d4+4'] vs structured ['2d4+4', '2d4']"
-    },
-    {
-      "monster": "warhorse",
-      "class": "b",
-      "path": "actions.hooves.damage",
-      "status": "open",
-      "summary": "damage in a later clause is not representable"
-    },
-    {
-      "monster": "warhorse",
-      "class": "b",
-      "path": "actions.hooves.damage",
-      "status": "open",
-      "summary": "several damage entries, not all stated unconditionally in the Hit clause"
     },
     {
       "monster": "warhorse",
@@ -11109,13 +10752,6 @@
       "path": "reactions.parry",
       "status": "open",
       "summary": "classified unmodeled (default skipped)"
-    },
-    {
-      "monster": "water-elemental",
-      "class": "b",
-      "path": "actions.whelm.damage",
-      "status": "open",
-      "summary": "several damage entries, not all stated unconditionally in the Failure clause"
     },
     {
       "monster": "water-elemental",
@@ -11280,31 +10916,10 @@
     },
     {
       "monster": "wereboar-boar",
-      "class": "a",
-      "path": "actions.tusk.damage",
-      "status": "open",
-      "summary": "Hit clause dice ['2d6+3'] vs structured ['2d6+3', '2d6']"
-    },
-    {
-      "monster": "wereboar-boar",
       "class": "b",
       "path": "actions.multiattack.effects",
       "status": "open",
       "summary": "correction not applied: Wereboar boar form only has Tusk and Gore actions; upstream Multiattack prose retains the human/hybrid Javelin reference."
-    },
-    {
-      "monster": "wereboar-boar",
-      "class": "b",
-      "path": "actions.tusk.damage",
-      "status": "open",
-      "summary": "damage in a later clause is not representable"
-    },
-    {
-      "monster": "wereboar-boar",
-      "class": "b",
-      "path": "actions.tusk.damage",
-      "status": "open",
-      "summary": "several damage entries, not all stated unconditionally in the Hit clause"
     },
     {
       "monster": "wereboar-boar",
@@ -11361,27 +10976,6 @@
       "path": "bonus_actions.shape-shift",
       "status": "open",
       "summary": "classified unmodeled (default skipped)"
-    },
-    {
-      "monster": "wereboar-hybrid",
-      "class": "a",
-      "path": "actions.tusk.damage",
-      "status": "open",
-      "summary": "Hit clause dice ['2d6+3'] vs structured ['2d6+3', '2d6']"
-    },
-    {
-      "monster": "wereboar-hybrid",
-      "class": "b",
-      "path": "actions.tusk.damage",
-      "status": "open",
-      "summary": "damage in a later clause is not representable"
-    },
-    {
-      "monster": "wereboar-hybrid",
-      "class": "b",
-      "path": "actions.tusk.damage",
-      "status": "open",
-      "summary": "several damage entries, not all stated unconditionally in the Hit clause"
     },
     {
       "monster": "wereboar-hybrid",

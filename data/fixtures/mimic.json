@@ -1,0 +1,141 @@
+{
+  "ability_scores": {
+    "charisma": 8,
+    "constitution": 15,
+    "dexterity": 12,
+    "intelligence": 5,
+    "strength": 17,
+    "wisdom": 13
+  },
+  "actions": [
+    {
+      "desc": "Melee Attack Roll: +5 (with Advantage if the target is Grappled by the mimic), reach 5 ft. Hit: 7 (1d8 + 3) Piercing damage—or 12 (2d8 + 3) Piercing damage if the target is Grappled by the mimic—plus 4 (1d8) Acid damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "1d8",
+                "magical": false,
+                "modifier": 3,
+                "type": "piercing"
+              },
+              {
+                "dice": "1d8",
+                "if_target": "grappled",
+                "if_target_from_actor": true,
+                "magical": false,
+                "modifier": 0,
+                "type": "piercing"
+              },
+              {
+                "dice": "1d8",
+                "magical": false,
+                "modifier": 0,
+                "type": "acid"
+              }
+            ],
+            "modifier": 5,
+            "on_hit": [],
+            "range": null,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "bite",
+      "kind": "modeled",
+      "name": "Bite"
+    },
+    {
+      "agent_clauses": [
+        "If the target is a Large or smaller creature, it has the Grappled condition (escape DC 13). Ability checks made to escape this grapple have Disadvantage."
+      ],
+      "desc": "Melee Attack Roll: +5, reach 5 ft. Hit: 7 (1d8 + 3) Bludgeoning damage plus 4 (1d8) Acid damage. If the target is a Large or smaller creature, it has the Grappled condition (escape DC 13). Ability checks made to escape this grapple have Disadvantage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "1d8",
+                "magical": false,
+                "modifier": 3,
+                "type": "bludgeoning"
+              },
+              {
+                "dice": "1d8",
+                "magical": false,
+                "modifier": 0,
+                "type": "acid"
+              }
+            ],
+            "modifier": 5,
+            "on_hit": [],
+            "range": null,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "pseudopod",
+      "kind": "partly_modeled",
+      "name": "Pseudopod"
+    }
+  ],
+  "alignment": "neutral",
+  "armor_class": [
+    {
+      "value": 12
+    }
+  ],
+  "bonus_actions": [
+    {
+      "default_resolution": "skipped",
+      "desc": "The mimic shape-shifts to resemble a Medium or Small object while retaining its game statistics, or it returns to its true blob form. Any equipment it is wearing or carrying isn’t transformed.",
+      "id": "shape-shift",
+      "kind": "unmodeled",
+      "name": "Shape-Shift"
+    }
+  ],
+  "challenge_rating": 2,
+  "condition_immunities": [
+    "prone"
+  ],
+  "damage_immunities": [
+    "acid"
+  ],
+  "hit_points": {
+    "average": 58,
+    "dice": "9d8+18"
+  },
+  "id": "mimic",
+  "initiative": 1,
+  "name": "Mimic",
+  "proficiency_bonus": 2,
+  "schema_version": "1",
+  "senses": {
+    "darkvision": 60,
+    "passive_perception": 11
+  },
+  "size": "medium",
+  "skills": {
+    "stealth": 5
+  },
+  "source": "srd-5.2.1",
+  "speeds": {
+    "walk": {
+      "feet": 20
+    }
+  },
+  "traits": [
+    {
+      "default_resolution": "skipped",
+      "desc": "The mimic adheres to anything that touches it. A Huge or smaller creature adhered to the mimic has the Grappled condition (escape DC 13). Ability checks made to escape this grapple have Disadvantage.",
+      "id": "adhesive-object-form-only",
+      "kind": "unmodeled",
+      "name": "Adhesive (Object Form Only)"
+    }
+  ],
+  "type": "monstrosity",
+  "xp": 450
+}

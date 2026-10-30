@@ -1,0 +1,100 @@
+{
+  "ability_scores": {
+    "charisma": 1,
+    "constitution": 14,
+    "dexterity": 13,
+    "intelligence": 1,
+    "strength": 3,
+    "wisdom": 7
+  },
+  "actions": [
+    {
+      "agent_clauses": [
+        "Conditional damage, not modeled: or 3 (1d4 + 1) Poison damage if the swarm is Bloodied."
+      ],
+      "desc": "Melee Attack Roll: +3, reach 5 ft. Hit: 6 (2d4 + 1) Poison damage, or 3 (1d4 + 1) Poison damage if the swarm is Bloodied.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "2d4",
+                "magical": false,
+                "modifier": 1,
+                "type": "poison"
+              }
+            ],
+            "modifier": 3,
+            "on_hit": [],
+            "range": null,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "bites",
+      "kind": "partly_modeled",
+      "name": "Bites"
+    }
+  ],
+  "alignment": "unaligned",
+  "armor_class": [
+    {
+      "value": 11
+    }
+  ],
+  "challenge_rating": 0.5,
+  "condition_immunities": [
+    "charmed",
+    "frightened",
+    "grappled",
+    "paralyzed",
+    "petrified",
+    "prone",
+    "restrained",
+    "stunned"
+  ],
+  "damage_resistances": [
+    "bludgeoning",
+    "piercing",
+    "slashing"
+  ],
+  "hit_points": {
+    "average": 19,
+    "dice": "3d8+6"
+  },
+  "id": "swarm-of-insects",
+  "initiative": 1,
+  "name": "Swarm of Insects",
+  "proficiency_bonus": 2,
+  "schema_version": "1",
+  "senses": {
+    "blindsight": 30,
+    "passive_perception": 8
+  },
+  "size": "medium",
+  "source": "srd-5.2.1",
+  "speeds": {
+    "walk": {
+      "feet": 20
+    }
+  },
+  "traits": [
+    {
+      "default_resolution": "skipped",
+      "desc": "If the swarm has a Climb Speed, the swarm can climb difficult surfaces, including along ceilings, without needing to make an ability check.",
+      "id": "spider-climb",
+      "kind": "unmodeled",
+      "name": "Spider Climb"
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "The swarm can occupy another creature’s space and vice versa, and the swarm can move through any opening large enough for a Tiny insect. The swarm can’t regain Hit Points or gain Temporary Hit Points.",
+      "id": "swarm",
+      "kind": "unmodeled",
+      "name": "Swarm"
+    }
+  ],
+  "type": "swarm of tiny beasts",
+  "xp": 100
+}

@@ -102,36 +102,10 @@
   ],
   "bonus_actions": [
     {
-      "agent_clauses": [
-        "The target is swallowed by the worm, and the Grappled condition ends. A swallowed creature has the Blinded and Restrained conditions, has Total Cover against attacks and other effects outside the worm, and takes  at the start of each of the worm’s turns. If the worm takes 30 damage or more on a single turn from a creature inside it, the worm must succeed on a DC 21 Constitution saving throw at the end of that turn or regurgitate all swallowed creatures, each of which falls in a space within 5 feet of the worm and has the Prone condition. If the worm dies, any swallowed creature no longer has the Restrained condition and can escape from the corpse using 20 feet of movement, exiting Prone"
-      ],
+      "default_resolution": "skipped",
       "desc": "Strength Saving Throw: DC 19, one Large or smaller creature Grappled by the worm (it can have up to three creatures swallowed at a time). Failure: The target is swallowed by the worm, and the Grappled condition ends. A swallowed creature has the Blinded and Restrained conditions, has Total Cover against attacks and other effects outside the worm, and takes 17 (5d6) Acid damage at the start of each of the worm’s turns. If the worm takes 30 damage or more on a single turn from a creature inside it, the worm must succeed on a DC 21 Constitution saving throw at the end of that turn or regurgitate all swallowed creatures, each of which falls in a space within 5 feet of the worm and has the Prone condition. If the worm dies, any swallowed creature no longer has the Restrained condition and can escape from the corpse using 20 feet of movement, exiting Prone.",
-      "effects": [
-        {
-          "saving_throw": {
-            "ability": "str",
-            "creature_type_gate": null,
-            "damage": [
-              {
-                "dice": "5d6",
-                "magical": false,
-                "modifier": 0,
-                "type": "acid"
-              }
-            ],
-            "dc": 19,
-            "half_on_success": false,
-            "hp_gate": null,
-            "immunity_after_success": false,
-            "no_damage_on_success": true,
-            "on_failure": [],
-            "repeat_save": null,
-            "two_stage": null
-          }
-        }
-      ],
       "id": "swallow",
-      "kind": "partly_modeled",
+      "kind": "unmodeled",
       "name": "Swallow"
     }
   ],

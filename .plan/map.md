@@ -13,7 +13,7 @@ Both modes ship in phase 1. Everything the engine can't model is labeled agent j
 
 - Domain: D&D 5e homebrew testing. Consult the `grilling` and `domain-modeling` skills in every decision session, and `implement`, `tdd`, `codebase-design`, `domain-modeling`, and `code-review` in every build session (`writing-for-agents` when authoring the skill). Vocabulary lives in `CONTEXT.md`.
 - Build phase override: all 24 phase-1 design tickets and 14 ADRs (`docs/adr/0001` through `0014`) are closed. This map now carries execution in place through `task` tickets (`025` through `034`) that deliver the working Rust workspace, reference datasets, `bench` CLI, agent skill, and release installers.
-- Existing material: `data/srd/2024/` holds pinned SRD 5.2.1 JSON and schemas, `data/srd/corrections.json` holds the 72 audited upstream corrections, `data/party/standard-spells.json` holds the standard party spell list, `docs/prototypes/report-format.html` holds the batch report prototype, and `scripts/` holds import and survey tooling.
+- Existing material: `data/srd/2024/` holds pinned SRD 5.2.1 JSON and schemas, `data/srd/corrections.json` holds the 77 audited upstream corrections, `data/party/standard-spells.json` holds the standard party spell list, `docs/prototypes/report-format.html` holds the batch report prototype, and `scripts/` holds import and survey tooling.
 - The map was reset on 2026-10-24. Earlier decisions were discarded on purpose and live only in git history (commit 9120650).
 - The three research tickets (SRD ability survey, CR and encounter guidance, agent skill locations) ran on 2026-10-27 and are closed; findings live in `docs/research/`.
 
@@ -49,6 +49,7 @@ Both modes ship in phase 1. Everything the engine can't model is labeled agent j
 - [Standard party progression tables and generator](closed/027-standard-party-progression-tables-and-generator.md): four step-based progression tables in `data/party/progression/`, `scripts/generate-party.py` (with `--check`) writing 80 stat blocks to `data/party/standard/`, casters cast effects-file ids, `StatBlock` gains `spellcasting` and `notes`, and the party exposes engine gaps (spell slots, save DC, cantrip scaling, bonus actions, death-save hits) handed to the batch runner ticket.
 - [SRD importer vocabulary gaps](closed/035-srd-importer-vocabulary-gaps.md): multiattack `Choice` takes per-option counts and K distinct picks (swap retired), `size_choice` beside `size`, `Damage.if_target` plus `on_hit` for later-clause damage, recharge dice N-6 or N for N in 2 to 6, recharge after rest maps to `PerRest` short once. To be built in tickets 036 to 039.
 - [Multiattack choice with per-option counts](closed/036-multiattack-choice-semantics.md): `ChoiceOption { action_id, count }` is the new `MultiattackStep::Choice` shape, `Multiattack.swap` is retired, the engine resolves `pick` distinct slots, and the importer expands upstream options into pick slots so swap, choose-2, choose-3, and unequal-count shapes all graduate. SRD fixtures rose from 186 to 227 of 341.
+- [Conditional and later-clause attack damage](closed/037-conditional-and-later-clause-damage.md): `Damage` gains `if_target` and `if_target_from_actor` (the engine already tracks condition sources), and the importer places each damage entry by where the prose states it. Later-sentence damage is always conditional or recurring, so it stays an agent clause and nothing routes to `on_hit`. The Mimic's grapple gate is built but inert until grapples are modeled. Five corrections restore omitted flat 1 damage, and SRD fixtures rose from 227 to 269 of 341. See `docs/adr/0005-closed-effect-vocabulary-with-agent-clauses.md`.
 
 ## Not yet specified
 
@@ -66,14 +67,14 @@ Both modes ship in phase 1. Everything the engine can't model is labeled agent j
 
 Takeable now, in order:
 
-- Conditional and later-clause attack damage (task)
 - Size choice field on stat blocks (task)
 - Recharge ranges and recharge after rest (task)
+- Hit-sentence tail effects (task)
 - Live mode CLI, overrides, log, public view and replay (task)
 
 Blocked:
 
-- SRD importer, review pipeline and fixtures (task), blocked by tickets 037, 038, and 039; first pass built, 227 of 341 graduated after ticket 036
+- SRD importer, review pipeline and fixtures (task), blocked by tickets 038 and 039; first pass built, 269 of 341 graduated after ticket 037
 - Batch tactics policy and batch runner (task), blocked by SRD importer, review pipeline and fixtures and Live mode CLI, overrides, log, public view and replay
 - Empirical CR baseline curve and embedded reference data (task), blocked by Batch tactics policy and batch runner
 - Agent skill and house-rule templates (task), blocked by Live mode CLI, overrides, log, public view and replay and Empirical CR baseline curve and embedded reference data

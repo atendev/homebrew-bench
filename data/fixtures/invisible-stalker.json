@@ -1,0 +1,180 @@
+{
+  "ability_scores": {
+    "charisma": 11,
+    "constitution": 14,
+    "dexterity": 19,
+    "intelligence": 10,
+    "strength": 16,
+    "wisdom": 15
+  },
+  "actions": [
+    {
+      "desc": "The stalker makes three Wind Swipe attacks. It can replace one attack with a use of Vortex.",
+      "effects": [
+        {
+          "multiattack": {
+            "steps": [
+              {
+                "action": {
+                  "action_id": "wind-swipe",
+                  "count": 2
+                }
+              },
+              {
+                "choice": {
+                  "options": [
+                    {
+                      "action_id": "wind-swipe",
+                      "count": 1
+                    },
+                    {
+                      "action_id": "vortex",
+                      "count": 1
+                    }
+                  ],
+                  "pick": 1
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "id": "multiattack",
+      "kind": "modeled",
+      "name": "Multiattack"
+    },
+    {
+      "desc": "Melee Attack Roll: +7, reach 5 ft. Hit: 11 (2d6 + 4) Force damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "2d6",
+                "magical": false,
+                "modifier": 4,
+                "type": "force"
+              }
+            ],
+            "modifier": 7,
+            "on_hit": [],
+            "range": null,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "wind-swipe",
+      "kind": "modeled",
+      "name": "Wind Swipe"
+    },
+    {
+      "agent_clauses": [
+        "and the target has the Grappled condition (escape DC 13). Until the grapple ends, the target can’t cast spells with a Verbal component and takes 7 (2d6) Thunder damage at the start of each of the stalker’s turns"
+      ],
+      "desc": "Constitution Saving Throw: DC 14, one Large or smaller creature in the stalker’s space. Failure: 7 (1d8 + 3) Thunder damage, and the target has the Grappled condition (escape DC 13). Until the grapple ends, the target can’t cast spells with a Verbal component and takes 7 (2d6) Thunder damage at the start of each of the stalker’s turns.",
+      "effects": [
+        {
+          "saving_throw": {
+            "ability": "con",
+            "creature_type_gate": null,
+            "damage": [
+              {
+                "dice": "1d8",
+                "magical": false,
+                "modifier": 3,
+                "type": "thunder"
+              }
+            ],
+            "dc": 14,
+            "half_on_success": false,
+            "hp_gate": null,
+            "immunity_after_success": false,
+            "no_damage_on_success": true,
+            "on_failure": [],
+            "repeat_save": null,
+            "two_stage": null
+          }
+        }
+      ],
+      "id": "vortex",
+      "kind": "partly_modeled",
+      "name": "Vortex"
+    }
+  ],
+  "alignment": "neutral",
+  "armor_class": [
+    {
+      "value": 14
+    }
+  ],
+  "challenge_rating": 6,
+  "condition_immunities": [
+    "exhaustion",
+    "grappled",
+    "paralyzed",
+    "petrified",
+    "poisoned",
+    "prone",
+    "restrained",
+    "unconscious"
+  ],
+  "damage_immunities": [
+    "poison"
+  ],
+  "damage_resistances": [
+    "bludgeoning",
+    "piercing",
+    "slashing"
+  ],
+  "hit_points": {
+    "average": 97,
+    "dice": "13d10+26"
+  },
+  "id": "invisible-stalker",
+  "initiative": 4,
+  "languages": [
+    "Common",
+    "Primordial (Auran)"
+  ],
+  "name": "Invisible Stalker",
+  "proficiency_bonus": 3,
+  "schema_version": "1",
+  "senses": {
+    "darkvision": 60,
+    "passive_perception": 18
+  },
+  "size": "large",
+  "skills": {
+    "perception": 8,
+    "stealth": 10
+  },
+  "source": "srd-5.2.1",
+  "speeds": {
+    "fly": {
+      "feet": 50,
+      "hover": true
+    },
+    "walk": {
+      "feet": 50
+    }
+  },
+  "traits": [
+    {
+      "default_resolution": "skipped",
+      "desc": "The stalker can enter an enemy’s space and stop there. It can move through a space as narrow as 1 inch without expending extra movement to do so.",
+      "id": "air-form",
+      "kind": "unmodeled",
+      "name": "Air Form"
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "The stalker has the Invisible condition.",
+      "id": "invisibility",
+      "kind": "unmodeled",
+      "name": "Invisibility"
+    }
+  ],
+  "type": "elemental",
+  "xp": 2300
+}

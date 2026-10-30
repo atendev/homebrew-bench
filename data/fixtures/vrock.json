@@ -60,36 +60,10 @@
       "name": "Shred"
     },
     {
-      "agent_clauses": [
-        "The target has the Poisoned condition and repeats the save at the end of each of its turns, ending the effect on itself on a success. While Poisoned, the target takes  at the start of each of its turns. Emptying a flask of Holy Water on the target ends the effect early"
-      ],
+      "default_resolution": "skipped",
       "desc": "Constitution Saving Throw: DC 15, each creature in a 20-foot Emanation originating from the vrock. Failure: The target has the Poisoned condition and repeats the save at the end of each of its turns, ending the effect on itself on a success. While Poisoned, the target takes 5 (1d10) Poison damage at the start of each of its turns. Emptying a flask of Holy Water on the target ends the effect early.",
-      "effects": [
-        {
-          "saving_throw": {
-            "ability": "con",
-            "creature_type_gate": null,
-            "damage": [
-              {
-                "dice": "1d10",
-                "magical": false,
-                "modifier": 0,
-                "type": "poison"
-              }
-            ],
-            "dc": 15,
-            "half_on_success": false,
-            "hp_gate": null,
-            "immunity_after_success": false,
-            "no_damage_on_success": true,
-            "on_failure": [],
-            "repeat_save": null,
-            "two_stage": null
-          }
-        }
-      ],
       "id": "spores",
-      "kind": "partly_modeled",
+      "kind": "unmodeled",
       "name": "Spores",
       "usage": {
         "recharge": {

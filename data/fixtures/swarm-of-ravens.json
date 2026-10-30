@@ -1,0 +1,110 @@
+{
+  "ability_scores": {
+    "charisma": 6,
+    "constitution": 12,
+    "dexterity": 14,
+    "intelligence": 5,
+    "strength": 6,
+    "wisdom": 12
+  },
+  "actions": [
+    {
+      "agent_clauses": [
+        "Conditional damage, not modeled: or 2 (1d4) Piercing damage if the swarm is Bloodied."
+      ],
+      "desc": "Melee Attack Roll: +4, reach 5 ft. Hit: 5 (1d6 + 2) Piercing damage, or 2 (1d4) Piercing damage if the swarm is Bloodied.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "1d6",
+                "magical": false,
+                "modifier": 2,
+                "type": "piercing"
+              }
+            ],
+            "modifier": 4,
+            "on_hit": [],
+            "range": null,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "beaks",
+      "kind": "partly_modeled",
+      "name": "Beaks"
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "Wisdom Saving Throw: DC 10, one creature in the swarm’s space. Failure: The target has the Deafened condition until the start of the swarm’s next turn. While Deafened, the target also has Disadvantage on ability checks and attack rolls.",
+      "id": "cacophony",
+      "kind": "unmodeled",
+      "name": "Cacophony",
+      "usage": {
+        "recharge": {
+          "dice": "6"
+        }
+      }
+    }
+  ],
+  "alignment": "unaligned",
+  "armor_class": [
+    {
+      "value": 12
+    }
+  ],
+  "challenge_rating": 0.25,
+  "condition_immunities": [
+    "charmed",
+    "frightened",
+    "grappled",
+    "paralyzed",
+    "petrified",
+    "prone",
+    "restrained",
+    "stunned"
+  ],
+  "damage_resistances": [
+    "bludgeoning",
+    "piercing",
+    "slashing"
+  ],
+  "hit_points": {
+    "average": 11,
+    "dice": "2d8+2"
+  },
+  "id": "swarm-of-ravens",
+  "initiative": 2,
+  "name": "Swarm of Ravens",
+  "proficiency_bonus": 2,
+  "schema_version": "1",
+  "senses": {
+    "passive_perception": 15
+  },
+  "size": "medium",
+  "skills": {
+    "perception": 5
+  },
+  "source": "srd-5.2.1",
+  "speeds": {
+    "fly": {
+      "feet": 50
+    },
+    "walk": {
+      "feet": 10
+    }
+  },
+  "traits": [
+    {
+      "default_resolution": "skipped",
+      "desc": "The swarm can occupy another creature’s space and vice versa, and the swarm can move through any opening large enough for a Tiny raven. The swarm can’t regain Hit Points or gain Temporary Hit Points.",
+      "id": "swarm",
+      "kind": "unmodeled",
+      "name": "Swarm"
+    }
+  ],
+  "type": "swarm of tiny beasts",
+  "xp": 50
+}

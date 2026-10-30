@@ -1,0 +1,163 @@
+{
+  "ability_scores": {
+    "charisma": 6,
+    "constitution": 19,
+    "dexterity": 11,
+    "intelligence": 6,
+    "strength": 16,
+    "wisdom": 13
+  },
+  "actions": [
+    {
+      "desc": "The otyugh makes one Bite attack and two Tentacle attacks.",
+      "effects": [
+        {
+          "multiattack": {
+            "steps": [
+              {
+                "action": {
+                  "action_id": "bite",
+                  "count": 1
+                }
+              },
+              {
+                "action": {
+                  "action_id": "tentacle",
+                  "count": 2
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "id": "multiattack",
+      "kind": "modeled",
+      "name": "Multiattack"
+    },
+    {
+      "agent_clauses": [
+        "Whenever the Poisoned target finishes a Long Rest, it is subjected to the following effect. Constitution Saving Throw: DC 15. Failure: The target’s Hit Point maximum decreases by 5 (1d10) and doesn’t return to normal until the Poisoned condition ends on the target. Success: The Poisoned condition ends."
+      ],
+      "desc": "Melee Attack Roll: +6, reach 5 ft. Hit: 12 (2d8 + 3) Piercing damage, and the target has the Poisoned condition. Whenever the Poisoned target finishes a Long Rest, it is subjected to the following effect. Constitution Saving Throw: DC 15. Failure: The target’s Hit Point maximum decreases by 5 (1d10) and doesn’t return to normal until the Poisoned condition ends on the target. Success: The Poisoned condition ends.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "2d8",
+                "magical": false,
+                "modifier": 3,
+                "type": "piercing"
+              }
+            ],
+            "modifier": 6,
+            "on_hit": [],
+            "range": null,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "bite",
+      "kind": "partly_modeled",
+      "name": "Bite"
+    },
+    {
+      "agent_clauses": [
+        "If the target is a Medium or smaller creature, it has the Grappled condition (escape DC 13) from one of two tentacles."
+      ],
+      "desc": "Melee Attack Roll: +6, reach 10 ft. Hit: 12 (2d8 + 3) Piercing damage. If the target is a Medium or smaller creature, it has the Grappled condition (escape DC 13) from one of two tentacles.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "2d8",
+                "magical": false,
+                "modifier": 3,
+                "type": "piercing"
+              }
+            ],
+            "modifier": 6,
+            "on_hit": [],
+            "range": null,
+            "reach": 10,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "tentacle",
+      "kind": "partly_modeled",
+      "name": "Tentacle"
+    },
+    {
+      "agent_clauses": [
+        "and the target has the Stunned condition until the start of the otyugh’s next turn"
+      ],
+      "desc": "Constitution Saving Throw: DC 14, each creature Grappled by the otyugh. Failure: 16 (3d8 + 3) Bludgeoning damage, and the target has the Stunned condition until the start of the otyugh’s next turn. Success: Half damage only.",
+      "effects": [
+        {
+          "saving_throw": {
+            "ability": "con",
+            "creature_type_gate": null,
+            "damage": [
+              {
+                "dice": "3d8",
+                "magical": false,
+                "modifier": 3,
+                "type": "bludgeoning"
+              }
+            ],
+            "dc": 14,
+            "half_on_success": true,
+            "hp_gate": null,
+            "immunity_after_success": false,
+            "no_damage_on_success": false,
+            "on_failure": [],
+            "repeat_save": null,
+            "two_stage": null
+          }
+        }
+      ],
+      "id": "tentacle-slam",
+      "kind": "partly_modeled",
+      "name": "Tentacle Slam"
+    }
+  ],
+  "alignment": "neutral",
+  "armor_class": [
+    {
+      "value": 14
+    }
+  ],
+  "challenge_rating": 5,
+  "hit_points": {
+    "average": 104,
+    "dice": "11d10+44"
+  },
+  "id": "otyugh",
+  "initiative": 0,
+  "languages": [
+    "Otyugh",
+    "telepathy 120 ft. (doesn’t allow the receiving creature to respond telepathically)"
+  ],
+  "name": "Otyugh",
+  "proficiency_bonus": 3,
+  "saving_throws": {
+    "con": 7
+  },
+  "schema_version": "1",
+  "senses": {
+    "darkvision": 120,
+    "passive_perception": 11
+  },
+  "size": "large",
+  "source": "srd-5.2.1",
+  "speeds": {
+    "walk": {
+      "feet": 30
+    }
+  },
+  "type": "aberration",
+  "xp": 1800
+}

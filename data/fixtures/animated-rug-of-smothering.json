@@ -1,0 +1,82 @@
+{
+  "ability_scores": {
+    "charisma": 1,
+    "constitution": 10,
+    "dexterity": 14,
+    "intelligence": 1,
+    "strength": 17,
+    "wisdom": 3
+  },
+  "actions": [
+    {
+      "agent_clauses": [
+        "If the target is a Medium or smaller creature, the rug can give it the Grappled condition (escape DC 13) instead of dealing damage. Until the grapple ends, the target has the Blinded and Restrained conditions, is suffocating, and takes 10 (2d6 + 3) Bludgeoning damage at the start of each of its turns. The rug can smother only one creature at a time. While grappling the target, the rug can’t take this action, the rug halves the damage it takes (round down), and the target takes the same amount of damage."
+      ],
+      "desc": "Melee Attack Roll: +5, reach 5 ft. Hit: 10 (2d6 + 3) Bludgeoning damage. If the target is a Medium or smaller creature, the rug can give it the Grappled condition (escape DC 13) instead of dealing damage. Until the grapple ends, the target has the Blinded and Restrained conditions, is suffocating, and takes 10 (2d6 + 3) Bludgeoning damage at the start of each of its turns. The rug can smother only one creature at a time. While grappling the target, the rug can’t take this action, the rug halves the damage it takes (round down), and the target takes the same amount of damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "2d6",
+                "magical": false,
+                "modifier": 3,
+                "type": "bludgeoning"
+              }
+            ],
+            "modifier": 5,
+            "on_hit": [],
+            "range": null,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "smother",
+      "kind": "partly_modeled",
+      "name": "Smother"
+    }
+  ],
+  "alignment": "unaligned",
+  "armor_class": [
+    {
+      "value": 12
+    }
+  ],
+  "challenge_rating": 2,
+  "condition_immunities": [
+    "charmed",
+    "deafened",
+    "exhaustion",
+    "frightened",
+    "paralyzed",
+    "petrified",
+    "poisoned"
+  ],
+  "damage_immunities": [
+    "poison",
+    "psychic"
+  ],
+  "hit_points": {
+    "average": 27,
+    "dice": "5d10"
+  },
+  "id": "animated-rug-of-smothering",
+  "initiative": 2,
+  "name": "Animated Rug of Smothering",
+  "proficiency_bonus": 2,
+  "schema_version": "1",
+  "senses": {
+    "blindsight": 60,
+    "passive_perception": 6
+  },
+  "size": "large",
+  "source": "srd-5.2.1",
+  "speeds": {
+    "walk": {
+      "feet": 10
+    }
+  },
+  "type": "construct",
+  "xp": 450
+}

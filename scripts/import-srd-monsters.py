@@ -65,11 +65,15 @@ PB_BANDS = [(4, 2), (8, 3), (12, 4), (16, 5), (20, 6), (24, 7), (28, 8), (30, 9)
 LEGENDARY_USES_PER_ROUND = 3
 
 DICE_RE = re.compile(r"^(\d+)d(\d+)(?:([+-])(\d+))?$")
-PROSE_TYPE_RE = re.compile(r"\)\s+([A-Za-z]+) damage")
 ATTACK_RANGED_RE = re.compile(r"Ranged Attack Roll")
-CONDITIONAL_RE = re.compile(r"\b(?:or|if|unless|extra|additional)\b")
+DAMAGE_IF_RE = re.compile(r"\s*[A-Za-z]+ damage\s*(?:—|,)?\s*(?:if|unless)\b", re.I)
+FLAT_DAMAGE_RE = re.compile(r"\b(\d+) (?!\()([A-Za-z]+) damage")
+OTHERWISE_RE = re.compile(r"\botherwise\b", re.I)
+RECURRING_RE = re.compile(r"\b(?:start|end) of\b|\beach of\b|\bwhenever\b|\buntil\b|\bwhile\b", re.I)
+GRAPPLED_BY_SELF_RE = re.compile(r"\bGrappled by the\b")
 PROSE_DICE_RE = re.compile(r"\((\d+d\d+)(?:\s*([+-])\s*(\d+))?\)")
 DAMAGE_PHRASE_RE = re.compile(r"\d+ \(\d+d\d+(?:\s*[+-]\s*\d+)?\) [A-Za-z]+ damage")
+DAMAGE_CHAIN_RE = re.compile(f"{DAMAGE_PHRASE_RE.pattern}(?:\\s+plus\\s+{DAMAGE_PHRASE_RE.pattern})*")
 ATTACK_RE = re.compile(r"(?:Melee|Ranged)(?: or (?:Melee|Ranged))? Attack Roll: \+(\d+)")
 SAVE_RE = re.compile(r"(Strength|Dexterity|Constitution|Intelligence|Wisdom|Charisma) Saving Throw: DC (\d+)")
 RECHARGE_RE = re.compile(r"Recharge (\d)(?:\s*[-–]\s*6)?")
@@ -187,6 +191,78 @@ class Converter:
                 self.rec("a", f"{base}.usage", f"name says {per_day.group(1)}/Day, structured usage differs")
         return usage
 
+    def place_damage(self, text, limit, damage, base, label):
+        """Sort structured damage entries by where the prose states them.
+
+        `text` is the effect's prose and `limit` the length of its first sentence. An entry stated
+        unconditionally in the first sentence stays in `damage`. A conditional entry is gated on the
+        target's Grappled condition (from this creature) when the prose says so, and otherwise leaves
+        the model as an agent clause. An entry stated in a later sentence is recurring or conditional
+        in every SRD case, so it leaves the model too; the caller keeps the sentence as a clause. The
+        exception is an "Otherwise" sentence, which states the immediate damage after an HP gate.
+        Returns the kept entries and the clauses for entries taken out of `damage`.
+        """
+        text = text.replace("−", "-").replace("–", "-")
+        spots = [(m.start(), m.end(), dice_text(m.group(1), int(m.group(3) or 0) * (-1 if m.group(2) == "-" else 1)))
+                 for m in PROSE_DICE_RE.finditer(text)]
+        paired = {}
+        for index, entry in enumerate(damage):
+            want = dice_text(entry["dice"], entry["modifier"])
+            spot = next((i for i, s in enumerate(spots) if i not in paired.values() and s[2] == want), None)
+            if spot is None:
+                self.rec("a", f"{base}.damage", f"structured damage {want} {entry['type']} is not stated in the prose")
+            else:
+                paired[index] = spot
+        for i, (start, end, dice) in enumerate(spots):
+            if start < limit and i not in paired.values() and re.match(r"\)?\s*(?:[A-Za-z]+\s+)?damage", text[end - 1:]):
+                self.rec("b", f"{base}.damage", f"{label} dice {dice} are not in the structured damage")
+        kept, clauses = [], []
+        for index, entry in enumerate(damage):
+            if index not in paired:
+                kept.append(entry)
+                continue
+            start, end, _ = spots[paired[index]]
+            region = limit
+            if start >= limit:
+                sentence = text[text.rfind(".", 0, start) + 1:max(text.find(".", end), end)]
+                if not OTHERWISE_RE.search(sentence) or RECURRING_RE.search(sentence):
+                    continue
+                region = len(text)
+            prose_type = re.match(r"\s*([A-Za-z]+) damage", text[end:])
+            if prose_type and prose_type.group(1).lower() != entry["type"]:
+                self.rec("a", f"{base}.damage", f"{label} type {prose_type.group(1).lower()} vs structured {entry['type']}")
+            previous = max((s[1] for s in spots[:paired[index]]), default=0)
+            following = next((s[0] for s in spots[paired[index] + 1:] if s[0] < region), region)
+            trail = text[end:following]
+            if not DAMAGE_IF_RE.match(trail):
+                kept.append(entry)
+                continue
+            alternative = re.search(r"\bor\s+\d+\s*$", text[previous:start])
+            if GRAPPLED_BY_SELF_RE.search(trail):
+                gate = {"if_target": "grappled", "if_target_from_actor": True}
+                if not alternative:
+                    kept.append({**entry, **gate})
+                    continue
+                extra = self.extra_dice(kept[-1] if kept else None, entry)
+                if extra:
+                    kept.append({**extra, **gate})
+                    continue
+            lead = re.search(r"(?:(?:—|,)?\s*\b(?:or|plus)\s+)?\d+\s*$", text[:start])
+            stated = text[start - len(lead.group(0)) if lead else start:end + len(re.split(r"—|,?\s+plus\s", trail)[0])]
+            clauses.append(f"Conditional damage, not modeled: {stated.strip(' ,—')}")
+        return kept, clauses
+
+    @staticmethod
+    def extra_dice(base_entry, alternative):
+        """The dice an alternative adds to a base entry of the same die, type and modifier, or None."""
+        if base_entry is None or base_entry["type"] != alternative["type"] or base_entry["modifier"] != alternative["modifier"]:
+            return None
+        have, want = DICE_RE.match(base_entry["dice"]), DICE_RE.match(alternative["dice"])
+        if not have or not want or have.group(2) != want.group(2) or int(want.group(1)) <= int(have.group(1)):
+            return None
+        return {"dice": f"{int(want.group(1)) - int(have.group(1))}d{want.group(2)}", "type": alternative["type"],
+                "modifier": 0, "magical": False}
+
     def attack(self, raw, base):
         desc = raw.get("desc", "")
         prose = ATTACK_RE.search(desc)
@@ -204,26 +280,17 @@ class Converter:
         clauses = []
         sentence, rest = hit_sentence(desc)
         if sentence is not None:
-            prose_dice = [dice_text(d, int(m or 0) * (-1 if s == "-" else 1))
-                          for d, s, m in PROSE_DICE_RE.findall(sentence)]
-            struct_dice = [dice_text(d["dice"], d["modifier"]) for d in damage]
-            prose_types = [t.lower() for t in PROSE_TYPE_RE.findall(sentence)]
-            struct_types = [d["type"] for d in damage]
-            if prose_dice and not damage:
+            if not damage and PROSE_DICE_RE.search(sentence):
                 self.rec("b", f"{base}.damage", "Hit clause states damage but structured damage is missing")
-            elif prose_dice and len(prose_dice) > len(struct_dice):
-                self.rec("b", f"{base}.damage", f"Hit clause dice {prose_dice} but structured damage has {struct_dice}")
-            elif prose_dice and prose_dice != struct_dice:
-                self.rec("a", f"{base}.damage", f"Hit clause dice {prose_dice} vs structured {struct_dice}")
-            elif prose_types and prose_types != struct_types:
-                self.rec("a", f"{base}.damage", f"Hit clause types {prose_types} vs structured {struct_types}")
             elif not damage and "damage" in sentence.lower():
                 self.rec("b", f"{base}.damage", "Hit clause states flat damage but structured damage is missing")
-            if len(damage) > 1 and (CONDITIONAL_RE.search(desc) or "plus" not in sentence.lower()):
-                self.rec("b", f"{base}.damage", "several damage entries, not all stated unconditionally in the Hit clause")
+            else:
+                damage, extra = self.place_damage(f"{sentence} {rest}", len(sentence), damage, base, "Hit clause")
+                clauses.extend(extra)
+                for flat in FLAT_DAMAGE_RE.finditer(sentence):
+                    if not any(d["dice"] == f"{flat.group(1)}d1" and d["type"] == flat.group(2).lower() for d in damage):
+                        self.rec("b", f"{base}.damage", "Hit clause states flat damage but structured damage is missing")
             if rest:
-                if PROSE_DICE_RE.search(rest):
-                    self.rec("b", f"{base}.damage", "damage in a later clause is not representable")
                 clauses.append(rest)
         effect = {"attack": {
             "modifier": raw["attack_bonus"],
@@ -251,15 +318,24 @@ class Converter:
             self.rec("a", f"{base}.effects", f"prose success clause vs structured success_type '{success}'")
         damage = self.damage_list(raw.get("damage"), base)
         failure = re.search(r"Failure:\s*(.*?)(?=\s*Success:|$)", desc)
+        if failure is None and damage:
+            self.rec("d", f"{base}.damage", "dc without a Failure clause is an ability check, not a saving throw; left unmodeled")
+            return None, []
         failure_text = failure.group(1) if failure else ""
         if DAMAGE_PHRASE_RE.search(failure_text) and not damage:
             self.rec("b", f"{base}.damage", "Failure clause states damage but structured damage is missing")
         if not damage:
             return None, []
-        if len(damage) > 1 and (CONDITIONAL_RE.search(failure_text) or "plus" not in failure_text.lower()):
-            self.rec("b", f"{base}.damage", "several damage entries, not all stated unconditionally in the Failure clause")
-        clauses = []
-        remainder = DAMAGE_PHRASE_RE.sub("", failure_text).strip(" .,;")
+        first = re.match(r"[^.]*\.?", failure_text).end()
+        damage, clauses = self.place_damage(failure_text, first, damage, base, "Failure clause")
+        if not damage:
+            self.rec("d", f"{base}.damage", "Failure clause states damage only as recurring or conditional later clauses; left unmodeled")
+            return None, []
+        later = "".join(
+            DAMAGE_CHAIN_RE.sub("the modeled damage", sentence)
+            if OTHERWISE_RE.search(sentence) and not RECURRING_RE.search(sentence) else sentence
+            for sentence in re.split(r"(?<=\.)(\s+)", failure_text[first:]))
+        remainder = (DAMAGE_CHAIN_RE.sub("", failure_text[:first]) + later).strip(" .,;")
         if remainder:
             clauses.append(remainder)
         effect = {"saving_throw": {

@@ -1,0 +1,103 @@
+{
+  "ability_scores": {
+    "charisma": 2,
+    "constitution": 9,
+    "dexterity": 16,
+    "intelligence": 1,
+    "strength": 13,
+    "wisdom": 7
+  },
+  "actions": [
+    {
+      "agent_clauses": [
+        "Conditional damage, not modeled: or 5 (1d4 + 3) Piercing damage if the swarm is Bloodied."
+      ],
+      "desc": "Melee Attack Roll: +5 (with Advantage if the target doesn’t have all its Hit Points), reach 5 ft. Hit: 8 (2d4 + 3) Piercing damage, or 5 (1d4 + 3) Piercing damage if the swarm is Bloodied.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "2d4",
+                "magical": false,
+                "modifier": 3,
+                "type": "piercing"
+              }
+            ],
+            "modifier": 5,
+            "on_hit": [],
+            "range": null,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "bites",
+      "kind": "partly_modeled",
+      "name": "Bites"
+    }
+  ],
+  "alignment": "unaligned",
+  "armor_class": [
+    {
+      "value": 13
+    }
+  ],
+  "challenge_rating": 1,
+  "condition_immunities": [
+    "charmed",
+    "frightened",
+    "grappled",
+    "paralyzed",
+    "petrified",
+    "prone",
+    "restrained",
+    "stunned"
+  ],
+  "damage_resistances": [
+    "bludgeoning",
+    "piercing",
+    "slashing"
+  ],
+  "hit_points": {
+    "average": 28,
+    "dice": "8d8-8"
+  },
+  "id": "swarm-of-piranhas",
+  "initiative": 3,
+  "name": "Swarm of Piranhas",
+  "proficiency_bonus": 2,
+  "schema_version": "1",
+  "senses": {
+    "darkvision": 60,
+    "passive_perception": 8
+  },
+  "size": "medium",
+  "source": "srd-5.2.1",
+  "speeds": {
+    "swim": {
+      "feet": 40
+    },
+    "walk": {
+      "feet": 5
+    }
+  },
+  "traits": [
+    {
+      "default_resolution": "skipped",
+      "desc": "The swarm can occupy another creature’s space and vice versa, and the swarm can move through any opening large enough for a Tiny piranha. The swarm can’t regain Hit Points or gain Temporary Hit Points.",
+      "id": "swarm",
+      "kind": "unmodeled",
+      "name": "Swarm"
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "The swarm can breathe only underwater.",
+      "id": "water-breathing",
+      "kind": "unmodeled",
+      "name": "Water Breathing"
+    }
+  ],
+  "type": "swarm of tiny beasts",
+  "xp": 200
+}

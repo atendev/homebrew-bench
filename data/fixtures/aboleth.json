@@ -204,36 +204,10 @@
       }
     },
     {
-      "agent_clauses": [
-        "The target is cursed. Until the curse ends, the target’s skin becomes slimy, the target can breathe air and water, and it can’t regain Hit Points unless it is underwater. While the cursed creature is outside a body of water, the creature takes  at the end of every 10 minutes unless moisture is applied to its skin before those minutes have passed"
-      ],
+      "default_resolution": "skipped",
       "desc": "While underwater, the aboleth is surrounded by mucus. Constitution Saving Throw: DC 14, each creature in a 5-foot Emanation originating from the aboleth at the end of the aboleth’s turn. Failure: The target is cursed. Until the curse ends, the target’s skin becomes slimy, the target can breathe air and water, and it can’t regain Hit Points unless it is underwater. While the cursed creature is outside a body of water, the creature takes 6 (1d12) Acid damage at the end of every 10 minutes unless moisture is applied to its skin before those minutes have passed.",
-      "effects": [
-        {
-          "saving_throw": {
-            "ability": "con",
-            "creature_type_gate": null,
-            "damage": [
-              {
-                "dice": "1d12",
-                "magical": false,
-                "modifier": 0,
-                "type": "acid"
-              }
-            ],
-            "dc": 14,
-            "half_on_success": false,
-            "hp_gate": null,
-            "immunity_after_success": false,
-            "no_damage_on_success": true,
-            "on_failure": [],
-            "repeat_save": null,
-            "two_stage": null
-          }
-        }
-      ],
       "id": "mucus-cloud",
-      "kind": "partly_modeled",
+      "kind": "unmodeled",
       "name": "Mucus Cloud"
     },
     {

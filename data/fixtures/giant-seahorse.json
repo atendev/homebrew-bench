@@ -1,0 +1,89 @@
+{
+  "ability_scores": {
+    "charisma": 5,
+    "constitution": 11,
+    "dexterity": 12,
+    "intelligence": 2,
+    "strength": 15,
+    "wisdom": 12
+  },
+  "actions": [
+    {
+      "agent_clauses": [
+        "Conditional damage, not modeled: or 11 (2d8 + 2) Bludgeoning damage if the seahorse moved 20+ feet straight toward the target immediately before the hit."
+      ],
+      "desc": "Melee Attack Roll: +4, reach 5 ft. Hit: 9 (2d6 + 2) Bludgeoning damage, or 11 (2d8 + 2) Bludgeoning damage if the seahorse moved 20+ feet straight toward the target immediately before the hit.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "2d6",
+                "magical": false,
+                "modifier": 2,
+                "type": "bludgeoning"
+              }
+            ],
+            "modifier": 4,
+            "on_hit": [],
+            "range": null,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "ram",
+      "kind": "partly_modeled",
+      "name": "Ram"
+    }
+  ],
+  "alignment": "unaligned",
+  "armor_class": [
+    {
+      "value": 14
+    }
+  ],
+  "bonus_actions": [
+    {
+      "default_resolution": "skipped",
+      "desc": "While underwater, the seahorse moves up to half its Swim Speed without provoking Opportunity Attacks.",
+      "id": "bubble-dash",
+      "kind": "unmodeled",
+      "name": "Bubble Dash"
+    }
+  ],
+  "challenge_rating": 0.5,
+  "hit_points": {
+    "average": 16,
+    "dice": "3d10"
+  },
+  "id": "giant-seahorse",
+  "initiative": 1,
+  "name": "Giant Seahorse",
+  "proficiency_bonus": 2,
+  "schema_version": "1",
+  "senses": {
+    "passive_perception": 11
+  },
+  "size": "large",
+  "source": "srd-5.2.1",
+  "speeds": {
+    "swim": {
+      "feet": 40
+    },
+    "walk": {
+      "feet": 5
+    }
+  },
+  "traits": [
+    {
+      "default_resolution": "skipped",
+      "desc": "The seahorse can breathe only underwater.",
+      "id": "water-breathing",
+      "kind": "unmodeled",
+      "name": "Water Breathing"
+    }
+  ],
+  "type": "beast",
+  "xp": 100
+}

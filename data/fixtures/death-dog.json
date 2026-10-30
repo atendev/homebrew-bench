@@ -1,0 +1,101 @@
+{
+  "ability_scores": {
+    "charisma": 6,
+    "constitution": 14,
+    "dexterity": 14,
+    "intelligence": 3,
+    "strength": 15,
+    "wisdom": 13
+  },
+  "actions": [
+    {
+      "desc": "The death dog makes two Bite attacks.",
+      "effects": [
+        {
+          "multiattack": {
+            "steps": [
+              {
+                "action": {
+                  "action_id": "bite",
+                  "count": 2
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "id": "multiattack",
+      "kind": "modeled",
+      "name": "Multiattack"
+    },
+    {
+      "agent_clauses": [
+        "If the target is a creature, it is subjected to the following effect. Constitution Saving Throw: DC 12. First Failure: The target has the Poisoned condition. While Poisoned, the target’s Hit Point maximum doesn’t return to normal when finishing a Long Rest, and it repeats the save every 24 hours that elapse, ending the effect on itself on a success. Subsequent Failures: The Poisoned target’s Hit Point maximum decreases by 5 (1d10)."
+      ],
+      "desc": "Melee Attack Roll: +4, reach 5 ft. Hit: 4 (1d4 + 2) Piercing damage. If the target is a creature, it is subjected to the following effect. Constitution Saving Throw: DC 12. First Failure: The target has the Poisoned condition. While Poisoned, the target’s Hit Point maximum doesn’t return to normal when finishing a Long Rest, and it repeats the save every 24 hours that elapse, ending the effect on itself on a success. Subsequent Failures: The Poisoned target’s Hit Point maximum decreases by 5 (1d10).",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "1d4",
+                "magical": false,
+                "modifier": 2,
+                "type": "piercing"
+              }
+            ],
+            "modifier": 4,
+            "on_hit": [],
+            "range": null,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "bite",
+      "kind": "partly_modeled",
+      "name": "Bite"
+    }
+  ],
+  "alignment": "neutral evil",
+  "armor_class": [
+    {
+      "value": 12
+    }
+  ],
+  "challenge_rating": 1,
+  "condition_immunities": [
+    "blinded",
+    "charmed",
+    "deafened",
+    "frightened",
+    "stunned",
+    "unconscious"
+  ],
+  "hit_points": {
+    "average": 39,
+    "dice": "6d8+12"
+  },
+  "id": "death-dog",
+  "initiative": 2,
+  "name": "Death Dog",
+  "proficiency_bonus": 2,
+  "schema_version": "1",
+  "senses": {
+    "darkvision": 120,
+    "passive_perception": 15
+  },
+  "size": "medium",
+  "skills": {
+    "perception": 5,
+    "stealth": 4
+  },
+  "source": "srd-5.2.1",
+  "speeds": {
+    "walk": {
+      "feet": 40
+    }
+  },
+  "type": "monstrosity",
+  "xp": 200
+}

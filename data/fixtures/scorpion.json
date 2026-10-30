@@ -15,6 +15,12 @@
           "attack": {
             "damage": [
               {
+                "dice": "1d1",
+                "magical": false,
+                "modifier": 0,
+                "type": "piercing"
+              },
+              {
                 "dice": "1d6",
                 "magical": false,
                 "modifier": 0,

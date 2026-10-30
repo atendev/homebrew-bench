@@ -1,0 +1,107 @@
+{
+  "ability_scores": {
+    "charisma": 4,
+    "constitution": 11,
+    "dexterity": 14,
+    "intelligence": 5,
+    "strength": 14,
+    "wisdom": 10
+  },
+  "actions": [
+    {
+      "agent_clauses": [
+        "Conditional damage, not modeled: or 11 (2d8 + 2) Necrotic damage if the swarm is Bloodied.",
+        "If the target is a Medium or smaller creature, it has the Prone condition."
+      ],
+      "desc": "Melee Attack Roll: +4, reach 5 ft. Hit: 20 (4d8 + 2) Necrotic damage, or 11 (2d8 + 2) Necrotic damage if the swarm is Bloodied. If the target is a Medium or smaller creature, it has the Prone condition.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "4d8",
+                "magical": false,
+                "modifier": 2,
+                "type": "necrotic"
+              }
+            ],
+            "modifier": 4,
+            "on_hit": [],
+            "range": null,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "swarm-of-grasping-hands",
+      "kind": "partly_modeled",
+      "name": "Swarm of Grasping Hands"
+    }
+  ],
+  "alignment": "neutral evil",
+  "armor_class": [
+    {
+      "value": 12
+    }
+  ],
+  "challenge_rating": 3,
+  "condition_immunities": [
+    "charmed",
+    "exhaustion",
+    "frightened",
+    "grappled",
+    "incapacitated",
+    "paralyzed",
+    "petrified",
+    "poisoned",
+    "prone",
+    "restrained",
+    "stunned"
+  ],
+  "damage_immunities": [
+    "necrotic",
+    "poison"
+  ],
+  "damage_resistances": [
+    "bludgeoning",
+    "piercing",
+    "slashing"
+  ],
+  "hit_points": {
+    "average": 49,
+    "dice": "11d8"
+  },
+  "id": "swarm-of-crawling-claws",
+  "initiative": 2,
+  "languages": [
+    "Understands Common but can’t speak"
+  ],
+  "name": "Swarm of Crawling Claws",
+  "proficiency_bonus": 2,
+  "schema_version": "1",
+  "senses": {
+    "blindsight": 30,
+    "passive_perception": 10
+  },
+  "size": "medium",
+  "source": "srd-5.2.1",
+  "speeds": {
+    "climb": {
+      "feet": 30
+    },
+    "walk": {
+      "feet": 30
+    }
+  },
+  "traits": [
+    {
+      "default_resolution": "skipped",
+      "desc": "The swarm can occupy another creature’s space and vice versa, and the swarm can move through any opening large enough for a Tiny creature. The swarm can’t regain Hit Points or gain Temporary Hit Points.",
+      "id": "swarm",
+      "kind": "unmodeled",
+      "name": "Swarm"
+    }
+  ],
+  "type": "swarm of tiny undead",
+  "xp": 700
+}

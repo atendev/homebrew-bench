@@ -1,0 +1,112 @@
+{
+  "ability_scores": {
+    "charisma": 9,
+    "constitution": 16,
+    "dexterity": 11,
+    "intelligence": 6,
+    "strength": 18,
+    "wisdom": 16
+  },
+  "actions": [
+    {
+      "desc": "Melee Attack Roll: +6, reach 10 ft. Hit: 10 (1d12 + 4) Slashing damage plus 10 (3d6) Necrotic damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "1d12",
+                "magical": false,
+                "modifier": 4,
+                "type": "slashing"
+              },
+              {
+                "dice": "3d6",
+                "magical": false,
+                "modifier": 0,
+                "type": "necrotic"
+              }
+            ],
+            "modifier": 6,
+            "on_hit": [],
+            "range": null,
+            "reach": 10,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "abyssal-glaive",
+      "kind": "modeled",
+      "name": "Abyssal Glaive"
+    },
+    {
+      "agent_clauses": [
+        "If the target is a Large or smaller creature and the minotaur moved 10+ feet straight toward it immediately before the hit, the target takes an extra 10 (3d6) Piercing damage and has the Prone condition."
+      ],
+      "desc": "Melee Attack Roll: +6, reach 5 ft. Hit: 18 (4d6 + 4) Piercing damage. If the target is a Large or smaller creature and the minotaur moved 10+ feet straight toward it immediately before the hit, the target takes an extra 10 (3d6) Piercing damage and has the Prone condition.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "4d6",
+                "magical": false,
+                "modifier": 4,
+                "type": "piercing"
+              }
+            ],
+            "modifier": 6,
+            "on_hit": [],
+            "range": null,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "gore",
+      "kind": "partly_modeled",
+      "name": "Gore",
+      "usage": {
+        "recharge": {
+          "dice": "5-6"
+        }
+      }
+    }
+  ],
+  "alignment": "chaotic evil",
+  "armor_class": [
+    {
+      "value": 14
+    }
+  ],
+  "challenge_rating": 3,
+  "hit_points": {
+    "average": 85,
+    "dice": "10d10+30"
+  },
+  "id": "minotaur-of-baphomet",
+  "initiative": 0,
+  "languages": [
+    "Abyssal"
+  ],
+  "name": "Minotaur of Baphomet",
+  "proficiency_bonus": 2,
+  "schema_version": "1",
+  "senses": {
+    "darkvision": 60,
+    "passive_perception": 17
+  },
+  "size": "large",
+  "skills": {
+    "perception": 7,
+    "survival": 7
+  },
+  "source": "srd-5.2.1",
+  "speeds": {
+    "walk": {
+      "feet": 40
+    }
+  },
+  "type": "monstrosity",
+  "xp": 700
+}

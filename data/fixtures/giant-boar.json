@@ -1,0 +1,80 @@
+{
+  "ability_scores": {
+    "charisma": 5,
+    "constitution": 16,
+    "dexterity": 10,
+    "intelligence": 2,
+    "strength": 17,
+    "wisdom": 7
+  },
+  "actions": [
+    {
+      "agent_clauses": [
+        "If the target is a Large or smaller creature and the boar moved 20+ feet straight toward it immediately before the hit, the target takes an extra 7 (2d6) Piercing damage and has the Prone condition."
+      ],
+      "desc": "Melee Attack Roll: +5, reach 5 ft. Hit: 10 (2d6 + 3) Piercing damage. If the target is a Large or smaller creature and the boar moved 20+ feet straight toward it immediately before the hit, the target takes an extra 7 (2d6) Piercing damage and has the Prone condition.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "2d6",
+                "magical": false,
+                "modifier": 3,
+                "type": "piercing"
+              }
+            ],
+            "modifier": 5,
+            "on_hit": [],
+            "range": null,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "gore",
+      "kind": "partly_modeled",
+      "name": "Gore"
+    }
+  ],
+  "alignment": "unaligned",
+  "armor_class": [
+    {
+      "value": 13
+    }
+  ],
+  "challenge_rating": 2,
+  "hit_points": {
+    "average": 42,
+    "dice": "5d10+15"
+  },
+  "id": "giant-boar",
+  "initiative": 0,
+  "name": "Giant Boar",
+  "proficiency_bonus": 2,
+  "saving_throws": {
+    "str": 5
+  },
+  "schema_version": "1",
+  "senses": {
+    "passive_perception": 8
+  },
+  "size": "large",
+  "source": "srd-5.2.1",
+  "speeds": {
+    "walk": {
+      "feet": 40
+    }
+  },
+  "traits": [
+    {
+      "default_resolution": "skipped",
+      "desc": "The boar has Advantage on melee attack rolls while it is Bloodied.",
+      "id": "bloodied-fury",
+      "kind": "unmodeled",
+      "name": "Bloodied Fury"
+    }
+  ],
+  "type": "beast",
+  "xp": 450
+}

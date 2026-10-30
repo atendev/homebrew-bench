@@ -1,0 +1,83 @@
+{
+  "ability_scores": {
+    "charisma": 5,
+    "constitution": 10,
+    "dexterity": 14,
+    "intelligence": 3,
+    "strength": 6,
+    "wisdom": 14
+  },
+  "actions": [
+    {
+      "agent_clauses": [
+        "Conditional damage, not modeled: or 6 (1d8 + 2) Piercing damage if the target is Bloodied."
+      ],
+      "desc": "Melee Attack Roll: +4, reach 5 ft. Hit: 4 (1d4 + 2) Piercing damage, or 6 (1d8 + 2) Piercing damage if the target is Bloodied.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "1d4",
+                "magical": false,
+                "modifier": 2,
+                "type": "piercing"
+              }
+            ],
+            "modifier": 4,
+            "on_hit": [],
+            "range": null,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "beak",
+      "kind": "partly_modeled",
+      "name": "Beak"
+    }
+  ],
+  "alignment": "unaligned",
+  "armor_class": [
+    {
+      "value": 12
+    }
+  ],
+  "challenge_rating": 0.125,
+  "hit_points": {
+    "average": 7,
+    "dice": "2d6"
+  },
+  "id": "blood-hawk",
+  "initiative": 2,
+  "name": "Blood Hawk",
+  "proficiency_bonus": 2,
+  "schema_version": "1",
+  "senses": {
+    "passive_perception": 16
+  },
+  "size": "small",
+  "skills": {
+    "perception": 6
+  },
+  "source": "srd-5.2.1",
+  "speeds": {
+    "fly": {
+      "feet": 60
+    },
+    "walk": {
+      "feet": 10
+    }
+  },
+  "traits": [
+    {
+      "default_resolution": "skipped",
+      "desc": "The hawk has Advantage on an attack roll against a creature if at least one of the hawk’s allies is within 5 feet of the creature and the ally doesn’t have the Incapacitated condition.",
+      "id": "pack-tactics",
+      "kind": "unmodeled",
+      "name": "Pack Tactics"
+    }
+  ],
+  "type": "beast",
+  "xp": 25
+}

@@ -116,36 +116,10 @@
       "name": "Storm Bolt"
     },
     {
-      "agent_clauses": [
-        "While in the whirlwind, the target has the Restrained condition and moves with the whirlwind. At the start of each of its turns, the Restrained target takes . At the end of each of its turns, the target repeats the save, ending the effect on itself on a success"
-      ],
+      "default_resolution": "skipped",
       "desc": "The djinni conjures a whirlwind at a point it can see within 120 feet. The whirlwind fills a 20-foot-radius, 60-foot-high Cylinder centered on that point. The whirlwind lasts until the djinni’s Concentration on it ends. The djinni can move the whirlwind up to 20 feet at the start of each of its turns. Whenever the whirlwind enters a creature’s space or a creature enters the whirlwind, that creature is subjected to the following effect. Strength Saving Throw: DC 17 (a creature makes this save only once per turn, and the djinni is unaffected). Failure: While in the whirlwind, the target has the Restrained condition and moves with the whirlwind. At the start of each of its turns, the Restrained target takes 21 (6d6) Thunder damage. At the end of each of its turns, the target repeats the save, ending the effect on itself on a success.",
-      "effects": [
-        {
-          "saving_throw": {
-            "ability": "str",
-            "creature_type_gate": null,
-            "damage": [
-              {
-                "dice": "6d6",
-                "magical": false,
-                "modifier": 0,
-                "type": "thunder"
-              }
-            ],
-            "dc": 17,
-            "half_on_success": false,
-            "hp_gate": null,
-            "immunity_after_success": false,
-            "no_damage_on_success": true,
-            "on_failure": [],
-            "repeat_save": null,
-            "two_stage": null
-          }
-        }
-      ],
       "id": "create-whirlwind",
-      "kind": "partly_modeled",
+      "kind": "unmodeled",
       "name": "Create Whirlwind"
     },
     {
