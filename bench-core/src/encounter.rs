@@ -133,6 +133,32 @@ pub struct CommandRecord {
     pub user_dice: Vec<u32>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub reason: Option<String>,
+    /// Game hash of the state after this command, compared by `bench replay`.
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub state_hash: String,
+}
+
+/// Who rolls a PC's dice in a live encounter.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize, schemars::JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum PcDice {
+    #[default]
+    Engine,
+    Ask,
+}
+
+/// Per-encounter settings fixed at `bench start`.
+#[derive(Debug, Clone, Default, Serialize, Deserialize, schemars::JsonSchema)]
+pub struct EncounterSettings {
+    #[serde(default)]
+    pub pc_dice: PcDice,
+}
+
+/// Record of an encounter ended early through `bench end`.
+#[derive(Debug, Clone, Serialize, Deserialize, schemars::JsonSchema)]
+pub struct EncounterEnd {
+    pub round: u32,
+    pub reason: String,
 }
 
 /// A prompt that must be answered before the current action can finish.
@@ -183,7 +209,78 @@ pub struct EncounterState {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub pending: Option<PendingPrompt>,
     pub rng: RngState,
+    /// Initiative totals by combatant id, used to slot mid-fight additions.
+    #[serde(default, skip_serializing_if = "HashMap::is_empty")]
+    pub initiative_rolls: HashMap<String, i32>,
+    #[serde(default)]
+    pub settings: EncounterSettings,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub ended: Option<EncounterEnd>,
+    /// State right after `bench start`, with empty history and log. Undo and
+    /// replay re-execute `command_history` from here.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub initial_snapshot: Option<Box<EncounterState>>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub log: Vec<crate::log::LogEntry>,
     pub tamper_hash: String,
+    /// User-entered faces for the command being resolved. Never stored.
+    #[serde(skip)]
+    #[schemars(skip)]
+    pub player_dice: PlayerDice,
+}
+
+/// Faces the user entered for PC rolls, consumed in draw order while one
+/// command resolves.
+#[derive(Debug, Clone, Default)]
+pub struct PlayerDice {
+    pub faces: std::collections::VecDeque<u32>,
+    /// PC rolls that found no face, in draw order.
+    pub missing: Vec<MissingDie>,
+    /// Faces consumed so far.
+    pub used: usize,
+    /// Use the engine's draw for any roll past the entered faces.
+    pub engine_fills_rest: bool,
+    pub next_group: u32,
+}
+
+/// A PC roll still waiting for a user-entered face. Dice in one group (one
+/// damage expression, or an advantage pair) are always drawn together.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct MissingDie {
+    pub sides: u32,
+    pub owner: String,
+    pub group: u32,
+}
+
+impl PlayerDice {
+    pub fn take(&mut self, owner: &str, sides: u32, drawn: u32, group_start: bool) -> u32 {
+        if group_start {
+            self.next_group += 1;
+        }
+        let missing = MissingDie { sides, owner: owner.into(), group: self.next_group };
+        if !self.missing.is_empty() {
+            self.missing.push(missing);
+            return drawn;
+        }
+        match self.faces.pop_front() {
+            Some(face) => {
+                self.used += 1;
+                face
+            }
+            None if self.engine_fills_rest => drawn,
+            None => {
+                self.missing.push(missing);
+                drawn
+            }
+        }
+    }
+
+    /// The dice to ask for next: the first missing group.
+    pub fn next_prompt(&self) -> Option<(u32, String, u32)> {
+        let first = self.missing.first()?;
+        let count = self.missing.iter().take_while(|d| d.group == first.group).count() as u32;
+        Some((first.sides, first.owner.clone(), count))
+    }
 }
 
 impl EncounterState {
@@ -210,7 +307,45 @@ impl EncounterState {
     pub fn verify_tamper_hash(&self) -> bool {
         self.compute_tamper_hash() == self.tamper_hash
     }
+
+    /// Hash of the game state alone, leaving out the log, command history,
+    /// initial snapshot and tamper hash. Log entries and command records carry
+    /// it, and replay compares it command by command.
+    pub fn game_hash(&self) -> String {
+        let mut value = match serde_json::to_value(self) {
+            Ok(v) => v,
+            Err(_) => return String::new(),
+        };
+        if let Some(obj) = value.as_object_mut() {
+            for key in ["tamper_hash", "log", "command_history", "initial_snapshot"] {
+                obj.remove(key);
+            }
+        }
+        tamper_hash(&value)
+    }
+
+    /// Copy of the state with bookkeeping cleared, used as the replay origin.
+    pub fn bare(&self) -> EncounterState {
+        let mut bare = self.clone();
+        bare.log.clear();
+        bare.command_history.clear();
+        bare.initial_snapshot = None;
+        bare.tamper_hash.clear();
+        bare
+    }
+
+    /// Whether a combatant id belongs to the party side, which the public view
+    /// shows in full.
+    pub fn is_party(&self, combatant_id: &str) -> bool {
+        self.combatants
+            .iter()
+            .find(|c| c.id == combatant_id)
+            .is_some_and(|c| c.side_id == PARTY_SIDE)
+    }
 }
+
+/// Side id of the player party. Every other side is hidden in the public view.
+pub const PARTY_SIDE: &str = "party";
 
 /// Compute a simple tamper hash of a serialized value. Not cryptographic; it is
 /// enough to catch accidental edits to the encounter file.
@@ -328,7 +463,13 @@ mod tests {
             command_history: vec![],
             pending: None,
             rng: RngState::new(1),
+            initiative_rolls: HashMap::new(),
+            settings: EncounterSettings::default(),
+            ended: None,
+            initial_snapshot: None,
+            log: vec![],
             tamper_hash: String::new(),
+            player_dice: Default::default(),
         };
         state.update_tamper_hash();
         let first = state.tamper_hash.clone();

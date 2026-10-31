@@ -65,6 +65,7 @@ dependencies = [
  "anyhow",
  "bench-core",
  "clap",
+ "rand",
  "schemars",
  "serde",
  "serde_json",

@@ -3,15 +3,23 @@
 //! Every command starts, does one thing, prints a JSON envelope to stdout, and
 //! exits. The binary delegates all rules/state work to `bench-core`.
 
+use std::path::PathBuf;
 use std::process;
 
 use bench_core::{
+    config::{Config, OutputTarget},
+    encounter::{EncounterState, PcDice, RangeBand, PARTY_SIDE},
     error::{CodedError, ErrorCode},
+    live::{self, Command, Entrant, LiveError, StartSpec},
+    log, paths,
     schema::{schema_json, validate_value},
+    stat_block::StatBlock,
+    store::{self, Index, IndexEntry, VersionCheck},
     Envelope, ENGINE_VERSION,
 };
-use clap::{Parser, Subcommand};
+use clap::{Args, CommandFactory, Parser, Subcommand, ValueEnum};
 use serde::Serialize;
+use serde_json::Value;
 
 #[derive(Parser)]
 #[command(name = "bench")]
@@ -21,6 +29,52 @@ use serde::Serialize;
 struct Cli {
     #[command(subcommand)]
     command: Option<Commands>,
+}
+
+#[derive(Args, Clone)]
+struct At {
+    /// Encounter id; defaults to the most recently started running encounter.
+    #[arg(long, short = 'e')]
+    encounter: Option<String>,
+}
+
+#[derive(Args, Clone)]
+struct Reason {
+    /// Why the agent made this call; written to the log.
+    #[arg(long)]
+    reason: String,
+    /// House rule slug, validated against `./.bench/house-rules/` and `~/.bench/house-rules/`.
+    #[arg(long)]
+    rule: Option<String>,
+}
+
+#[derive(Clone, Copy, ValueEnum)]
+enum Band {
+    Engaged,
+    Near,
+    Far,
+}
+
+impl From<Band> for RangeBand {
+    fn from(band: Band) -> Self {
+        match band {
+            Band::Engaged => RangeBand::Engaged,
+            Band::Near => RangeBand::Near,
+            Band::Far => RangeBand::Far,
+        }
+    }
+}
+
+#[derive(Clone, Copy, ValueEnum)]
+enum DiceMode {
+    Engine,
+    Ask,
+}
+
+#[derive(Clone, Copy, ValueEnum)]
+enum Output {
+    Home,
+    Workspace,
 }
 
 #[derive(Subcommand)]
@@ -35,6 +89,148 @@ enum Commands {
     Schema {
         #[command(subcommand)]
         action: SchemaAction,
+    },
+    /// Start a live encounter and roll initiative.
+    Start {
+        /// Combatants as `[side=]path[@near|far]`. Side defaults to `party` for
+        /// stat blocks with a class and `monsters` otherwise.
+        #[arg(required = true)]
+        combatants: Vec<String>,
+        /// Combatant id or side id that starts surprised. Repeatable.
+        #[arg(long)]
+        surprised: Vec<String>,
+        /// Seed for the encounter's ChaCha8 stream; fresh entropy if omitted.
+        #[arg(long)]
+        seed: Option<u64>,
+        /// Who rolls PC dice.
+        #[arg(long, value_enum, default_value = "engine")]
+        pc_dice: DiceMode,
+        /// Where to write the state file and log; defaults to `config.toml`.
+        #[arg(long, value_enum)]
+        output: Option<Output>,
+        /// Roll one initiative per side instead of per combatant.
+        #[arg(long)]
+        group_initiative: bool,
+        /// Readable encounter id; derived from the first monster if omitted.
+        #[arg(long)]
+        id: Option<String>,
+    },
+    /// Take an action, such as an attack, on the active combatant's turn.
+    Action {
+        actor: String,
+        action: String,
+        /// Target combatant ids.
+        targets: Vec<String>,
+        #[command(flatten)]
+        at: At,
+    },
+    /// Move a combatant to a range band, relative to one target or to everyone.
+    Move {
+        actor: String,
+        #[arg(value_enum)]
+        band: Band,
+        /// Move relative to this combatant only.
+        #[arg(long)]
+        target: Option<String>,
+        /// Feet spent; defaults to the remaining walking speed.
+        #[arg(long)]
+        feet: Option<u32>,
+        #[command(flatten)]
+        at: At,
+    },
+    /// Answer the pending prompt.
+    Respond {
+        /// Die faces or choices the prompt asks for.
+        values: Vec<u32>,
+        /// Decline the prompt; for dice prompts the engine rolls the rest.
+        #[arg(long)]
+        decline: bool,
+        #[command(flatten)]
+        at: At,
+    },
+    /// End the active turn.
+    EndTurn {
+        #[command(flatten)]
+        at: At,
+    },
+    /// End the encounter early as agent judgment.
+    End {
+        #[arg(long)]
+        reason: String,
+        #[command(flatten)]
+        at: At,
+    },
+    /// Print the encounter digest.
+    State {
+        /// Apply the public view filter.
+        #[arg(long)]
+        public: bool,
+        #[command(flatten)]
+        at: At,
+    },
+    /// List encounters in the index.
+    List,
+    /// Prune ended encounters per `config.toml`.
+    Clean,
+    /// Override a state field at a dotted path, such as `goblin-2.hp 14`.
+    Override {
+        path: String,
+        /// New value as JSON; bare words are strings.
+        #[arg(required_unless_present = "clear", conflicts_with = "clear")]
+        value: Option<String>,
+        /// Clear the field instead of setting it.
+        #[arg(long)]
+        clear: bool,
+        #[command(flatten)]
+        why: Reason,
+        #[command(flatten)]
+        at: At,
+    },
+    /// Roll a dice expression from the encounter's stream as agent judgment.
+    Roll {
+        expression: String,
+        #[command(flatten)]
+        why: Reason,
+        #[command(flatten)]
+        at: At,
+    },
+    /// Add a combatant mid-fight.
+    Add {
+        stat_block: String,
+        #[arg(long)]
+        side: String,
+        #[arg(long, value_enum, conflicts_with = "engaged_with")]
+        band: Option<Band>,
+        #[arg(long)]
+        engaged_with: Option<String>,
+        #[command(flatten)]
+        at: At,
+    },
+    /// Remove a combatant mid-fight.
+    Remove {
+        id: String,
+        #[arg(long)]
+        reason: String,
+        #[command(flatten)]
+        at: At,
+    },
+    /// Revert the last mutating command.
+    Undo {
+        #[command(flatten)]
+        at: At,
+    },
+    /// Re-execute the command history and compare state hashes.
+    Replay {
+        #[command(flatten)]
+        at: At,
+    },
+    /// Print the plain-text log.
+    Log {
+        /// Apply the public view filter.
+        #[arg(long)]
+        public: bool,
+        #[command(flatten)]
+        at: At,
     },
 }
 
@@ -51,93 +247,316 @@ enum SchemaAction {
 
 fn main() {
     let cli = Cli::parse();
-
     let result = match cli.command {
-        Some(Commands::Help { json }) => {
-            if json {
-                print_and_exit_ok(Envelope::ok(command_catalog()));
-            }
-            Err(CodedError::new(
-                ErrorCode::InvalidJson,
-                "use --help for usage, or help --json for the command catalog",
-            ))
-        }
+        Some(Commands::Help { json: true }) => ok(command_catalog()),
+        Some(Commands::Help { json: false }) => Err(CodedError::new(
+            ErrorCode::InvalidArgument,
+            "use --help for usage, or help --json for the command catalog",
+        )),
         Some(Commands::Schema { action }) => run_schema(action),
-        None => Err(CodedError::new(ErrorCode::InvalidJson, "no command given; use --help or help --json")),
+        Some(command) => run(command),
+        None => Err(CodedError::new(ErrorCode::InvalidArgument, "no command given; use --help or help --json")),
     };
-
     match result {
         Ok(output) => {
-            println!("{}", output);
+            println!("{output}");
             process::exit(0);
         }
         Err(err) => {
-            let envelope: Envelope<serde_json::Value> = err.envelope();
+            let envelope: Envelope<Value> = err.envelope();
             println!("{}", serde_json::to_string_pretty(&envelope).unwrap());
             process::exit(err.code.exit_code());
         }
     }
 }
 
+fn ok<T: Serialize>(data: T) -> Result<String, CodedError> {
+    serde_json::to_string_pretty(&Envelope::ok(data))
+        .map_err(|e| CodedError::new(ErrorCode::Internal, format!("failed to serialize envelope: {e}")))
+}
+
+fn cwd() -> Result<PathBuf, CodedError> {
+    std::env::current_dir().map_err(|e| CodedError::new(ErrorCode::Internal, format!("no working directory: {e}")))
+}
+
+fn config() -> Result<Config, CodedError> {
+    Ok(Config::load(paths::config_file()?)?)
+}
+
+fn coded(err: LiveError, override_cmd: bool) -> CodedError {
+    let code = match &err {
+        LiveError::Invalid(_) if override_cmd => ErrorCode::InvalidOverride,
+        LiveError::Invalid(_) => ErrorCode::InvalidArgument,
+        LiveError::NotFound(_) => ErrorCode::NotFound,
+        LiveError::Illegal(_) => ErrorCode::IllegalAction,
+        LiveError::Pending(_) => ErrorCode::PendingPrompt,
+        LiveError::Ended(_) => ErrorCode::EncounterEnded,
+    };
+    CodedError::new(code, err.to_string())
+}
+
+fn read_stat_block(path: &str) -> Result<StatBlock, CodedError> {
+    let text = std::fs::read_to_string(path)
+        .map_err(|e| CodedError::new(ErrorCode::NotFound, format!("failed to read {path}: {e}")))?;
+    let value: Value = serde_json::from_str(&text)
+        .map_err(|e| CodedError::new(ErrorCode::InvalidJson, format!("invalid json in {path}: {e}")))?;
+    let errors = validate_value::<StatBlock>(&value)
+        .map_err(|e| CodedError::new(ErrorCode::Internal, format!("failed to validate {path}: {e}")))?;
+    if !errors.is_empty() {
+        let details = serde_json::to_value(errors).unwrap_or_default();
+        return Err(CodedError::new(ErrorCode::SchemaValidationFailed, format!("{path} failed schema validation"))
+            .with_details(details));
+    }
+    serde_json::from_value(value)
+        .map_err(|e| CodedError::new(ErrorCode::SchemaValidationFailed, format!("{path} is not a stat block: {e}")))
+}
+
+fn parse_entrant(spec: &str) -> Result<Entrant, CodedError> {
+    let (side, rest) = match spec.split_once('=') {
+        Some((side, rest)) => (Some(side.to_string()), rest),
+        None => (None, spec),
+    };
+    let (path, band) = match rest.rsplit_once('@') {
+        Some((path, "near")) => (path, RangeBand::Near),
+        Some((path, "far")) => (path, RangeBand::Far),
+        Some((_, other)) => {
+            return Err(CodedError::new(
+                ErrorCode::InvalidArgument,
+                format!("`{other}` in `{spec}` is not a starting band; use near or far"),
+            ))
+        }
+        None => (rest, RangeBand::Near),
+    };
+    let stat_block = read_stat_block(path)?;
+    let side = side.unwrap_or_else(|| if stat_block.class.is_some() { PARTY_SIDE } else { "monsters" }.into());
+    Ok(Entrant { stat_block, side, band })
+}
+
+fn run(command: Commands) -> Result<String, CodedError> {
+    match command {
+        Commands::Start { combatants, surprised, seed, pc_dice, output, group_initiative, id } => {
+            let entrants = combatants.iter().map(|c| parse_entrant(c)).collect::<Result<Vec<_>, _>>()?;
+            let cwd = cwd()?;
+            let config = config()?;
+            let output = match output {
+                Some(Output::Home) => OutputTarget::Home,
+                Some(Output::Workspace) => OutputTarget::Workspace,
+                None => config.output,
+            };
+            let dir = paths::encounters_dir(output, &cwd)?;
+            let mut index = Index::load()?;
+            if !config.keep_encounters {
+                prune(&mut index, config.delete_logs)?;
+            }
+            let id = match id {
+                Some(id) if index.find(&id).is_some() || store::files_for(&dir, &id).1.exists() => {
+                    return Err(CodedError::new(ErrorCode::InvalidArgument, format!("encounter `{id}` already exists")))
+                }
+                Some(id) => id,
+                None => {
+                    let stem = entrants
+                        .iter()
+                        .find(|e| e.side != PARTY_SIDE)
+                        .or(entrants.first())
+                        .map(|e| e.stat_block.id.clone())
+                        .unwrap_or_default();
+                    index.next_id(&stem, &dir)
+                }
+            };
+            let spec = StartSpec {
+                id: id.clone(),
+                origin_directory: cwd.display().to_string(),
+                entrants,
+                seed: seed.unwrap_or_else(rand::random),
+                surprised,
+                individual_initiative: !group_initiative,
+                pc_dice: match pc_dice {
+                    DiceMode::Engine => PcDice::Engine,
+                    DiceMode::Ask => PcDice::Ask,
+                },
+            };
+            let (state, outcome) = live::start(spec).map_err(|e| coded(e, false))?;
+            let (state_path, log_path) = store::files_for(&dir, &id);
+            let entry = IndexEntry {
+                id,
+                state_path,
+                log_path,
+                origin_directory: state.origin_directory.clone(),
+                started_unix: store::now_unix(),
+                ended: false,
+            };
+            store::save(&state, &entry)?;
+            index.upsert(entry);
+            index.save()?;
+            ok(outcome)
+        }
+        Commands::Action { actor, action, targets, at } => step(&at, Command::Action { actor, action, targets }),
+        Commands::Move { actor, band, target, feet, at } => {
+            step(&at, Command::Move { actor, target, band: band.into(), feet })
+        }
+        Commands::Respond { values, decline, at } => step(&at, Command::Respond { values, decline }),
+        Commands::EndTurn { at } => step(&at, Command::EndTurn),
+        Commands::End { reason, at } => step(&at, Command::End { reason }),
+        Commands::Override { path, value, clear: _, why, at } => {
+            check_rule(&why.rule)?;
+            let value = value.map(|v| serde_json::from_str(&v).unwrap_or(Value::String(v)));
+            step(&at, Command::Override { path, value, reason: why.reason, rule: why.rule })
+        }
+        Commands::Roll { expression, why, at } => {
+            check_rule(&why.rule)?;
+            step(&at, Command::Roll { expression, reason: why.reason, rule: why.rule })
+        }
+        Commands::Add { stat_block, side, band, engaged_with, at } => {
+            let stat_block = Box::new(read_stat_block(&stat_block)?);
+            step(&at, Command::Add { stat_block, side, band: band.map(Into::into), engaged_with })
+        }
+        Commands::Remove { id, reason, at } => step(&at, Command::Remove { id, reason }),
+        Commands::Undo { at } => step(&at, Command::Undo),
+        Commands::State { public, at } => {
+            let (_, state) = open(&at, VersionCheck::Require)?;
+            ok(serde_json::json!({
+                "encounter": state.id,
+                "digest": live::digest_of(&state, public),
+                "pending": if public { None } else { state.pending.clone() },
+            }))
+        }
+        Commands::Log { public, at } => {
+            let (entry, state) = open(&at, VersionCheck::Require)?;
+            let text = if public { log::render_public(&state.log) } else { log::render(&state.log) };
+            let mut out = serde_json::json!({ "encounter": state.id, "public": public, "log": text });
+            if !public {
+                out["log_path"] = serde_json::to_value(&entry.log_path).unwrap_or_default();
+            }
+            ok(out)
+        }
+        Commands::Replay { at } => {
+            let (_, state) = open(&at, VersionCheck::Ignore)?;
+            ok(live::replay(&state))
+        }
+        Commands::List => {
+            let index = Index::load()?;
+            let rows: Vec<Value> = index
+                .encounters
+                .iter()
+                .map(|e| {
+                    serde_json::json!({
+                        "id": e.id,
+                        "origin_directory": e.origin_directory,
+                        "started_unix": e.started_unix,
+                        "ended": e.ended,
+                        "state_path": e.state_path,
+                        "log_path": e.log_path,
+                        "state_exists": e.state_path.exists(),
+                    })
+                })
+                .collect();
+            ok(serde_json::json!({ "encounters": rows }))
+        }
+        Commands::Clean => {
+            let config = config()?;
+            let mut index = Index::load()?;
+            let removed = prune(&mut index, config.delete_logs)?;
+            ok(serde_json::json!({ "removed": removed, "logs_deleted": config.delete_logs }))
+        }
+        Commands::Help { .. } | Commands::Schema { .. } => unreachable!("handled in main"),
+    }
+}
+
+/// Delete ended encounters, and entries whose state file is gone.
+fn prune(index: &mut Index, delete_logs: bool) -> Result<Vec<String>, CodedError> {
+    let mut removed = Vec::new();
+    for entry in &index.encounters {
+        if entry.ended || !entry.state_path.exists() {
+            store::delete(entry, delete_logs)?;
+            removed.push(entry.id.clone());
+        }
+    }
+    index.encounters.retain(|e| !removed.contains(&e.id));
+    index.save()?;
+    Ok(removed)
+}
+
+fn check_rule(rule: &Option<String>) -> Result<(), CodedError> {
+    match rule {
+        Some(slug) => store::validate_rule(slug, &cwd()?),
+        None => Ok(()),
+    }
+}
+
+fn open(at: &At, version: VersionCheck) -> Result<(IndexEntry, EncounterState), CodedError> {
+    let index = Index::load()?;
+    let entry = index.resolve(at.encounter.as_deref())?.clone();
+    let state = store::load(&entry.state_path, version)?;
+    Ok((entry, state))
+}
+
+fn step(at: &At, cmd: Command) -> Result<String, CodedError> {
+    let override_cmd = matches!(cmd, Command::Override { .. });
+    let (mut entry, mut state) = open(at, VersionCheck::Require)?;
+    let outcome = live::execute(&mut state, cmd).map_err(|e| coded(e, override_cmd))?;
+    store::save(&state, &entry)?;
+    if entry.ended != state.ended.is_some() {
+        entry.ended = state.ended.is_some();
+        let mut index = Index::load()?;
+        index.upsert(entry);
+        index.save()?;
+    }
+    ok(outcome)
+}
+
 fn run_schema(action: SchemaAction) -> Result<String, CodedError> {
-    let data = match action {
+    let data: Value = match action {
         SchemaAction::Monster => {
-            let schema = schema_json::<bench_core::stat_block::StatBlock>()
+            let schema = schema_json::<StatBlock>()
                 .map_err(|e| CodedError::new(ErrorCode::Internal, format!("failed to generate monster schema: {e:#}")))?;
             serde_json::from_str(&schema)
                 .map_err(|e| CodedError::new(ErrorCode::Internal, format!("generated schema is not valid json: {e}")))?
         }
         SchemaAction::Validate { path } => {
-            let text = std::fs::read_to_string(&path)
-                .map_err(|e| CodedError::new(ErrorCode::NotFound, format!("failed to read {path}: {e}")))?;
-            let value: serde_json::Value = serde_json::from_str(&text)
-                .map_err(|e| CodedError::new(ErrorCode::InvalidJson, format!("invalid json in {path}: {e}")))?;
-            let errors = validate_value::<bench_core::stat_block::StatBlock>(&value)
-                .map_err(|e| CodedError::new(ErrorCode::Internal, format!("failed to validate {path}: {e}")))?;
-            if errors.is_empty() {
-                serde_json::json!({"valid": true, "path": path})
-            } else {
-                let details = serde_json::to_value(errors)
-                    .map_err(|e| CodedError::new(ErrorCode::Internal, format!("failed to serialize errors: {e}")))?;
-                return Err(CodedError::new(
-                    ErrorCode::SchemaValidationFailed,
-                    format!("{path} failed schema validation"),
-                )
-                .with_details(details));
-            }
+            read_stat_block(&path)?;
+            serde_json::json!({"valid": true, "path": path})
         }
     };
-    serde_json::to_string_pretty(&Envelope::ok(data))
-        .map_err(|e| CodedError::new(ErrorCode::Internal, format!("failed to serialize envelope: {e}")))
+    ok(data)
 }
 
-fn command_catalog() -> serde_json::Value {
-    serde_json::json!({
-        "commands": [
-            {
-                "name": "help",
-                "args": ["--json"],
-                "description": "Print machine-readable command catalog."
-            },
-            {
-                "name": "schema",
-                "subcommands": [
-                    {
-                        "name": "monster",
-                        "description": "Print the JSON Schema for the monster stat block."
+/// Machine-readable catalog built from the clap definitions, so it cannot
+/// drift from the commands the binary accepts.
+fn command_catalog() -> Value {
+    fn describe(cmd: &clap::Command) -> Value {
+        let args: Vec<Value> = cmd
+            .get_arguments()
+            .filter(|a| !matches!(a.get_id().as_str(), "help" | "version"))
+            .map(|a| {
+                serde_json::json!({
+                    "name": a.get_long().map(|l| format!("--{l}")).unwrap_or_else(|| a.get_id().to_string()),
+                    "positional": a.is_positional(),
+                    "required": a.is_required_set(),
+                    "multiple": a.get_num_args().is_some_and(|n| n.max_values() > 1),
+                    "flag": !a.get_action().takes_values(),
+                    "values": if a.get_action().takes_values() {
+                        a.get_possible_values().iter().map(|v| v.get_name().to_string()).collect::<Vec<_>>()
+                    } else {
+                        vec![]
                     },
-                    {
-                        "name": "validate",
-                        "args": ["path"],
-                        "description": "Validate a stat block JSON file."
-                    }
-                ]
-            }
-        ]
+                    "description": a.get_help().map(|h| h.to_string()),
+                })
+            })
+            .collect();
+        let mut out = serde_json::json!({
+            "name": cmd.get_name(),
+            "description": cmd.get_about().map(|h| h.to_string()),
+            "args": args,
+        });
+        let subs: Vec<Value> = cmd.get_subcommands().map(describe).collect();
+        if !subs.is_empty() {
+            out["subcommands"] = Value::Array(subs);
+        }
+        out
+    }
+    let cli = Cli::command();
+    serde_json::json!({
+        "engine_version": ENGINE_VERSION,
+        "commands": cli.get_subcommands().map(describe).collect::<Vec<_>>(),
     })
-}
-
-fn print_and_exit_ok<T: Serialize>(data: T) {
-    println!("{}", serde_json::to_string_pretty(&data).unwrap());
-    process::exit(0);
 }

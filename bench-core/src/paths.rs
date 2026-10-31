@@ -9,7 +9,14 @@ use std::path::{Path, PathBuf};
 use directories::BaseDirs;
 
 /// Returns the `~/.bench` home directory, creating it if necessary.
+///
+/// `BENCH_HOME` overrides the location, for tests and portable installs.
 pub fn home_dir() -> anyhow::Result<PathBuf> {
+    if let Some(custom) = std::env::var_os("BENCH_HOME").filter(|v| !v.is_empty()) {
+        let path = PathBuf::from(custom);
+        std::fs::create_dir_all(&path)?;
+        return Ok(path);
+    }
     let base = BaseDirs::new()
         .ok_or_else(|| anyhow::anyhow!("could not determine user home directory"))?;
     let path = base.home_dir().join(".bench");
@@ -41,6 +48,15 @@ pub fn encounters_dir(output: config::OutputTarget, cwd: impl AsRef<Path>) -> an
 /// Path to the user-level config file.
 pub fn config_file() -> anyhow::Result<PathBuf> {
     Ok(home_dir()?.join("config.toml"))
+}
+
+/// House-rule folders, project layer first: `./.bench/house-rules/`, then
+/// `~/.bench/house-rules/`.
+pub fn house_rule_dirs(cwd: impl AsRef<Path>) -> anyhow::Result<Vec<PathBuf>> {
+    Ok(vec![
+        cwd.as_ref().join(".bench").join("house-rules"),
+        home_dir()?.join("house-rules"),
+    ])
 }
 
 /// Path to the encounter index file.

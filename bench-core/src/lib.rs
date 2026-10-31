@@ -6,15 +6,20 @@
 #![allow(dead_code)]
 
 pub mod config;
+pub mod digest;
 pub mod effect;
 pub mod engine;
 pub mod encounter;
 pub mod error;
+pub mod live;
+pub mod log;
+pub mod override_path;
 pub mod party;
 pub mod paths;
 pub mod rng;
 pub mod schema;
 pub mod spell;
+pub mod store;
 pub mod stat_block;
 
 /// Engine version written into encounter state files.
