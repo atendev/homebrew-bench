@@ -1,0 +1,150 @@
+{
+  "ability_scores": {
+    "charisma": 11,
+    "constitution": 16,
+    "dexterity": 15,
+    "intelligence": 10,
+    "strength": 17,
+    "wisdom": 13
+  },
+  "actions": [
+    {
+      "desc": "The weretiger makes two attacks, using Scratch or Longbow in any combination. It can replace one attack with a Bite attack.",
+      "effects": [
+        {
+          "multiattack": {
+            "steps": [
+              {
+                "choice": {
+                  "options": [
+                    {
+                      "action_id": "scratch",
+                      "count": 1
+                    },
+                    {
+                      "action_id": "scratch",
+                      "count": 1
+                    },
+                    {
+                      "action_id": "bite",
+                      "count": 1
+                    }
+                  ],
+                  "pick": 2
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "id": "multiattack",
+      "kind": "modeled",
+      "name": "Multiattack"
+    },
+    {
+      "agent_clauses": [
+        "If the target is a Humanoid, it is subjected to the following effect. Constitution Saving Throw: DC 13. Failure: The target is cursed. If the cursed target drops to 0 Hit Points, it instead becomes a Weretiger under the GM’s control and has 10 Hit Points. Success: The target is immune to this weretiger’s curse for 24 hours."
+      ],
+      "desc": "Melee Attack Roll: +5, reach 5 ft. Hit: 12 (2d8 + 3) Piercing damage. If the target is a Humanoid, it is subjected to the following effect. Constitution Saving Throw: DC 13. Failure: The target is cursed. If the cursed target drops to 0 Hit Points, it instead becomes a Weretiger under the GM’s control and has 10 Hit Points. Success: The target is immune to this weretiger’s curse for 24 hours.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "2d8",
+                "magical": false,
+                "modifier": 3,
+                "type": "piercing"
+              }
+            ],
+            "modifier": 5,
+            "on_hit": [],
+            "range": null,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "bite",
+      "kind": "partly_modeled",
+      "name": "Bite"
+    },
+    {
+      "desc": "Melee Attack Roll: +5, reach 5 ft. Hit: 10 (2d6 + 3) Slashing damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "2d6",
+                "magical": false,
+                "modifier": 3,
+                "type": "slashing"
+              }
+            ],
+            "modifier": 5,
+            "on_hit": [],
+            "range": null,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "scratch",
+      "kind": "modeled",
+      "name": "Scratch"
+    }
+  ],
+  "alignment": "neutral",
+  "armor_class": [
+    {
+      "value": 12
+    }
+  ],
+  "bonus_actions": [
+    {
+      "default_resolution": "skipped",
+      "desc": "The weretiger moves up to its Speed without provoking Opportunity Attacks. At the end of this movement, the weretiger can take the Hide action.",
+      "id": "prowl",
+      "kind": "unmodeled",
+      "name": "Prowl"
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "The weretiger shape-shifts into a Large tiger-humanoid hybrid or a Large tiger, or it returns to its true humanoid form. Its game statistics, other than its size, are the same in each form. Any equipment it is wearing or carrying isn’t transformed.",
+      "id": "shape-shift",
+      "kind": "unmodeled",
+      "name": "Shape-Shift"
+    }
+  ],
+  "challenge_rating": 4,
+  "hit_points": {
+    "average": 120,
+    "dice": "16d8+48"
+  },
+  "id": "weretiger-tiger",
+  "initiative": 2,
+  "languages": [
+    "Common (can’t speak in tiger form)"
+  ],
+  "name": "Weretiger, Tiger Form",
+  "proficiency_bonus": 2,
+  "schema_version": "1",
+  "senses": {
+    "darkvision": 60,
+    "passive_perception": 15
+  },
+  "size": "large",
+  "skills": {
+    "perception": 5,
+    "stealth": 4
+  },
+  "source": "srd-5.2.1",
+  "speeds": {
+    "walk": {
+      "feet": 40
+    }
+  },
+  "type": "monstrosity",
+  "xp": 1100
+}

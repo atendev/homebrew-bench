@@ -1,0 +1,139 @@
+{
+  "ability_scores": {
+    "charisma": 14,
+    "constitution": 16,
+    "dexterity": 14,
+    "intelligence": 10,
+    "strength": 19,
+    "wisdom": 15
+  },
+  "actions": [
+    {
+      "desc": "The half-dragon makes two Claw attacks.",
+      "effects": [
+        {
+          "multiattack": {
+            "steps": [
+              {
+                "action": {
+                  "action_id": "claw",
+                  "count": 2
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "id": "multiattack",
+      "kind": "modeled",
+      "name": "Multiattack"
+    },
+    {
+      "agent_clauses": [
+        "Damage of a chosen type, not modeled: plus 7 (2d6) damage of the type chosen for the Draconic Origin trait."
+      ],
+      "desc": "Melee Attack Roll: +7, reach 10 ft. Hit: 6 (1d4 + 4) Slashing damage plus 7 (2d6) damage of the type chosen for the Draconic Origin trait.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "1d4",
+                "magical": false,
+                "modifier": 4,
+                "type": "slashing"
+              }
+            ],
+            "modifier": 7,
+            "on_hit": [],
+            "range": null,
+            "reach": 10,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "claw",
+      "kind": "partly_modeled",
+      "name": "Claw"
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "Dexterity Saving Throw: DC 14, each creature in a 30-foot Cone. Failure: 28 (8d6) damage of the type chosen for the Draconic Origin trait. Success: Half damage.",
+      "id": "dragon-s-breath",
+      "kind": "unmodeled",
+      "name": "Dragon’s Breath",
+      "usage": {
+        "recharge": {
+          "dice": "5-6"
+        }
+      }
+    }
+  ],
+  "alignment": "neutral",
+  "armor_class": [
+    {
+      "value": 18
+    }
+  ],
+  "bonus_actions": [
+    {
+      "default_resolution": "skipped",
+      "desc": "The half-dragon jumps up to 30 feet by spending 10 feet of movement.",
+      "id": "leap",
+      "kind": "unmodeled",
+      "name": "Leap"
+    }
+  ],
+  "challenge_rating": 5,
+  "hit_points": {
+    "average": 105,
+    "dice": "14d8+42"
+  },
+  "id": "half-dragon",
+  "initiative": 2,
+  "intake_flags": [
+    {
+      "note": "Not modeled; the agent applies it: damage type chosen for the draconic origin trait below",
+      "path": "damage_resistances"
+    }
+  ],
+  "languages": [
+    "Common",
+    "Draconic"
+  ],
+  "name": "Half-Dragon",
+  "proficiency_bonus": 3,
+  "saving_throws": {
+    "dex": 5,
+    "wis": 5
+  },
+  "schema_version": "1",
+  "senses": {
+    "blindsight": 10,
+    "darkvision": 60,
+    "passive_perception": 15
+  },
+  "size": "medium",
+  "skills": {
+    "athletics": 7,
+    "perception": 5,
+    "stealth": 5
+  },
+  "source": "srd-5.2.1",
+  "speeds": {
+    "walk": {
+      "feet": 40
+    }
+  },
+  "traits": [
+    {
+      "default_resolution": "skipped",
+      "desc": "The half-dragon is related to a type of dragon associated with one of the following damage types (GM’s choice): Acid, Cold, Fire, Lightning, or Poison. This choice affects other aspects of the stat block.",
+      "id": "draconic-origin",
+      "kind": "unmodeled",
+      "name": "Draconic Origin"
+    }
+  ],
+  "type": "dragon",
+  "xp": 1800
+}

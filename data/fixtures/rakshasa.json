@@ -1,0 +1,175 @@
+{
+  "ability_scores": {
+    "charisma": 20,
+    "constitution": 18,
+    "dexterity": 17,
+    "intelligence": 13,
+    "strength": 14,
+    "wisdom": 16
+  },
+  "actions": [
+    {
+      "desc": "The rakshasa makes three Cursed Touch attacks.",
+      "effects": [
+        {
+          "multiattack": {
+            "steps": [
+              {
+                "action": {
+                  "action_id": "cursed-touch",
+                  "count": 3
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "id": "multiattack",
+      "kind": "modeled",
+      "name": "Multiattack"
+    },
+    {
+      "agent_clauses": [
+        "If the target is a creature, it is cursed. While cursed, the target gains no benefit from finishing a Short or Long Rest."
+      ],
+      "desc": "Melee Attack Roll: +10, reach 5 ft. Hit: 12 (2d6 + 5) Slashing damage plus 19 (3d12) Necrotic damage. If the target is a creature, it is cursed. While cursed, the target gains no benefit from finishing a Short or Long Rest.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "2d6",
+                "magical": false,
+                "modifier": 5,
+                "type": "slashing"
+              },
+              {
+                "dice": "3d12",
+                "magical": false,
+                "modifier": 0,
+                "type": "necrotic"
+              }
+            ],
+            "modifier": 10,
+            "on_hit": [],
+            "range": null,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "cursed-touch",
+      "kind": "partly_modeled",
+      "name": "Cursed Touch"
+    },
+    {
+      "agent_clauses": [
+        "and the target has the Frightened and Incapacitated conditions until the start of the rakshasa’s next turn"
+      ],
+      "desc": "Wisdom Saving Throw: DC 18, each enemy in a 30-foot Emanation originating from the rakshasa. Failure: 28 (8d6) Psychic damage, and the target has the Frightened and Incapacitated conditions until the start of the rakshasa’s next turn.",
+      "effects": [
+        {
+          "saving_throw": {
+            "ability": "wis",
+            "creature_type_gate": null,
+            "damage": [
+              {
+                "dice": "8d6",
+                "magical": false,
+                "modifier": 0,
+                "type": "psychic"
+              }
+            ],
+            "dc": 18,
+            "half_on_success": false,
+            "hp_gate": null,
+            "immunity_after_success": false,
+            "no_damage_on_success": true,
+            "on_failure": [],
+            "repeat_save": null,
+            "two_stage": null
+          }
+        }
+      ],
+      "id": "baleful-command",
+      "kind": "partly_modeled",
+      "name": "Baleful Command",
+      "usage": {
+        "recharge": {
+          "dice": "5-6"
+        }
+      }
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "The rakshasa casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 18):",
+      "id": "spellcasting",
+      "kind": "unmodeled",
+      "name": "Spellcasting"
+    }
+  ],
+  "alignment": "lawful evil",
+  "armor_class": [
+    {
+      "value": 17
+    }
+  ],
+  "challenge_rating": 13,
+  "condition_immunities": [
+    "charmed",
+    "frightened"
+  ],
+  "hit_points": {
+    "average": 221,
+    "dice": "26d8+104"
+  },
+  "id": "rakshasa",
+  "initiative": 3,
+  "intake_flags": [
+    {
+      "note": "Not modeled; the agent applies it: piercing damage from weapons wielded by creatures under the effect of a bless spell",
+      "path": "damage_vulnerabilities"
+    }
+  ],
+  "languages": [
+    "Common",
+    "Infernal"
+  ],
+  "name": "Rakshasa",
+  "proficiency_bonus": 5,
+  "schema_version": "1",
+  "senses": {
+    "passive_perception": 18,
+    "truesight": 60
+  },
+  "size": "medium",
+  "skills": {
+    "deception": 10,
+    "insight": 8,
+    "perception": 8
+  },
+  "source": "srd-5.2.1",
+  "speeds": {
+    "walk": {
+      "feet": 40
+    }
+  },
+  "traits": [
+    {
+      "default_resolution": "skipped",
+      "desc": "The rakshasa automatically succeeds on saving throws against spells and other magical effects, and the attack rolls of spells automatically miss it. Without the rakshasa’s permission, no spell can observe the rakshasa remotely or detect its thoughts, creature type, or alignment.",
+      "id": "greater-magic-resistance",
+      "kind": "unmodeled",
+      "name": "Greater Magic Resistance"
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "If the rakshasa dies outside the Nine Hells, its body turns to ichor, and it gains a new body instantly, reviving with all its Hit Points somewhere in the Nine Hells.",
+      "id": "fiendish-restoration",
+      "kind": "unmodeled",
+      "name": "Fiendish Restoration"
+    }
+  ],
+  "type": "fiend",
+  "xp": 10000
+}

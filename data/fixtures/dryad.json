@@ -1,0 +1,183 @@
+{
+  "ability_scores": {
+    "charisma": 18,
+    "constitution": 11,
+    "dexterity": 12,
+    "intelligence": 14,
+    "strength": 10,
+    "wisdom": 15
+  },
+  "actions": [
+    {
+      "desc": "The dryad makes one Vine Lash or Thorn Burst attack, and it can use Spellcasting to cast Charm Monster.",
+      "effects": [
+        {
+          "multiattack": {
+            "steps": [
+              {
+                "choice": {
+                  "options": [
+                    {
+                      "action_id": "vine-lash",
+                      "count": 1
+                    },
+                    {
+                      "action_id": "thorn-burst",
+                      "count": 1
+                    }
+                  ],
+                  "pick": 1
+                }
+              },
+              {
+                "alternatives": {
+                  "sets": [
+                    [
+                      {
+                        "action": {
+                          "action_id": "spellcasting",
+                          "cast": {
+                            "slot_level": null,
+                            "spell_id": "charm-monster",
+                            "upcast": false
+                          },
+                          "count": 1
+                        }
+                      }
+                    ],
+                    []
+                  ]
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "id": "multiattack",
+      "kind": "modeled",
+      "name": "Multiattack"
+    },
+    {
+      "desc": "Melee Attack Roll: +6, reach 10 ft. Hit: 8 (1d8 + 4) Slashing damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "1d8",
+                "magical": false,
+                "modifier": 4,
+                "type": "slashing"
+              }
+            ],
+            "modifier": 6,
+            "on_hit": [],
+            "range": null,
+            "reach": 10,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "vine-lash",
+      "kind": "modeled",
+      "name": "Vine Lash"
+    },
+    {
+      "desc": "Ranged Attack Roll: +6, range 60 ft. Hit: 7 (1d6 + 4) Piercing damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "1d6",
+                "magical": false,
+                "modifier": 4,
+                "type": "piercing"
+              }
+            ],
+            "modifier": 6,
+            "on_hit": [],
+            "range": [
+              60,
+              60
+            ],
+            "reach": null,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "thorn-burst",
+      "kind": "modeled",
+      "name": "Thorn Burst"
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "The dryad casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 14):",
+      "id": "spellcasting",
+      "kind": "unmodeled",
+      "name": "Spellcasting"
+    }
+  ],
+  "alignment": "neutral",
+  "armor_class": [
+    {
+      "value": 16
+    }
+  ],
+  "bonus_actions": [
+    {
+      "default_resolution": "skipped",
+      "desc": "If within 5 feet of a Large or bigger tree, the dryad teleports to an unoccupied space within 5 feet of a second Large or bigger tree that is within 60 feet of the previous tree.",
+      "id": "tree-stride",
+      "kind": "unmodeled",
+      "name": "Tree Stride"
+    }
+  ],
+  "challenge_rating": 1,
+  "hit_points": {
+    "average": 22,
+    "dice": "5d8"
+  },
+  "id": "dryad",
+  "initiative": 1,
+  "languages": [
+    "Elvish",
+    "Sylvan"
+  ],
+  "name": "Dryad",
+  "proficiency_bonus": 2,
+  "schema_version": "1",
+  "senses": {
+    "darkvision": 60,
+    "passive_perception": 14
+  },
+  "size": "medium",
+  "skills": {
+    "perception": 4,
+    "stealth": 5
+  },
+  "source": "srd-5.2.1",
+  "speeds": {
+    "walk": {
+      "feet": 30
+    }
+  },
+  "traits": [
+    {
+      "default_resolution": "skipped",
+      "desc": "The dryad has Advantage on saving throws against spells and other magical effects.",
+      "id": "magic-resistance",
+      "kind": "unmodeled",
+      "name": "Magic Resistance"
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "The dryad can communicate with Beasts and Plants as if they shared a language.",
+      "id": "speak-with-beasts-and-plants",
+      "kind": "unmodeled",
+      "name": "Speak with Beasts and Plants"
+    }
+  ],
+  "type": "fey",
+  "xp": 200
+}

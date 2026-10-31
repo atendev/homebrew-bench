@@ -371,37 +371,7 @@ fn resolve_effect(
             resolve_nested_action(state, stream, actor_id, &movement.attack_id, target_ids, events)?;
         }
         Effect::Multiattack(multi) => {
-            for step in multi.steps {
-                match step {
-                    crate::effect::MultiattackStep::Action { action_id, count } => {
-                        for _ in 0..count {
-                            resolve_nested_action(state, stream, actor_id, &action_id, target_ids, events)?;
-                        }
-                    }
-                    crate::effect::MultiattackStep::Choice { options, pick } => {
-                        // Phase 1 default: pick the first `pick` distinct options deterministically.
-                        // Live mode will later pause with a pending prompt for these picks; the batch
-                        // tactics policy will supply them as part of its plan. When that lands, the
-                        // engine will use those picks instead of this deterministic fallback.
-                        let pick = pick.min(options.len() as u32);
-                        let picks: Vec<_> = options.into_iter().take(pick as usize).collect();
-                        for opt in picks {
-                            events.push(EngineEvent {
-                                kind: "multiattack_choice".into(),
-                                message: format!("{} chooses {} for multiattack", actor_id, opt.action_id),
-                                actor_id: Some(actor_id.into()),
-                                target_id: None,
-                                roll: None,
-                                total: None,
-                                damage: None,
-                            });
-                            for _ in 0..opt.count {
-                                resolve_nested_action(state, stream, actor_id, &opt.action_id, target_ids, events)?;
-                            }
-                        }
-                    }
-                }
-            }
+            resolve_multiattack_steps(state, stream, actor_id, multi.steps, target_ids, events)?;
         }
         Effect::UseAction(use_action) => {
             resolve_nested_action(state, stream, actor_id, &use_action.action_id, target_ids, events)?;
@@ -476,6 +446,79 @@ fn resolve_save(
         }
     }
     Ok(())
+}
+
+fn resolve_multiattack_steps(
+    state: &mut EncounterState,
+    stream: &mut Stream,
+    actor_id: &str,
+    steps: Vec<crate::effect::MultiattackStep>,
+    target_ids: &[String],
+    events: &mut Vec<EngineEvent>,
+) -> Result<(), EngineError> {
+    use crate::effect::MultiattackStep;
+    for step in steps {
+        match step {
+            MultiattackStep::Action { action_id, count, cast } => {
+                for _ in 0..count {
+                    resolve_multiattack_slot(state, stream, actor_id, &action_id, cast.as_ref(), target_ids, events)?;
+                }
+            }
+            MultiattackStep::Choice { options, pick } => {
+                // Phase 1 default: pick the first `pick` distinct options deterministically.
+                // Live mode will later pause with a pending prompt for these picks; the batch
+                // tactics policy will supply them as part of its plan. When that lands, the
+                // engine will use those picks instead of this deterministic fallback.
+                let pick = pick.min(options.len() as u32);
+                for opt in options.into_iter().take(pick as usize) {
+                    let label = opt.cast.as_ref().map_or(opt.action_id.as_str(), |c| c.spell_id.as_str());
+                    events.push(multiattack_choice_event(actor_id, label));
+                    for _ in 0..opt.count {
+                        resolve_multiattack_slot(state, stream, actor_id, &opt.action_id, opt.cast.as_ref(), target_ids, events)?;
+                    }
+                }
+            }
+            MultiattackStep::Alternatives { sets } => {
+                // Same deterministic fallback as `Choice`: the first set, until live prompts
+                // and the batch tactics policy supply the pick.
+                let Some(set) = sets.into_iter().next() else { continue };
+                events.push(multiattack_choice_event(actor_id, "alternative 1"));
+                resolve_multiattack_steps(state, stream, actor_id, set, target_ids, events)?;
+            }
+        }
+    }
+    Ok(())
+}
+
+fn multiattack_choice_event(actor_id: &str, choice: &str) -> EngineEvent {
+    EngineEvent {
+        kind: "multiattack_choice".into(),
+        message: format!("{actor_id} chooses {choice} for multiattack"),
+        actor_id: Some(actor_id.into()),
+        target_id: None,
+        roll: None,
+        total: None,
+        damage: None,
+    }
+}
+
+fn resolve_multiattack_slot(
+    state: &mut EncounterState,
+    stream: &mut Stream,
+    actor_id: &str,
+    action_id: &str,
+    cast: Option<&crate::effect::Cast>,
+    target_ids: &[String],
+    events: &mut Vec<EngineEvent>,
+) -> Result<(), EngineError> {
+    let Some(cast) = cast else {
+        return resolve_nested_action(state, stream, actor_id, action_id, target_ids, events);
+    };
+    let i = index_of(state, actor_id)?;
+    if !stat_block(state, &state.combatants[i])?.actions.iter().any(|a| a.id == action_id) {
+        return Err(EngineError::NotFound(format!("action {action_id} not found")));
+    }
+    resolve_effect(state, stream, actor_id, Effect::Cast(cast.clone()), target_ids, events)
 }
 
 fn resolve_cast(
@@ -1561,11 +1604,11 @@ mod tests {
             kind: crate::stat_block::AbilityKind::Modeled,
             effects: vec![Effect::Multiattack(crate::effect::Multiattack {
                 steps: vec![
-                    crate::effect::MultiattackStep::Action { action_id: "claw".into(), count: 1 },
+                    crate::effect::MultiattackStep::Action { action_id: "claw".into(), count: 1, cast: None },
                     crate::effect::MultiattackStep::Choice {
                         options: vec![
-                            crate::effect::ChoiceOption { action_id: "claw".into(), count: 1 },
-                            crate::effect::ChoiceOption { action_id: "bite".into(), count: 1 },
+                            crate::effect::ChoiceOption { action_id: "claw".into(), count: 1, cast: None },
+                            crate::effect::ChoiceOption { action_id: "bite".into(), count: 1, cast: None },
                         ],
                         pick: 1,
                     },
@@ -1623,6 +1666,95 @@ mod tests {
         let resp = step(&mut state, req).unwrap();
         let attack_events: Vec<_> = resp.events.iter().filter(|e| e.kind == "attack").collect();
         assert_eq!(attack_events.len(), 2, "fixed 1 attack plus choice 1 attack");
+    }
+
+    #[test]
+    fn multiattack_alternatives_and_spell_slots() {
+        use crate::effect::{Cast, ChoiceOption, Multiattack, MultiattackStep};
+        let melee = |id: &str, dice: &str| crate::stat_block::AbilityEntry {
+            id: id.into(),
+            name: id.into(),
+            desc: None,
+            kind: crate::stat_block::AbilityKind::Modeled,
+            effects: vec![Effect::Attack(Attack {
+                modifier: 5,
+                reach: Some(5),
+                range: None,
+                target_count: 1,
+                damage: vec![Damage { dice: dice.into(), damage_type: DamageType::Slashing, modifier: 3, magical: false, if_target: None, if_target_from_actor: false }],
+                on_hit: vec![],
+            })],
+            agent_clauses: vec![],
+            default_resolution: None,
+            usage: None,
+        };
+        let fog = Cast { spell_id: "fog-cloud".into(), slot_level: None, upcast: false };
+        let mut attacker_block = test_stat_block("attacker", "Attacker", 30, 15);
+        attacker_block.actions.push(crate::stat_block::AbilityEntry {
+            effects: vec![Effect::Multiattack(Multiattack {
+                steps: vec![
+                    MultiattackStep::Alternatives {
+                        sets: vec![
+                            vec![MultiattackStep::Action { action_id: "claw".into(), count: 2, cast: None }],
+                            vec![MultiattackStep::Action { action_id: "bite".into(), count: 3, cast: None }],
+                        ],
+                    },
+                    MultiattackStep::Choice {
+                        options: vec![ChoiceOption { action_id: "spellcasting".into(), count: 1, cast: Some(fog.clone()) }],
+                        pick: 1,
+                    },
+                    MultiattackStep::Alternatives {
+                        sets: vec![vec![MultiattackStep::Action { action_id: "spellcasting".into(), count: 1, cast: Some(fog) }], vec![]],
+                    },
+                    MultiattackStep::Alternatives { sets: vec![] },
+                ],
+            })],
+            ..melee("multiattack", "1d4")
+        });
+        attacker_block.actions.push(melee("claw", "1d6"));
+        attacker_block.actions.push(melee("bite", "1d8"));
+        attacker_block.actions.push(crate::stat_block::AbilityEntry { effects: vec![], ..melee("spellcasting", "1d4") });
+        let target_block = test_stat_block("target", "Target", 50, 10);
+        let attacker = test_combatant("attacker", "attacker", 30, "enemy");
+        let target = test_combatant("target", "target", 50, "ally");
+        let mut state = test_encounter(vec![target_block, attacker_block], vec![target, attacker]);
+        state.combatants[0].engagement.push("attacker".into());
+        state.combatants[1].engagement.push("target".into());
+        state.active_turn = Some("attacker".into());
+        let req = StepRequest::Action { actor_id: "attacker".into(), action_id: "multiattack".into(), target_ids: vec!["target".into()] };
+        let resp = step(&mut state, req).unwrap();
+        let count = |kind: &str| resp.events.iter().filter(|e| e.kind == kind).count();
+        assert_eq!(count("attack"), 2, "first alternative: two claws");
+        assert_eq!(count("cast"), 2, "spell choice option plus the optional cast");
+        assert!(resp.events.iter().any(|e| e.kind == "multiattack_choice" && e.message.contains("fog-cloud")));
+    }
+
+    #[test]
+    fn multiattack_cast_requires_the_named_action() {
+        use crate::effect::{Cast, Multiattack, MultiattackStep};
+        let mut attacker_block = test_stat_block("attacker", "Attacker", 30, 15);
+        attacker_block.actions.push(crate::stat_block::AbilityEntry {
+            id: "multiattack".into(),
+            name: "Multiattack".into(),
+            desc: None,
+            kind: crate::stat_block::AbilityKind::Modeled,
+            effects: vec![Effect::Multiattack(Multiattack {
+                steps: vec![MultiattackStep::Action {
+                    action_id: "spellcasting".into(),
+                    count: 1,
+                    cast: Some(Cast { spell_id: "fog-cloud".into(), slot_level: None, upcast: false }),
+                }],
+            })],
+            agent_clauses: vec![],
+            default_resolution: None,
+            usage: None,
+        });
+        let attacker = test_combatant("attacker", "attacker", 30, "enemy");
+        let target = test_combatant("target", "target", 50, "ally");
+        let mut state = test_encounter(vec![test_stat_block("target", "Target", 50, 10), attacker_block], vec![target, attacker]);
+        state.active_turn = Some("attacker".into());
+        let req = StepRequest::Action { actor_id: "attacker".into(), action_id: "multiattack".into(), target_ids: vec!["target".into()] };
+        assert!(matches!(step(&mut state, req), Err(EngineError::NotFound(_))));
     }
 
     #[test]

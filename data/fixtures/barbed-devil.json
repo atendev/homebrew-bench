@@ -1,0 +1,218 @@
+{
+  "ability_scores": {
+    "charisma": 14,
+    "constitution": 18,
+    "dexterity": 17,
+    "intelligence": 12,
+    "strength": 16,
+    "wisdom": 14
+  },
+  "actions": [
+    {
+      "desc": "The devil makes one Claws attack and one Tail attack, or it makes two Hurl Flame attacks.",
+      "effects": [
+        {
+          "multiattack": {
+            "steps": [
+              {
+                "alternatives": {
+                  "sets": [
+                    [
+                      {
+                        "action": {
+                          "action_id": "claws",
+                          "count": 1
+                        }
+                      },
+                      {
+                        "action": {
+                          "action_id": "tail",
+                          "count": 1
+                        }
+                      }
+                    ],
+                    [
+                      {
+                        "action": {
+                          "action_id": "hurl-flame",
+                          "count": 2
+                        }
+                      }
+                    ]
+                  ]
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "id": "multiattack",
+      "kind": "modeled",
+      "name": "Multiattack"
+    },
+    {
+      "agent_clauses": [
+        "If the target is a Large or smaller creature, it has the Grappled condition (escape DC 13) from both claws."
+      ],
+      "desc": "Melee Attack Roll: +6, reach 5 ft. Hit: 10 (2d6 + 3) Piercing damage. If the target is a Large or smaller creature, it has the Grappled condition (escape DC 13) from both claws.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "2d6",
+                "magical": false,
+                "modifier": 3,
+                "type": "piercing"
+              }
+            ],
+            "modifier": 6,
+            "on_hit": [],
+            "range": null,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "claws",
+      "kind": "partly_modeled",
+      "name": "Claws"
+    },
+    {
+      "desc": "Melee Attack Roll: +6, reach 10 ft. Hit: 14 (2d10 + 3) Slashing damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "2d10",
+                "magical": false,
+                "modifier": 3,
+                "type": "slashing"
+              }
+            ],
+            "modifier": 6,
+            "on_hit": [],
+            "range": null,
+            "reach": 10,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "tail",
+      "kind": "modeled",
+      "name": "Tail"
+    },
+    {
+      "agent_clauses": [
+        "If the target is a flammable object that isn’t being worn or carried, it starts burning."
+      ],
+      "desc": "Ranged Attack Roll: +5, range 150 ft. Hit: 17 (5d6) Fire damage. If the target is a flammable object that isn’t being worn or carried, it starts burning.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "5d6",
+                "magical": false,
+                "modifier": 0,
+                "type": "fire"
+              }
+            ],
+            "modifier": 5,
+            "on_hit": [],
+            "range": [
+              150,
+              150
+            ],
+            "reach": null,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "hurl-flame",
+      "kind": "partly_modeled",
+      "name": "Hurl Flame"
+    }
+  ],
+  "alignment": "lawful evil",
+  "armor_class": [
+    {
+      "value": 15
+    }
+  ],
+  "challenge_rating": 5,
+  "condition_immunities": [
+    "poisoned"
+  ],
+  "damage_immunities": [
+    "fire",
+    "poison"
+  ],
+  "damage_resistances": [
+    "cold"
+  ],
+  "hit_points": {
+    "average": 110,
+    "dice": "13d8+52"
+  },
+  "id": "barbed-devil",
+  "initiative": 3,
+  "languages": [
+    "Infernal",
+    "telepathy 120 ft."
+  ],
+  "name": "Barbed Devil",
+  "proficiency_bonus": 3,
+  "saving_throws": {
+    "cha": 5,
+    "con": 7,
+    "str": 6,
+    "wis": 5
+  },
+  "schema_version": "1",
+  "senses": {
+    "darkvision": 120,
+    "passive_perception": 18
+  },
+  "size": "medium",
+  "skills": {
+    "deception": 5,
+    "insight": 5,
+    "perception": 8
+  },
+  "source": "srd-5.2.1",
+  "speeds": {
+    "climb": {
+      "feet": 30
+    },
+    "walk": {
+      "feet": 30
+    }
+  },
+  "traits": [
+    {
+      "default_resolution": "skipped",
+      "desc": "At the start of each of its turns, the devil deals 5 (1d10) Piercing damage to any creature it is grappling or any creature grappling it.",
+      "id": "barbed-hide",
+      "kind": "unmodeled",
+      "name": "Barbed Hide"
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "If the devil dies outside the Nine Hells, its body disappears in sulfurous smoke, and it gains a new body instantly, reviving with all its Hit Points somewhere in the Nine Hells.",
+      "id": "diabolical-restoration",
+      "kind": "unmodeled",
+      "name": "Diabolical Restoration"
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "The devil has Advantage on saving throws against spells and other magical effects.",
+      "id": "magic-resistance",
+      "kind": "unmodeled",
+      "name": "Magic Resistance"
+    }
+  ],
+  "type": "fiend",
+  "xp": 1800
+}

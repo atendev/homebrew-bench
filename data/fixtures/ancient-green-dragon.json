@@ -1,0 +1,253 @@
+{
+  "ability_scores": {
+    "charisma": 22,
+    "constitution": 25,
+    "dexterity": 12,
+    "intelligence": 20,
+    "strength": 27,
+    "wisdom": 17
+  },
+  "actions": [
+    {
+      "desc": "The dragon makes three Rend attacks. It can replace one attack with a use of Spellcasting to cast Mind Spike (level 5 version).",
+      "effects": [
+        {
+          "multiattack": {
+            "steps": [
+              {
+                "action": {
+                  "action_id": "rend",
+                  "count": 2
+                }
+              },
+              {
+                "choice": {
+                  "options": [
+                    {
+                      "action_id": "rend",
+                      "count": 1
+                    },
+                    {
+                      "action_id": "spellcasting",
+                      "cast": {
+                        "slot_level": 5,
+                        "spell_id": "mind-spike",
+                        "upcast": true
+                      },
+                      "count": 1
+                    }
+                  ],
+                  "pick": 1
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "id": "multiattack",
+      "kind": "modeled",
+      "name": "Multiattack"
+    },
+    {
+      "desc": "Melee Attack Roll: +15, reach 15 ft. Hit: 17 (2d8 + 8) Slashing damage plus 10 (3d6) Poison damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "2d8",
+                "magical": false,
+                "modifier": 8,
+                "type": "slashing"
+              },
+              {
+                "dice": "3d6",
+                "magical": false,
+                "modifier": 0,
+                "type": "poison"
+              }
+            ],
+            "modifier": 15,
+            "on_hit": [],
+            "range": null,
+            "reach": 15,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "rend",
+      "kind": "modeled",
+      "name": "Rend"
+    },
+    {
+      "desc": "Constitution Saving Throw: DC 22, each creature in a 90-foot Cone. Failure: 77 (22d6) Poison damage. Success: Half damage.",
+      "effects": [
+        {
+          "saving_throw": {
+            "ability": "con",
+            "creature_type_gate": null,
+            "damage": [
+              {
+                "dice": "22d6",
+                "magical": false,
+                "modifier": 0,
+                "type": "poison"
+              }
+            ],
+            "dc": 22,
+            "half_on_success": true,
+            "hp_gate": null,
+            "immunity_after_success": false,
+            "no_damage_on_success": false,
+            "on_failure": [],
+            "repeat_save": null,
+            "two_stage": null
+          }
+        }
+      ],
+      "id": "poison-breath",
+      "kind": "modeled",
+      "name": "Poison Breath",
+      "usage": {
+        "recharge": {
+          "dice": "5-6"
+        }
+      }
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 21):",
+      "id": "spellcasting",
+      "kind": "unmodeled",
+      "name": "Spellcasting"
+    }
+  ],
+  "alignment": "lawful evil",
+  "armor_class": [
+    {
+      "value": 21
+    }
+  ],
+  "challenge_rating": 22,
+  "condition_immunities": [
+    "poisoned"
+  ],
+  "damage_immunities": [
+    "poison"
+  ],
+  "hit_points": {
+    "average": 402,
+    "dice": "23d20+161"
+  },
+  "id": "ancient-green-dragon",
+  "initiative": 1,
+  "lair_xp": 50000,
+  "languages": [
+    "Common",
+    "Draconic"
+  ],
+  "legendary_actions": [
+    {
+      "default_resolution": "skipped",
+      "desc": "The dragon uses Spellcasting to cast Mind Spike (level 5 version).",
+      "id": "mind-invasion",
+      "kind": "unmodeled",
+      "name": "Mind Invasion"
+    },
+    {
+      "agent_clauses": [
+        "and the target takes a −2 penalty to AC until the end of its next turn. Failure or"
+      ],
+      "desc": "Constitution Saving Throw: DC 21, each creature in a 30-foot-radius Sphere centered on a point the dragon can see within 90 feet. Failure: 17 (5d6) Poison damage, and the target takes a −2 penalty to AC until the end of its next turn. Failure or Success: The dragon can’t take this action again until the start of its next turn.",
+      "effects": [
+        {
+          "saving_throw": {
+            "ability": "con",
+            "creature_type_gate": null,
+            "damage": [
+              {
+                "dice": "5d6",
+                "magical": false,
+                "modifier": 0,
+                "type": "poison"
+              }
+            ],
+            "dc": 21,
+            "half_on_success": false,
+            "hp_gate": null,
+            "immunity_after_success": false,
+            "no_damage_on_success": true,
+            "on_failure": [],
+            "repeat_save": null,
+            "two_stage": null
+          }
+        }
+      ],
+      "id": "noxious-miasma",
+      "kind": "partly_modeled",
+      "name": "Noxious Miasma"
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "The dragon moves up to half its Speed, and it makes one Rend attack.",
+      "id": "pounce",
+      "kind": "unmodeled",
+      "name": "Pounce"
+    }
+  ],
+  "legendary_uses_per_round": 3,
+  "name": "Ancient Green Dragon",
+  "proficiency_bonus": 7,
+  "saving_throws": {
+    "dex": 8,
+    "wis": 10
+  },
+  "schema_version": "1",
+  "senses": {
+    "blindsight": 60,
+    "darkvision": 120,
+    "passive_perception": 27
+  },
+  "size": "gargantuan",
+  "skills": {
+    "deception": 13,
+    "perception": 17,
+    "persuasion": 13,
+    "stealth": 8
+  },
+  "source": "srd-5.2.1",
+  "speeds": {
+    "fly": {
+      "feet": 80
+    },
+    "swim": {
+      "feet": 40
+    },
+    "walk": {
+      "feet": 40
+    }
+  },
+  "traits": [
+    {
+      "default_resolution": "skipped",
+      "desc": "The dragon can breathe air and water.",
+      "id": "amphibious",
+      "kind": "unmodeled",
+      "name": "Amphibious"
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "If the dragon fails a saving throw, it can choose to succeed instead.",
+      "id": "legendary-resistance",
+      "kind": "unmodeled",
+      "name": "Legendary Resistance",
+      "usage": {
+        "per_day": {
+          "uses": 4
+        }
+      }
+    }
+  ],
+  "type": "dragon",
+  "xp": 41000
+}

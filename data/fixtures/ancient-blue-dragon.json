@@ -1,0 +1,215 @@
+{
+  "ability_scores": {
+    "charisma": 25,
+    "constitution": 27,
+    "dexterity": 10,
+    "intelligence": 18,
+    "strength": 29,
+    "wisdom": 17
+  },
+  "actions": [
+    {
+      "desc": "The dragon makes three Rend attacks. It can replace one attack with a use of Spellcasting to cast Shatter (level 3 version).",
+      "effects": [
+        {
+          "multiattack": {
+            "steps": [
+              {
+                "action": {
+                  "action_id": "rend",
+                  "count": 2
+                }
+              },
+              {
+                "choice": {
+                  "options": [
+                    {
+                      "action_id": "rend",
+                      "count": 1
+                    },
+                    {
+                      "action_id": "spellcasting",
+                      "cast": {
+                        "slot_level": 3,
+                        "spell_id": "shatter",
+                        "upcast": true
+                      },
+                      "count": 1
+                    }
+                  ],
+                  "pick": 1
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "id": "multiattack",
+      "kind": "modeled",
+      "name": "Multiattack"
+    },
+    {
+      "desc": "Melee Attack Roll: +16, reach 15 ft. Hit: 18 (2d8 + 9) Slashing damage plus 11 (2d10) Lightning damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "2d8",
+                "magical": false,
+                "modifier": 9,
+                "type": "slashing"
+              },
+              {
+                "dice": "2d10",
+                "magical": false,
+                "modifier": 0,
+                "type": "lightning"
+              }
+            ],
+            "modifier": 16,
+            "on_hit": [],
+            "range": null,
+            "reach": 15,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "rend",
+      "kind": "modeled",
+      "name": "Rend"
+    },
+    {
+      "desc": "Dexterity Saving Throw: DC 23, each creature in a 120-foot-long, 10-foot-wide Line. Failure: 88 (16d10) Lightning damage. Success: Half damage.",
+      "effects": [
+        {
+          "saving_throw": {
+            "ability": "dex",
+            "creature_type_gate": null,
+            "damage": [
+              {
+                "dice": "16d10",
+                "magical": false,
+                "modifier": 0,
+                "type": "lightning"
+              }
+            ],
+            "dc": 23,
+            "half_on_success": true,
+            "hp_gate": null,
+            "immunity_after_success": false,
+            "no_damage_on_success": false,
+            "on_failure": [],
+            "repeat_save": null,
+            "two_stage": null
+          }
+        }
+      ],
+      "id": "lightning-breath",
+      "kind": "modeled",
+      "name": "Lightning Breath",
+      "usage": {
+        "recharge": {
+          "dice": "5-6"
+        }
+      }
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 22):",
+      "id": "spellcasting",
+      "kind": "unmodeled",
+      "name": "Spellcasting"
+    }
+  ],
+  "alignment": "lawful evil",
+  "armor_class": [
+    {
+      "value": 22
+    }
+  ],
+  "challenge_rating": 23,
+  "damage_immunities": [
+    "lightning"
+  ],
+  "hit_points": {
+    "average": 481,
+    "dice": "26d20+208"
+  },
+  "id": "ancient-blue-dragon",
+  "initiative": 0,
+  "lair_xp": 62000,
+  "languages": [
+    "Common",
+    "Draconic"
+  ],
+  "legendary_actions": [
+    {
+      "default_resolution": "skipped",
+      "desc": "The dragon uses Spellcasting to cast Invisibility on itself, and it can fly up to half its Fly Speed. The dragon can’t take this action again until the start of its next turn.",
+      "id": "cloaked-flight",
+      "kind": "unmodeled",
+      "name": "Cloaked Flight"
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "The dragon uses Spellcasting to cast Shatter (level 3 version). The dragon can’t take this action again until the start of its next turn.",
+      "id": "sonic-boom",
+      "kind": "unmodeled",
+      "name": "Sonic Boom"
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "The dragon makes one Rend attack.",
+      "id": "tail-swipe",
+      "kind": "unmodeled",
+      "name": "Tail Swipe"
+    }
+  ],
+  "legendary_uses_per_round": 3,
+  "name": "Ancient Blue Dragon",
+  "proficiency_bonus": 7,
+  "saving_throws": {
+    "dex": 7,
+    "wis": 10
+  },
+  "schema_version": "1",
+  "senses": {
+    "blindsight": 60,
+    "darkvision": 120,
+    "passive_perception": 27
+  },
+  "size": "gargantuan",
+  "skills": {
+    "perception": 17,
+    "stealth": 7
+  },
+  "source": "srd-5.2.1",
+  "speeds": {
+    "burrow": {
+      "feet": 40
+    },
+    "fly": {
+      "feet": 80
+    },
+    "walk": {
+      "feet": 40
+    }
+  },
+  "traits": [
+    {
+      "default_resolution": "skipped",
+      "desc": "If the dragon fails a saving throw, it can choose to succeed instead.",
+      "id": "legendary-resistance",
+      "kind": "unmodeled",
+      "name": "Legendary Resistance",
+      "usage": {
+        "per_day": {
+          "uses": 4
+        }
+      }
+    }
+  ],
+  "type": "dragon",
+  "xp": 50000
+}

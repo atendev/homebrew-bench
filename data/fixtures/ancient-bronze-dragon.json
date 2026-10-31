@@ -1,0 +1,267 @@
+{
+  "ability_scores": {
+    "charisma": 25,
+    "constitution": 27,
+    "dexterity": 10,
+    "intelligence": 18,
+    "strength": 29,
+    "wisdom": 17
+  },
+  "actions": [
+    {
+      "desc": "The dragon makes three Rend attacks. It can replace one attack with a use of (A) Repulsion Breath or (B) Spellcasting to cast Guiding Bolt (level 2 version).",
+      "effects": [
+        {
+          "multiattack": {
+            "steps": [
+              {
+                "action": {
+                  "action_id": "rend",
+                  "count": 2
+                }
+              },
+              {
+                "choice": {
+                  "options": [
+                    {
+                      "action_id": "rend",
+                      "count": 1
+                    },
+                    {
+                      "action_id": "repulsion-breath",
+                      "count": 1
+                    },
+                    {
+                      "action_id": "spellcasting",
+                      "cast": {
+                        "slot_level": 2,
+                        "spell_id": "guiding-bolt",
+                        "upcast": true
+                      },
+                      "count": 1
+                    }
+                  ],
+                  "pick": 1
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "id": "multiattack",
+      "kind": "modeled",
+      "name": "Multiattack"
+    },
+    {
+      "desc": "Melee Attack Roll: +16, reach 15 ft. Hit: 18 (2d8 + 9) Slashing damage plus 9 (2d8) Lightning damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "2d8",
+                "magical": false,
+                "modifier": 9,
+                "type": "slashing"
+              },
+              {
+                "dice": "2d8",
+                "magical": false,
+                "modifier": 0,
+                "type": "lightning"
+              }
+            ],
+            "modifier": 16,
+            "on_hit": [],
+            "range": null,
+            "reach": 15,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "rend",
+      "kind": "modeled",
+      "name": "Rend"
+    },
+    {
+      "desc": "Dexterity Saving Throw: DC 23, each creature in a 120-foot-long, 10-foot-wide Line. Failure: 82 (15d10) Lightning damage. Success: Half damage.",
+      "effects": [
+        {
+          "saving_throw": {
+            "ability": "dex",
+            "creature_type_gate": null,
+            "damage": [
+              {
+                "dice": "15d10",
+                "magical": false,
+                "modifier": 0,
+                "type": "lightning"
+              }
+            ],
+            "dc": 23,
+            "half_on_success": true,
+            "hp_gate": null,
+            "immunity_after_success": false,
+            "no_damage_on_success": false,
+            "on_failure": [],
+            "repeat_save": null,
+            "two_stage": null
+          }
+        }
+      ],
+      "id": "lightning-breath",
+      "kind": "modeled",
+      "name": "Lightning Breath",
+      "usage": {
+        "recharge": {
+          "dice": "5-6",
+          "group": "breath_weapons"
+        }
+      }
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "Strength Saving Throw: DC 23, each creature in a 30-foot Cone. Failure: The target is pushed up to 60 feet straight away from the dragon and has the Prone condition.",
+      "id": "repulsion-breath",
+      "kind": "unmodeled",
+      "name": "Repulsion Breath",
+      "usage": {
+        "recharge": {
+          "dice": "5-6",
+          "group": "breath_weapons"
+        }
+      }
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 22, +14 to hit with spell attacks):",
+      "id": "spellcasting",
+      "kind": "unmodeled",
+      "name": "Spellcasting"
+    }
+  ],
+  "alignment": "lawful good",
+  "armor_class": [
+    {
+      "value": 22
+    }
+  ],
+  "challenge_rating": 22,
+  "damage_immunities": [
+    "lightning"
+  ],
+  "hit_points": {
+    "average": 444,
+    "dice": "24d20+192"
+  },
+  "id": "ancient-bronze-dragon",
+  "initiative": 0,
+  "lair_xp": 50000,
+  "languages": [
+    "Common",
+    "Draconic"
+  ],
+  "legendary_actions": [
+    {
+      "default_resolution": "skipped",
+      "desc": "The dragon uses Spellcasting to cast Guiding Bolt (level 2 version).",
+      "id": "guiding-light",
+      "kind": "unmodeled",
+      "name": "Guiding Light"
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "The dragon moves up to half its Speed, and it makes one Rend attack.",
+      "id": "pounce",
+      "kind": "unmodeled",
+      "name": "Pounce"
+    },
+    {
+      "agent_clauses": [
+        "and the target has the Deafened condition until the end of its next turn"
+      ],
+      "desc": "Constitution Saving Throw: DC 22, each creature in a 20-foot-radius Sphere centered on a point the dragon can see within 120 feet. Failure: 13 (3d8) Thunder damage, and the target has the Deafened condition until the end of its next turn.",
+      "effects": [
+        {
+          "saving_throw": {
+            "ability": "con",
+            "creature_type_gate": null,
+            "damage": [
+              {
+                "dice": "3d8",
+                "magical": false,
+                "modifier": 0,
+                "type": "thunder"
+              }
+            ],
+            "dc": 22,
+            "half_on_success": false,
+            "hp_gate": null,
+            "immunity_after_success": false,
+            "no_damage_on_success": true,
+            "on_failure": [],
+            "repeat_save": null,
+            "two_stage": null
+          }
+        }
+      ],
+      "id": "thunderclap",
+      "kind": "partly_modeled",
+      "name": "Thunderclap"
+    }
+  ],
+  "legendary_uses_per_round": 3,
+  "name": "Ancient Bronze Dragon",
+  "proficiency_bonus": 7,
+  "saving_throws": {
+    "dex": 7,
+    "wis": 10
+  },
+  "schema_version": "1",
+  "senses": {
+    "blindsight": 60,
+    "darkvision": 120,
+    "passive_perception": 27
+  },
+  "size": "gargantuan",
+  "skills": {
+    "insight": 10,
+    "perception": 17,
+    "stealth": 7
+  },
+  "source": "srd-5.2.1",
+  "speeds": {
+    "fly": {
+      "feet": 80
+    },
+    "swim": {
+      "feet": 40
+    },
+    "walk": {
+      "feet": 40
+    }
+  },
+  "traits": [
+    {
+      "default_resolution": "skipped",
+      "desc": "The dragon can breathe air and water.",
+      "id": "amphibious",
+      "kind": "unmodeled",
+      "name": "Amphibious"
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "If the dragon fails a saving throw, it can choose to succeed instead.",
+      "id": "legendary-resistance",
+      "kind": "unmodeled",
+      "name": "Legendary Resistance",
+      "usage": {
+        "per_day": {
+          "uses": 4
+        }
+      }
+    }
+  ],
+  "type": "dragon",
+  "xp": 41000
+}

@@ -1,0 +1,268 @@
+{
+  "ability_scores": {
+    "charisma": 28,
+    "constitution": 29,
+    "dexterity": 14,
+    "intelligence": 18,
+    "strength": 30,
+    "wisdom": 17
+  },
+  "actions": [
+    {
+      "desc": "The dragon makes three Rend attacks. It can replace one attack with a use of (A) Spellcasting to cast Guiding Bolt (level 4 version) or (B) Weakening Breath.",
+      "effects": [
+        {
+          "multiattack": {
+            "steps": [
+              {
+                "action": {
+                  "action_id": "rend",
+                  "count": 2
+                }
+              },
+              {
+                "choice": {
+                  "options": [
+                    {
+                      "action_id": "rend",
+                      "count": 1
+                    },
+                    {
+                      "action_id": "spellcasting",
+                      "cast": {
+                        "slot_level": 4,
+                        "spell_id": "guiding-bolt",
+                        "upcast": true
+                      },
+                      "count": 1
+                    },
+                    {
+                      "action_id": "weakening-breath",
+                      "count": 1
+                    }
+                  ],
+                  "pick": 1
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "id": "multiattack",
+      "kind": "modeled",
+      "name": "Multiattack"
+    },
+    {
+      "desc": "Melee Attack Roll: +17 to hit, reach 15 ft. Hit: 19 (2d8 + 10) Slashing damage plus 9 (2d8) Fire damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "2d8",
+                "magical": false,
+                "modifier": 10,
+                "type": "slashing"
+              },
+              {
+                "dice": "2d8",
+                "magical": false,
+                "modifier": 0,
+                "type": "fire"
+              }
+            ],
+            "modifier": 17,
+            "on_hit": [],
+            "range": null,
+            "reach": 15,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "rend",
+      "kind": "modeled",
+      "name": "Rend"
+    },
+    {
+      "desc": "Dexterity Saving Throw: DC 24, each creature in a 90-foot Cone. Failure: 71 (13d10) Fire damage. Success: Half damage.",
+      "effects": [
+        {
+          "saving_throw": {
+            "ability": "dex",
+            "creature_type_gate": null,
+            "damage": [
+              {
+                "dice": "13d10",
+                "magical": false,
+                "modifier": 0,
+                "type": "fire"
+              }
+            ],
+            "dc": 24,
+            "half_on_success": true,
+            "hp_gate": null,
+            "immunity_after_success": false,
+            "no_damage_on_success": false,
+            "on_failure": [],
+            "repeat_save": null,
+            "two_stage": null
+          }
+        }
+      ],
+      "id": "fire-breath",
+      "kind": "modeled",
+      "name": "Fire Breath",
+      "usage": {
+        "recharge": {
+          "dice": "5-6",
+          "group": "breath_weapons"
+        }
+      }
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 24, +16 to hit with spell attacks):",
+      "id": "spellcasting",
+      "kind": "unmodeled",
+      "name": "Spellcasting"
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "Strength Saving Throw: DC 24, each creature that isn’t currently affected by this breath in a 90-foot Cone. Failure: The target has Disadvantage on Strength-based D20 Tests and subtracts 5 (1d10) from its damage rolls. It repeats the save at the end of each of its turns, ending the effect on itself on a success. After 1 minute, it succeeds automatically.",
+      "id": "weakening-breath",
+      "kind": "unmodeled",
+      "name": "Weakening Breath",
+      "usage": {
+        "recharge": {
+          "dice": "5-6",
+          "group": "breath_weapons"
+        }
+      }
+    }
+  ],
+  "alignment": "lawful good",
+  "armor_class": [
+    {
+      "value": 22
+    }
+  ],
+  "challenge_rating": 24,
+  "damage_immunities": [
+    "fire"
+  ],
+  "hit_points": {
+    "average": 546,
+    "dice": "28d20+252"
+  },
+  "id": "ancient-gold-dragon",
+  "initiative": 2,
+  "lair_xp": 75000,
+  "languages": [
+    "Common",
+    "Draconic"
+  ],
+  "legendary_actions": [
+    {
+      "agent_clauses": [
+        "and the target has the Incapacitated condition and is transported to a harmless demiplane until the start of the dragon’s next turn, at which point it reappears in an unoccupied space of the dragon’s choice within 120 feet of the dragon. Failure or"
+      ],
+      "desc": "Charisma Saving Throw: DC 24, one creature the dragon can see within 120 feet. Failure: 24 (7d6) Force damage, and the target has the Incapacitated condition and is transported to a harmless demiplane until the start of the dragon’s next turn, at which point it reappears in an unoccupied space of the dragon’s choice within 120 feet of the dragon. Failure or Success: The dragon can’t take this action again until the start of its next turn.",
+      "effects": [
+        {
+          "saving_throw": {
+            "ability": "cha",
+            "creature_type_gate": null,
+            "damage": [
+              {
+                "dice": "7d6",
+                "magical": false,
+                "modifier": 0,
+                "type": "force"
+              }
+            ],
+            "dc": 24,
+            "half_on_success": false,
+            "hp_gate": null,
+            "immunity_after_success": false,
+            "no_damage_on_success": true,
+            "on_failure": [],
+            "repeat_save": null,
+            "two_stage": null
+          }
+        }
+      ],
+      "id": "banish",
+      "kind": "partly_modeled",
+      "name": "Banish"
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "The dragon uses Spellcasting to cast Guiding Bolt (level 4 version).",
+      "id": "guiding-light",
+      "kind": "unmodeled",
+      "name": "Guiding Light"
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "The dragon moves up to half its Speed, and it makes one Rend attack.",
+      "id": "pounce",
+      "kind": "unmodeled",
+      "name": "Pounce"
+    }
+  ],
+  "legendary_uses_per_round": 3,
+  "name": "Ancient Gold Dragon",
+  "proficiency_bonus": 7,
+  "saving_throws": {
+    "dex": 9,
+    "wis": 10
+  },
+  "schema_version": "1",
+  "senses": {
+    "blindsight": 60,
+    "darkvision": 120,
+    "passive_perception": 27
+  },
+  "size": "gargantuan",
+  "skills": {
+    "insight": 10,
+    "perception": 17,
+    "persuasion": 16,
+    "stealth": 9
+  },
+  "source": "srd-5.2.1",
+  "speeds": {
+    "fly": {
+      "feet": 80
+    },
+    "swim": {
+      "feet": 40
+    },
+    "walk": {
+      "feet": 40
+    }
+  },
+  "traits": [
+    {
+      "default_resolution": "skipped",
+      "desc": "The dragon can breathe air and water.",
+      "id": "amphibious",
+      "kind": "unmodeled",
+      "name": "Amphibious"
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "If the dragon fails a saving throw, it can choose to succeed instead.",
+      "id": "legendary-resistance",
+      "kind": "unmodeled",
+      "name": "Legendary Resistance",
+      "usage": {
+        "per_day": {
+          "uses": 4
+        }
+      }
+    }
+  ],
+  "type": "dragon",
+  "xp": 62000
+}

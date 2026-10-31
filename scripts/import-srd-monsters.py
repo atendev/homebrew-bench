@@ -8,6 +8,8 @@ Inputs (all committed):
   data/srd/COMMIT
   data/srd/2024/5e-SRD-Monsters.json
   data/srd/corrections.json
+  data/srd/2024/5e-SRD-Spells.json
+  data/spells/effects.json
 
 Outputs (regenerated on every run):
   data/fixtures/<id>.json      one per monster with zero open blocking entries
@@ -32,6 +34,8 @@ CORRECTIONS = ROOT / "data/srd/corrections.json"
 FIXTURES = ROOT / "data/fixtures"
 REVIEW_MD = ROOT / "data/srd/import-review.md"
 REVIEW_JSON = ROOT / "data/srd/import-review.json"
+SPELL_EFFECTS = ROOT / "data/spells/effects.json"
+UPSTREAM_SPELLS = ROOT / "data/srd/2024/5e-SRD-Spells.json"
 
 SOURCE = "srd-5.2.1"
 SCHEMA_VERSION = "1"
@@ -79,6 +83,30 @@ ATTACK_RE = re.compile(r"(?:Melee|Ranged)(?: or (?:Melee|Ranged))? Attack Roll: 
 SAVE_RE = re.compile(r"(Strength|Dexterity|Constitution|Intelligence|Wisdom|Charisma) Saving Throw: DC (\d+)")
 RECHARGE_RE = re.compile(r"Recharge (\d)(?:\s*[-–]\s*6)?")
 PER_DAY_NAME_RE = re.compile(r"\((\d+)/Day\)")
+SUBJECT_RE = re.compile(r"(?:^|[.:;]\s+|\bthen\s+|\band\s+)the ([a-z]+(?: [a-z]+)*)", re.I)
+# Sentence subjects in SRD ability prose that are not creatures, from a survey of all 341 stat blocks.
+NON_CREATURE_SUBJECTS = {"ally", "attack", "duration", "first", "heart", "new", "next",
+                         "object", "original", "penalty", "puller", "spell", "stored", "target", "touch",
+                         "wearer", "weapon", "wound"}
+# Short self-references the printed stat block uses, checked against the 2024 Monster Manual.
+SELF_REFERENCES = {"warhorse": {"horse"}}
+# Capitalized rules terms that open a sentence ("The Poisoned condition", "The Cube is Heavily Obscured").
+TERM_SUBJECTS = CONDITIONS | {"cone", "cube", "cylinder", "emanation", "line", "sphere"}
+# Non-creature subjects that are also SRD creature names, allowed only where the prose means the object.
+OBJECT_SUBJECTS = {"black-pudding": {"armor"}, "gray-ooze": {"armor"}}
+CHOSEN_TYPE_RE = re.compile(r"\s*damage of the type chosen\b[^.]*")
+
+
+SPELL_IDS = set(json.loads(SPELL_EFFECTS.read_text()))
+SRD_SPELL_IDS = {spell["index"] for spell in json.loads(UPSTREAM_SPELLS.read_text())}
+
+
+def singular(word):
+    return word[:-1] if word.endswith("s") and not word.endswith("ss") else word
+
+
+def words(text):
+    return {singular(w) for w in re.findall(r"[a-z]+", text.lower())}
 
 
 def slug(text):
@@ -157,13 +185,55 @@ def hit_tail(sentence):
     return f"{clause[:1].upper()}{clause[1:]}." if clause else None
 
 
+class ActionIndex(set):
+    """Action ids on one stat block, plus what a multiattack may name besides them."""
+
+    def __init__(self, ids, raws):
+        super().__init__(ids)
+        self.aliases = {}
+        for aid, raw in zip(ids, raws):
+            bare = slug(re.sub(r"\s*\([^)]*\)\s*$", "", raw["name"]))
+            if bare != aid and bare not in ids:
+                self.aliases[bare] = aid
+        self.spellcasting, self.spells = None, {}
+        for aid, raw in zip(ids, raws):
+            if "spellcasting" in raw and self.spellcasting is None:
+                self.spellcasting = aid
+                self.spells = {slug(s["name"]): s["index"] for s in raw["spellcasting"].get("spells", [])}
+
+
 class Converter:
     def __init__(self, monster, review, all_names):
         self.monster = monster
         self.mid = monster["index"]
         self.review = review
         self.own_name = monster["name"].lower()
+        self.own_words = words(monster["name"])
+        self.flags = []
         self.other_names = sorted({n.lower() for n in all_names if n.lower() != self.own_name}, key=len, reverse=True)
+
+    def self_reference(self, raw, base):
+        """Flag prose whose sentence subject names a creature other than this one (class a).
+
+        A subject "The X" passes when X is a word of this creature's name, a word of the
+        ability's name ("The specter" in Create Specter), a non-creature subject such as
+        "the target", or a short name in SELF_REFERENCES. A subject that names another
+        upstream creature in full fails even when its words hide inside this name ("the
+        mage" in the Archmage). A capitalized rules term ("The Poisoned condition", "The Cube")
+        passes; a lowercase "the cube" can still mean the Gelatinous Cube.
+        """
+        desc = raw.get("desc", "")
+        allowed = (self.own_words | words(raw["name"]) | NON_CREATURE_SUBJECTS
+                   | SELF_REFERENCES.get(self.mid, set()) | OBJECT_SUBJECTS.get(self.mid, set()))
+        for subject in SUBJECT_RE.finditer(desc):
+            phrase = subject.group(1).lower()
+            other = next((n for n in self.other_names if f"{phrase} ".startswith(f"{n} ")
+                          and not words(n) <= self.own_words | words(raw["name"])), None)
+            term = subject.group(1)[0].isupper() and phrase.split()[0] in TERM_SUBJECTS
+            if other or not (term or singular(phrase.split()[0]) in allowed):
+                named = other or phrase.split()[0]
+                self.rec("a", f"{base}.desc", f"prose names 'the {named}' instead of this creature")
+                return
 
     def rec(self, cls, path, summary):
         self.review.add(self.mid, cls, path, summary)
@@ -237,10 +307,17 @@ class Converter:
                 self.rec("a", f"{base}.damage", f"structured damage {want} {entry['type']} is not stated in the prose")
             else:
                 paired[index] = spot
+        kept, clauses = [], []
         for i, (start, end, dice) in enumerate(spots):
             if start < limit and i not in paired.values() and re.match(r"\)?\s*(?:[A-Za-z]+\s+)?damage", text[end - 1:]):
-                self.rec("b", f"{base}.damage", f"{label} dice {dice} are not in the structured damage")
-        kept, clauses = [], []
+                chosen = CHOSEN_TYPE_RE.match(text, end)
+                if chosen:
+                    lead = re.search(r"(?:\bplus\s+)?\d+\s*$", text[:start])
+                    stated = text[lead.start() if lead else start:chosen.end()].strip()
+                    clauses.append(f"Damage of a chosen type, not modeled: {stated}.")
+                    self.rec("d", f"{base}.damage", f"{label} dice {dice} have a chosen damage type; kept as an agent clause")
+                else:
+                    self.rec("b", f"{base}.damage", f"{label} dice {dice} are not in the structured damage")
         for index, entry in enumerate(damage):
             if index not in paired:
                 kept.append(entry)
@@ -380,54 +457,96 @@ class Converter:
         }}
         return effect, clauses
 
+    def slot(self, name, desc, action_ids):
+        """The multiattack slot a named action or Spellcasting spell resolves to, or None.
+
+        An action named with a trailing parenthetical ("Entangling Rope (Requires Magic Rope)")
+        also answers to its bare name. A spell listed in the Spellcasting action becomes a cast
+        through that action, keeping a "(level N version)" note from the prose as an upcast.
+        """
+        target = slug(name)
+        if target in action_ids:
+            return {"action_id": target}
+        if target in action_ids.aliases:
+            return {"action_id": action_ids.aliases[target]}
+        spell = action_ids.spells.get(target)
+        if spell is None:
+            return None
+        level = re.search(rf"{re.escape(name)}\s*\(level (\d+) version\)", desc)
+        if spell not in SRD_SPELL_IDS:
+            self.rec("b", f"actions.{action_ids.spellcasting}", f"multiattack casts '{spell}', which is not an SRD 5.2.1 spell")
+        elif spell not in SPELL_IDS:
+            self.rec("d", f"actions.{action_ids.spellcasting}", f"multiattack casts '{spell}', which data/spells/effects.json lacks; the engine logs it as unmodeled")
+        return {"action_id": action_ids.spellcasting, "cast": {
+            "spell_id": spell, "slot_level": int(level.group(1)) if level else None, "upcast": bool(level)}}
+
+    def action_step(self, act, desc, action_ids, missing):
+        found = self.slot(act["action_name"], desc, action_ids)
+        if found is None:
+            missing.append(slug(act["action_name"]))
+            return None
+        return {"action": {**found, "count": act["count"]}}
+
     def multiattack(self, raw, base, action_ids):
         steps, ok = [], True
+        desc = raw.get("desc", "")
+        opts = raw.get("action_options")
+        options = (opts or {}).get("from", {}).get("options", [])
         counts = [a.get("count") for a in raw.get("actions") or []]
-        counts += [o.get("count") for o in (raw.get("action_options") or {}).get("from", {}).get("options", [])]
+        counts += [o.get("count") for o in options if o.get("option_type") != "multiple"]
+        counts += [i.get("count") for o in options if o.get("option_type") == "multiple" for i in o.get("items", [])]
         if any(not isinstance(c, int) for c in counts):
             self.rec("b", f"{base}.effects", "multiattack count is variable and not representable")
             return []
         for act in raw.get("actions") or []:
-            target = slug(act["action_name"])
-            if target not in action_ids:
+            step = self.action_step(act, desc, action_ids, [])
+            if step is None:
                 self.rec("a", f"{base}.effects", f"multiattack names '{act['action_name']}' with no matching action")
                 ok = False
                 continue
-            steps.append({"action": {"action_id": target, "count": act["count"]}})
-        opts = raw.get("action_options")
+            steps.append(step)
         if opts:
             from_ = opts.get("from", {})
-            options = from_.get("options", [])
             choose = opts.get("choose", 1)
+            grouped = any(o.get("option_type") == "multiple" for o in options)
             representable = (from_.get("option_set_type") == "options_array"
                              and options
-                             and all(o.get("option_type") == "action" for o in options)
-                             and choose in (1, 2, 3))
+                             and all(o.get("option_type") in ("action", "multiple") for o in options)
+                             and all(i.get("option_type") == "action" for o in options for i in o.get("items", []))
+                             and (choose == 1 if grouped else choose in (1, 2, 3)))
+            missing = []
             if not representable:
                 reason = "unsupported option set"
-                if any(o.get("option_type") != "action" for o in options):
+                if any(o.get("option_type") not in ("action", "multiple") for o in options):
                     reason = "nested option group"
-                elif choose not in (1, 2, 3):
+                elif choose not in (1, 2, 3) or grouped:
                     reason = f"choose-{choose} combination"
                 self.rec("b", f"{base}.effects", f"multiattack {reason} is not representable in the closed vocabulary")
                 ok = False
+            elif grouped:
+                # "Two Claw attacks and one Snake Hair attack, or three Poison Ray attacks":
+                # each upstream option is one alternative set of fixed steps.
+                sets = [[self.action_step(i, desc, action_ids, missing) for i in (o["items"] if o["option_type"] == "multiple" else [o])]
+                        for o in options]
+                if not missing:
+                    steps.append({"alternatives": {"sets": sets}})
             else:
-                ids = [slug(o["action_name"]) for o in options]
-                missing = [i for i in ids if i not in action_ids]
-                if missing:
-                    self.rec("a", f"{base}.effects", f"multiattack options name missing actions {missing}")
-                    ok = False
-                else:
-                    # Expand each upstream option into `count` distinct pick slots.
-                    # This lets a `Choice { options, pick = choose }` represent SRD
-                    # "any combination" patterns where the same action can be chosen
-                    # multiple times. The engine resolves `pick` distinct slots.
-                    choice_options = [
-                        {"action_id": slug(o["action_name"]), "count": 1}
-                        for o in options
-                        for _ in range(o.get("count", 1))
-                    ]
+                # Expand each upstream option into `count` distinct pick slots.
+                # This lets a `Choice { options, pick = choose }` represent SRD
+                # "any combination" patterns where the same action can be chosen
+                # multiple times. The engine resolves `pick` distinct slots.
+                choice_options = []
+                for o in options:
+                    found = self.slot(o["action_name"], desc, action_ids)
+                    if found is None:
+                        missing.append(slug(o["action_name"]))
+                        continue
+                    choice_options += [{**found, "count": 1} for _ in range(o.get("count", 1))]
+                if not missing:
                     steps.append({"choice": {"options": choice_options, "pick": choose}})
+            if missing:
+                self.rec("a", f"{base}.effects", f"multiattack options name missing actions {missing}")
+                ok = False
         if not steps and ok:
             self.rec("b", f"{base}.effects", "multiattack has no representable steps")
             ok = False
@@ -438,11 +557,7 @@ class Converter:
     def ability(self, raw, section, aid, action_ids):
         base = f"{section}.{aid}"
         desc = raw.get("desc", "")
-        low = desc.lower()
-        for other in self.other_names:
-            if low.startswith(f"the {other} ") and other not in self.own_name:
-                self.rec("a", f"{base}.desc", f"prose names '{other}' instead of this creature")
-                break
+        self.self_reference(raw, base)
         entry = {"id": aid, "name": raw["name"], "desc": desc, "kind": "unmodeled",
                  "default_resolution": "skipped"}
         effects, clauses = [], []
@@ -474,7 +589,7 @@ class Converter:
     def sections(self):
         raw_sections = {sec: (self.mid_raw(key) or []) for sec, key in SECTIONS.items()}
         ids = {sec: assign_ids([a["name"] for a in raw_sections[sec]]) for sec in SECTIONS}
-        action_ids = set(ids["actions"])
+        action_ids = ActionIndex(ids["actions"], raw_sections["actions"])
         return {sec: [self.ability(raw, sec, aid, action_ids)
                       for raw, aid in zip(raw_sections[sec], ids[sec])]
                 for sec in SECTIONS}
@@ -494,8 +609,12 @@ class Converter:
                     types.append(token)
                 else:
                     leftovers.append(token)
-        if leftovers:
-            self.rec("b", key, f"qualifier not representable: {leftovers}")
+        unknown = [t for t in leftovers if "damage" not in t]
+        if unknown:
+            self.rec("b", key, f"qualifier not representable: {unknown}")
+        for qualifier in (t for t in leftovers if "damage" in t):
+            self.flags.append({"path": key, "note": f"Not modeled; the agent applies it: {qualifier}"})
+            self.rec("d", key, f"qualifier kept as an intake flag: {qualifier}")
         return types
 
     def convert(self):
@@ -587,6 +706,8 @@ class Converter:
         for sec in SECTIONS:
             if sections[sec]:
                 block[sec] = sections[sec]
+        if self.flags:
+            block["intake_flags"] = self.flags
         if m.get("legendary_actions"):
             block["legendary_uses_per_round"] = LEGENDARY_USES_PER_ROUND
             self.rec("d", "legendary_uses_per_round", f"set to SRD default {LEGENDARY_USES_PER_ROUND}; upstream omits the count")
@@ -613,8 +734,12 @@ def apply_path(blocks, monster_id, path, value, review_fail):
         if field == "usage":
             ability["usage"] = value
             return
-        if field == "effects":
-            ability["effects"] = value
+        if field == "desc":
+            ability["desc"] = value
+            return
+        if field in ("effects", "agent_clauses"):
+            ability[field] = value
+            classify(ability)
             return
         if field == "damage":
             for effect in ability.get("effects", []):
@@ -625,6 +750,16 @@ def apply_path(blocks, monster_id, path, value, review_fail):
             review_fail(f"correction {monster_id}.{path} has no attack or save to hold damage")
             return
     review_fail(f"correction path '{path}' on {monster_id} is not supported")
+
+
+def classify(ability):
+    """Reset an ability's kind after a correction replaces its effects or agent clauses."""
+    if ability.get("effects"):
+        ability.pop("default_resolution", None)
+        ability["kind"] = "partly_modeled" if ability.get("agent_clauses") else "modeled"
+    else:
+        ability["kind"] = "unmodeled"
+        ability.setdefault("default_resolution", "skipped")
 
 
 def covers(correction_path, mismatch_path):

@@ -1,0 +1,156 @@
+{
+  "ability_scores": {
+    "charisma": 10,
+    "constitution": 14,
+    "dexterity": 14,
+    "intelligence": 10,
+    "strength": 16,
+    "wisdom": 11
+  },
+  "actions": [
+    {
+      "desc": "The werewolf makes two attacks, using Scratch or Longbow in any combination. It can replace one attack with a Bite attack.",
+      "effects": [
+        {
+          "multiattack": {
+            "steps": [
+              {
+                "choice": {
+                  "options": [
+                    {
+                      "action_id": "scratch",
+                      "count": 1
+                    },
+                    {
+                      "action_id": "scratch",
+                      "count": 1
+                    },
+                    {
+                      "action_id": "longbow",
+                      "count": 1
+                    },
+                    {
+                      "action_id": "longbow",
+                      "count": 1
+                    }
+                  ],
+                  "pick": 2
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "id": "multiattack",
+      "kind": "modeled",
+      "name": "Multiattack"
+    },
+    {
+      "desc": "Melee Attack Roll: +5, reach 5 ft. Hit: 10 (2d6 + 3) Slashing damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "2d6",
+                "magical": false,
+                "modifier": 3,
+                "type": "slashing"
+              }
+            ],
+            "modifier": 5,
+            "on_hit": [],
+            "range": null,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "scratch",
+      "kind": "modeled",
+      "name": "Scratch"
+    },
+    {
+      "desc": "Ranged Attack Roll: +4, range 150/600 ft. Hit: 11 (2d8 + 2) Piercing damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "2d8",
+                "magical": false,
+                "modifier": 2,
+                "type": "piercing"
+              }
+            ],
+            "modifier": 4,
+            "on_hit": [],
+            "range": [
+              150,
+              600
+            ],
+            "reach": null,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "longbow",
+      "kind": "modeled",
+      "name": "Longbow"
+    }
+  ],
+  "alignment": "chaotic evil",
+  "armor_class": [
+    {
+      "value": 15
+    }
+  ],
+  "bonus_actions": [
+    {
+      "default_resolution": "skipped",
+      "desc": "The werewolf shape-shifts into a Large wolf-humanoid hybrid or a Medium wolf, or it returns to its true humanoid form. Its game statistics, other than its size, are the same in each form. Any equipment it is wearing or carrying isn’t transformed.",
+      "id": "shape-shift",
+      "kind": "unmodeled",
+      "name": "Shape-Shift"
+    }
+  ],
+  "challenge_rating": 3,
+  "hit_points": {
+    "average": 71,
+    "dice": "11d8+22"
+  },
+  "id": "werewolf-human",
+  "initiative": 2,
+  "languages": [
+    "Common (can’t speak in wolf form)"
+  ],
+  "name": "Werewolf, Human Form",
+  "proficiency_bonus": 2,
+  "schema_version": "1",
+  "senses": {
+    "darkvision": 60,
+    "passive_perception": 14
+  },
+  "size": "medium",
+  "skills": {
+    "perception": 4,
+    "stealth": 4
+  },
+  "source": "srd-5.2.1",
+  "speeds": {
+    "walk": {
+      "feet": 30
+    }
+  },
+  "traits": [
+    {
+      "default_resolution": "skipped",
+      "desc": "The werewolf has Advantage on an attack roll against a creature if at least one of the werewolf’s allies is within 5 feet of the creature and the ally doesn’t have the Incapacitated condition.",
+      "id": "pack-tactics",
+      "kind": "unmodeled",
+      "name": "Pack Tactics"
+    }
+  ],
+  "type": "monstrosity",
+  "xp": 700
+}

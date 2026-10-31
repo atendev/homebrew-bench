@@ -1,0 +1,215 @@
+{
+  "ability_scores": {
+    "charisma": 27,
+    "constitution": 29,
+    "dexterity": 10,
+    "intelligence": 18,
+    "strength": 30,
+    "wisdom": 15
+  },
+  "actions": [
+    {
+      "desc": "The dragon makes three Rend attacks. It can replace one attack with a use of Spellcasting to cast Scorching Ray (level 3 version).",
+      "effects": [
+        {
+          "multiattack": {
+            "steps": [
+              {
+                "action": {
+                  "action_id": "rend",
+                  "count": 2
+                }
+              },
+              {
+                "choice": {
+                  "options": [
+                    {
+                      "action_id": "rend",
+                      "count": 1
+                    },
+                    {
+                      "action_id": "spellcasting",
+                      "cast": {
+                        "slot_level": 3,
+                        "spell_id": "scorching-ray",
+                        "upcast": true
+                      },
+                      "count": 1
+                    }
+                  ],
+                  "pick": 1
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "id": "multiattack",
+      "kind": "modeled",
+      "name": "Multiattack"
+    },
+    {
+      "desc": "Melee Attack Roll: +17, reach 15 ft. Hit: 19 (2d8 + 10) Slashing damage plus 10 (3d6) Fire damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "2d8",
+                "magical": false,
+                "modifier": 10,
+                "type": "slashing"
+              },
+              {
+                "dice": "3d6",
+                "magical": false,
+                "modifier": 0,
+                "type": "fire"
+              }
+            ],
+            "modifier": 17,
+            "on_hit": [],
+            "range": null,
+            "reach": 15,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "rend",
+      "kind": "modeled",
+      "name": "Rend"
+    },
+    {
+      "desc": "Dexterity Saving Throw: DC 24, each creature in a 90-foot Cone. Failure: 91 (26d6) Fire damage. Success: Half damage.",
+      "effects": [
+        {
+          "saving_throw": {
+            "ability": "dex",
+            "creature_type_gate": null,
+            "damage": [
+              {
+                "dice": "26d6",
+                "magical": false,
+                "modifier": 0,
+                "type": "fire"
+              }
+            ],
+            "dc": 24,
+            "half_on_success": true,
+            "hp_gate": null,
+            "immunity_after_success": false,
+            "no_damage_on_success": false,
+            "on_failure": [],
+            "repeat_save": null,
+            "two_stage": null
+          }
+        }
+      ],
+      "id": "fire-breath",
+      "kind": "modeled",
+      "name": "Fire Breath",
+      "usage": {
+        "recharge": {
+          "dice": "5-6"
+        }
+      }
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 23, +15 to hit with spell attacks):",
+      "id": "spellcasting",
+      "kind": "unmodeled",
+      "name": "Spellcasting"
+    }
+  ],
+  "alignment": "chaotic evil",
+  "armor_class": [
+    {
+      "value": 22
+    }
+  ],
+  "challenge_rating": 24,
+  "damage_immunities": [
+    "fire"
+  ],
+  "hit_points": {
+    "average": 507,
+    "dice": "26d20+234"
+  },
+  "id": "ancient-red-dragon",
+  "initiative": 0,
+  "lair_xp": 75000,
+  "languages": [
+    "Common",
+    "Draconic"
+  ],
+  "legendary_actions": [
+    {
+      "default_resolution": "skipped",
+      "desc": "The dragon uses Spellcasting to cast Command (level 2 version). The dragon can’t take this action again until the start of its next turn.",
+      "id": "commanding-presence",
+      "kind": "unmodeled",
+      "name": "Commanding Presence"
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "The dragon uses Spellcasting to cast Scorching Ray (level 3 version). The dragon can’t take this action again until the start of its next turn.",
+      "id": "fiery-rays",
+      "kind": "unmodeled",
+      "name": "Fiery Rays"
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "The dragon moves up to half its Speed, and it makes one Rend attack.",
+      "id": "pounce",
+      "kind": "unmodeled",
+      "name": "Pounce"
+    }
+  ],
+  "legendary_uses_per_round": 3,
+  "name": "Ancient Red Dragon",
+  "proficiency_bonus": 7,
+  "saving_throws": {
+    "dex": 7,
+    "wis": 9
+  },
+  "schema_version": "1",
+  "senses": {
+    "blindsight": 60,
+    "darkvision": 120,
+    "passive_perception": 26
+  },
+  "size": "gargantuan",
+  "skills": {
+    "perception": 16,
+    "stealth": 7
+  },
+  "source": "srd-5.2.1",
+  "speeds": {
+    "climb": {
+      "feet": 40
+    },
+    "fly": {
+      "feet": 80
+    },
+    "walk": {
+      "feet": 40
+    }
+  },
+  "traits": [
+    {
+      "default_resolution": "skipped",
+      "desc": "If the dragon fails a saving throw, it can choose to succeed instead.",
+      "id": "legendary-resistance",
+      "kind": "unmodeled",
+      "name": "Legendary Resistance",
+      "usage": {
+        "per_day": {
+          "uses": 4
+        }
+      }
+    }
+  ],
+  "type": "dragon",
+  "xp": 62000
+}

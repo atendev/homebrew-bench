@@ -1,0 +1,150 @@
+{
+  "ability_scores": {
+    "charisma": 8,
+    "constitution": 12,
+    "dexterity": 16,
+    "intelligence": 11,
+    "strength": 10,
+    "wisdom": 10
+  },
+  "actions": [
+    {
+      "desc": "The wererat makes two attacks, using Scratch or Hand Crossbow in any combination. It can replace one attack with a Bite attack.",
+      "effects": [
+        {
+          "multiattack": {
+            "steps": [
+              {
+                "choice": {
+                  "options": [
+                    {
+                      "action_id": "scratch",
+                      "count": 1
+                    },
+                    {
+                      "action_id": "scratch",
+                      "count": 1
+                    },
+                    {
+                      "action_id": "hand-crossbow",
+                      "count": 1
+                    },
+                    {
+                      "action_id": "hand-crossbow",
+                      "count": 1
+                    }
+                  ],
+                  "pick": 2
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "id": "multiattack",
+      "kind": "modeled",
+      "name": "Multiattack"
+    },
+    {
+      "desc": "Melee Attack Roll: +5, reach 5 ft. Hit: 6 (1d6 + 3) Slashing damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "1d6",
+                "magical": false,
+                "modifier": 3,
+                "type": "slashing"
+              }
+            ],
+            "modifier": 5,
+            "on_hit": [],
+            "range": null,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "scratch",
+      "kind": "modeled",
+      "name": "Scratch"
+    },
+    {
+      "desc": "Ranged Attack Roll: +5, range 30/120 ft. Hit: 6 (1d6 + 3) Piercing damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "1d6",
+                "magical": false,
+                "modifier": 3,
+                "type": "piercing"
+              }
+            ],
+            "modifier": 5,
+            "on_hit": [],
+            "range": [
+              30,
+              120
+            ],
+            "reach": null,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "hand-crossbow",
+      "kind": "modeled",
+      "name": "Hand Crossbow"
+    }
+  ],
+  "alignment": "lawful evil",
+  "armor_class": [
+    {
+      "value": 13
+    }
+  ],
+  "bonus_actions": [
+    {
+      "default_resolution": "skipped",
+      "desc": "The wererat shape-shifts into a Medium rat-humanoid hybrid or a Small rat, or it returns to its true humanoid form. Its game statistics, other than its size, are the same in each form. Any equipment it is wearing or carrying isn’t transformed.",
+      "id": "shape-shift",
+      "kind": "unmodeled",
+      "name": "Shape-Shift"
+    }
+  ],
+  "challenge_rating": 2,
+  "hit_points": {
+    "average": 60,
+    "dice": "11d8+11"
+  },
+  "id": "wererat-human",
+  "initiative": 3,
+  "languages": [
+    "Common (can’t speak in rat form)"
+  ],
+  "name": "Wererat, Human Form",
+  "proficiency_bonus": 2,
+  "schema_version": "1",
+  "senses": {
+    "darkvision": 60,
+    "passive_perception": 14
+  },
+  "size": "medium",
+  "skills": {
+    "perception": 4,
+    "stealth": 5
+  },
+  "source": "srd-5.2.1",
+  "speeds": {
+    "climb": {
+      "feet": 30
+    },
+    "walk": {
+      "feet": 30
+    }
+  },
+  "type": "monstrosity",
+  "xp": 450
+}

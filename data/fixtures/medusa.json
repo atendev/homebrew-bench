@@ -1,0 +1,192 @@
+{
+  "ability_scores": {
+    "charisma": 15,
+    "constitution": 16,
+    "dexterity": 17,
+    "intelligence": 12,
+    "strength": 10,
+    "wisdom": 13
+  },
+  "actions": [
+    {
+      "desc": "The medusa makes two Claw attacks and one Snake Hair attack, or it makes three Poison Ray attacks.",
+      "effects": [
+        {
+          "multiattack": {
+            "steps": [
+              {
+                "alternatives": {
+                  "sets": [
+                    [
+                      {
+                        "action": {
+                          "action_id": "claw",
+                          "count": 2
+                        }
+                      },
+                      {
+                        "action": {
+                          "action_id": "snake-hair",
+                          "count": 1
+                        }
+                      }
+                    ],
+                    [
+                      {
+                        "action": {
+                          "action_id": "poison-ray",
+                          "count": 3
+                        }
+                      }
+                    ]
+                  ]
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "id": "multiattack",
+      "kind": "modeled",
+      "name": "Multiattack"
+    },
+    {
+      "desc": "Melee Attack Roll: +6, reach 5 ft. Hit: 10 (2d6 + 3) Slashing damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "2d6",
+                "magical": false,
+                "modifier": 3,
+                "type": "slashing"
+              }
+            ],
+            "modifier": 6,
+            "on_hit": [],
+            "range": null,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "claw",
+      "kind": "modeled",
+      "name": "Claw"
+    },
+    {
+      "desc": "Melee Attack Roll: +6, reach 5 ft. Hit: 5 (1d4 + 3) Piercing damage plus 14 (4d6) Poison damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "1d4",
+                "magical": false,
+                "modifier": 3,
+                "type": "piercing"
+              },
+              {
+                "dice": "4d6",
+                "magical": false,
+                "modifier": 0,
+                "type": "poison"
+              }
+            ],
+            "modifier": 6,
+            "on_hit": [],
+            "range": null,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "snake-hair",
+      "kind": "modeled",
+      "name": "Snake Hair"
+    },
+    {
+      "desc": "Ranged Attack Roll: +5, range 150 ft. Hit: 11 (2d8 + 2) Poison damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "2d8",
+                "magical": false,
+                "modifier": 2,
+                "type": "poison"
+              }
+            ],
+            "modifier": 5,
+            "on_hit": [],
+            "range": [
+              150,
+              150
+            ],
+            "reach": null,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "poison-ray",
+      "kind": "modeled",
+      "name": "Poison Ray"
+    }
+  ],
+  "alignment": "lawful evil",
+  "armor_class": [
+    {
+      "value": 15
+    }
+  ],
+  "bonus_actions": [
+    {
+      "default_resolution": "skipped",
+      "desc": "Constitution Saving Throw: DC 13, each creature in a 30-foot Cone. If the medusa sees its reflection in the Cone, the medusa must make this save. First Failure: The target has the Restrained condition and repeats the save at the end of its next turn if it is still Restrained, ending the effect on itself on a success. Second Failure: The target has the Petrified condition instead of the Restrained condition.",
+      "id": "petrifying-gaze",
+      "kind": "unmodeled",
+      "name": "Petrifying Gaze",
+      "usage": {
+        "recharge": {
+          "dice": "5-6"
+        }
+      }
+    }
+  ],
+  "challenge_rating": 6,
+  "hit_points": {
+    "average": 127,
+    "dice": "17d8+51"
+  },
+  "id": "medusa",
+  "initiative": 3,
+  "languages": [
+    "Common plus one other language"
+  ],
+  "name": "Medusa",
+  "proficiency_bonus": 3,
+  "saving_throws": {
+    "wis": 4
+  },
+  "schema_version": "1",
+  "senses": {
+    "darkvision": 150,
+    "passive_perception": 14
+  },
+  "size": "medium",
+  "skills": {
+    "deception": 5,
+    "perception": 4,
+    "stealth": 6
+  },
+  "source": "srd-5.2.1",
+  "speeds": {
+    "walk": {
+      "feet": 30
+    }
+  },
+  "type": "monstrosity",
+  "xp": 2300
+}

@@ -67,3 +67,42 @@ fn conditional_damage_tails_are_not_duplicated_as_effects() {
         ["Conditional damage, not modeled: plus 2 (1d4) Slashing damage if the attack roll had Advantage."]
     );
 }
+
+fn multiattack_steps(fixture: &str) -> Vec<bench_core::effect::MultiattackStep> {
+    let path = Path::new(env!("CARGO_MANIFEST_DIR")).join("../data/fixtures").join(format!("{fixture}.json"));
+    let block: StatBlock = serde_json::from_str(&std::fs::read_to_string(&path).expect("readable fixture")).expect("valid fixture");
+    let action = block.actions.into_iter().find(|a| a.id == "multiattack").expect("multiattack action");
+    match action.effects.into_iter().next() {
+        Some(bench_core::effect::Effect::Multiattack(multi)) => multi.steps,
+        other => panic!("{fixture} multiattack is {other:?}"),
+    }
+}
+
+#[test]
+fn all_srd_monsters_graduate() {
+    let count = std::fs::read_dir(Path::new(env!("CARGO_MANIFEST_DIR")).join("../data/fixtures"))
+        .expect("data/fixtures exists")
+        .filter(|e| e.as_ref().is_ok_and(|e| e.path().extension().is_some_and(|x| x == "json")))
+        .count();
+    assert_eq!(count, 341);
+}
+
+#[test]
+fn multiattack_spell_options_cast_through_spellcasting() {
+    use bench_core::effect::MultiattackStep;
+    let steps = multiattack_steps("adult-black-dragon");
+    let MultiattackStep::Choice { options, pick: 1 } = &steps[1] else { panic!("{steps:?}") };
+    let cast = options[1].cast.as_ref().expect("acid arrow option casts");
+    assert_eq!((options[1].action_id.as_str(), cast.spell_id.as_str(), cast.slot_level, cast.upcast), ("spellcasting", "acid-arrow", Some(3), true));
+}
+
+#[test]
+fn grouped_and_optional_multiattack_steps_become_alternatives() {
+    use bench_core::effect::MultiattackStep;
+    let medusa = multiattack_steps("medusa");
+    let [MultiattackStep::Alternatives { sets }] = medusa.as_slice() else { panic!("{medusa:?}") };
+    assert_eq!(sets.iter().map(Vec::len).collect::<Vec<_>>(), [2, 1]);
+    let erinyes = multiattack_steps("erinyes");
+    let MultiattackStep::Alternatives { sets } = &erinyes[1] else { panic!("{erinyes:?}") };
+    assert!(sets[1].is_empty(), "Entangling Rope is optional");
+}

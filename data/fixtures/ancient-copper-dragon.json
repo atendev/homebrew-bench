@@ -1,0 +1,267 @@
+{
+  "ability_scores": {
+    "charisma": 22,
+    "constitution": 25,
+    "dexterity": 12,
+    "intelligence": 20,
+    "strength": 27,
+    "wisdom": 17
+  },
+  "actions": [
+    {
+      "desc": "The dragon makes three Rend attacks. It can replace one attack with a use of (A) Slowing Breath or (B) Spellcasting to cast Mind Spike (level 5 version).",
+      "effects": [
+        {
+          "multiattack": {
+            "steps": [
+              {
+                "action": {
+                  "action_id": "rend",
+                  "count": 2
+                }
+              },
+              {
+                "choice": {
+                  "options": [
+                    {
+                      "action_id": "rend",
+                      "count": 1
+                    },
+                    {
+                      "action_id": "slowing-breath",
+                      "count": 1
+                    },
+                    {
+                      "action_id": "spellcasting",
+                      "cast": {
+                        "slot_level": 5,
+                        "spell_id": "mind-spike",
+                        "upcast": true
+                      },
+                      "count": 1
+                    }
+                  ],
+                  "pick": 1
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "id": "multiattack",
+      "kind": "modeled",
+      "name": "Multiattack"
+    },
+    {
+      "desc": "Melee Attack Roll: +15, reach 15 ft. Hit: 19 (2d10 + 8) Slashing damage plus 9 (2d8) Acid damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "2d10",
+                "magical": false,
+                "modifier": 8,
+                "type": "slashing"
+              },
+              {
+                "dice": "2d8",
+                "magical": false,
+                "modifier": 0,
+                "type": "acid"
+              }
+            ],
+            "modifier": 15,
+            "on_hit": [],
+            "range": null,
+            "reach": 15,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "rend",
+      "kind": "modeled",
+      "name": "Rend"
+    },
+    {
+      "desc": "Dexterity Saving Throw: DC 22, each creature in an 90-foot-long, 10-footwide Line. Failure: 63 (14d8) Acid damage. Success: Half damage.",
+      "effects": [
+        {
+          "saving_throw": {
+            "ability": "dex",
+            "creature_type_gate": null,
+            "damage": [
+              {
+                "dice": "14d8",
+                "magical": false,
+                "modifier": 0,
+                "type": "acid"
+              }
+            ],
+            "dc": 22,
+            "half_on_success": true,
+            "hp_gate": null,
+            "immunity_after_success": false,
+            "no_damage_on_success": false,
+            "on_failure": [],
+            "repeat_save": null,
+            "two_stage": null
+          }
+        }
+      ],
+      "id": "acid-breath",
+      "kind": "modeled",
+      "name": "Acid Breath",
+      "usage": {
+        "recharge": {
+          "dice": "5-6",
+          "group": "breath_weapons"
+        }
+      }
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "Constitution Saving Throw: DC 22, each creature in a 90-foot Cone. Failure: The target can’t take Reactions; its Speed is halved; and it can take either an action or a Bonus Action on its turn, not both. This effect lasts until the end of its next turn.",
+      "id": "slowing-breath",
+      "kind": "unmodeled",
+      "name": "Slowing Breath",
+      "usage": {
+        "recharge": {
+          "dice": "5-6",
+          "group": "breath_weapons"
+        }
+      }
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 21):",
+      "id": "spellcasting",
+      "kind": "unmodeled",
+      "name": "Spellcasting"
+    }
+  ],
+  "alignment": "chaotic good",
+  "armor_class": [
+    {
+      "value": 21
+    }
+  ],
+  "challenge_rating": 21,
+  "damage_immunities": [
+    "acid"
+  ],
+  "hit_points": {
+    "average": 367,
+    "dice": "21d20+147"
+  },
+  "id": "ancient-copper-dragon",
+  "initiative": 1,
+  "lair_xp": 41000,
+  "languages": [
+    "Common",
+    "Draconic"
+  ],
+  "legendary_actions": [
+    {
+      "agent_clauses": [
+        "Until the end of its next turn, the target rolls 1d8 whenever it makes an ability check or attack roll and subtracts the number rolled from the D20 Test. Failure or"
+      ],
+      "desc": "Charisma Saving Throw: DC 21, one creature the dragon can see within 120 feet. Failure: 31 (9d6) Psychic damage. Until the end of its next turn, the target rolls 1d8 whenever it makes an ability check or attack roll and subtracts the number rolled from the D20 Test. Failure or Success: The dragon can’t take this action again until the start of its next turn.",
+      "effects": [
+        {
+          "saving_throw": {
+            "ability": "cha",
+            "creature_type_gate": null,
+            "damage": [
+              {
+                "dice": "9d6",
+                "magical": false,
+                "modifier": 0,
+                "type": "psychic"
+              }
+            ],
+            "dc": 21,
+            "half_on_success": false,
+            "hp_gate": null,
+            "immunity_after_success": false,
+            "no_damage_on_success": true,
+            "on_failure": [],
+            "repeat_save": null,
+            "two_stage": null
+          }
+        }
+      ],
+      "id": "giggling-magic",
+      "kind": "partly_modeled",
+      "name": "Giggling Magic"
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "The dragon uses Spellcasting to cast Mind Spike (level 4 version). The dragon can’t take this action again until the start of its next turn.",
+      "id": "mind-jolt",
+      "kind": "unmodeled",
+      "name": "Mind Jolt"
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "The dragon can’t take this action again until the start of its next turn.",
+      "id": "spike-level-5-version",
+      "kind": "unmodeled",
+      "name": "Spike (level 5 version)"
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "The dragon moves up to half its Speed, and it makes one Rend attack.",
+      "id": "pounce",
+      "kind": "unmodeled",
+      "name": "Pounce"
+    }
+  ],
+  "legendary_uses_per_round": 3,
+  "name": "Ancient Copper Dragon",
+  "proficiency_bonus": 7,
+  "saving_throws": {
+    "dex": 8,
+    "wis": 10
+  },
+  "schema_version": "1",
+  "senses": {
+    "blindsight": 60,
+    "darkvision": 120,
+    "passive_perception": 27
+  },
+  "size": "gargantuan",
+  "skills": {
+    "deception": 13,
+    "perception": 17,
+    "stealth": 8
+  },
+  "source": "srd-5.2.1",
+  "speeds": {
+    "climb": {
+      "feet": 40
+    },
+    "fly": {
+      "feet": 80
+    },
+    "walk": {
+      "feet": 40
+    }
+  },
+  "traits": [
+    {
+      "default_resolution": "skipped",
+      "desc": "If the dragon fails a saving throw, it can choose to succeed instead.",
+      "id": "legendary-resistance",
+      "kind": "unmodeled",
+      "name": "Legendary Resistance",
+      "usage": {
+        "per_day": {
+          "uses": 4
+        }
+      }
+    }
+  ],
+  "type": "dragon",
+  "xp": 33000
+}
