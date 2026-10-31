@@ -1,0 +1,180 @@
+{
+  "ability_scores": {
+    "charisma": 16,
+    "constitution": 22,
+    "dexterity": 10,
+    "intelligence": 12,
+    "strength": 27,
+    "wisdom": 16
+  },
+  "actions": [
+    {
+      "desc": "The giant makes two attacks, using Thunderous Mace or Thundercloud in any combination. It can replace one attack with a use of Spellcasting to cast Fog Cloud.",
+      "effects": [
+        {
+          "multiattack": {
+            "steps": [
+              {
+                "choice": {
+                  "options": [
+                    {
+                      "action_id": "thunderous-mace",
+                      "count": 1
+                    },
+                    {
+                      "action_id": "thunderous-mace",
+                      "count": 1
+                    },
+                    {
+                      "action_id": "thundercloud",
+                      "count": 1
+                    },
+                    {
+                      "action_id": "thundercloud",
+                      "count": 1
+                    },
+                    {
+                      "action_id": "spellcasting",
+                      "cast": {
+                        "slot_level": null,
+                        "spell_id": "fog-cloud",
+                        "upcast": false
+                      },
+                      "count": 1
+                    }
+                  ],
+                  "pick": 2
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "id": "multiattack",
+      "kind": "modeled",
+      "name": "Multiattack"
+    },
+    {
+      "desc": "Melee Attack Roll: +12, reach 10 ft. Hit: 21 (3d8 + 8) Bludgeoning damage plus 7 (2d6) Thunder damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "3d8",
+                "magical": false,
+                "modifier": 8,
+                "type": "bludgeoning"
+              },
+              {
+                "dice": "2d6",
+                "magical": false,
+                "modifier": 0,
+                "type": "thunder"
+              }
+            ],
+            "modifier": 12,
+            "on_hit": [],
+            "range": null,
+            "reach": 10,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "thunderous-mace",
+      "kind": "modeled",
+      "name": "Thunderous Mace"
+    },
+    {
+      "agent_clauses": [
+        "The target has the Incapacitated condition until the end of its next turn."
+      ],
+      "desc": "Ranged Attack Roll: +12, range 240 ft. Hit: 18 (3d6 + 8) Thunder damage, and the target has the Incapacitated condition until the end of its next turn.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "3d6",
+                "magical": false,
+                "modifier": 8,
+                "type": "thunder"
+              }
+            ],
+            "modifier": 12,
+            "on_hit": [],
+            "range": [
+              240,
+              240
+            ],
+            "reach": null,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "thundercloud",
+      "kind": "partly_modeled",
+      "name": "Thundercloud"
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "The giant casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 15):",
+      "id": "spellcasting",
+      "kind": "unmodeled",
+      "name": "Spellcasting"
+    }
+  ],
+  "alignment": "neutral",
+  "armor_class": [
+    {
+      "value": 14
+    }
+  ],
+  "bonus_actions": [
+    {
+      "default_resolution": "skipped",
+      "desc": "The giant casts the Misty Step spell, using the same spellcasting ability as Spellcasting.",
+      "id": "misty-step",
+      "kind": "unmodeled",
+      "name": "Misty Step"
+    }
+  ],
+  "challenge_rating": 9,
+  "hit_points": {
+    "average": 200,
+    "dice": "16d12+96"
+  },
+  "id": "cloud-giant",
+  "initiative": 0,
+  "languages": [
+    "Common",
+    "Giant"
+  ],
+  "name": "Cloud Giant",
+  "proficiency_bonus": 4,
+  "saving_throws": {
+    "con": 10,
+    "wis": 7
+  },
+  "schema_version": "1",
+  "senses": {
+    "passive_perception": 21
+  },
+  "size": "huge",
+  "skills": {
+    "insight": 7,
+    "perception": 11
+  },
+  "source": "srd-5.2.1",
+  "speeds": {
+    "fly": {
+      "feet": 20,
+      "hover": true
+    },
+    "walk": {
+      "feet": 40
+    }
+  },
+  "type": "giant",
+  "xp": 5000
+}

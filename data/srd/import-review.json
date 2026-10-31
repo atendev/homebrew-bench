@@ -2,10 +2,10 @@
   "summary": {
     "commit": "a6212beb4b278917c2cff41c2b04c4ef4f3e0d6f",
     "monsters": 341,
-    "graduated": 305,
-    "blocked": 36,
-    "open_blocking": 39,
-    "corrections": 77
+    "graduated": 341,
+    "blocked": 0,
+    "open_blocking": 0,
+    "corrections": 70
   },
   "entries": [
     {
@@ -108,13 +108,6 @@
     },
     {
       "monster": "adult-black-dragon",
-      "class": "a",
-      "path": "actions.multiattack.effects",
-      "status": "open",
-      "summary": "multiattack options name missing actions ['acid-arrow']"
-    },
-    {
-      "monster": "adult-black-dragon",
       "class": "d",
       "path": "actions.acid-breath",
       "status": "open",
@@ -125,7 +118,7 @@
       "class": "d",
       "path": "actions.multiattack",
       "status": "open",
-      "summary": "classified unmodeled (default skipped)"
+      "summary": "classified modeled"
     },
     {
       "monster": "adult-black-dragon",
@@ -192,13 +185,6 @@
     },
     {
       "monster": "adult-blue-dragon",
-      "class": "a",
-      "path": "actions.multiattack.effects",
-      "status": "open",
-      "summary": "multiattack options name missing actions ['shatter']"
-    },
-    {
-      "monster": "adult-blue-dragon",
       "class": "d",
       "path": "actions.lightning-breath",
       "status": "open",
@@ -209,7 +195,7 @@
       "class": "d",
       "path": "actions.multiattack",
       "status": "open",
-      "summary": "classified unmodeled (default skipped)"
+      "summary": "classified modeled"
     },
     {
       "monster": "adult-blue-dragon",
@@ -269,13 +255,6 @@
     },
     {
       "monster": "adult-brass-dragon",
-      "class": "a",
-      "path": "actions.multiattack.effects",
-      "status": "open",
-      "summary": "multiattack options name missing actions ['scorching-ray']"
-    },
-    {
-      "monster": "adult-brass-dragon",
       "class": "d",
       "path": "actions.fire-breath",
       "status": "open",
@@ -293,7 +272,7 @@
       "class": "d",
       "path": "actions.multiattack",
       "status": "open",
-      "summary": "classified unmodeled (default skipped)"
+      "summary": "classified modeled"
     },
     {
       "monster": "adult-brass-dragon",
@@ -367,13 +346,6 @@
     },
     {
       "monster": "adult-bronze-dragon",
-      "class": "a",
-      "path": "actions.multiattack.effects",
-      "status": "open",
-      "summary": "multiattack options name missing actions ['guiding-bolt']"
-    },
-    {
-      "monster": "adult-bronze-dragon",
       "class": "d",
       "path": "actions.lightning-breath",
       "status": "open",
@@ -391,7 +363,7 @@
       "class": "d",
       "path": "actions.multiattack",
       "status": "open",
-      "summary": "classified unmodeled (default skipped)"
+      "summary": "classified modeled"
     },
     {
       "monster": "adult-bronze-dragon",
@@ -472,13 +444,6 @@
     },
     {
       "monster": "adult-copper-dragon",
-      "class": "a",
-      "path": "actions.multiattack.effects",
-      "status": "open",
-      "summary": "multiattack options name missing actions ['mind-spike']"
-    },
-    {
-      "monster": "adult-copper-dragon",
       "class": "d",
       "path": "actions.acid-breath",
       "status": "open",
@@ -496,7 +461,7 @@
       "class": "d",
       "path": "actions.multiattack",
       "status": "open",
-      "summary": "classified unmodeled (default skipped)"
+      "summary": "classified modeled"
     },
     {
       "monster": "adult-copper-dragon",
@@ -570,13 +535,6 @@
     },
     {
       "monster": "adult-gold-dragon",
-      "class": "a",
-      "path": "actions.multiattack.effects",
-      "status": "open",
-      "summary": "multiattack options name missing actions ['guiding-bolt']"
-    },
-    {
-      "monster": "adult-gold-dragon",
       "class": "d",
       "path": "actions.fire-breath",
       "status": "open",
@@ -594,7 +552,7 @@
       "class": "d",
       "path": "actions.multiattack",
       "status": "open",
-      "summary": "classified unmodeled (default skipped)"
+      "summary": "classified modeled"
     },
     {
       "monster": "adult-gold-dragon",
@@ -675,17 +633,10 @@
     },
     {
       "monster": "adult-green-dragon",
-      "class": "a",
-      "path": "actions.multiattack.effects",
-      "status": "open",
-      "summary": "multiattack options name missing actions ['mind-spike']"
-    },
-    {
-      "monster": "adult-green-dragon",
       "class": "d",
       "path": "actions.multiattack",
       "status": "open",
-      "summary": "classified unmodeled (default skipped)"
+      "summary": "classified modeled"
     },
     {
       "monster": "adult-green-dragon",
@@ -759,13 +710,6 @@
     },
     {
       "monster": "adult-red-dragon",
-      "class": "a",
-      "path": "actions.multiattack.effects",
-      "status": "open",
-      "summary": "multiattack options name missing actions ['scorching-ray']"
-    },
-    {
-      "monster": "adult-red-dragon",
       "class": "d",
       "path": "actions.fire-breath",
       "status": "open",
@@ -776,7 +720,7 @@
       "class": "d",
       "path": "actions.multiattack",
       "status": "open",
-      "summary": "classified unmodeled (default skipped)"
+      "summary": "classified modeled"
     },
     {
       "monster": "adult-red-dragon",
@@ -836,13 +780,6 @@
     },
     {
       "monster": "adult-silver-dragon",
-      "class": "a",
-      "path": "actions.multiattack.effects",
-      "status": "open",
-      "summary": "multiattack options name missing actions ['ice-knife']"
-    },
-    {
-      "monster": "adult-silver-dragon",
       "class": "d",
       "path": "actions.cold-breath",
       "status": "open",
@@ -860,7 +797,7 @@
       "class": "d",
       "path": "actions.multiattack",
       "status": "open",
-      "summary": "classified unmodeled (default skipped)"
+      "summary": "classified modeled"
     },
     {
       "monster": "adult-silver-dragon",
@@ -1046,13 +983,6 @@
     },
     {
       "monster": "ancient-black-dragon",
-      "class": "a",
-      "path": "actions.multiattack.effects",
-      "status": "open",
-      "summary": "multiattack options name missing actions ['acid-arrow']"
-    },
-    {
-      "monster": "ancient-black-dragon",
       "class": "d",
       "path": "actions.acid-breath",
       "status": "open",
@@ -1063,7 +993,7 @@
       "class": "d",
       "path": "actions.multiattack",
       "status": "open",
-      "summary": "classified unmodeled (default skipped)"
+      "summary": "classified modeled"
     },
     {
       "monster": "ancient-black-dragon",
@@ -1130,13 +1060,6 @@
     },
     {
       "monster": "ancient-blue-dragon",
-      "class": "a",
-      "path": "actions.multiattack.effects",
-      "status": "open",
-      "summary": "multiattack options name missing actions ['shatter']"
-    },
-    {
-      "monster": "ancient-blue-dragon",
       "class": "d",
       "path": "actions.lightning-breath",
       "status": "open",
@@ -1147,7 +1070,7 @@
       "class": "d",
       "path": "actions.multiattack",
       "status": "open",
-      "summary": "classified unmodeled (default skipped)"
+      "summary": "classified modeled"
     },
     {
       "monster": "ancient-blue-dragon",
@@ -1207,13 +1130,6 @@
     },
     {
       "monster": "ancient-brass-dragon",
-      "class": "a",
-      "path": "actions.multiattack.effects",
-      "status": "open",
-      "summary": "multiattack options name missing actions ['scorching-ray']"
-    },
-    {
-      "monster": "ancient-brass-dragon",
       "class": "d",
       "path": "actions.fire-breath",
       "status": "open",
@@ -1231,7 +1147,7 @@
       "class": "d",
       "path": "actions.multiattack",
       "status": "open",
-      "summary": "classified unmodeled (default skipped)"
+      "summary": "classified modeled"
     },
     {
       "monster": "ancient-brass-dragon",
@@ -1305,13 +1221,6 @@
     },
     {
       "monster": "ancient-bronze-dragon",
-      "class": "a",
-      "path": "actions.multiattack.effects",
-      "status": "open",
-      "summary": "multiattack options name missing actions ['guiding-bolt']"
-    },
-    {
-      "monster": "ancient-bronze-dragon",
       "class": "d",
       "path": "actions.lightning-breath",
       "status": "open",
@@ -1329,7 +1238,7 @@
       "class": "d",
       "path": "actions.multiattack",
       "status": "open",
-      "summary": "classified unmodeled (default skipped)"
+      "summary": "classified modeled"
     },
     {
       "monster": "ancient-bronze-dragon",
@@ -1410,13 +1319,6 @@
     },
     {
       "monster": "ancient-copper-dragon",
-      "class": "a",
-      "path": "actions.multiattack.effects",
-      "status": "open",
-      "summary": "multiattack options name missing actions ['mind-spike']"
-    },
-    {
-      "monster": "ancient-copper-dragon",
       "class": "d",
       "path": "actions.acid-breath",
       "status": "open",
@@ -1434,7 +1336,7 @@
       "class": "d",
       "path": "actions.multiattack",
       "status": "open",
-      "summary": "classified unmodeled (default skipped)"
+      "summary": "classified modeled"
     },
     {
       "monster": "ancient-copper-dragon",
@@ -1515,13 +1417,6 @@
     },
     {
       "monster": "ancient-gold-dragon",
-      "class": "a",
-      "path": "actions.multiattack.effects",
-      "status": "open",
-      "summary": "multiattack options name missing actions ['guiding-bolt']"
-    },
-    {
-      "monster": "ancient-gold-dragon",
       "class": "d",
       "path": "actions.fire-breath",
       "status": "open",
@@ -1539,7 +1434,7 @@
       "class": "d",
       "path": "actions.multiattack",
       "status": "open",
-      "summary": "classified unmodeled (default skipped)"
+      "summary": "classified modeled"
     },
     {
       "monster": "ancient-gold-dragon",
@@ -1620,17 +1515,10 @@
     },
     {
       "monster": "ancient-green-dragon",
-      "class": "a",
-      "path": "actions.multiattack.effects",
-      "status": "open",
-      "summary": "multiattack options name missing actions ['mind-spike']"
-    },
-    {
-      "monster": "ancient-green-dragon",
       "class": "d",
       "path": "actions.multiattack",
       "status": "open",
-      "summary": "classified unmodeled (default skipped)"
+      "summary": "classified modeled"
     },
     {
       "monster": "ancient-green-dragon",
@@ -1704,13 +1592,6 @@
     },
     {
       "monster": "ancient-red-dragon",
-      "class": "a",
-      "path": "actions.multiattack.effects",
-      "status": "open",
-      "summary": "multiattack options name missing actions ['scorching-ray']"
-    },
-    {
-      "monster": "ancient-red-dragon",
       "class": "d",
       "path": "actions.fire-breath",
       "status": "open",
@@ -1721,7 +1602,7 @@
       "class": "d",
       "path": "actions.multiattack",
       "status": "open",
-      "summary": "classified unmodeled (default skipped)"
+      "summary": "classified modeled"
     },
     {
       "monster": "ancient-red-dragon",
@@ -1781,13 +1662,6 @@
     },
     {
       "monster": "ancient-silver-dragon",
-      "class": "a",
-      "path": "actions.multiattack.effects",
-      "status": "open",
-      "summary": "multiattack options name missing actions ['ice-knife']"
-    },
-    {
-      "monster": "ancient-silver-dragon",
       "class": "d",
       "path": "actions.cold-breath",
       "status": "open",
@@ -1805,7 +1679,7 @@
       "class": "d",
       "path": "actions.multiattack",
       "status": "open",
-      "summary": "classified unmodeled (default skipped)"
+      "summary": "classified modeled"
     },
     {
       "monster": "ancient-silver-dragon",
@@ -2054,6 +1928,13 @@
     },
     {
       "monster": "archmage",
+      "class": "a",
+      "path": "bonus_actions.misty-step.desc",
+      "status": "corrected",
+      "summary": "prose names 'the mage' instead of this creature (corrected: The Archmage's Misty Step names 'the mage', the stat block it derives from; every other Archmage ability says 'the archmage'. The 2024 Monster Manual prints the same slip.)"
+    },
+    {
+      "monster": "archmage",
       "class": "c",
       "path": "xp",
       "status": "corrected",
@@ -2100,6 +1981,13 @@
       "path": "bonus_actions.misty-step",
       "status": "open",
       "summary": "spellcasting is not modeled; spells are absent from the stat block effects"
+    },
+    {
+      "monster": "archmage",
+      "class": "d",
+      "path": "bonus_actions.misty-step.desc",
+      "status": "open",
+      "summary": "correction applied: The Archmage's Misty Step names 'the mage', the stat block it derives from; every other Archmage ability says 'the archmage'. The 2024 Monster Manual prints the same slip. [archmage bonus_actions.misty-step.desc: \"The mage casts Misty Step, using the same spellcasting ability as Spellcasting.\" (MM 2024 p. 202)]"
     },
     {
       "monster": "archmage",
@@ -2369,13 +2257,6 @@
     },
     {
       "monster": "barbed-devil",
-      "class": "b",
-      "path": "actions.multiattack.effects",
-      "status": "open",
-      "summary": "multiattack count is variable and not representable"
-    },
-    {
-      "monster": "barbed-devil",
       "class": "d",
       "path": "actions.claws",
       "status": "open",
@@ -2393,7 +2274,7 @@
       "class": "d",
       "path": "actions.multiattack",
       "status": "open",
-      "summary": "classified unmodeled (default skipped)"
+      "summary": "classified modeled"
     },
     {
       "monster": "barbed-devil",
@@ -3202,15 +3083,15 @@
     },
     {
       "monster": "cloud-giant",
-      "class": "a",
-      "path": "actions.multiattack.effects",
+      "class": "d",
+      "path": "actions.multiattack",
       "status": "open",
-      "summary": "multiattack options name missing actions ['fog-cloud']"
+      "summary": "classified modeled"
     },
     {
       "monster": "cloud-giant",
       "class": "d",
-      "path": "actions.multiattack",
+      "path": "actions.spellcasting",
       "status": "open",
       "summary": "classified unmodeled (default skipped)"
     },
@@ -3219,7 +3100,7 @@
       "class": "d",
       "path": "actions.spellcasting",
       "status": "open",
-      "summary": "classified unmodeled (default skipped)"
+      "summary": "multiattack casts 'fog-cloud', which data/spells/effects.json lacks; the engine logs it as unmodeled"
     },
     {
       "monster": "cloud-giant",
@@ -3853,24 +3734,17 @@
     },
     {
       "monster": "dryad",
-      "class": "a",
-      "path": "actions.multiattack.effects",
+      "class": "d",
+      "path": "actions.multiattack",
       "status": "open",
-      "summary": "multiattack options name missing actions ['charm-monster']"
-    },
-    {
-      "monster": "dryad",
-      "class": "b",
-      "path": "actions.multiattack.effects",
-      "status": "open",
-      "summary": "correction not applied: Upstream puts Vine Lash, Thorn Burst, and Charm Monster inside one choose-1 option set, but prose says one Vine Lash or Thorn Burst attack AND it can cast Charm Monster."
+      "summary": "classified modeled"
     },
     {
       "monster": "dryad",
       "class": "d",
-      "path": "actions.multiattack",
+      "path": "actions.multiattack.effects",
       "status": "open",
-      "summary": "classified unmodeled (default skipped)"
+      "summary": "correction applied: Upstream puts Vine Lash, Thorn Burst, and Charm Monster inside one choose-1 option set, but prose says one Vine Lash or Thorn Burst attack AND it can cast Charm Monster. [dryad actions.multiattack.desc: \"The dryad makes one Vine Lash or Thorn Burst attack, and it can use Spellcasting to cast Charm Monster.\"]"
     },
     {
       "monster": "dryad",
@@ -4084,20 +3958,6 @@
     },
     {
       "monster": "erinyes",
-      "class": "a",
-      "path": "actions.multiattack.effects",
-      "status": "open",
-      "summary": "multiattack names 'Entangling Rope' with no matching action"
-    },
-    {
-      "monster": "erinyes",
-      "class": "b",
-      "path": "actions.multiattack.effects",
-      "status": "open",
-      "summary": "correction not applied: Upstream Multiattack references 'Entangling Rope', whereas the action on the stat block is named 'Entangling Rope (Requires Magic Rope)'."
-    },
-    {
-      "monster": "erinyes",
       "class": "d",
       "path": "actions.entangling-rope-requires-magic-rope",
       "status": "open",
@@ -4108,7 +3968,14 @@
       "class": "d",
       "path": "actions.multiattack",
       "status": "open",
-      "summary": "classified unmodeled (default skipped)"
+      "summary": "classified modeled"
+    },
+    {
+      "monster": "erinyes",
+      "class": "d",
+      "path": "actions.multiattack.effects",
+      "status": "open",
+      "summary": "correction applied: Upstream makes Entangling Rope a fixed Multiattack step, but prose says the erinyes can use it, so the use is optional. [erinyes actions.multiattack.desc: \"The erinyes makes three Withering Sword attacks and can use Entangling Rope.\"]"
     },
     {
       "monster": "erinyes",
@@ -5603,24 +5470,17 @@
     },
     {
       "monster": "half-dragon",
-      "class": "b",
-      "path": "actions.claw.damage",
+      "class": "d",
+      "path": "actions.claw",
       "status": "open",
-      "summary": "Hit clause dice 2d6 are not in the structured damage"
-    },
-    {
-      "monster": "half-dragon",
-      "class": "b",
-      "path": "damage_resistances",
-      "status": "open",
-      "summary": "qualifier not representable: ['damage type chosen for the draconic origin trait below']"
+      "summary": "classified partly_modeled"
     },
     {
       "monster": "half-dragon",
       "class": "d",
-      "path": "actions.claw",
+      "path": "actions.claw.damage",
       "status": "open",
-      "summary": "classified modeled"
+      "summary": "Hit clause dice 2d6 have a chosen damage type; kept as an agent clause"
     },
     {
       "monster": "half-dragon",
@@ -5642,6 +5502,13 @@
       "path": "bonus_actions.leap",
       "status": "open",
       "summary": "classified unmodeled (default skipped)"
+    },
+    {
+      "monster": "half-dragon",
+      "class": "d",
+      "path": "damage_resistances",
+      "status": "open",
+      "summary": "qualifier kept as an intake flag: damage type chosen for the draconic origin trait below"
     },
     {
       "monster": "half-dragon",
@@ -5955,8 +5822,8 @@
       "monster": "hydra",
       "class": "b",
       "path": "actions.multiattack.effects",
-      "status": "open",
-      "summary": "multiattack count is variable and not representable"
+      "status": "corrected",
+      "summary": "multiattack count is variable and not representable (corrected: Upstream gives the Bite count as 'Number of Heads', which no fixed count represents. The Multiple Heads trait starts the hydra at five heads, so the engine makes five Bites and an agent clause tracks lost and regrown heads.)"
     },
     {
       "monster": "hydra",
@@ -5971,6 +5838,20 @@
       "path": "actions.multiattack",
       "status": "open",
       "summary": "classified unmodeled (default skipped)"
+    },
+    {
+      "monster": "hydra",
+      "class": "d",
+      "path": "actions.multiattack.agent_clauses",
+      "status": "open",
+      "summary": "correction applied: Pairs with the five-Bite multiattack: the head count changes during combat and only the agent tracks it. [hydra special_abilities.multiple-heads.desc]"
+    },
+    {
+      "monster": "hydra",
+      "class": "d",
+      "path": "actions.multiattack.effects",
+      "status": "open",
+      "summary": "correction applied: Upstream gives the Bite count as 'Number of Heads', which no fixed count represents. The Multiple Heads trait starts the hydra at five heads, so the engine makes five Bites and an agent clause tracks lost and regrown heads. [hydra actions.multiattack.desc: \"The hydra makes as many Bite attacks as it has heads.\"; special_abilities.multiple-heads.desc: \"The hydra has five heads.\"]"
     },
     {
       "monster": "hydra",
@@ -6828,13 +6709,6 @@
     },
     {
       "monster": "medusa",
-      "class": "b",
-      "path": "actions.multiattack.effects",
-      "status": "open",
-      "summary": "multiattack count is variable and not representable"
-    },
-    {
-      "monster": "medusa",
       "class": "d",
       "path": "actions.claw",
       "status": "open",
@@ -6845,7 +6719,7 @@
       "class": "d",
       "path": "actions.multiattack",
       "status": "open",
-      "summary": "classified unmodeled (default skipped)"
+      "summary": "classified modeled"
     },
     {
       "monster": "medusa",
@@ -6972,6 +6846,27 @@
       "path": "actions.slam",
       "status": "open",
       "summary": "classified modeled"
+    },
+    {
+      "monster": "mule",
+      "class": "a",
+      "path": "reactions.ink-cloud.desc",
+      "status": "corrected",
+      "summary": "prose names 'the octopus' instead of this creature (corrected: Upstream 5e-database splices Octopus's Ink Cloud reaction onto Mule; Mule has no reactions.)"
+    },
+    {
+      "monster": "mule",
+      "class": "a",
+      "path": "traits.compression.desc",
+      "status": "corrected",
+      "summary": "prose names 'the octopus' instead of this creature (corrected: Upstream 5e-database splices Octopus's special_abilities (Compression, Water Breathing) onto Mule.)"
+    },
+    {
+      "monster": "mule",
+      "class": "a",
+      "path": "traits.water-breathing.desc",
+      "status": "corrected",
+      "summary": "prose names 'the octopus' instead of this creature (corrected: Upstream 5e-database splices Octopus's special_abilities (Compression, Water Breathing) onto Mule.)"
     },
     {
       "monster": "mule",
@@ -8053,13 +7948,6 @@
     },
     {
       "monster": "rakshasa",
-      "class": "b",
-      "path": "damage_vulnerabilities",
-      "status": "open",
-      "summary": "qualifier not representable: ['piercing damage from weapons wielded by creatures under the effect of a bless spell']"
-    },
-    {
-      "monster": "rakshasa",
       "class": "d",
       "path": "actions.baleful-command",
       "status": "open",
@@ -8092,6 +7980,13 @@
       "path": "actions.spellcasting",
       "status": "open",
       "summary": "spellcasting is not modeled; spells are absent from the stat block effects"
+    },
+    {
+      "monster": "rakshasa",
+      "class": "d",
+      "path": "damage_vulnerabilities",
+      "status": "open",
+      "summary": "qualifier kept as an intake flag: piercing damage from weapons wielded by creatures under the effect of a bless spell"
     },
     {
       "monster": "rakshasa",
@@ -10573,13 +10468,6 @@
     },
     {
       "monster": "werebear-bear",
-      "class": "b",
-      "path": "actions.multiattack.effects",
-      "status": "open",
-      "summary": "correction not applied: Werebear bear form only has Rend and Bite actions; upstream Multiattack prose retains the human/hybrid Handaxe reference."
-    },
-    {
-      "monster": "werebear-bear",
       "class": "d",
       "path": "actions.bite",
       "status": "open",
@@ -10605,13 +10493,6 @@
       "path": "bonus_actions.shape-shift",
       "status": "open",
       "summary": "classified unmodeled (default skipped)"
-    },
-    {
-      "monster": "werebear-human",
-      "class": "b",
-      "path": "actions.multiattack.effects",
-      "status": "open",
-      "summary": "correction not applied: Werebear human form only has the Handaxe action; upstream Multiattack prose retains hybrid/bear Rend and Bite references."
     },
     {
       "monster": "werebear-human",
@@ -10671,13 +10552,6 @@
     },
     {
       "monster": "wereboar-boar",
-      "class": "b",
-      "path": "actions.multiattack.effects",
-      "status": "open",
-      "summary": "correction not applied: Wereboar boar form only has Tusk and Gore actions; upstream Multiattack prose retains the human/hybrid Javelin reference."
-    },
-    {
-      "monster": "wereboar-boar",
       "class": "d",
       "path": "actions.gore",
       "status": "open",
@@ -10703,13 +10577,6 @@
       "path": "bonus_actions.shape-shift",
       "status": "open",
       "summary": "classified unmodeled (default skipped)"
-    },
-    {
-      "monster": "wereboar-human",
-      "class": "b",
-      "path": "actions.multiattack.effects",
-      "status": "open",
-      "summary": "correction not applied: Wereboar human form only has the Javelin action; upstream Multiattack prose retains hybrid/boar Tusk and Gore references."
     },
     {
       "monster": "wereboar-human",
@@ -10766,13 +10633,6 @@
       "path": "bonus_actions.shape-shift",
       "status": "open",
       "summary": "classified unmodeled (default skipped)"
-    },
-    {
-      "monster": "wererat-human",
-      "class": "b",
-      "path": "actions.multiattack.effects",
-      "status": "open",
-      "summary": "correction not applied: Wererat human form only has Scratch and Hand Crossbow actions; upstream Multiattack prose retains the hybrid/rat Bite replacement."
     },
     {
       "monster": "wererat-human",
@@ -10839,13 +10699,6 @@
     },
     {
       "monster": "wererat-rat",
-      "class": "b",
-      "path": "actions.multiattack.effects",
-      "status": "open",
-      "summary": "correction not applied: Wererat rat form only has Scratch and Bite actions; upstream Multiattack prose retains the human/hybrid Hand Crossbow reference."
-    },
-    {
-      "monster": "wererat-rat",
       "class": "d",
       "path": "actions.bite",
       "status": "open",
@@ -10871,13 +10724,6 @@
       "path": "bonus_actions.shape-shift",
       "status": "open",
       "summary": "classified unmodeled (default skipped)"
-    },
-    {
-      "monster": "weretiger-human",
-      "class": "b",
-      "path": "actions.multiattack.effects",
-      "status": "open",
-      "summary": "correction not applied: Weretiger human form only has Scratch and Longbow actions; upstream Multiattack prose retains the hybrid/tiger Bite replacement."
     },
     {
       "monster": "weretiger-human",
@@ -10951,13 +10797,6 @@
     },
     {
       "monster": "weretiger-tiger",
-      "class": "b",
-      "path": "actions.multiattack.effects",
-      "status": "open",
-      "summary": "correction not applied: Weretiger tiger form only has Scratch and Bite actions; upstream Multiattack prose retains the human/hybrid Longbow reference."
-    },
-    {
-      "monster": "weretiger-tiger",
       "class": "d",
       "path": "actions.bite",
       "status": "open",
@@ -10990,13 +10829,6 @@
       "path": "bonus_actions.shape-shift",
       "status": "open",
       "summary": "classified unmodeled (default skipped)"
-    },
-    {
-      "monster": "werewolf-human",
-      "class": "b",
-      "path": "actions.multiattack.effects",
-      "status": "open",
-      "summary": "correction not applied: Werewolf human form only has Scratch and Longbow actions; upstream Multiattack prose retains the hybrid/wolf Bite replacement."
     },
     {
       "monster": "werewolf-human",
@@ -11074,13 +10906,6 @@
       "path": "traits.pack-tactics",
       "status": "open",
       "summary": "classified unmodeled (default skipped)"
-    },
-    {
-      "monster": "werewolf-wolf",
-      "class": "b",
-      "path": "actions.multiattack.effects",
-      "status": "open",
-      "summary": "correction not applied: Werewolf wolf form only has Scratch and Bite actions; upstream Multiattack prose retains the human/hybrid Longbow reference."
     },
     {
       "monster": "werewolf-wolf",

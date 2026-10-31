@@ -1,0 +1,112 @@
+{
+  "ability_scores": {
+    "charisma": 8,
+    "constitution": 15,
+    "dexterity": 10,
+    "intelligence": 10,
+    "strength": 17,
+    "wisdom": 11
+  },
+  "actions": [
+    {
+      "desc": "The wereboar makes two attacks, using Javelin or Tusk in any combination. It can replace one attack with a Gore attack.",
+      "effects": [
+        {
+          "multiattack": {
+            "steps": [
+              {
+                "choice": {
+                  "options": [
+                    {
+                      "action_id": "javelin",
+                      "count": 1
+                    },
+                    {
+                      "action_id": "javelin",
+                      "count": 1
+                    }
+                  ],
+                  "pick": 2
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "id": "multiattack",
+      "kind": "modeled",
+      "name": "Multiattack"
+    },
+    {
+      "desc": "Melee or Ranged Attack Roll: +5, reach 5 ft. or range 30/120 ft. Hit: 13 (3d6 + 3) Piercing damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "3d6",
+                "magical": false,
+                "modifier": 3,
+                "type": "piercing"
+              }
+            ],
+            "modifier": 5,
+            "on_hit": [],
+            "range": [
+              30,
+              120
+            ],
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "javelin",
+      "kind": "modeled",
+      "name": "Javelin"
+    }
+  ],
+  "alignment": "neutral evil",
+  "armor_class": [
+    {
+      "value": 15
+    }
+  ],
+  "bonus_actions": [
+    {
+      "default_resolution": "skipped",
+      "desc": "The wereboar shape-shifts into a Medium boar-humanoid hybrid or a Small boar, or it returns to its true humanoid form. Its game statistics, other than its size, are the same in each form. Any equipment it is wearing or carrying isn’t transformed.",
+      "id": "shape-shift",
+      "kind": "unmodeled",
+      "name": "Shape-Shift"
+    }
+  ],
+  "challenge_rating": 4,
+  "hit_points": {
+    "average": 97,
+    "dice": "15d8+30"
+  },
+  "id": "wereboar-human",
+  "initiative": 0,
+  "languages": [
+    "Common (can’t speak in boar form)"
+  ],
+  "name": "Wereboar, Human Form",
+  "proficiency_bonus": 2,
+  "schema_version": "1",
+  "senses": {
+    "passive_perception": 12
+  },
+  "size": "medium",
+  "skills": {
+    "perception": 2
+  },
+  "source": "srd-5.2.1",
+  "speeds": {
+    "walk": {
+      "feet": 30
+    }
+  },
+  "type": "monstrosity",
+  "xp": 1100
+}

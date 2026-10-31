@@ -73,7 +73,7 @@
   "bonus_actions": [
     {
       "default_resolution": "skipped",
-      "desc": "The mage casts Misty Step, using the same spellcasting ability as Spellcasting.",
+      "desc": "The archmage casts Misty Step, using the same spellcasting ability as Spellcasting.",
       "id": "misty-step",
       "kind": "unmodeled",
       "name": "Misty Step",

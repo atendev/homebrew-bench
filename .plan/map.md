@@ -53,8 +53,11 @@ Both modes ship in phase 1. Everything the engine can't model is labeled agent j
 - [Size choice field on stat blocks](closed/038-size-choice-field.md): `StatBlock` gains `size_choice: Vec<Size>` with serde default; the importer splits upstream `"Medium or small"` on `" or "`, stores the first as `size` and the full list in `size_choice`. SRD fixtures rose from 269 to 299 of 341.
 - [Recharge ranges and recharge after rest](closed/039-recharge-ranges-and-rest.md): recharge dice "N-6" or "N" for N in 2 to 6 parse through `recharge_minimum` and unparseable dice fail at load time, recharge after rest maps to `PerRest` short once, and ungrouped recharge resources are now keyed by ability id. SRD fixtures rose from 299 to 305 of 341.
 - [Hit-sentence tail effects](closed/040-hit-sentence-tail-effects.md): the importer keeps what a Hit sentence states after its damage as an agent clause (an "and" tail, or a whole effect-only sentence), 30 fixtures became partly modeled, and the graduated count stays 305 of 341.
+- [SRD importer, review pipeline and fixtures](closed/028-srd-importer-review-pipeline-and-fixtures.md): all 341 SRD monsters graduate with the review at exit 0. Multiattacks can cast through Spellcasting and pick one of several step sets (an empty set makes a step optional), the self-reference check reads every sentence-initial subject, and the Hydra's five Bites are a recorded known limit. See `docs/adr/0005-closed-effect-vocabulary-with-agent-clauses.md`.
 
 ## Not yet specified
+
+- Upcast spell scaling: `resolve_cast` ignores `Cast.slot_level` and `upcast`, so a dragon's level 3 Acid Arrow resolves at the effects file's base level. This depends on how the effects file states per-level scaling.
 
 - Magic items in the standard party: ruled out for phase 1, revisit if the CR baseline curve shows the party falling off SRD monsters at high levels.
 
@@ -70,12 +73,11 @@ Both modes ship in phase 1. Everything the engine can't model is labeled agent j
 
 Takeable now, in order:
 
-- SRD importer, review pipeline and fixtures (task); first pass built, 305 of 341 graduated after ticket 039
 - Live mode CLI, overrides, log, public view and replay (task)
 
 Blocked:
 
-- Batch tactics policy and batch runner (task), blocked by SRD importer, review pipeline and fixtures and Live mode CLI, overrides, log, public view and replay
+- Batch tactics policy and batch runner (task), blocked by Live mode CLI, overrides, log, public view and replay
 - Empirical CR baseline curve and embedded reference data (task), blocked by Batch tactics policy and batch runner
 - Agent skill and house-rule templates (task), blocked by Live mode CLI, overrides, log, public view and replay and Empirical CR baseline curve and embedded reference data
 - Release packaging, legal notices and installers (task), blocked by Empirical CR baseline curve and embedded reference data and Agent skill and house-rule templates

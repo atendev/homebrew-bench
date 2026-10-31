@@ -275,19 +275,32 @@ pub struct MoveThenAttack {
     pub attack_id: String,
 }
 
-/// One selectable option inside a `MultiattackStep::Choice`.
+/// One selectable option inside a `MultiattackStep::Choice`. With `cast` set,
+/// the option is a use of the `action_id` Spellcasting action to cast that spell.
 #[derive(Debug, Clone, Serialize, Deserialize, schemars::JsonSchema)]
 pub struct ChoiceOption {
     pub action_id: String,
     pub count: u32,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cast: Option<Cast>,
 }
 
-/// Multiattack step.
+/// Multiattack step. `Action` with `cast` set casts that spell through the
+/// `action_id` Spellcasting action. `Alternatives` runs exactly one of its
+/// step sets; an empty set makes the whole step optional. Until live prompts
+/// and the batch tactics policy choose, the engine runs the first set, so a
+/// creature always takes an optional step unless the agent intervenes.
 #[derive(Debug, Clone, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum MultiattackStep {
-    Action { action_id: String, count: u32 },
+    Action {
+        action_id: String,
+        count: u32,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        cast: Option<Cast>,
+    },
     Choice { options: Vec<ChoiceOption>, pick: u32 },
+    Alternatives { sets: Vec<Vec<MultiattackStep>> },
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, schemars::JsonSchema)]
