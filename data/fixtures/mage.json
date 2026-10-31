@@ -1,0 +1,139 @@
+{
+  "ability_scores": {
+    "charisma": 11,
+    "constitution": 11,
+    "dexterity": 14,
+    "intelligence": 17,
+    "strength": 9,
+    "wisdom": 12
+  },
+  "actions": [
+    {
+      "desc": "The mage makes three Arcane Burst attacks.",
+      "effects": [
+        {
+          "multiattack": {
+            "steps": [
+              {
+                "action": {
+                  "action_id": "arcane-burst",
+                  "count": 3
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "id": "multiattack",
+      "kind": "modeled",
+      "name": "Multiattack"
+    },
+    {
+      "desc": "Melee or Ranged Attack Roll: +6, reach 5 ft. or range 120 ft. Hit: 16 (3d8 + 3) Force damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "3d8",
+                "magical": false,
+                "modifier": 3,
+                "type": "force"
+              }
+            ],
+            "modifier": 6,
+            "on_hit": [],
+            "range": [
+              120,
+              120
+            ],
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "arcane-burst",
+      "kind": "modeled",
+      "name": "Arcane Burst"
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "The mage casts one of the following spells, using Intelligence as the spellcasting ability (spell save DC 14):",
+      "id": "spellcasting",
+      "kind": "unmodeled",
+      "name": "Spellcasting"
+    }
+  ],
+  "alignment": "neutral",
+  "armor_class": [
+    {
+      "value": 15
+    }
+  ],
+  "bonus_actions": [
+    {
+      "default_resolution": "skipped",
+      "desc": "The mage casts Misty Step, using the same spellcasting ability as Spellcasting.",
+      "id": "misty-step",
+      "kind": "unmodeled",
+      "name": "Misty Step",
+      "usage": {
+        "per_day": {
+          "uses": 3
+        }
+      }
+    }
+  ],
+  "challenge_rating": 6,
+  "hit_points": {
+    "average": 81,
+    "dice": "18d8"
+  },
+  "id": "mage",
+  "initiative": 2,
+  "languages": [
+    "Common plus three other languages"
+  ],
+  "name": "Mage",
+  "proficiency_bonus": 3,
+  "reactions": [
+    {
+      "default_resolution": "skipped",
+      "desc": "The mage casts Counterspell or Shield in response to the spell’s trigger, using the same spellcasting ability as Spellcasting.",
+      "id": "protective-magic",
+      "kind": "unmodeled",
+      "name": "Protective Magic",
+      "usage": {
+        "per_day": {
+          "uses": 3
+        }
+      }
+    }
+  ],
+  "saving_throws": {
+    "int": 6,
+    "wis": 4
+  },
+  "schema_version": "1",
+  "senses": {
+    "passive_perception": 14
+  },
+  "size": "medium",
+  "size_choice": [
+    "medium",
+    "small"
+  ],
+  "skills": {
+    "arcana": 6,
+    "history": 6,
+    "perception": 4
+  },
+  "source": "srd-5.2.1",
+  "speeds": {
+    "walk": {
+      "feet": 30
+    }
+  },
+  "type": "humanoid",
+  "xp": 2300
+}

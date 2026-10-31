@@ -1,0 +1,157 @@
+{
+  "ability_scores": {
+    "charisma": 14,
+    "constitution": 14,
+    "dexterity": 16,
+    "intelligence": 14,
+    "strength": 15,
+    "wisdom": 11
+  },
+  "actions": [
+    {
+      "desc": "The bandit makes two attacks, using Scimitar and Pistol in any combination.",
+      "effects": [
+        {
+          "multiattack": {
+            "steps": [
+              {
+                "choice": {
+                  "options": [
+                    {
+                      "action_id": "scimitar",
+                      "count": 1
+                    },
+                    {
+                      "action_id": "scimitar",
+                      "count": 1
+                    },
+                    {
+                      "action_id": "pistol",
+                      "count": 1
+                    },
+                    {
+                      "action_id": "pistol",
+                      "count": 1
+                    }
+                  ],
+                  "pick": 2
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "id": "multiattack",
+      "kind": "modeled",
+      "name": "Multiattack"
+    },
+    {
+      "desc": "Melee Attack Roll: +5, reach 5 ft. Hit: 6 (1d6 + 3) Slashing damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "1d6",
+                "magical": false,
+                "modifier": 3,
+                "type": "slashing"
+              }
+            ],
+            "modifier": 5,
+            "on_hit": [],
+            "range": null,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "scimitar",
+      "kind": "modeled",
+      "name": "Scimitar"
+    },
+    {
+      "desc": "Ranged Attack Roll: +5, range 30/90 ft. Hit: 8 (1d10 + 3) Piercing damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "1d10",
+                "magical": false,
+                "modifier": 3,
+                "type": "piercing"
+              }
+            ],
+            "modifier": 5,
+            "on_hit": [],
+            "range": [
+              30,
+              90
+            ],
+            "reach": null,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "pistol",
+      "kind": "modeled",
+      "name": "Pistol"
+    }
+  ],
+  "alignment": "neutral",
+  "armor_class": [
+    {
+      "source": "Studded Leather Armor",
+      "value": 15
+    }
+  ],
+  "challenge_rating": 2,
+  "hit_points": {
+    "average": 52,
+    "dice": "8d8+16"
+  },
+  "id": "bandit-captain",
+  "initiative": 3,
+  "languages": [
+    "Common",
+    "Thieves’ Cant"
+  ],
+  "name": "Bandit Captain",
+  "proficiency_bonus": 2,
+  "reactions": [
+    {
+      "default_resolution": "skipped",
+      "desc": "Trigger: The bandit is hit by a melee attack roll while holding a weapon. Response: The bandit adds 2 to its AC against that attack, possibly causing it to miss.",
+      "id": "parry",
+      "kind": "unmodeled",
+      "name": "Parry"
+    }
+  ],
+  "saving_throws": {
+    "dex": 5,
+    "str": 4,
+    "wis": 2
+  },
+  "schema_version": "1",
+  "senses": {
+    "passive_perception": 10
+  },
+  "size": "medium",
+  "size_choice": [
+    "medium",
+    "small"
+  ],
+  "skills": {
+    "athletics": 4,
+    "deception": 4
+  },
+  "source": "srd-5.2.1",
+  "speeds": {
+    "walk": {
+      "feet": 30
+    }
+  },
+  "type": "humanoid",
+  "xp": 450
+}

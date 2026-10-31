@@ -1,0 +1,270 @@
+{
+  "ability_scores": {
+    "charisma": 16,
+    "constitution": 17,
+    "dexterity": 10,
+    "intelligence": 11,
+    "strength": 18,
+    "wisdom": 19
+  },
+  "actions": [
+    {
+      "desc": "The mummy makes one Rotting Fist or Channel Negative Energy attack, and it uses Dreadful Glare.",
+      "effects": [
+        {
+          "multiattack": {
+            "steps": [
+              {
+                "action": {
+                  "action_id": "dreadful-glare",
+                  "count": 1
+                }
+              },
+              {
+                "choice": {
+                  "options": [
+                    {
+                      "action_id": "rotting-fist",
+                      "count": 1
+                    },
+                    {
+                      "action_id": "channel-negative-energy",
+                      "count": 1
+                    }
+                  ],
+                  "pick": 1
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "id": "multiattack",
+      "kind": "modeled",
+      "name": "Multiattack"
+    },
+    {
+      "agent_clauses": [
+        "If the target is a creature, it is cursed. While cursed, the target can’t regain Hit Points, it gains no benefit from finishing a Long Rest, and its Hit Point maximum decreases by 10 (3d6) every 24 hours that elapse. A creature dies and turns to dust if reduced to 0 Hit Points by this attack."
+      ],
+      "desc": "Melee Attack Roll: +9, reach 5 ft. Hit: 15 (2d10 + 4) Bludgeoning damage plus 10 (3d6) Necrotic damage. If the target is a creature, it is cursed. While cursed, the target can’t regain Hit Points, it gains no benefit from finishing a Long Rest, and its Hit Point maximum decreases by 10 (3d6) every 24 hours that elapse. A creature dies and turns to dust if reduced to 0 Hit Points by this attack.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "2d10",
+                "magical": false,
+                "modifier": 4,
+                "type": "bludgeoning"
+              },
+              {
+                "dice": "3d6",
+                "magical": false,
+                "modifier": 0,
+                "type": "necrotic"
+              }
+            ],
+            "modifier": 9,
+            "on_hit": [],
+            "range": null,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "rotting-fist",
+      "kind": "partly_modeled",
+      "name": "Rotting Fist"
+    },
+    {
+      "desc": "Ranged Attack Roll: +9, range 60 ft. Hit: 25 (6d6 + 4) Necrotic damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "6d6",
+                "magical": false,
+                "modifier": 4,
+                "type": "necrotic"
+              }
+            ],
+            "modifier": 9,
+            "on_hit": [],
+            "range": [
+              60,
+              60
+            ],
+            "reach": null,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "channel-negative-energy",
+      "kind": "modeled",
+      "name": "Channel Negative Energy"
+    },
+    {
+      "agent_clauses": [
+        "and the target has the Paralyzed condition until the end of the mummy’s next turn"
+      ],
+      "desc": "Wisdom Saving Throw: DC 17, one creature the mummy can see within 60 feet. Failure: 25 (6d6 + 4) Psychic damage, and the target has the Paralyzed condition until the end of the mummy’s next turn.",
+      "effects": [
+        {
+          "saving_throw": {
+            "ability": "wis",
+            "creature_type_gate": null,
+            "damage": [
+              {
+                "dice": "6d6",
+                "magical": false,
+                "modifier": 4,
+                "type": "psychic"
+              }
+            ],
+            "dc": 17,
+            "half_on_success": false,
+            "hp_gate": null,
+            "immunity_after_success": false,
+            "no_damage_on_success": true,
+            "on_failure": [],
+            "repeat_save": null,
+            "two_stage": null
+          }
+        }
+      ],
+      "id": "dreadful-glare",
+      "kind": "partly_modeled",
+      "name": "Dreadful Glare"
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "The mummy casts one of the following spells, requiring no Material components and using Wisdom as the spellcasting ability (spell save DC 17, +9 to hit with spell attacks):",
+      "id": "spellcasting",
+      "kind": "unmodeled",
+      "name": "Spellcasting"
+    }
+  ],
+  "alignment": "lawful evil",
+  "armor_class": [
+    {
+      "value": 17
+    }
+  ],
+  "challenge_rating": 15,
+  "condition_immunities": [
+    "charmed",
+    "exhaustion",
+    "frightened",
+    "paralyzed",
+    "poisoned"
+  ],
+  "damage_immunities": [
+    "necrotic",
+    "poison"
+  ],
+  "damage_vulnerabilities": [
+    "fire"
+  ],
+  "hit_points": {
+    "average": 187,
+    "dice": "25d8+75"
+  },
+  "id": "mummy-lord",
+  "initiative": 0,
+  "lair_xp": 15000,
+  "languages": [
+    "Common plus three other languages"
+  ],
+  "legendary_actions": [
+    {
+      "default_resolution": "skipped",
+      "desc": "The mummy casts Command (level 2 version), using the same spellcasting ability as Spellcasting. The mummy can’t take this action again until the start of its next turn.",
+      "id": "dread-command",
+      "kind": "unmodeled",
+      "name": "Dread Command"
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "The mummy uses Dreadful Glare. The mummy can’t take this action again until the start of its next turn.",
+      "id": "glare",
+      "kind": "unmodeled",
+      "name": "Glare"
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "The mummy makes one Rotting Fist or Channel Negative Energy attack.",
+      "id": "necrotic-strike",
+      "kind": "unmodeled",
+      "name": "Necrotic Strike"
+    }
+  ],
+  "legendary_uses_per_round": 3,
+  "name": "Mummy Lord",
+  "proficiency_bonus": 5,
+  "reactions": [
+    {
+      "default_resolution": "skipped",
+      "desc": "Trigger: The mummy is hit by an attack roll. Response: The mummy adds 2 to its AC against the attack, possibly causing the attack to miss, and the mummy teleports up to 60 feet to an unoccupied space it can see. Each creature of its choice that it can see within 5 feet of its destination space has the Blinded condition until the end of the mummy’s next turn.",
+      "id": "whirlwind-of-sand",
+      "kind": "unmodeled",
+      "name": "Whirlwind of Sand"
+    }
+  ],
+  "saving_throws": {
+    "int": 5,
+    "wis": 9
+  },
+  "schema_version": "1",
+  "senses": {
+    "passive_perception": 19,
+    "truesight": 60
+  },
+  "size": "medium",
+  "size_choice": [
+    "medium",
+    "small"
+  ],
+  "skills": {
+    "history": 5,
+    "perception": 9,
+    "religion": 5
+  },
+  "source": "srd-5.2.1",
+  "speeds": {
+    "walk": {
+      "feet": 30
+    }
+  },
+  "traits": [
+    {
+      "default_resolution": "skipped",
+      "desc": "If the mummy fails a saving throw, it can choose to succeed instead.",
+      "id": "legendary-resistance",
+      "kind": "unmodeled",
+      "name": "Legendary Resistance",
+      "usage": {
+        "per_day": {
+          "uses": 3
+        }
+      }
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "The mummy has Advantage on saving throws against spells and other magical effects.",
+      "id": "magic-resistance",
+      "kind": "unmodeled",
+      "name": "Magic Resistance"
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "If destroyed, the mummy gains a new body in 24 hours if its heart is intact, reviving with all its Hit Points. The new body appears in an unoccupied space within the mummy’s lair. The heart is a Tiny object that has AC 17, HP 10, and Immunity to all damage except Fire.",
+      "id": "undead-restoration",
+      "kind": "unmodeled",
+      "name": "Undead Restoration"
+    }
+  ],
+  "type": "undead",
+  "xp": 13000
+}

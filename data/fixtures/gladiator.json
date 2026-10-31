@@ -1,0 +1,163 @@
+{
+  "ability_scores": {
+    "charisma": 15,
+    "constitution": 16,
+    "dexterity": 15,
+    "intelligence": 10,
+    "strength": 18,
+    "wisdom": 12
+  },
+  "actions": [
+    {
+      "desc": "The gladiator makes three Spear attacks. It can replace one attack with a use of Shield Bash.",
+      "effects": [
+        {
+          "multiattack": {
+            "steps": [
+              {
+                "action": {
+                  "action_id": "spear",
+                  "count": 2
+                }
+              },
+              {
+                "choice": {
+                  "options": [
+                    {
+                      "action_id": "spear",
+                      "count": 1
+                    },
+                    {
+                      "action_id": "shield-bash",
+                      "count": 1
+                    }
+                  ],
+                  "pick": 1
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "id": "multiattack",
+      "kind": "modeled",
+      "name": "Multiattack"
+    },
+    {
+      "desc": "Melee or Ranged Attack Roll: +7, reach 5 ft. or range 20/60 ft. Hit: 11 (2d6 + 4) Piercing damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "2d6",
+                "magical": false,
+                "modifier": 4,
+                "type": "piercing"
+              }
+            ],
+            "modifier": 7,
+            "on_hit": [],
+            "range": [
+              20,
+              60
+            ],
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "spear",
+      "kind": "modeled",
+      "name": "Spear"
+    },
+    {
+      "agent_clauses": [
+        "If the target is a Medium or smaller creature, it has the Prone condition"
+      ],
+      "desc": "Strength Saving Throw: DC 15, one creature within 5 feet that the gladiator can see. Failure: 9 (2d4 + 4) Bludgeoning damage. If the target is a Medium or smaller creature, it has the Prone condition.",
+      "effects": [
+        {
+          "saving_throw": {
+            "ability": "str",
+            "creature_type_gate": null,
+            "damage": [
+              {
+                "dice": "2d4",
+                "magical": false,
+                "modifier": 4,
+                "type": "bludgeoning"
+              }
+            ],
+            "dc": 15,
+            "half_on_success": false,
+            "hp_gate": null,
+            "immunity_after_success": false,
+            "no_damage_on_success": true,
+            "on_failure": [],
+            "repeat_save": null,
+            "two_stage": null
+          }
+        }
+      ],
+      "id": "shield-bash",
+      "kind": "partly_modeled",
+      "name": "Shield Bash"
+    }
+  ],
+  "alignment": "neutral",
+  "armor_class": [
+    {
+      "source": "Shield, Studded Leather Armor",
+      "value": 16
+    }
+  ],
+  "challenge_rating": 5,
+  "hit_points": {
+    "average": 112,
+    "dice": "15d8+45"
+  },
+  "id": "gladiator",
+  "initiative": 2,
+  "languages": [
+    "Common"
+  ],
+  "name": "Gladiator",
+  "proficiency_bonus": 3,
+  "reactions": [
+    {
+      "default_resolution": "skipped",
+      "desc": "Trigger: The gladiator is hit by a melee attack roll while holding a weapon. Response: The gladiator adds 3 to its AC against that attack, possibly causing it to miss.",
+      "id": "parry",
+      "kind": "unmodeled",
+      "name": "Parry"
+    }
+  ],
+  "saving_throws": {
+    "con": 6,
+    "dex": 5,
+    "str": 7,
+    "wis": 4
+  },
+  "schema_version": "1",
+  "senses": {
+    "passive_perception": 11
+  },
+  "size": "medium",
+  "size_choice": [
+    "medium",
+    "small"
+  ],
+  "skills": {
+    "athletics": 10,
+    "performance": 5
+  },
+  "source": "srd-5.2.1",
+  "speeds": {
+    "walk": {
+      "feet": 30
+    }
+  },
+  "type": "humanoid",
+  "xp": 1800
+}

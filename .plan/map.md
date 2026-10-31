@@ -50,6 +50,7 @@ Both modes ship in phase 1. Everything the engine can't model is labeled agent j
 - [SRD importer vocabulary gaps](closed/035-srd-importer-vocabulary-gaps.md): multiattack `Choice` takes per-option counts and K distinct picks (swap retired), `size_choice` beside `size`, `Damage.if_target` plus `on_hit` for later-clause damage, recharge dice N-6 or N for N in 2 to 6, recharge after rest maps to `PerRest` short once. To be built in tickets 036 to 039.
 - [Multiattack choice with per-option counts](closed/036-multiattack-choice-semantics.md): `ChoiceOption { action_id, count }` is the new `MultiattackStep::Choice` shape, `Multiattack.swap` is retired, the engine resolves `pick` distinct slots, and the importer expands upstream options into pick slots so swap, choose-2, choose-3, and unequal-count shapes all graduate. SRD fixtures rose from 186 to 227 of 341.
 - [Conditional and later-clause attack damage](closed/037-conditional-and-later-clause-damage.md): `Damage` gains `if_target` and `if_target_from_actor` (the engine already tracks condition sources), and the importer places each damage entry by where the prose states it. Later-sentence damage is always conditional or recurring, so it stays an agent clause and nothing routes to `on_hit`. The Mimic's grapple gate is built but inert until grapples are modeled. Five corrections restore omitted flat 1 damage, and SRD fixtures rose from 227 to 269 of 341. See `docs/adr/0005-closed-effect-vocabulary-with-agent-clauses.md`.
+- [Size choice field on stat blocks](closed/038-size-choice-field.md): `StatBlock` gains `size_choice: Vec<Size>` with serde default; the importer splits upstream `"Medium or small"` on `" or "`, stores the first as `size` and the full list in `size_choice`. SRD fixtures rose from 269 to 299 of 341.
 
 ## Not yet specified
 
@@ -67,14 +68,13 @@ Both modes ship in phase 1. Everything the engine can't model is labeled agent j
 
 Takeable now, in order:
 
-- Size choice field on stat blocks (task)
 - Recharge ranges and recharge after rest (task)
 - Hit-sentence tail effects (task)
 - Live mode CLI, overrides, log, public view and replay (task)
 
 Blocked:
 
-- SRD importer, review pipeline and fixtures (task), blocked by tickets 038 and 039; first pass built, 269 of 341 graduated after ticket 037
+- SRD importer, review pipeline and fixtures (task), blocked by ticket 039; first pass built, 299 of 341 graduated after ticket 038
 - Batch tactics policy and batch runner (task), blocked by SRD importer, review pipeline and fixtures and Live mode CLI, overrides, log, public view and replay
 - Empirical CR baseline curve and embedded reference data (task), blocked by Batch tactics policy and batch runner
 - Agent skill and house-rule templates (task), blocked by Live mode CLI, overrides, log, public view and replay and Empirical CR baseline curve and embedded reference data

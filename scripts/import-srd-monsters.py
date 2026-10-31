@@ -473,15 +473,21 @@ class Converter:
 
     def convert(self):
         m = self.monster
-        size = m["size"].lower()
+        raw_size = m["size"].lower()
+        size_choices = [s.strip() for s in raw_size.split(" or ")]
+        size = size_choices[0]
         if size not in SIZES:
             self.rec("b", "size", f"size '{m['size']}' is not representable")
+        for s in size_choices:
+            if s not in SIZES:
+                self.rec("b", "size", f"size choice '{s}' is not representable")
         block = {
             "id": self.mid,
             "name": m["name"],
             "source": SOURCE,
             "schema_version": SCHEMA_VERSION,
             "size": size,
+            **({"size_choice": size_choices} if len(size_choices) > 1 else {}),
             "type": m["type"],
             "alignment": m["alignment"],
             "armor_class": [],

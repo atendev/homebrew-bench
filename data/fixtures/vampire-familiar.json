@@ -1,0 +1,141 @@
+{
+  "ability_scores": {
+    "charisma": 14,
+    "constitution": 15,
+    "dexterity": 16,
+    "intelligence": 10,
+    "strength": 17,
+    "wisdom": 10
+  },
+  "actions": [
+    {
+      "desc": "The familiar makes two Umbral Dagger attacks.",
+      "effects": [
+        {
+          "multiattack": {
+            "steps": [
+              {
+                "action": {
+                  "action_id": "umbral-dagger",
+                  "count": 2
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "id": "multiattack",
+      "kind": "modeled",
+      "name": "Multiattack"
+    },
+    {
+      "agent_clauses": [
+        "If the target is reduced to 0 Hit Points by this attack, the target becomes Stable but has the Poisoned condition for 1 hour. While it has the Poisoned condition, the target has the Paralyzed condition."
+      ],
+      "desc": "Melee or Ranged Attack Roll: +5, reach 5 ft. or range 20/60 ft. Hit: 5 (1d4 + 3) Piercing damage plus 7 (3d4) Necrotic damage. If the target is reduced to 0 Hit Points by this attack, the target becomes Stable but has the Poisoned condition for 1 hour. While it has the Poisoned condition, the target has the Paralyzed condition.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "1d4",
+                "magical": false,
+                "modifier": 3,
+                "type": "piercing"
+              },
+              {
+                "dice": "3d4",
+                "magical": false,
+                "modifier": 0,
+                "type": "necrotic"
+              }
+            ],
+            "modifier": 5,
+            "on_hit": [],
+            "range": [
+              20,
+              60
+            ],
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "umbral-dagger",
+      "kind": "partly_modeled",
+      "name": "Umbral Dagger"
+    }
+  ],
+  "alignment": "neutral evil",
+  "armor_class": [
+    {
+      "value": 15
+    }
+  ],
+  "bonus_actions": [
+    {
+      "default_resolution": "skipped",
+      "desc": "The familiar takes the Dash or Disengage action.",
+      "id": "deathless-agility",
+      "kind": "unmodeled",
+      "name": "Deathless Agility"
+    }
+  ],
+  "challenge_rating": 3,
+  "condition_immunities": [
+    "charmed"
+  ],
+  "damage_resistances": [
+    "necrotic"
+  ],
+  "hit_points": {
+    "average": 65,
+    "dice": "10d8+20"
+  },
+  "id": "vampire-familiar",
+  "initiative": 3,
+  "languages": [
+    "Common plus one other language"
+  ],
+  "name": "Vampire Familiar",
+  "proficiency_bonus": 2,
+  "saving_throws": {
+    "dex": 5,
+    "wis": 2
+  },
+  "schema_version": "1",
+  "senses": {
+    "darkvision": 60,
+    "passive_perception": 14
+  },
+  "size": "medium",
+  "size_choice": [
+    "medium",
+    "small"
+  ],
+  "skills": {
+    "perception": 4,
+    "persuasion": 4,
+    "stealth": 7
+  },
+  "source": "srd-5.2.1",
+  "speeds": {
+    "climb": {
+      "feet": 30
+    },
+    "walk": {
+      "feet": 30
+    }
+  },
+  "traits": [
+    {
+      "default_resolution": "skipped",
+      "desc": "While the familiar and its vampire master are on the same plane of existence, the vampire can communicate with the familiar telepathically, and the vampire can perceive through the familiar’s senses.",
+      "id": "vampiric-connection",
+      "kind": "unmodeled",
+      "name": "Vampiric Connection"
+    }
+  ],
+  "type": "humanoid",
+  "xp": 700
+}

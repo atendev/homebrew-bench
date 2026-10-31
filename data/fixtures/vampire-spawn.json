@@ -1,0 +1,205 @@
+{
+  "ability_scores": {
+    "charisma": 12,
+    "constitution": 16,
+    "dexterity": 16,
+    "intelligence": 11,
+    "strength": 16,
+    "wisdom": 10
+  },
+  "actions": [
+    {
+      "desc": "The vampire makes two Claw attacks and uses Bite.",
+      "effects": [
+        {
+          "multiattack": {
+            "steps": [
+              {
+                "action": {
+                  "action_id": "claw",
+                  "count": 2
+                }
+              },
+              {
+                "action": {
+                  "action_id": "bite",
+                  "count": 1
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "id": "multiattack",
+      "kind": "modeled",
+      "name": "Multiattack"
+    },
+    {
+      "agent_clauses": [
+        "If the target is a Medium or smaller creature, it has the Grappled condition (escape DC 13) from one of two claws."
+      ],
+      "desc": "Melee Attack Roll: +6, reach 5 ft. Hit: 8 (2d4 + 3) Slashing damage. If the target is a Medium or smaller creature, it has the Grappled condition (escape DC 13) from one of two claws.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "2d4",
+                "magical": false,
+                "modifier": 3,
+                "type": "slashing"
+              }
+            ],
+            "modifier": 6,
+            "on_hit": [],
+            "range": null,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "claw",
+      "kind": "partly_modeled",
+      "name": "Claw"
+    },
+    {
+      "agent_clauses": [
+        "The target’s Hit Point maximum decreases by an amount equal to the Necrotic damage taken, and the vampire regains Hit Points equal to that amount"
+      ],
+      "desc": "Constitution Saving Throw: DC 14, one creature within 5 feet that is willing or that has the Grappled, Incapacitated, or Restrained condition. Failure: 5 (1d4 + 3) Piercing damage plus 10 (3d6) Necrotic damage. The target’s Hit Point maximum decreases by an amount equal to the Necrotic damage taken, and the vampire regains Hit Points equal to that amount.",
+      "effects": [
+        {
+          "saving_throw": {
+            "ability": "con",
+            "creature_type_gate": null,
+            "damage": [
+              {
+                "dice": "1d4",
+                "magical": false,
+                "modifier": 3,
+                "type": "piercing"
+              },
+              {
+                "dice": "3d6",
+                "magical": false,
+                "modifier": 0,
+                "type": "necrotic"
+              }
+            ],
+            "dc": 14,
+            "half_on_success": false,
+            "hp_gate": null,
+            "immunity_after_success": false,
+            "no_damage_on_success": true,
+            "on_failure": [],
+            "repeat_save": null,
+            "two_stage": null
+          }
+        }
+      ],
+      "id": "bite",
+      "kind": "partly_modeled",
+      "name": "Bite"
+    }
+  ],
+  "alignment": "neutral evil",
+  "armor_class": [
+    {
+      "value": 16
+    }
+  ],
+  "bonus_actions": [
+    {
+      "default_resolution": "skipped",
+      "desc": "The vampire takes the Dash or Disengage action.",
+      "id": "deathless-agility",
+      "kind": "unmodeled",
+      "name": "Deathless Agility"
+    }
+  ],
+  "challenge_rating": 5,
+  "damage_resistances": [
+    "necrotic"
+  ],
+  "hit_points": {
+    "average": 90,
+    "dice": "12d8+36"
+  },
+  "id": "vampire-spawn",
+  "initiative": 3,
+  "languages": [
+    "Common plus one other language"
+  ],
+  "name": "Vampire Spawn",
+  "proficiency_bonus": 3,
+  "saving_throws": {
+    "dex": 6,
+    "wis": 3
+  },
+  "schema_version": "1",
+  "senses": {
+    "darkvision": 60,
+    "passive_perception": 13
+  },
+  "size": "medium",
+  "size_choice": [
+    "medium",
+    "small"
+  ],
+  "skills": {
+    "perception": 3,
+    "stealth": 6
+  },
+  "source": "srd-5.2.1",
+  "speeds": {
+    "walk": {
+      "feet": 30
+    }
+  },
+  "traits": [
+    {
+      "default_resolution": "skipped",
+      "desc": "The vampire can climb difficult surfaces, including along ceilings, without needing to make an ability check.",
+      "id": "spider-climb",
+      "kind": "unmodeled",
+      "name": "Spider Climb"
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "The vampire has these weaknesses:",
+      "id": "vampire-weakness",
+      "kind": "unmodeled",
+      "name": "Vampire Weakness"
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "The vampire can’t enter a residence without an invitation from an occupant.",
+      "id": "forbiddance",
+      "kind": "unmodeled",
+      "name": "Forbiddance"
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "The vampire takes 20 Acid damage if it ends its turn in running water.",
+      "id": "running-water",
+      "kind": "unmodeled",
+      "name": "Running Water"
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "The vampire is destroyed if a weapon that deals Piercing damage is driven into the vampire’s heart while the vampire has the Incapacitated condition.",
+      "id": "stake-to-the-heart",
+      "kind": "unmodeled",
+      "name": "Stake to the Heart"
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "The vampire takes 20 Radiant damage if it starts its turn in sunlight. While in sunlight, it has Disadvantage on attack rolls and ability checks.",
+      "id": "sunlight",
+      "kind": "unmodeled",
+      "name": "Sunlight"
+    }
+  ],
+  "type": "undead",
+  "xp": 1800
+}

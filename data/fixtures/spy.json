@@ -1,0 +1,132 @@
+{
+  "ability_scores": {
+    "charisma": 16,
+    "constitution": 10,
+    "dexterity": 15,
+    "intelligence": 12,
+    "strength": 10,
+    "wisdom": 14
+  },
+  "actions": [
+    {
+      "desc": "Melee Attack Roll: +4, reach 5 ft. Hit: 5 (1d6 + 2) Piercing damage plus 7 (2d6) Poison damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "1d6",
+                "magical": false,
+                "modifier": 2,
+                "type": "piercing"
+              },
+              {
+                "dice": "2d6",
+                "magical": false,
+                "modifier": 0,
+                "type": "poison"
+              }
+            ],
+            "modifier": 4,
+            "on_hit": [],
+            "range": null,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "shortsword",
+      "kind": "modeled",
+      "name": "Shortsword"
+    },
+    {
+      "desc": "Ranged Attack Roll: +4, range 30/120 ft. Hit: 5 (1d6 + 2) Piercing damage plus 7 (2d6) Poison damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "1d6",
+                "magical": false,
+                "modifier": 2,
+                "type": "piercing"
+              },
+              {
+                "dice": "2d6",
+                "magical": false,
+                "modifier": 0,
+                "type": "poison"
+              }
+            ],
+            "modifier": 4,
+            "on_hit": [],
+            "range": [
+              30,
+              120
+            ],
+            "reach": null,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "hand-crossbow",
+      "kind": "modeled",
+      "name": "Hand Crossbow"
+    }
+  ],
+  "alignment": "neutral",
+  "armor_class": [
+    {
+      "value": 12
+    }
+  ],
+  "bonus_actions": [
+    {
+      "default_resolution": "skipped",
+      "desc": "The spy takes the Dash, Disengage, or Hide action.",
+      "id": "cunning-action",
+      "kind": "unmodeled",
+      "name": "Cunning Action"
+    }
+  ],
+  "challenge_rating": 1,
+  "hit_points": {
+    "average": 27,
+    "dice": "6d8"
+  },
+  "id": "spy",
+  "initiative": 2,
+  "languages": [
+    "Common plus one other language"
+  ],
+  "name": "Spy",
+  "proficiency_bonus": 2,
+  "schema_version": "1",
+  "senses": {
+    "passive_perception": 16
+  },
+  "size": "medium",
+  "size_choice": [
+    "medium",
+    "small"
+  ],
+  "skills": {
+    "deception": 5,
+    "insight": 4,
+    "investigation": 5,
+    "perception": 6,
+    "sleight-of-hand": 4,
+    "stealth": 6
+  },
+  "source": "srd-5.2.1",
+  "speeds": {
+    "climb": {
+      "feet": 30
+    },
+    "walk": {
+      "feet": 30
+    }
+  },
+  "type": "humanoid",
+  "xp": 200
+}

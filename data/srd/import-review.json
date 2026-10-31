@@ -2,9 +2,9 @@
   "summary": {
     "commit": "a6212beb4b278917c2cff41c2b04c4ef4f3e0d6f",
     "monsters": 341,
-    "graduated": 269,
-    "blocked": 72,
-    "open_blocking": 75,
+    "graduated": 299,
+    "blocked": 42,
+    "open_blocking": 45,
     "corrections": 77
   },
   "entries": [
@@ -2061,13 +2061,6 @@
     },
     {
       "monster": "archmage",
-      "class": "b",
-      "path": "size",
-      "status": "open",
-      "summary": "size 'Medium or small' is not representable"
-    },
-    {
-      "monster": "archmage",
       "class": "c",
       "path": "xp",
       "status": "corrected",
@@ -2142,13 +2135,6 @@
       "path": "xp",
       "status": "open",
       "summary": "correction applied: CR 12 XP is 8,400 in the Experience Points by Challenge Rating table; the Archmage stat block prints 8,000. [SRD 5.2.1 p. 256 (Experience Points by Challenge Rating)]"
-    },
-    {
-      "monster": "assassin",
-      "class": "b",
-      "path": "size",
-      "status": "open",
-      "summary": "size 'Medium or small' is not representable"
     },
     {
       "monster": "assassin",
@@ -2348,13 +2334,6 @@
     },
     {
       "monster": "bandit",
-      "class": "b",
-      "path": "size",
-      "status": "open",
-      "summary": "size 'Medium or small' is not representable"
-    },
-    {
-      "monster": "bandit",
       "class": "d",
       "path": "actions.light-crossbow",
       "status": "open",
@@ -2366,13 +2345,6 @@
       "path": "actions.scimitar",
       "status": "open",
       "summary": "classified modeled"
-    },
-    {
-      "monster": "bandit-captain",
-      "class": "b",
-      "path": "size",
-      "status": "open",
-      "summary": "size 'Medium or small' is not representable"
     },
     {
       "monster": "bandit-captain",
@@ -2583,13 +2555,6 @@
       "path": "bonus_actions.swallow.damage",
       "status": "open",
       "summary": "Failure clause states damage only as recurring or conditional later clauses; left unmodeled"
-    },
-    {
-      "monster": "berserker",
-      "class": "b",
-      "path": "size",
-      "status": "open",
-      "summary": "size 'Medium or small' is not representable"
     },
     {
       "monster": "berserker",
@@ -3328,13 +3293,6 @@
     },
     {
       "monster": "commoner",
-      "class": "b",
-      "path": "size",
-      "status": "open",
-      "summary": "size 'Medium or small' is not representable"
-    },
-    {
-      "monster": "commoner",
       "class": "d",
       "path": "actions.club",
       "status": "open",
@@ -3496,13 +3454,6 @@
     },
     {
       "monster": "cultist",
-      "class": "b",
-      "path": "size",
-      "status": "open",
-      "summary": "size 'Medium or small' is not representable"
-    },
-    {
-      "monster": "cultist",
       "class": "d",
       "path": "actions.ritual-sickle",
       "status": "open",
@@ -3514,13 +3465,6 @@
       "path": "actions.ritual-sickle.damage",
       "status": "open",
       "summary": "correction applied: Upstream structured damage omits the flat 1 Necrotic damage that follows the dice damage. [cultist actions.ritual-sickle.desc: \"Melee Attack Roll: +3, reach 5 ft. Hit: 3 (1d4 + 1) Slashing damage plus 1 Necrotic damage.\"]"
-    },
-    {
-      "monster": "cultist-fanatic",
-      "class": "b",
-      "path": "size",
-      "status": "open",
-      "summary": "size 'Medium or small' is not representable"
     },
     {
       "monster": "cultist-fanatic",
@@ -3899,13 +3843,6 @@
       "path": "traits.web-walker",
       "status": "open",
       "summary": "classified unmodeled (default skipped)"
-    },
-    {
-      "monster": "druid",
-      "class": "b",
-      "path": "size",
-      "status": "open",
-      "summary": "size 'Medium or small' is not representable"
     },
     {
       "monster": "druid",
@@ -5267,13 +5204,6 @@
     },
     {
       "monster": "gladiator",
-      "class": "b",
-      "path": "size",
-      "status": "open",
-      "summary": "size 'Medium or small' is not representable"
-    },
-    {
-      "monster": "gladiator",
       "class": "d",
       "path": "actions.multiattack",
       "status": "open",
@@ -5631,24 +5561,10 @@
     },
     {
       "monster": "guard",
-      "class": "b",
-      "path": "size",
-      "status": "open",
-      "summary": "size 'Medium or small' is not representable"
-    },
-    {
-      "monster": "guard",
       "class": "d",
       "path": "actions.spear",
       "status": "open",
       "summary": "classified modeled"
-    },
-    {
-      "monster": "guard-captain",
-      "class": "b",
-      "path": "size",
-      "status": "open",
-      "summary": "size 'Medium or small' is not representable"
     },
     {
       "monster": "guard-captain",
@@ -6387,13 +6303,6 @@
     },
     {
       "monster": "knight",
-      "class": "b",
-      "path": "size",
-      "status": "open",
-      "summary": "size 'Medium or small' is not representable"
-    },
-    {
-      "monster": "knight",
       "class": "d",
       "path": "actions.greatsword",
       "status": "open",
@@ -6741,13 +6650,6 @@
       "path": "traits.spider-climb",
       "status": "open",
       "summary": "classified unmodeled (default skipped)"
-    },
-    {
-      "monster": "mage",
-      "class": "b",
-      "path": "size",
-      "status": "open",
-      "summary": "size 'Medium or small' is not representable"
     },
     {
       "monster": "mage",
@@ -7157,13 +7059,6 @@
     },
     {
       "monster": "mummy",
-      "class": "b",
-      "path": "size",
-      "status": "open",
-      "summary": "size 'Medium or small' is not representable"
-    },
-    {
-      "monster": "mummy",
       "class": "d",
       "path": "actions.dreadful-glare",
       "status": "open",
@@ -7182,13 +7077,6 @@
       "path": "actions.rotting-fist",
       "status": "open",
       "summary": "classified partly_modeled"
-    },
-    {
-      "monster": "mummy-lord",
-      "class": "b",
-      "path": "size",
-      "status": "open",
-      "summary": "size 'Medium or small' is not representable"
     },
     {
       "monster": "mummy-lord",
@@ -7448,13 +7336,6 @@
       "path": "traits.illumination",
       "status": "open",
       "summary": "classified unmodeled (default skipped)"
-    },
-    {
-      "monster": "noble",
-      "class": "b",
-      "path": "size",
-      "status": "open",
-      "summary": "size 'Medium or small' is not representable"
     },
     {
       "monster": "noble",
@@ -7752,13 +7633,6 @@
     },
     {
       "monster": "pirate",
-      "class": "b",
-      "path": "size",
-      "status": "open",
-      "summary": "size 'Medium or small' is not representable"
-    },
-    {
-      "monster": "pirate",
       "class": "d",
       "path": "actions.dagger",
       "status": "open",
@@ -7777,13 +7651,6 @@
       "path": "actions.multiattack",
       "status": "open",
       "summary": "classified modeled"
-    },
-    {
-      "monster": "pirate-captain",
-      "class": "b",
-      "path": "size",
-      "status": "open",
-      "summary": "size 'Medium or small' is not representable"
     },
     {
       "monster": "pirate-captain",
@@ -7997,13 +7864,6 @@
     },
     {
       "monster": "priest",
-      "class": "b",
-      "path": "size",
-      "status": "open",
-      "summary": "size 'Medium or small' is not representable"
-    },
-    {
-      "monster": "priest",
       "class": "d",
       "path": "actions.mace",
       "status": "open",
@@ -8050,13 +7910,6 @@
       "path": "bonus_actions.divine-aid",
       "status": "open",
       "summary": "spellcasting is not modeled; spells are absent from the stat block effects"
-    },
-    {
-      "monster": "priest-acolyte",
-      "class": "b",
-      "path": "size",
-      "status": "open",
-      "summary": "size 'Medium or small' is not representable"
     },
     {
       "monster": "priest-acolyte",
@@ -8694,13 +8547,6 @@
       "path": "actions.sting.damage",
       "status": "open",
       "summary": "correction applied: Upstream structured damage omits the flat 1 Piercing damage that precedes the dice damage. [scorpion actions.sting.desc: \"Melee Attack Roll: +2, reach 5 ft. Hit: 1 Piercing damage plus 3 (1d6) Poison damage.\"]"
-    },
-    {
-      "monster": "scout",
-      "class": "b",
-      "path": "size",
-      "status": "open",
-      "summary": "size 'Medium or small' is not representable"
     },
     {
       "monster": "scout",
@@ -9404,13 +9250,6 @@
     },
     {
       "monster": "spy",
-      "class": "b",
-      "path": "size",
-      "status": "open",
-      "summary": "size 'Medium or small' is not representable"
-    },
-    {
-      "monster": "spy",
       "class": "d",
       "path": "actions.hand-crossbow",
       "status": "open",
@@ -9880,13 +9719,6 @@
     },
     {
       "monster": "tough",
-      "class": "b",
-      "path": "size",
-      "status": "open",
-      "summary": "size 'Medium or small' is not representable"
-    },
-    {
-      "monster": "tough",
       "class": "d",
       "path": "actions.heavy-crossbow",
       "status": "open",
@@ -9905,13 +9737,6 @@
       "path": "traits.pack-tactics",
       "status": "open",
       "summary": "classified unmodeled (default skipped)"
-    },
-    {
-      "monster": "tough-boss",
-      "class": "b",
-      "path": "size",
-      "status": "open",
-      "summary": "size 'Medium or small' is not representable"
     },
     {
       "monster": "tough-boss",
@@ -10251,13 +10076,6 @@
     },
     {
       "monster": "vampire-familiar",
-      "class": "b",
-      "path": "size",
-      "status": "open",
-      "summary": "size 'Medium or small' is not representable"
-    },
-    {
-      "monster": "vampire-familiar",
       "class": "d",
       "path": "actions.multiattack",
       "status": "open",
@@ -10388,13 +10206,6 @@
       "path": "traits.vampire-weakness",
       "status": "open",
       "summary": "classified unmodeled (default skipped)"
-    },
-    {
-      "monster": "vampire-spawn",
-      "class": "b",
-      "path": "size",
-      "status": "open",
-      "summary": "size 'Medium or small' is not representable"
     },
     {
       "monster": "vampire-spawn",
@@ -10699,13 +10510,6 @@
     },
     {
       "monster": "warrior-infantry",
-      "class": "b",
-      "path": "size",
-      "status": "open",
-      "summary": "size 'Medium or small' is not representable"
-    },
-    {
-      "monster": "warrior-infantry",
       "class": "d",
       "path": "actions.spear",
       "status": "open",
@@ -10717,13 +10521,6 @@
       "path": "traits.pack-tactics",
       "status": "open",
       "summary": "classified unmodeled (default skipped)"
-    },
-    {
-      "monster": "warrior-veteran",
-      "class": "b",
-      "path": "size",
-      "status": "open",
-      "summary": "size 'Medium or small' is not representable"
     },
     {
       "monster": "warrior-veteran",
@@ -11515,13 +11312,6 @@
       "path": "actions.bite",
       "status": "open",
       "summary": "classified modeled"
-    },
-    {
-      "monster": "wraith",
-      "class": "b",
-      "path": "size",
-      "status": "open",
-      "summary": "size 'Medium or small' is not representable"
     },
     {
       "monster": "wraith",

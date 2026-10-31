@@ -1,0 +1,85 @@
+{
+  "ability_scores": {
+    "charisma": 8,
+    "constitution": 11,
+    "dexterity": 11,
+    "intelligence": 8,
+    "strength": 13,
+    "wisdom": 11
+  },
+  "actions": [
+    {
+      "desc": "Melee or Ranged Attack Roll: +3, reach 5 ft. or range 20/60 ft. Hit: 4 (1d6 + 1) Piercing damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "1d6",
+                "magical": false,
+                "modifier": 1,
+                "type": "piercing"
+              }
+            ],
+            "modifier": 3,
+            "on_hit": [],
+            "range": [
+              20,
+              60
+            ],
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "spear",
+      "kind": "modeled",
+      "name": "Spear"
+    }
+  ],
+  "alignment": "neutral",
+  "armor_class": [
+    {
+      "source": "Chain Shirt",
+      "value": 13
+    }
+  ],
+  "challenge_rating": 0.125,
+  "hit_points": {
+    "average": 9,
+    "dice": "2d8"
+  },
+  "id": "warrior-infantry",
+  "initiative": 0,
+  "languages": [
+    "Common"
+  ],
+  "name": "Warrior Infantry",
+  "proficiency_bonus": 2,
+  "schema_version": "1",
+  "senses": {
+    "passive_perception": 10
+  },
+  "size": "medium",
+  "size_choice": [
+    "medium",
+    "small"
+  ],
+  "source": "srd-5.2.1",
+  "speeds": {
+    "walk": {
+      "feet": 30
+    }
+  },
+  "traits": [
+    {
+      "default_resolution": "skipped",
+      "desc": "The warrior has Advantage on an attack roll against a creature if at least one of the warrior’s allies is within 5 feet of the creature and the ally doesn’t have the Incapacitated condition.",
+      "id": "pack-tactics",
+      "kind": "unmodeled",
+      "name": "Pack Tactics"
+    }
+  ],
+  "type": "humanoid",
+  "xp": 25
+}

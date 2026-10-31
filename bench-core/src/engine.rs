@@ -1201,6 +1201,7 @@ mod tests {
             source: "test".into(),
             schema_version: "1".into(),
             size: Size::Medium,
+            size_choice: vec![],
             creature_type: "humanoid".into(),
             alignment: "neutral".into(),
             armor_class: vec![ArmorClass { value: ac, source: None }],

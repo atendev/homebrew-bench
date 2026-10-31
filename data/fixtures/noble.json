@@ -1,0 +1,87 @@
+{
+  "ability_scores": {
+    "charisma": 16,
+    "constitution": 11,
+    "dexterity": 12,
+    "intelligence": 12,
+    "strength": 11,
+    "wisdom": 14
+  },
+  "actions": [
+    {
+      "desc": "Melee Attack Roll: +3, reach 5 ft. Hit: 5 (1d8 + 1) Piercing damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "1d8",
+                "magical": false,
+                "modifier": 1,
+                "type": "piercing"
+              }
+            ],
+            "modifier": 3,
+            "on_hit": [],
+            "range": null,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "rapier",
+      "kind": "modeled",
+      "name": "Rapier"
+    }
+  ],
+  "alignment": "neutral",
+  "armor_class": [
+    {
+      "source": "Breastplate",
+      "value": 15
+    }
+  ],
+  "challenge_rating": 0.125,
+  "hit_points": {
+    "average": 9,
+    "dice": "2d8"
+  },
+  "id": "noble",
+  "initiative": 1,
+  "languages": [
+    "Common plus two other languages"
+  ],
+  "name": "Noble",
+  "proficiency_bonus": 2,
+  "reactions": [
+    {
+      "default_resolution": "skipped",
+      "desc": "Trigger: The noble is hit by a melee attack roll while holding a weapon. Response: The noble adds 2 to its AC against that attack, possibly causing it to miss.",
+      "id": "parry",
+      "kind": "unmodeled",
+      "name": "Parry"
+    }
+  ],
+  "schema_version": "1",
+  "senses": {
+    "passive_perception": 12
+  },
+  "size": "medium",
+  "size_choice": [
+    "medium",
+    "small"
+  ],
+  "skills": {
+    "deception": 5,
+    "insight": 4,
+    "persuasion": 5
+  },
+  "source": "srd-5.2.1",
+  "speeds": {
+    "walk": {
+      "feet": 30
+    }
+  },
+  "type": "humanoid",
+  "xp": 25
+}

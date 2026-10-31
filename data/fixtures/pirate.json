@@ -1,0 +1,122 @@
+{
+  "ability_scores": {
+    "charisma": 14,
+    "constitution": 12,
+    "dexterity": 16,
+    "intelligence": 8,
+    "strength": 10,
+    "wisdom": 12
+  },
+  "actions": [
+    {
+      "desc": "The pirate makes two Dagger attacks. It can replace one attack with a use of Enthralling Panache.",
+      "effects": [
+        {
+          "multiattack": {
+            "steps": [
+              {
+                "action": {
+                  "action_id": "dagger",
+                  "count": 1
+                }
+              },
+              {
+                "choice": {
+                  "options": [
+                    {
+                      "action_id": "dagger",
+                      "count": 1
+                    },
+                    {
+                      "action_id": "enthralling-panache",
+                      "count": 1
+                    }
+                  ],
+                  "pick": 1
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "id": "multiattack",
+      "kind": "modeled",
+      "name": "Multiattack"
+    },
+    {
+      "desc": "Melee or Ranged Attack Roll: +5, reach 5 ft. or range 20/60 ft. Hit: 5 (1d4 + 3) Piercing damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "1d4",
+                "magical": false,
+                "modifier": 3,
+                "type": "piercing"
+              }
+            ],
+            "modifier": 5,
+            "on_hit": [],
+            "range": [
+              20,
+              60
+            ],
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "dagger",
+      "kind": "modeled",
+      "name": "Dagger"
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "Wisdom Saving Throw: DC 12, one creature the pirate can see within 30 feet. Failure: The target has the Charmed condition until the start of the pirate’s next turn.",
+      "id": "enthralling-panache",
+      "kind": "unmodeled",
+      "name": "Enthralling Panache"
+    }
+  ],
+  "alignment": "neutral",
+  "armor_class": [
+    {
+      "source": "Leather Armor",
+      "value": 14
+    }
+  ],
+  "challenge_rating": 1,
+  "hit_points": {
+    "average": 33,
+    "dice": "6d8+6"
+  },
+  "id": "pirate",
+  "initiative": 3,
+  "languages": [
+    "Common plus one other language"
+  ],
+  "name": "Pirate",
+  "proficiency_bonus": 2,
+  "saving_throws": {
+    "cha": 4,
+    "dex": 5
+  },
+  "schema_version": "1",
+  "senses": {
+    "passive_perception": 11
+  },
+  "size": "medium",
+  "size_choice": [
+    "medium",
+    "small"
+  ],
+  "source": "srd-5.2.1",
+  "speeds": {
+    "walk": {
+      "feet": 30
+    }
+  },
+  "type": "humanoid",
+  "xp": 200
+}

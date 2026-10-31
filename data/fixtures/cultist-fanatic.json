@@ -1,0 +1,108 @@
+{
+  "ability_scores": {
+    "charisma": 13,
+    "constitution": 12,
+    "dexterity": 14,
+    "intelligence": 10,
+    "strength": 11,
+    "wisdom": 14
+  },
+  "actions": [
+    {
+      "desc": "Melee Attack Roll: +4, reach 5 ft. Hit: 6 (1d8 + 2) Slashing damage plus 7 (2d6) Necrotic damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "1d8",
+                "magical": false,
+                "modifier": 2,
+                "type": "slashing"
+              },
+              {
+                "dice": "2d6",
+                "magical": false,
+                "modifier": 0,
+                "type": "necrotic"
+              }
+            ],
+            "modifier": 4,
+            "on_hit": [],
+            "range": null,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "pact-blade",
+      "kind": "modeled",
+      "name": "Pact Blade"
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "The cultist casts one of the following spells, using Wisdom as the spellcasting ability (spell save DC 12, +4 to hit with spell attacks):",
+      "id": "spellcasting",
+      "kind": "unmodeled",
+      "name": "Spellcasting"
+    }
+  ],
+  "alignment": "neutral",
+  "armor_class": [
+    {
+      "source": "Leather Armor",
+      "value": 13
+    }
+  ],
+  "bonus_actions": [
+    {
+      "default_resolution": "skipped",
+      "desc": "The cultist casts the Spiritual Weapon spell, using the same spellcasting ability as Spellcasting.",
+      "id": "spiritual-weapon",
+      "kind": "unmodeled",
+      "name": "Spiritual Weapon",
+      "usage": {
+        "per_day": {
+          "uses": 2
+        }
+      }
+    }
+  ],
+  "challenge_rating": 2,
+  "hit_points": {
+    "average": 44,
+    "dice": "8d8+8"
+  },
+  "id": "cultist-fanatic",
+  "initiative": 2,
+  "languages": [
+    "Common"
+  ],
+  "name": "Cultist Fanatic",
+  "proficiency_bonus": 2,
+  "saving_throws": {
+    "wis": 4
+  },
+  "schema_version": "1",
+  "senses": {
+    "passive_perception": 12
+  },
+  "size": "medium",
+  "size_choice": [
+    "medium",
+    "small"
+  ],
+  "skills": {
+    "deception": 3,
+    "persuasion": 3,
+    "religion": 2
+  },
+  "source": "srd-5.2.1",
+  "speeds": {
+    "walk": {
+      "feet": 30
+    }
+  },
+  "type": "humanoid",
+  "xp": 450
+}
