@@ -22,3 +22,48 @@ fn srd_fixtures_validate_against_stat_block_schema() {
     assert!(count > 0, "no fixtures found in {}", dir.display());
     assert!(failures.is_empty(), "fixtures failing the schema:\n{}", failures.join("\n"));
 }
+
+fn action_clauses(fixture: &str, action_id: &str) -> Vec<String> {
+    let path = Path::new(env!("CARGO_MANIFEST_DIR")).join("../data/fixtures").join(format!("{fixture}.json"));
+    let text = std::fs::read_to_string(&path).expect("readable fixture");
+    let block: serde_json::Value = serde_json::from_str(&text).expect("fixture is JSON");
+    let action = block["actions"]
+        .as_array()
+        .expect("actions array")
+        .iter()
+        .find(|a| a["id"] == action_id)
+        .unwrap_or_else(|| panic!("{fixture} has no action {action_id}"));
+    action["agent_clauses"]
+        .as_array()
+        .map(|clauses| clauses.iter().map(|c| c.as_str().expect("string clause").to_string()).collect())
+        .unwrap_or_default()
+}
+
+#[test]
+fn hit_sentence_tail_effects_become_agent_clauses() {
+    assert_eq!(
+        action_clauses("clay-golem", "slam"),
+        ["The target\u{2019}s Hit Point maximum decreases by an amount equal to the Acid damage taken."]
+    );
+    let otyugh = action_clauses("otyugh", "bite");
+    assert_eq!(otyugh.len(), 2, "{otyugh:?}");
+    assert_eq!(otyugh[0], "The target has the Poisoned condition.");
+    let roper = action_clauses("roper", "tentacle");
+    assert_eq!(roper.len(), 2, "{roper:?}");
+    assert_eq!(
+        roper[0],
+        "The target has the Grappled condition (escape DC 14) from one of six tentacles, and the target has the Poisoned condition until the grapple ends."
+    );
+    assert_eq!(
+        action_clauses("sprite", "enchanting-bow"),
+        ["The target has the Charmed condition until the start of the sprite\u{2019}s next turn."]
+    );
+}
+
+#[test]
+fn conditional_damage_tails_are_not_duplicated_as_effects() {
+    assert_eq!(
+        action_clauses("goblin-warrior", "scimitar"),
+        ["Conditional damage, not modeled: plus 2 (1d4) Slashing damage if the attack roll had Advantage."]
+    );
+}

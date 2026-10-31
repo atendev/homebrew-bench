@@ -54,6 +54,9 @@
       "name": "Multiattack"
     },
     {
+      "agent_clauses": [
+        "The target has the Poisoned condition until the end of the merrow’s next turn."
+      ],
       "desc": "Melee Attack Roll: +6, reach 5 ft. Hit: 6 (1d4 + 4) Piercing damage, and the target has the Poisoned condition until the end of the merrow’s next turn.",
       "effects": [
         {
@@ -75,7 +78,7 @@
         }
       ],
       "id": "bite",
-      "kind": "modeled",
+      "kind": "partly_modeled",
       "name": "Bite"
     },
     {

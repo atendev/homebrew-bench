@@ -77,6 +77,9 @@
       "name": "Storm Sword"
     },
     {
+      "agent_clauses": [
+        "The target has the Blinded and Deafened conditions until the start of the giant’s next turn."
+      ],
       "desc": "Ranged Attack Roll: +14, range 500 ft. Hit: 22 (2d12 + 9) Lightning damage, and the target has the Blinded and Deafened conditions until the start of the giant’s next turn.",
       "effects": [
         {
@@ -101,7 +104,7 @@
         }
       ],
       "id": "thunderbolt",
-      "kind": "modeled",
+      "kind": "partly_modeled",
       "name": "Thunderbolt"
     },
     {

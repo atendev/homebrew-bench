@@ -60,6 +60,9 @@
       "name": "Bite"
     },
     {
+      "agent_clauses": [
+        "The target has the Poisoned condition until the start of the wyvern’s next turn."
+      ],
       "desc": "Melee Attack Roll: +7, reach 10 ft. Hit: 11 (2d6 + 4) Piercing damage plus 24 (7d6) Poison damage, and the target has the Poisoned condition until the start of the wyvern’s next turn.",
       "effects": [
         {
@@ -87,7 +90,7 @@
         }
       ],
       "id": "sting",
-      "kind": "modeled",
+      "kind": "partly_modeled",
       "name": "Sting"
     }
   ],

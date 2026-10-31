@@ -69,6 +69,9 @@
       "name": "Flame Whip"
     },
     {
+      "agent_clauses": [
+        "The target can’t take Reactions until the start of the balor’s next turn."
+      ],
       "desc": "Melee Attack Roll: +14, reach 10 ft. Hit: 21 (3d8 + 8) Force damage plus 22 (4d10) Lightning damage, and the target can’t take Reactions until the start of the balor’s next turn.",
       "effects": [
         {
@@ -96,7 +99,7 @@
         }
       ],
       "id": "lightning-blade",
-      "kind": "modeled",
+      "kind": "partly_modeled",
       "name": "Lightning Blade"
     }
   ],

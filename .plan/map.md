@@ -52,6 +52,7 @@ Both modes ship in phase 1. Everything the engine can't model is labeled agent j
 - [Conditional and later-clause attack damage](closed/037-conditional-and-later-clause-damage.md): `Damage` gains `if_target` and `if_target_from_actor` (the engine already tracks condition sources), and the importer places each damage entry by where the prose states it. Later-sentence damage is always conditional or recurring, so it stays an agent clause and nothing routes to `on_hit`. The Mimic's grapple gate is built but inert until grapples are modeled. Five corrections restore omitted flat 1 damage, and SRD fixtures rose from 227 to 269 of 341. See `docs/adr/0005-closed-effect-vocabulary-with-agent-clauses.md`.
 - [Size choice field on stat blocks](closed/038-size-choice-field.md): `StatBlock` gains `size_choice: Vec<Size>` with serde default; the importer splits upstream `"Medium or small"` on `" or "`, stores the first as `size` and the full list in `size_choice`. SRD fixtures rose from 269 to 299 of 341.
 - [Recharge ranges and recharge after rest](closed/039-recharge-ranges-and-rest.md): recharge dice "N-6" or "N" for N in 2 to 6 parse through `recharge_minimum` and unparseable dice fail at load time, recharge after rest maps to `PerRest` short once, and ungrouped recharge resources are now keyed by ability id. SRD fixtures rose from 299 to 305 of 341.
+- [Hit-sentence tail effects](closed/040-hit-sentence-tail-effects.md): the importer keeps what a Hit sentence states after its damage as an agent clause (an "and" tail, or a whole effect-only sentence), 30 fixtures became partly modeled, and the graduated count stays 305 of 341.
 
 ## Not yet specified
 
@@ -69,7 +70,6 @@ Both modes ship in phase 1. Everything the engine can't model is labeled agent j
 
 Takeable now, in order:
 
-- Hit-sentence tail effects (task)
 - SRD importer, review pipeline and fixtures (task); first pass built, 305 of 341 graduated after ticket 039
 - Live mode CLI, overrides, log, public view and replay (task)
 

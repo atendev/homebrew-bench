@@ -63,6 +63,9 @@
       "name": "Battleaxe"
     },
     {
+      "agent_clauses": [
+        "The target has Disadvantage on the next attack roll it makes before the end of its next turn."
+      ],
       "desc": "Melee Attack Roll: +7, reach 5 ft. Hit: 14 (2d8 + 5) Piercing damage, and the target has Disadvantage on the next attack roll it makes before the end of its next turn.",
       "effects": [
         {
@@ -84,7 +87,7 @@
         }
       ],
       "id": "morningstar",
-      "kind": "modeled",
+      "kind": "partly_modeled",
       "name": "Morningstar"
     }
   ],

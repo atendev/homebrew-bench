@@ -35,6 +35,9 @@
       "name": "Multiattack"
     },
     {
+      "agent_clauses": [
+        "The target has the Poisoned condition until the start of the ettercap’s next turn."
+      ],
       "desc": "Melee Attack Roll: +4, reach 5 ft. Hit: 5 (1d6 + 2) Piercing damage plus 2 (1d4) Poison damage, and the target has the Poisoned condition until the start of the ettercap’s next turn.",
       "effects": [
         {
@@ -62,7 +65,7 @@
         }
       ],
       "id": "bite",
-      "kind": "modeled",
+      "kind": "partly_modeled",
       "name": "Bite"
     },
     {

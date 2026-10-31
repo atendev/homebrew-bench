@@ -9,6 +9,9 @@
   },
   "actions": [
     {
+      "agent_clauses": [
+        "The target has the Poisoned condition until the end of its next turn."
+      ],
       "desc": "Melee Attack Roll: +4, reach 5 ft. Hit: 9 (2d6 + 2) Piercing damage, and the target has the Poisoned condition until the end of its next turn.",
       "effects": [
         {
@@ -30,7 +33,7 @@
         }
       ],
       "id": "gouge",
-      "kind": "modeled",
+      "kind": "partly_modeled",
       "name": "Gouge"
     }
   ],

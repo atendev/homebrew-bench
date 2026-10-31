@@ -81,6 +81,9 @@
       "name": "Claw"
     },
     {
+      "agent_clauses": [
+        "The target has the Frightened condition until the start of the oni’s next turn."
+      ],
       "desc": "Ranged Attack Roll: +5, range 60 ft. Hit: 9 (2d6 + 2) Psychic damage, and the target has the Frightened condition until the start of the oni’s next turn.",
       "effects": [
         {
@@ -105,7 +108,7 @@
         }
       ],
       "id": "nightmare-ray",
-      "kind": "modeled",
+      "kind": "partly_modeled",
       "name": "Nightmare Ray"
     },
     {

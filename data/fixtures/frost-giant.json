@@ -77,6 +77,9 @@
       "name": "Frost Axe"
     },
     {
+      "agent_clauses": [
+        "The target’s Speed decreases by 10 feet until the end of its next turn."
+      ],
       "desc": "Ranged Attack Roll: +9, range 150/600 ft. Hit: 17 (2d10 + 6) Piercing damage plus 7 (2d6) Cold damage, and the target’s Speed decreases by 10 feet until the end of its next turn.",
       "effects": [
         {
@@ -107,7 +110,7 @@
         }
       ],
       "id": "great-bow",
-      "kind": "modeled",
+      "kind": "partly_modeled",
       "name": "Great Bow"
     }
   ],

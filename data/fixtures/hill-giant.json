@@ -74,6 +74,9 @@
       "name": "Tree Club"
     },
     {
+      "agent_clauses": [
+        "The target has the Poisoned condition until the end of its next turn."
+      ],
       "desc": "Ranged Attack Roll: +8, range 60/240 ft. Hit: 16 (2d10 + 5) Bludgeoning damage, and the target has the Poisoned condition until the end of its next turn.",
       "effects": [
         {
@@ -98,7 +101,7 @@
         }
       ],
       "id": "trash-lob",
-      "kind": "modeled",
+      "kind": "partly_modeled",
       "name": "Trash Lob"
     }
   ],

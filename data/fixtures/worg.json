@@ -9,6 +9,9 @@
   },
   "actions": [
     {
+      "agent_clauses": [
+        "The next attack roll made against the target before the start of the worg’s next turn has Advantage."
+      ],
       "desc": "Melee Attack Roll: +5, reach 5 ft. Hit: 7 (1d8 + 3) Piercing damage, and the next attack roll made against the target before the start of the worg’s next turn has Advantage.",
       "effects": [
         {
@@ -30,7 +33,7 @@
         }
       ],
       "id": "bite",
-      "kind": "modeled",
+      "kind": "partly_modeled",
       "name": "Bite"
     }
   ],
