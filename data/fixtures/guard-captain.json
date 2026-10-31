@@ -1,0 +1,142 @@
+{
+  "ability_scores": {
+    "charisma": 13,
+    "constitution": 16,
+    "dexterity": 14,
+    "intelligence": 12,
+    "strength": 18,
+    "wisdom": 14
+  },
+  "actions": [
+    {
+      "desc": "The guard makes two attacks, using Javelin or Longsword in any combination.",
+      "effects": [
+        {
+          "multiattack": {
+            "steps": [
+              {
+                "choice": {
+                  "options": [
+                    {
+                      "action_id": "javelin",
+                      "count": 1
+                    },
+                    {
+                      "action_id": "javelin",
+                      "count": 1
+                    },
+                    {
+                      "action_id": "longsword",
+                      "count": 1
+                    },
+                    {
+                      "action_id": "longsword",
+                      "count": 1
+                    }
+                  ],
+                  "pick": 2
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "id": "multiattack",
+      "kind": "modeled",
+      "name": "Multiattack"
+    },
+    {
+      "desc": "Melee or Ranged Attack Roll: +6, reach 5 ft. or range 30/120 ft. Hit: 14 (3d6 + 4) Piercing damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "3d6",
+                "magical": false,
+                "modifier": 4,
+                "type": "piercing"
+              }
+            ],
+            "modifier": 6,
+            "on_hit": [],
+            "range": [
+              30,
+              120
+            ],
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "javelin",
+      "kind": "modeled",
+      "name": "Javelin"
+    },
+    {
+      "desc": "Melee Attack Roll: +6, reach 5 ft. Hit: 15 (2d10 + 4) Slashing damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "2d10",
+                "magical": false,
+                "modifier": 4,
+                "type": "slashing"
+              }
+            ],
+            "modifier": 6,
+            "on_hit": [],
+            "range": null,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "longsword",
+      "kind": "modeled",
+      "name": "Longsword"
+    }
+  ],
+  "alignment": "neutral",
+  "armor_class": [
+    {
+      "source": "Breastplate, Shield",
+      "value": 18
+    }
+  ],
+  "challenge_rating": 4,
+  "hit_points": {
+    "average": 75,
+    "dice": "10d8+30"
+  },
+  "id": "guard-captain",
+  "initiative": 2,
+  "languages": [
+    "Common"
+  ],
+  "name": "Guard Captain",
+  "proficiency_bonus": 2,
+  "schema_version": "1",
+  "senses": {
+    "passive_perception": 14
+  },
+  "size": "medium",
+  "size_choice": [
+    "medium",
+    "small"
+  ],
+  "skills": {
+    "athletics": 6,
+    "perception": 4
+  },
+  "source": "srd-5.2.1",
+  "speeds": {
+    "walk": {
+      "feet": 30
+    }
+  },
+  "type": "humanoid",
+  "xp": 1100
+}

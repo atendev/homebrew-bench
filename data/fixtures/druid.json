@@ -1,0 +1,158 @@
+{
+  "ability_scores": {
+    "charisma": 11,
+    "constitution": 13,
+    "dexterity": 12,
+    "intelligence": 12,
+    "strength": 10,
+    "wisdom": 16
+  },
+  "actions": [
+    {
+      "desc": "The druid makes two attacks, using Vine Staff or Verdant Wisp in any combination.",
+      "effects": [
+        {
+          "multiattack": {
+            "steps": [
+              {
+                "choice": {
+                  "options": [
+                    {
+                      "action_id": "vine-staff",
+                      "count": 1
+                    },
+                    {
+                      "action_id": "vine-staff",
+                      "count": 1
+                    },
+                    {
+                      "action_id": "verdant-wisp",
+                      "count": 1
+                    },
+                    {
+                      "action_id": "verdant-wisp",
+                      "count": 1
+                    }
+                  ],
+                  "pick": 2
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "id": "multiattack",
+      "kind": "modeled",
+      "name": "Multiattack"
+    },
+    {
+      "desc": "Melee Attack Roll: +5, reach 5 ft. Hit: 7 (1d8 + 3) Bludgeoning damage plus 2 (1d4) Poison damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "1d8",
+                "magical": false,
+                "modifier": 3,
+                "type": "bludgeoning"
+              },
+              {
+                "dice": "1d4",
+                "magical": false,
+                "modifier": 0,
+                "type": "poison"
+              }
+            ],
+            "modifier": 5,
+            "on_hit": [],
+            "range": null,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "vine-staff",
+      "kind": "modeled",
+      "name": "Vine Staff"
+    },
+    {
+      "desc": "Ranged Attack Roll: +5, range 90 ft. Hit: 10 (3d6) Radiant damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "3d6",
+                "magical": false,
+                "modifier": 0,
+                "type": "radiant"
+              }
+            ],
+            "modifier": 5,
+            "on_hit": [],
+            "range": [
+              90,
+              90
+            ],
+            "reach": null,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "verdant-wisp",
+      "kind": "modeled",
+      "name": "Verdant Wisp"
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "The druid casts one of the following spells, using Wisdom as the spellcasting ability (spell save DC 13):",
+      "id": "spellcasting",
+      "kind": "unmodeled",
+      "name": "Spellcasting"
+    }
+  ],
+  "alignment": "neutral",
+  "armor_class": [
+    {
+      "source": "Studded Leather Armor",
+      "value": 13
+    }
+  ],
+  "challenge_rating": 2,
+  "hit_points": {
+    "average": 44,
+    "dice": "8d8+8"
+  },
+  "id": "druid",
+  "initiative": 1,
+  "languages": [
+    "Common",
+    "Druidic",
+    "Sylvan"
+  ],
+  "name": "Druid",
+  "proficiency_bonus": 2,
+  "schema_version": "1",
+  "senses": {
+    "passive_perception": 15
+  },
+  "size": "medium",
+  "size_choice": [
+    "medium",
+    "small"
+  ],
+  "skills": {
+    "medicine": 5,
+    "nature": 3,
+    "perception": 5
+  },
+  "source": "srd-5.2.1",
+  "speeds": {
+    "walk": {
+      "feet": 30
+    }
+  },
+  "type": "humanoid",
+  "xp": 450
+}

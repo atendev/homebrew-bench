@@ -1,0 +1,82 @@
+{
+  "ability_scores": {
+    "charisma": 9,
+    "constitution": 17,
+    "dexterity": 12,
+    "intelligence": 9,
+    "strength": 16,
+    "wisdom": 11
+  },
+  "actions": [
+    {
+      "desc": "Melee Attack Roll: +5, reach 5 ft. Hit: 9 (1d12 + 3) Slashing damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "1d12",
+                "magical": false,
+                "modifier": 3,
+                "type": "slashing"
+              }
+            ],
+            "modifier": 5,
+            "on_hit": [],
+            "range": null,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "greataxe",
+      "kind": "modeled",
+      "name": "Greataxe"
+    }
+  ],
+  "alignment": "neutral",
+  "armor_class": [
+    {
+      "source": "Hide Armor",
+      "value": 13
+    }
+  ],
+  "challenge_rating": 2,
+  "hit_points": {
+    "average": 67,
+    "dice": "9d8+27"
+  },
+  "id": "berserker",
+  "initiative": 1,
+  "languages": [
+    "Common"
+  ],
+  "name": "Berserker",
+  "proficiency_bonus": 2,
+  "schema_version": "1",
+  "senses": {
+    "passive_perception": 10
+  },
+  "size": "medium",
+  "size_choice": [
+    "medium",
+    "small"
+  ],
+  "source": "srd-5.2.1",
+  "speeds": {
+    "walk": {
+      "feet": 30
+    }
+  },
+  "traits": [
+    {
+      "default_resolution": "skipped",
+      "desc": "While Bloodied, the berserker has Advantage on attack rolls and saving throws.",
+      "id": "bloodied-frenzy",
+      "kind": "unmodeled",
+      "name": "Bloodied Frenzy"
+    }
+  ],
+  "type": "humanoid",
+  "xp": 450
+}

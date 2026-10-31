@@ -1,0 +1,154 @@
+{
+  "ability_scores": {
+    "charisma": 16,
+    "constitution": 12,
+    "dexterity": 14,
+    "intelligence": 20,
+    "strength": 10,
+    "wisdom": 15
+  },
+  "actions": [
+    {
+      "desc": "The archmage makes four Arcane Burst attacks.",
+      "effects": [
+        {
+          "multiattack": {
+            "steps": [
+              {
+                "action": {
+                  "action_id": "arcane-burst",
+                  "count": 4
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "id": "multiattack",
+      "kind": "modeled",
+      "name": "Multiattack"
+    },
+    {
+      "desc": "Melee or Ranged Attack Roll: +9, reach 5 ft. or range 150 ft. Hit: 27 (4d10 + 5) Force damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "4d10",
+                "magical": false,
+                "modifier": 5,
+                "type": "force"
+              }
+            ],
+            "modifier": 9,
+            "on_hit": [],
+            "range": [
+              150,
+              150
+            ],
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "arcane-burst",
+      "kind": "modeled",
+      "name": "Arcane Burst"
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "The archmage casts one of the following spells, using Intelligence as the spellcasting ability (spell save DC 17):",
+      "id": "spellcasting",
+      "kind": "unmodeled",
+      "name": "Spellcasting"
+    }
+  ],
+  "alignment": "neutral",
+  "armor_class": [
+    {
+      "value": 17
+    }
+  ],
+  "bonus_actions": [
+    {
+      "default_resolution": "skipped",
+      "desc": "The mage casts Misty Step, using the same spellcasting ability as Spellcasting.",
+      "id": "misty-step",
+      "kind": "unmodeled",
+      "name": "Misty Step",
+      "usage": {
+        "per_day": {
+          "uses": 3
+        }
+      }
+    }
+  ],
+  "challenge_rating": 12,
+  "condition_immunities": [
+    "charmed"
+  ],
+  "damage_immunities": [
+    "psychic"
+  ],
+  "hit_points": {
+    "average": 170,
+    "dice": "31d8+31"
+  },
+  "id": "archmage",
+  "initiative": 2,
+  "languages": [
+    "Common plus five other languages"
+  ],
+  "name": "Archmage",
+  "proficiency_bonus": 4,
+  "reactions": [
+    {
+      "default_resolution": "skipped",
+      "desc": "The archmage casts Counterspell or Shield in response to the spell’s trigger, using the same spellcasting ability as Spellcasting.",
+      "id": "protective-magic",
+      "kind": "unmodeled",
+      "name": "Protective Magic",
+      "usage": {
+        "per_day": {
+          "uses": 3
+        }
+      }
+    }
+  ],
+  "saving_throws": {
+    "int": 9,
+    "wis": 6
+  },
+  "schema_version": "1",
+  "senses": {
+    "passive_perception": 16
+  },
+  "size": "medium",
+  "size_choice": [
+    "medium",
+    "small"
+  ],
+  "skills": {
+    "arcana": 13,
+    "history": 9,
+    "perception": 6
+  },
+  "source": "srd-5.2.1",
+  "speeds": {
+    "walk": {
+      "feet": 30
+    }
+  },
+  "traits": [
+    {
+      "default_resolution": "skipped",
+      "desc": "The archmage has Advantage on saving throws against spells and other magical effects.",
+      "id": "magic-resistance",
+      "kind": "unmodeled",
+      "name": "Magic Resistance"
+    }
+  ],
+  "type": "humanoid",
+  "xp": 8400
+}

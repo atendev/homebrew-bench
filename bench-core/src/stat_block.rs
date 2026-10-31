@@ -228,6 +228,8 @@ pub struct StatBlock {
     pub source: String,
     pub schema_version: String,
     pub size: Size,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub size_choice: Vec<Size>,
     #[serde(rename = "type")]
     pub creature_type: String,
     pub alignment: String,
@@ -316,6 +318,7 @@ mod tests {
             source: "test".into(),
             schema_version: "1".into(),
             size: Size::Small,
+            size_choice: vec![],
             creature_type: "humanoid".into(),
             alignment: "neutral evil".into(),
             armor_class: vec![ArmorClass {

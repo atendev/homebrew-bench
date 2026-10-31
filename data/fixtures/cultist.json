@@ -1,0 +1,86 @@
+{
+  "ability_scores": {
+    "charisma": 10,
+    "constitution": 10,
+    "dexterity": 12,
+    "intelligence": 10,
+    "strength": 11,
+    "wisdom": 11
+  },
+  "actions": [
+    {
+      "desc": "Melee Attack Roll: +3, reach 5 ft. Hit: 3 (1d4 + 1) Slashing damage plus 1 Necrotic damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "1d4",
+                "magical": false,
+                "modifier": 1,
+                "type": "slashing"
+              },
+              {
+                "dice": "1d1",
+                "magical": false,
+                "modifier": 0,
+                "type": "necrotic"
+              }
+            ],
+            "modifier": 3,
+            "on_hit": [],
+            "range": null,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "ritual-sickle",
+      "kind": "modeled",
+      "name": "Ritual Sickle"
+    }
+  ],
+  "alignment": "neutral",
+  "armor_class": [
+    {
+      "source": "Leather Armor",
+      "value": 12
+    }
+  ],
+  "challenge_rating": 0.125,
+  "hit_points": {
+    "average": 9,
+    "dice": "2d8"
+  },
+  "id": "cultist",
+  "initiative": 1,
+  "languages": [
+    "Common"
+  ],
+  "name": "Cultist",
+  "proficiency_bonus": 2,
+  "saving_throws": {
+    "wis": 2
+  },
+  "schema_version": "1",
+  "senses": {
+    "passive_perception": 10
+  },
+  "size": "medium",
+  "size_choice": [
+    "medium",
+    "small"
+  ],
+  "skills": {
+    "deception": 2,
+    "religion": 2
+  },
+  "source": "srd-5.2.1",
+  "speeds": {
+    "walk": {
+      "feet": 30
+    }
+  },
+  "type": "humanoid",
+  "xp": 25
+}

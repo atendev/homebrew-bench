@@ -1,0 +1,170 @@
+{
+  "ability_scores": {
+    "charisma": 13,
+    "constitution": 12,
+    "dexterity": 10,
+    "intelligence": 13,
+    "strength": 16,
+    "wisdom": 16
+  },
+  "actions": [
+    {
+      "desc": "The priest makes two attacks, using Mace or Radiant Flame in any combination.",
+      "effects": [
+        {
+          "multiattack": {
+            "steps": [
+              {
+                "choice": {
+                  "options": [
+                    {
+                      "action_id": "mace",
+                      "count": 1
+                    },
+                    {
+                      "action_id": "mace",
+                      "count": 1
+                    },
+                    {
+                      "action_id": "radiant-flame",
+                      "count": 1
+                    },
+                    {
+                      "action_id": "radiant-flame",
+                      "count": 1
+                    }
+                  ],
+                  "pick": 2
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "id": "multiattack",
+      "kind": "modeled",
+      "name": "Multiattack"
+    },
+    {
+      "desc": "Melee Attack Roll: +5, reach 5 ft. Hit: 6 (1d6 + 3) Bludgeoning damage plus 5 (2d4) Radiant damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "1d6",
+                "magical": false,
+                "modifier": 3,
+                "type": "bludgeoning"
+              },
+              {
+                "dice": "2d4",
+                "magical": false,
+                "modifier": 0,
+                "type": "radiant"
+              }
+            ],
+            "modifier": 5,
+            "on_hit": [],
+            "range": null,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "mace",
+      "kind": "modeled",
+      "name": "Mace"
+    },
+    {
+      "desc": "Ranged Attack Roll: +5, range 60 ft. Hit: 11 (2d10) Radiant damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "2d10",
+                "magical": false,
+                "modifier": 0,
+                "type": "radiant"
+              }
+            ],
+            "modifier": 5,
+            "on_hit": [],
+            "range": [
+              60,
+              60
+            ],
+            "reach": null,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "radiant-flame",
+      "kind": "modeled",
+      "name": "Radiant Flame"
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "The priest casts one of the following spells, using Wisdom as the spellcasting ability (spell save DC 13):",
+      "id": "spellcasting",
+      "kind": "unmodeled",
+      "name": "Spellcasting"
+    }
+  ],
+  "alignment": "neutral",
+  "armor_class": [
+    {
+      "source": "Chain Shirt",
+      "value": 13
+    }
+  ],
+  "bonus_actions": [
+    {
+      "default_resolution": "skipped",
+      "desc": "The priest casts Bless, Dispel Magic, Healing Word, or Lesser Restoration, using the same spellcasting ability as Spellcasting.",
+      "id": "divine-aid",
+      "kind": "unmodeled",
+      "name": "Divine Aid",
+      "usage": {
+        "per_day": {
+          "uses": 3
+        }
+      }
+    }
+  ],
+  "challenge_rating": 2,
+  "hit_points": {
+    "average": 38,
+    "dice": "7d8+7"
+  },
+  "id": "priest",
+  "initiative": 0,
+  "languages": [
+    "Common plus one other language"
+  ],
+  "name": "Priest",
+  "proficiency_bonus": 2,
+  "schema_version": "1",
+  "senses": {
+    "passive_perception": 15
+  },
+  "size": "medium",
+  "size_choice": [
+    "medium",
+    "small"
+  ],
+  "skills": {
+    "medicine": 7,
+    "perception": 5,
+    "religion": 5
+  },
+  "source": "srd-5.2.1",
+  "speeds": {
+    "walk": {
+      "feet": 30
+    }
+  },
+  "type": "humanoid",
+  "xp": 450
+}

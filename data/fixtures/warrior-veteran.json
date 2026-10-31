@@ -1,0 +1,151 @@
+{
+  "ability_scores": {
+    "charisma": 10,
+    "constitution": 14,
+    "dexterity": 13,
+    "intelligence": 10,
+    "strength": 16,
+    "wisdom": 11
+  },
+  "actions": [
+    {
+      "desc": "The warrior makes two Greatsword or Heavy Crossbow attacks.",
+      "effects": [
+        {
+          "multiattack": {
+            "steps": [
+              {
+                "choice": {
+                  "options": [
+                    {
+                      "action_id": "greatsword",
+                      "count": 1
+                    },
+                    {
+                      "action_id": "greatsword",
+                      "count": 1
+                    },
+                    {
+                      "action_id": "heavy-crossbow",
+                      "count": 1
+                    },
+                    {
+                      "action_id": "heavy-crossbow",
+                      "count": 1
+                    }
+                  ],
+                  "pick": 2
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "id": "multiattack",
+      "kind": "modeled",
+      "name": "Multiattack"
+    },
+    {
+      "desc": "Melee Attack Roll: +5, reach 5 ft. Hit: 10 (2d6 + 3) Slashing damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "2d6",
+                "magical": false,
+                "modifier": 3,
+                "type": "slashing"
+              }
+            ],
+            "modifier": 5,
+            "on_hit": [],
+            "range": null,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "greatsword",
+      "kind": "modeled",
+      "name": "Greatsword"
+    },
+    {
+      "desc": "Ranged Attack Roll: +3, range 100/400 ft. Hit: 12 (2d10 + 1) Piercing damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "2d10",
+                "magical": false,
+                "modifier": 1,
+                "type": "piercing"
+              }
+            ],
+            "modifier": 3,
+            "on_hit": [],
+            "range": [
+              100,
+              400
+            ],
+            "reach": null,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "heavy-crossbow",
+      "kind": "modeled",
+      "name": "Heavy Crossbow"
+    }
+  ],
+  "alignment": "neutral",
+  "armor_class": [
+    {
+      "source": "Splint Armor",
+      "value": 17
+    }
+  ],
+  "challenge_rating": 3,
+  "hit_points": {
+    "average": 65,
+    "dice": "10d8+20"
+  },
+  "id": "warrior-veteran",
+  "initiative": 1,
+  "languages": [
+    "Common plus one other language"
+  ],
+  "name": "Warrior Veteran",
+  "proficiency_bonus": 2,
+  "reactions": [
+    {
+      "default_resolution": "skipped",
+      "desc": "Trigger: The warrior is hit by a melee attack roll while holding a weapon. Response: The warrior adds 2 to its AC against that attack, possibly causing it to miss.",
+      "id": "parry",
+      "kind": "unmodeled",
+      "name": "Parry"
+    }
+  ],
+  "schema_version": "1",
+  "senses": {
+    "passive_perception": 12
+  },
+  "size": "medium",
+  "size_choice": [
+    "medium",
+    "small"
+  ],
+  "skills": {
+    "athletics": 5,
+    "perception": 2
+  },
+  "source": "srd-5.2.1",
+  "speeds": {
+    "walk": {
+      "feet": 30
+    }
+  },
+  "type": "humanoid",
+  "xp": 700
+}

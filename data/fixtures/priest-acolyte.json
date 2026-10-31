@@ -1,0 +1,132 @@
+{
+  "ability_scores": {
+    "charisma": 11,
+    "constitution": 12,
+    "dexterity": 10,
+    "intelligence": 10,
+    "strength": 14,
+    "wisdom": 14
+  },
+  "actions": [
+    {
+      "desc": "Melee Attack Roll: +4, reach 5 ft. Hit: 5 (1d6 + 2) Bludgeoning damage plus 2 (1d4) Radiant damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "1d6",
+                "magical": false,
+                "modifier": 2,
+                "type": "bludgeoning"
+              },
+              {
+                "dice": "1d4",
+                "magical": false,
+                "modifier": 0,
+                "type": "radiant"
+              }
+            ],
+            "modifier": 4,
+            "on_hit": [],
+            "range": null,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "mace",
+      "kind": "modeled",
+      "name": "Mace"
+    },
+    {
+      "desc": "Ranged Attack Roll: +4, range 60 ft. Hit: 7 (2d6) Radiant damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "2d6",
+                "magical": false,
+                "modifier": 0,
+                "type": "radiant"
+              }
+            ],
+            "modifier": 4,
+            "on_hit": [],
+            "range": [
+              60,
+              60
+            ],
+            "reach": null,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "radiant-flame",
+      "kind": "modeled",
+      "name": "Radiant Flame"
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "The priest casts one of the following spells, using Wisdom as the spellcasting ability:",
+      "id": "spellcasting",
+      "kind": "unmodeled",
+      "name": "Spellcasting"
+    }
+  ],
+  "alignment": "neutral",
+  "armor_class": [
+    {
+      "source": "Chain Shirt",
+      "value": 13
+    }
+  ],
+  "bonus_actions": [
+    {
+      "default_resolution": "skipped",
+      "desc": "The priest casts Bless, Healing Word, or Sanctuary, using the same spellcasting ability as Spellcasting.",
+      "id": "divine-aid",
+      "kind": "unmodeled",
+      "name": "Divine Aid",
+      "usage": {
+        "per_day": {
+          "uses": 1
+        }
+      }
+    }
+  ],
+  "challenge_rating": 0.25,
+  "hit_points": {
+    "average": 11,
+    "dice": "2d8+2"
+  },
+  "id": "priest-acolyte",
+  "initiative": 0,
+  "languages": [
+    "Common"
+  ],
+  "name": "Priest Acolyte",
+  "proficiency_bonus": 2,
+  "schema_version": "1",
+  "senses": {
+    "passive_perception": 12
+  },
+  "size": "medium",
+  "size_choice": [
+    "medium",
+    "small"
+  ],
+  "skills": {
+    "medicine": 4,
+    "religion": 2
+  },
+  "source": "srd-5.2.1",
+  "speeds": {
+    "walk": {
+      "feet": 30
+    }
+  },
+  "type": "humanoid",
+  "xp": 50
+}
