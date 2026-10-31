@@ -54,6 +54,7 @@ Both modes ship in phase 1. Everything the engine can't model is labeled agent j
 - [Recharge ranges and recharge after rest](closed/039-recharge-ranges-and-rest.md): recharge dice "N-6" or "N" for N in 2 to 6 parse through `recharge_minimum` and unparseable dice fail at load time, recharge after rest maps to `PerRest` short once, and ungrouped recharge resources are now keyed by ability id. SRD fixtures rose from 299 to 305 of 341.
 - [Hit-sentence tail effects](closed/040-hit-sentence-tail-effects.md): the importer keeps what a Hit sentence states after its damage as an agent clause (an "and" tail, or a whole effect-only sentence), 30 fixtures became partly modeled, and the graduated count stays 305 of 341.
 - [SRD importer, review pipeline and fixtures](closed/028-srd-importer-review-pipeline-and-fixtures.md): all 341 SRD monsters graduate with the review at exit 0. Multiattacks can cast through Spellcasting and pick one of several step sets (an empty set makes a step optional), the self-reference check reads every sentence-initial subject, and the Hydra's five Bites are a recorded known limit. See `docs/adr/0005-closed-effect-vocabulary-with-agent-clauses.md`.
+- [Live mode CLI, overrides, log, public view and replay](closed/030-live-mode-cli-overrides-log-public-view-and-replay.md): the `bench` CLI runs every live command as a fold over the command history, so `undo` restores the dice and `replay` re-derives each state hash. PC dice prompts hold the request until `respond`. The public view hides monster numbers, damage amounts and the seed. `keep_encounters = false` prunes at the next `start`. PC initiative prompts and a concentration-save stream bug move to ticket 041.
 
 ## Not yet specified
 
@@ -73,11 +74,11 @@ Both modes ship in phase 1. Everything the engine can't model is labeled agent j
 
 Takeable now, in order:
 
-- Live mode CLI, overrides, log, public view and replay (task)
+- PC initiative prompts, concentration save stream and standing assumptions (task)
+- Batch tactics policy and batch runner (task)
 
 Blocked:
 
-- Batch tactics policy and batch runner (task), blocked by Live mode CLI, overrides, log, public view and replay
 - Empirical CR baseline curve and embedded reference data (task), blocked by Batch tactics policy and batch runner
-- Agent skill and house-rule templates (task), blocked by Live mode CLI, overrides, log, public view and replay and Empirical CR baseline curve and embedded reference data
+- Agent skill and house-rule templates (task), blocked by Empirical CR baseline curve and embedded reference data
 - Release packaging, legal notices and installers (task), blocked by Empirical CR baseline curve and embedded reference data and Agent skill and house-rule templates

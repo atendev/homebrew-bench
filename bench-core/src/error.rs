@@ -24,6 +24,20 @@ pub enum ErrorCode {
     StateTampered,
     /// A command asked for an encounter or resource that does not exist.
     NotFound,
+    /// A command line argument is malformed or missing.
+    InvalidArgument,
+    /// An override path or value does not fit the state schema.
+    InvalidOverride,
+    /// The rules forbid the command right now.
+    IllegalAction,
+    /// A pending prompt must be answered before this command.
+    PendingPrompt,
+    /// The encounter has ended.
+    EncounterEnded,
+    /// The state file was written by an incompatible engine version.
+    EngineVersionMismatch,
+    /// A `--rule` slug names no house-rule file.
+    UnknownHouseRule,
     /// An internal invariant failed.
     Internal,
 }
@@ -37,6 +51,13 @@ impl ErrorCode {
             ErrorCode::UnmodeledAbilityRefused => "unmodeled_ability_refused",
             ErrorCode::StateTampered => "state_tampered",
             ErrorCode::NotFound => "not_found",
+            ErrorCode::InvalidArgument => "invalid_argument",
+            ErrorCode::InvalidOverride => "invalid_override",
+            ErrorCode::IllegalAction => "illegal_action",
+            ErrorCode::PendingPrompt => "pending_prompt",
+            ErrorCode::EncounterEnded => "encounter_ended",
+            ErrorCode::EngineVersionMismatch => "engine_version_mismatch",
+            ErrorCode::UnknownHouseRule => "unknown_house_rule",
             ErrorCode::Internal => "internal",
         }
     }
@@ -44,9 +65,17 @@ impl ErrorCode {
     /// Process exit code.
     pub fn exit_code(&self) -> i32 {
         match self {
-            ErrorCode::InvalidJson | ErrorCode::SchemaValidationFailed | ErrorCode::NotFound => 1,
-            ErrorCode::UnmodeledAbilityRefused => 2,
-            ErrorCode::StateTampered | ErrorCode::Internal => 3,
+            ErrorCode::InvalidJson
+            | ErrorCode::SchemaValidationFailed
+            | ErrorCode::NotFound
+            | ErrorCode::InvalidArgument
+            | ErrorCode::InvalidOverride
+            | ErrorCode::UnknownHouseRule => 1,
+            ErrorCode::UnmodeledAbilityRefused
+            | ErrorCode::IllegalAction
+            | ErrorCode::PendingPrompt
+            | ErrorCode::EncounterEnded => 2,
+            ErrorCode::StateTampered | ErrorCode::EngineVersionMismatch | ErrorCode::Internal => 3,
         }
     }
 }

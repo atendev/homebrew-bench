@@ -3,7 +3,7 @@ id: 030
 title: Live mode CLI, overrides, log, public view and replay
 type: task
 mode: AFK
-status: open
+status: closed
 blocked_by:
   - 029
 claimed: false
@@ -35,3 +35,15 @@ Key decisions to implement:
   - `bench log [--public]` and `bench state --public` apply the public view filter: hide monster HP, resources, recharge state, and per-round budgets; replace monster HP with the four wounded states (`unhurt` at full, `wounded` below full, `bloodied` at half or less, `at death's door` at a quarter or less); keep override/prompt facts and reasons while dropping hidden values; show monster AC and the player side in full.
 
 ## Resolution
+
+All listed commands are wired in `bench/src/main.rs`. Each runs `bench_core::live::execute` over a state file that `bench_core::store` loads, tamper-checks and saves. `help --json` is generated from the clap definitions, so it cannot drift from the binary.
+
+- State is a fold over the command history. `undo` and `replay` re-execute `command_history` from `initial_snapshot`, so `undo` restores the ChaCha8 cursor and a re-issued command gets the same dice. Prompt ids come from the RNG cursor, not the history length, so replay re-derives the same pending prompt.
+- `--pc-dice ask` runs the request on a copy. If a PC roll has no face, the copy is discarded and a dice prompt holds the request until `respond` supplies faces or `--decline`s, which lets the engine roll the rest.
+- `start` takes combatants as `[side=]path[@near|far]`. Side defaults to `party` for stat blocks with a class. Bare fixture slugs wait for embedded data in ticket 032.
+- Public view: each log line carries a DM text and a public text (same, replaced or hidden). Monster damage amounts, override values on monster numbers, monster recharge lines and the seed are hidden.
+- `keep_encounters = false` prunes ended encounters at the next `bench start`, not at `end`, so `undo` after `end` still works. `clean` prunes ended encounters on demand. Logs are kept unless `delete_logs` is on, and new ids skip any id whose log is kept.
+- Override also refuses `stat_block_id` and `side_id`. A clear can remove one array element (`mia.conditions.0`).
+
+Deferred to [041](../tickets/041-pc-initiative-prompts-and-concentration-stream.md): PC initiative under `--pc-dice ask`, the engine's nested concentration-save stream, and standing-assumption tags.
+

@@ -12,7 +12,7 @@ use crate::effect::{
 };
 use crate::encounter::{
     ActionEconomy, ActiveModifier, Combatant, ConditionInstance, EndState, EncounterState,
-    PendingPrompt, RangeBand,
+    PcDice, PendingPrompt, RangeBand,
 };
 use crate::rng::Stream;
 use crate::stat_block::{Ability, Condition, DamageType, DeathSaves, StatBlock};
@@ -108,6 +108,7 @@ pub fn roll_initiative(
     }
     state.rng = stream.state();
     state.initiative_order = initiative_order(state, &rolls, !options.individual);
+    state.initiative_rolls = rolls.clone();
     state.active_turn = state.initiative_order.first().cloned();
     if state.round == 0 {
         state.round = 1;
@@ -248,7 +249,9 @@ fn resolve_effect(
                 let actor = state.combatants[index_of(state, actor_id)?].clone();
                 let advantage = disposition(state, &actor, &target, RollDisposition::Normal);
                 let d20a = stream.roll_die(20);
+                let d20a = player_roll(state, actor_id, 20, d20a);
                 let d20b = stream.roll_die(20);
+                let d20b = if matches!(advantage, RollDisposition::Normal) { d20b } else { player_roll_in(state, actor_id, 20, d20b, false) };
                 let natural = match advantage {
                     RollDisposition::Advantage => d20a.max(d20b),
                     RollDisposition::Disadvantage => d20a.min(d20b),
@@ -270,9 +273,9 @@ fn resolve_effect(
                 if hit {
                     let mut damage = 0;
                     for die in attack.damage.iter().filter(|d| damage_applies(&target, actor_id, d)) {
-                        let mut amount = roll_dice(stream, &die.dice)? as i32 + die.modifier;
+                        let mut amount = roll_dice(state, stream, actor_id, &die.dice)? as i32 + die.modifier;
                         if critical {
-                            amount += roll_dice(stream, &die.dice)? as i32;
+                            amount += roll_dice(state, stream, actor_id, &die.dice)? as i32;
                         }
                         damage += adjust_damage(state, &target, amount, die.damage_type);
                     }
@@ -284,7 +287,7 @@ fn resolve_effect(
             }
         }
         Effect::Damage(damage) => {
-            let amount = roll_dice(stream, &damage.dice)? as i32 + damage.modifier;
+            let amount = roll_dice(state, stream, actor_id, &damage.dice)? as i32 + damage.modifier;
             for target_id in target_ids {
                 let target = state.combatants[index_of(state, target_id)?].clone();
                 if !damage_applies(&target, actor_id, &damage) {
@@ -328,7 +331,7 @@ fn resolve_effect(
             }
         }
         Effect::Heal(heal) => {
-            let amount = roll_dice(stream, &heal.dice)? as i32 + heal.modifier;
+            let amount = roll_dice(state, stream, actor_id, &heal.dice)? as i32 + heal.modifier;
             for target_id in target_ids {
                 let i = index_of(state, target_id)?;
                 state.combatants[i].hp = (state.combatants[i].hp + amount).min(state.combatants[i].max_hp);
@@ -342,7 +345,7 @@ fn resolve_effect(
             }
         }
         Effect::TempHp(temp) => {
-            let amount = roll_dice(stream, &temp.dice)? as i32 + temp.modifier;
+            let amount = roll_dice(state, stream, actor_id, &temp.dice)? as i32 + temp.modifier;
             for target_id in if target_ids.is_empty() {
                 vec![actor_id.to_string()]
             } else {
@@ -414,6 +417,7 @@ fn resolve_save(
     let modifier = block.saving_throws.get(&save.ability).copied()
         .unwrap_or_else(|| block.ability_scores.modifier(save.ability))
         + save_modifier(state, &target, save.ability);
+    let roll = player_roll(state, target_id, 20, roll);
     let success = roll as i32 + modifier >= save.dc;
     events.push(EngineEvent {
         kind: "save".into(),
@@ -426,7 +430,7 @@ fn resolve_save(
     });
     if !success {
         for damage in save.damage.iter().filter(|d| damage_applies(&target, actor_id, d)) {
-            let amount = roll_dice(stream, &damage.dice)? as i32 + damage.modifier;
+            let amount = roll_dice(state, stream, actor_id, &damage.dice)? as i32 + damage.modifier;
             let amount = adjust_damage(state, &target, amount, damage.damage_type);
             apply_damage(state, target_id, amount, Some(actor_id), events)?;
         }
@@ -434,13 +438,13 @@ fn resolve_save(
         // no damage on success
     } else if save.half_on_success {
         for damage in save.damage.iter().filter(|d| damage_applies(&target, actor_id, d)) {
-            let rolled = roll_dice(stream, &damage.dice)? as i32 + damage.modifier;
+            let rolled = roll_dice(state, stream, actor_id, &damage.dice)? as i32 + damage.modifier;
             let amount = adjust_damage(state, &target, rolled, damage.damage_type) / 2;
             apply_damage(state, target_id, amount, Some(actor_id), events)?;
         }
     } else {
         for damage in save.damage.iter().filter(|d| damage_applies(&target, actor_id, d)) {
-            let amount = roll_dice(stream, &damage.dice)? as i32 + damage.modifier;
+            let amount = roll_dice(state, stream, actor_id, &damage.dice)? as i32 + damage.modifier;
             let amount = adjust_damage(state, &target, amount, damage.damage_type);
             apply_damage(state, target_id, amount, Some(actor_id), events)?;
         }
@@ -795,6 +799,7 @@ fn roll_death_saves(state: &mut EncounterState, combatant_id: &str, events: &mut
     let mut stream = Stream::from_state(state.rng.clone());
     let roll = stream.roll_die(20);
     state.rng = stream.state();
+    let roll = player_roll(state, combatant_id, 20, roll);
     if roll == 20 {
         state.combatants[i].hp = 1;
         state.combatants[i].end_state = EndState::Active;
@@ -835,6 +840,7 @@ fn process_repeat_saves(state: &mut EncounterState, combatant_id: &str, events: 
             let modifier = block.saving_throws.get(&ability)
                 .copied()
                 .unwrap_or_else(|| block.ability_scores.modifier(ability));
+            let roll = player_roll(state, combatant_id, 20, roll);
             let dc = 10;
             let success = roll as i32 + modifier >= dc;
             events.push(EngineEvent {
@@ -917,6 +923,7 @@ fn apply_damage(
         let modifier = block.saving_throws.get(&Ability::Con)
             .copied()
             .unwrap_or_else(|| block.ability_scores.modifier(Ability::Con));
+        let roll = player_roll(state, target_id, 20, roll);
         let success = roll as i32 + modifier >= dc;
         state.rng = stream.state();
         events.push(EngineEvent {
@@ -1160,37 +1167,38 @@ fn break_concentration(
     Ok(())
 }
 
-/// Prompt for user-entered dice faces.
-fn dice_prompt(state: &mut EncounterState, actor_id: &str, sides: u32, remaining: u32, message: &str) {
-    state.pending = Some(PendingPrompt {
-        id: format!("dice-{actor_id}-{}", state.round),
-        kind: "dice".into(),
-        actor_id: actor_id.into(),
-        message: message.into(),
-        sides: Some(sides),
-        remaining,
-        metadata: serde_json::Value::Null,
-    });
+/// Draw a die for `owner`, then swap in a user-entered face when the owner is
+/// a PC and the encounter asks for player dice. The draw always happens, so
+/// the stream position never depends on the dice mode (ADR 0007).
+fn player_roll(state: &mut EncounterState, owner: &str, sides: u32, drawn: u32) -> u32 {
+    player_roll_in(state, owner, sides, drawn, true)
 }
 
-fn roll_die_with_prompt(
-    stream: &mut Stream,
-    _state: &mut EncounterState,
-    _actor_id: &str,
-    sides: u32,
-    _reason: &str,
-) -> Option<u32> {
-    // For phase 1, engine rolls by default; pc_dice=ask would create a pending prompt here.
-    // The prompt mechanism is wired but the full pc_dice flow is left for live-mode integration.
-    Some(stream.roll_die(sides))
+fn player_roll_in(state: &mut EncounterState, owner: &str, sides: u32, drawn: u32, group_start: bool) -> u32 {
+    if state.settings.pc_dice != PcDice::Ask {
+        return drawn;
+    }
+    let is_pc = index_of(state, owner)
+        .ok()
+        .and_then(|i| stat_block(state, &state.combatants[i]).ok())
+        .is_some_and(|b| b.class.is_some());
+    if !is_pc {
+        return drawn;
+    }
+    state.player_dice.take(owner, sides, drawn, group_start)
 }
 
-fn roll_dice(stream: &mut Stream, expression: &str) -> Result<u32, EngineError> {
+fn roll_dice(state: &mut EncounterState, stream: &mut Stream, owner: &str, expression: &str) -> Result<u32, EngineError> {
     let (count, sides) = expression.split_once('d').ok_or_else(|| EngineError::Invalid(format!("invalid dice expression {expression}")))?;
     let count: u32 = count.parse().map_err(|_| EngineError::Invalid(format!("invalid dice expression {expression}")))?;
     let sides: u32 = sides.parse().map_err(|_| EngineError::Invalid(format!("invalid dice expression {expression}")))?;
     if count == 0 || sides == 0 { return Err(EngineError::Invalid(format!("invalid dice expression {expression}"))); }
-    Ok((0..count).map(|_| stream.roll_die(sides)).sum())
+    let mut total = 0;
+    for i in 0..count {
+        let drawn = stream.roll_die(sides);
+        total += player_roll_in(state, owner, sides, drawn, i == 0);
+    }
+    Ok(total)
 }
 
 fn can_act(c: &Combatant) -> bool {
@@ -1318,7 +1326,13 @@ mod tests {
             command_history: vec![],
             pending: None,
             rng: RngState::new(1),
+            initiative_rolls: HashMap::new(),
+            settings: Default::default(),
+            ended: None,
+            initial_snapshot: None,
+            log: vec![],
             tamper_hash: String::new(),
+            player_dice: Default::default(),
         };
         state.initiative_order = state.combatants.iter().map(|c| c.id.clone()).collect();
         state.active_turn = state.initiative_order.first().cloned();
@@ -1388,8 +1402,8 @@ mod tests {
 
     #[test]
     fn dice_parser_rejects_malformed_input() {
-        assert!(roll_dice(&mut Stream::from_seed(1), "d6").is_err());
-        assert!(roll_dice(&mut Stream::from_seed(1), "1d0").is_err());
+        assert!(roll_dice(&mut test_encounter(vec![], vec![]), &mut Stream::from_seed(1), "x", "d6").is_err());
+        assert!(roll_dice(&mut test_encounter(vec![], vec![]), &mut Stream::from_seed(1), "x", "1d0").is_err());
     }
 
     #[test]
