@@ -74,6 +74,7 @@ GRAPPLED_BY_SELF_RE = re.compile(r"\bGrappled by the\b")
 PROSE_DICE_RE = re.compile(r"\((\d+d\d+)(?:\s*([+-])\s*(\d+))?\)")
 DAMAGE_PHRASE_RE = re.compile(r"\d+ \(\d+d\d+(?:\s*[+-]\s*\d+)?\) [A-Za-z]+ damage")
 DAMAGE_CHAIN_RE = re.compile(f"{DAMAGE_PHRASE_RE.pattern}(?:\\s+plus\\s+{DAMAGE_PHRASE_RE.pattern})*")
+HIT_DAMAGE_RE = re.compile(r"\d+ (?:\(\d+d\d+(?:\s*[+-]\s*\d+)?\) )?[A-Za-z]+ damage")
 ATTACK_RE = re.compile(r"(?:Melee|Ranged)(?: or (?:Melee|Ranged))? Attack Roll: \+(\d+)")
 SAVE_RE = re.compile(r"(Strength|Dexterity|Constitution|Intelligence|Wisdom|Charisma) Saving Throw: DC (\d+)")
 RECHARGE_RE = re.compile(r"Recharge (\d)(?:\s*[-–]\s*6)?")
@@ -133,6 +134,27 @@ def hit_sentence(desc):
     if not m:
         return rest, ""
     return m.group(1), rest[m.end():].strip()
+
+
+def hit_tail(sentence):
+    """The effects a Hit sentence states after its damage, as an agent clause, or None.
+
+    A sentence with damage keeps only a tail that opens with "and" (", and the target has ...").
+    Any other tail is a conditional or alternative damage entry that `place_damage` already handles.
+    A sentence with no damage at all is an effect in full (Roper's Tentacle).
+    """
+    text = sentence.replace("−", "-").replace("–", "-")
+    start = 0
+    for last in HIT_DAMAGE_RE.finditer(text):
+        start = last.end()
+    tail = text[start:]
+    if start:
+        lead = re.match(r"[\s,;]*and\b\s*", tail)
+        if not lead:
+            return None
+        start += lead.end()
+    clause = sentence[start:].strip(" ,;.")
+    return f"{clause[:1].upper()}{clause[1:]}." if clause else None
 
 
 class Converter:
@@ -292,6 +314,9 @@ class Converter:
                 for flat in FLAT_DAMAGE_RE.finditer(sentence):
                     if not any(d["dice"] == f"{flat.group(1)}d1" and d["type"] == flat.group(2).lower() for d in damage):
                         self.rec("b", f"{base}.damage", "Hit clause states flat damage but structured damage is missing")
+            tail = hit_tail(sentence)
+            if tail:
+                clauses.append(tail)
             if rest:
                 clauses.append(rest)
         effect = {"attack": {

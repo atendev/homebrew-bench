@@ -9,6 +9,9 @@
   },
   "actions": [
     {
+      "agent_clauses": [
+        "The target has the Poisoned condition until the start of the quasit’s next turn."
+      ],
       "desc": "Melee Attack Roll: +5, reach 5 ft. Hit: 5 (1d4 + 3) Slashing damage, and the target has the Poisoned condition until the start of the quasit’s next turn.",
       "effects": [
         {
@@ -30,7 +33,7 @@
         }
       ],
       "id": "rend",
-      "kind": "modeled",
+      "kind": "partly_modeled",
       "name": "Rend"
     },
     {

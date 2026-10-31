@@ -82,6 +82,9 @@
       "name": "Eldritch Burst"
     },
     {
+      "agent_clauses": [
+        "The target has the Paralyzed condition until the start of the lich’s next turn."
+      ],
       "desc": "Melee Attack Roll: +12, reach 5 ft. Hit: 15 (3d6 + 5) Cold damage, and the target has the Paralyzed condition until the start of the lich’s next turn.",
       "effects": [
         {
@@ -103,7 +106,7 @@
         }
       ],
       "id": "paralyzing-touch",
-      "kind": "modeled",
+      "kind": "partly_modeled",
       "name": "Paralyzing Touch"
     },
     {

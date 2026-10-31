@@ -10,6 +10,7 @@
   "actions": [
     {
       "agent_clauses": [
+        "The target’s Strength score decreases by 1d4.",
         "The target dies if this reduces that score to 0. If a Humanoid is slain by this attack, a Shadow rises from the corpse 1d4 hours later."
       ],
       "desc": "Melee Attack Roll: +4, reach 5 ft. Hit: 5 (1d6 + 2) Necrotic damage, and the target’s Strength score decreases by 1d4. The target dies if this reduces that score to 0. If a Humanoid is slain by this attack, a Shadow rises from the corpse 1d4 hours later.",

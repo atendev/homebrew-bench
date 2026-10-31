@@ -30,6 +30,7 @@
     },
     {
       "agent_clauses": [
+        "The target is cursed for 24 hours or until the incubus dies.",
         "Until the curse ends, the target gains no benefit from finishing Short Rests."
       ],
       "desc": "Melee Attack Roll: +7, reach 5 ft. Hit: 15 (3d6 + 5) Psychic damage, and the target is cursed for 24 hours or until the incubus dies. Until the curse ends, the target gains no benefit from finishing Short Rests.",

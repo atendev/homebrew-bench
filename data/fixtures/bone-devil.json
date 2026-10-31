@@ -61,6 +61,7 @@
     },
     {
       "agent_clauses": [
+        "The target has the Poisoned condition until the start of the devil’s next turn.",
         "While Poisoned, the target can’t regain Hit Points."
       ],
       "desc": "Melee Attack Roll: +8, reach 10 ft. Hit: 15 (2d10 + 4) Piercing damage plus 18 (4d8) Poison damage, and the target has the Poisoned condition until the start of the devil’s next turn. While Poisoned, the target can’t regain Hit Points.",

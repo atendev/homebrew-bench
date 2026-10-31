@@ -50,6 +50,9 @@
       "name": "Multiattack"
     },
     {
+      "agent_clauses": [
+        "The target’s Hit Point maximum decreases by an amount equal to the Acid damage taken."
+      ],
       "desc": "Melee Attack Roll: +9, reach 5 ft. Hit: 10 (1d10 + 5) Bludgeoning damage plus 6 (1d12) Acid damage, and the target’s Hit Point maximum decreases by an amount equal to the Acid damage taken.",
       "effects": [
         {
@@ -77,7 +80,7 @@
         }
       ],
       "id": "slam",
-      "kind": "modeled",
+      "kind": "partly_modeled",
       "name": "Slam"
     }
   ],

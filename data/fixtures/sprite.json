@@ -34,6 +34,9 @@
       "name": "Needle Sword"
     },
     {
+      "agent_clauses": [
+        "The target has the Charmed condition until the start of the sprite’s next turn."
+      ],
       "desc": "Ranged Attack Roll: +6, range 40/160 ft. Hit: 1 Piercing damage, and the target has the Charmed condition until the start of the sprite’s next turn.",
       "effects": [
         {
@@ -58,7 +61,7 @@
         }
       ],
       "id": "enchanting-bow",
-      "kind": "modeled",
+      "kind": "partly_modeled",
       "name": "Enchanting Bow"
     },
     {

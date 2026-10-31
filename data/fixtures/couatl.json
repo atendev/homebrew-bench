@@ -9,6 +9,9 @@
   },
   "actions": [
     {
+      "agent_clauses": [
+        "The target has the Poisoned condition until the end of the couatl’s next turn."
+      ],
       "desc": "Melee Attack Roll: +7, reach 5 ft. Hit: 11 (1d12 + 5) Piercing damage, and the target has the Poisoned condition until the end of the couatl’s next turn.",
       "effects": [
         {
@@ -30,7 +33,7 @@
         }
       ],
       "id": "bite",
-      "kind": "modeled",
+      "kind": "partly_modeled",
       "name": "Bite"
     },
     {

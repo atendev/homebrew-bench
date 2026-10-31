@@ -2148,7 +2148,7 @@
       "class": "d",
       "path": "actions.shortsword",
       "status": "open",
-      "summary": "classified modeled"
+      "summary": "classified partly_modeled"
     },
     {
       "monster": "assassin",
@@ -2274,7 +2274,7 @@
       "class": "d",
       "path": "actions.lightning-blade",
       "status": "open",
-      "summary": "classified modeled"
+      "summary": "classified partly_modeled"
     },
     {
       "monster": "balor",
@@ -3114,7 +3114,7 @@
       "class": "d",
       "path": "actions.slam",
       "status": "open",
-      "summary": "classified modeled"
+      "summary": "classified partly_modeled"
     },
     {
       "monster": "clay-golem",
@@ -3233,7 +3233,7 @@
       "class": "d",
       "path": "actions.thundercloud",
       "status": "open",
-      "summary": "classified modeled"
+      "summary": "classified partly_modeled"
     },
     {
       "monster": "cloud-giant",
@@ -3331,7 +3331,7 @@
       "class": "d",
       "path": "actions.bite",
       "status": "open",
-      "summary": "classified modeled"
+      "summary": "classified partly_modeled"
     },
     {
       "monster": "couatl",
@@ -4150,7 +4150,7 @@
       "class": "d",
       "path": "actions.bite",
       "status": "open",
-      "summary": "classified modeled"
+      "summary": "classified partly_modeled"
     },
     {
       "monster": "ettercap",
@@ -4206,7 +4206,7 @@
       "class": "d",
       "path": "actions.morningstar",
       "status": "open",
-      "summary": "classified modeled"
+      "summary": "classified partly_modeled"
     },
     {
       "monster": "ettin",
@@ -4290,7 +4290,7 @@
       "class": "d",
       "path": "actions.hammer-throw",
       "status": "open",
-      "summary": "classified modeled"
+      "summary": "classified partly_modeled"
     },
     {
       "monster": "fire-giant",
@@ -4423,7 +4423,7 @@
       "class": "d",
       "path": "actions.great-bow",
       "status": "open",
-      "summary": "classified modeled"
+      "summary": "classified partly_modeled"
     },
     {
       "monster": "frost-giant",
@@ -4668,7 +4668,7 @@
       "class": "d",
       "path": "actions.bite",
       "status": "open",
-      "summary": "classified modeled"
+      "summary": "classified partly_modeled"
     },
     {
       "monster": "giant-constrictor-snake",
@@ -5053,7 +5053,7 @@
       "class": "d",
       "path": "actions.gouge",
       "status": "open",
-      "summary": "classified modeled"
+      "summary": "classified partly_modeled"
     },
     {
       "monster": "giant-vulture",
@@ -5767,7 +5767,7 @@
       "class": "d",
       "path": "actions.trash-lob",
       "status": "open",
-      "summary": "classified modeled"
+      "summary": "classified partly_modeled"
     },
     {
       "monster": "hill-giant",
@@ -6474,7 +6474,7 @@
       "class": "d",
       "path": "actions.paralyzing-touch",
       "status": "open",
-      "summary": "classified modeled"
+      "summary": "classified partly_modeled"
     },
     {
       "monster": "lich",
@@ -6887,7 +6887,7 @@
       "class": "d",
       "path": "actions.bite",
       "status": "open",
-      "summary": "classified modeled"
+      "summary": "classified partly_modeled"
     },
     {
       "monster": "merrow",
@@ -7398,7 +7398,7 @@
       "class": "d",
       "path": "actions.nightmare-ray",
       "status": "open",
-      "summary": "classified modeled"
+      "summary": "classified partly_modeled"
     },
     {
       "monster": "oni",
@@ -7643,7 +7643,7 @@
       "class": "d",
       "path": "actions.rapier",
       "status": "open",
-      "summary": "classified modeled"
+      "summary": "classified partly_modeled"
     },
     {
       "monster": "pirate-captain",
@@ -8028,7 +8028,7 @@
       "class": "d",
       "path": "actions.rend",
       "status": "open",
-      "summary": "classified modeled"
+      "summary": "classified partly_modeled"
     },
     {
       "monster": "quasit",
@@ -9176,7 +9176,7 @@
       "class": "d",
       "path": "actions.enchanting-bow",
       "status": "open",
-      "summary": "classified modeled"
+      "summary": "classified partly_modeled"
     },
     {
       "monster": "sprite",
@@ -9386,7 +9386,7 @@
       "class": "d",
       "path": "actions.thunderbolt",
       "status": "open",
-      "summary": "classified modeled"
+      "summary": "classified partly_modeled"
     },
     {
       "monster": "storm-giant",
@@ -11269,7 +11269,7 @@
       "class": "d",
       "path": "actions.bite",
       "status": "open",
-      "summary": "classified modeled"
+      "summary": "classified partly_modeled"
     },
     {
       "monster": "wraith",
@@ -11325,7 +11325,7 @@
       "class": "d",
       "path": "actions.sting",
       "status": "open",
-      "summary": "classified modeled"
+      "summary": "classified partly_modeled"
     },
     {
       "monster": "xorn",
