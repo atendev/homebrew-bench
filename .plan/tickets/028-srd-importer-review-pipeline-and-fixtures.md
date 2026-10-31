@@ -9,7 +9,6 @@ blocked_by:
   - 026
   - 036
   - 038
-  - 039
 claimed: false
 ---
 
