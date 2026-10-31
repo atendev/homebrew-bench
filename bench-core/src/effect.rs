@@ -35,10 +35,10 @@ pub enum PassiveTrigger {
 pub enum Usage {
     /// Unlimited uses.
     AtWill,
-    /// Recharge on a die roll (default 5-6). Optional group id shared across
-    /// abilities, such as metallic dragon breath weapons.
+    /// Recharge on a d6 roll of "N-6" or "N" for N in 2 to 6 (default 5-6). Optional
+    /// group id shared across abilities, such as metallic dragon breath weapons.
     Recharge {
-        #[serde(default = "default_recharge_dice")]
+        #[serde(default = "default_recharge_dice", deserialize_with = "deserialize_recharge_dice")]
         dice: String,
         #[serde(skip_serializing_if = "Option::is_none")]
         group: Option<String>,
@@ -53,6 +53,25 @@ pub enum Usage {
 
 fn default_recharge_dice() -> String {
     "5-6".into()
+}
+
+/// Lowest d6 roll that recharges an ability, from "N-6" or "N" with N in 2 to 6.
+pub fn recharge_minimum(dice: &str) -> Option<u32> {
+    let digits = dice.strip_suffix("-6").unwrap_or(dice);
+    match digits.parse::<u32>() {
+        Ok(n) if (2..=6).contains(&n) && digits.len() == 1 => Some(n),
+        _ => None,
+    }
+}
+
+fn deserialize_recharge_dice<'de, D: serde::Deserializer<'de>>(deserializer: D) -> Result<String, D::Error> {
+    let dice = String::deserialize(deserializer)?;
+    if recharge_minimum(&dice).is_none() {
+        return Err(serde::de::Error::custom(format!(
+            "recharge dice '{dice}' must be 'N-6' or 'N' for N in 2 to 6"
+        )));
+    }
+    Ok(dice)
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, schemars::JsonSchema)]
@@ -334,3 +353,32 @@ pub enum Effect {
 
 /// Resource map for usage tracking on a combatant.
 pub type Resources = HashMap<String, i32>;
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn recharge_minimum_accepts_ranges_and_single_values() {
+        assert_eq!(recharge_minimum("5-6"), Some(5));
+        assert_eq!(recharge_minimum("2-6"), Some(2));
+        assert_eq!(recharge_minimum("6"), Some(6));
+        assert_eq!(recharge_minimum("4"), Some(4));
+    }
+
+    #[test]
+    fn recharge_minimum_rejects_everything_else() {
+        for bad in ["", "1", "7", "1-6", "7-6", "5-5", "4-5", "+5", "05-6", "five", "5-6-6", "-6"] {
+            assert_eq!(recharge_minimum(bad), None, "{bad}");
+        }
+    }
+
+    #[test]
+    fn unparseable_recharge_dice_fail_at_load() {
+        assert!(serde_json::from_str::<Usage>(r#"{"recharge":{"dice":"1d6"}}"#).is_err());
+        let ok: Usage = serde_json::from_str(r#"{"recharge":{"dice":"3-6"}}"#).unwrap();
+        assert!(matches!(ok, Usage::Recharge { dice, .. } if dice == "3-6"));
+        let default: Usage = serde_json::from_str(r#"{"recharge":{}}"#).unwrap();
+        assert!(matches!(default, Usage::Recharge { dice, .. } if dice == "5-6"));
+    }
+}

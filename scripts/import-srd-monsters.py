@@ -166,10 +166,12 @@ class Converter:
                 self.rec("b", f"{base}.usage", f"recharge dice {u.get('dice')} is not representable")
                 return None
             minimum = u.get("min_value")
-            if minimum not in (5, 6):
+            if minimum not in (2, 3, 4, 5, 6):
                 self.rec("b", f"{base}.usage", f"recharge {minimum}-6 has no engine range")
                 return None
-            usage = {"recharge": {"dice": "5-6" if minimum == 5 else "6"}}
+            usage = {"recharge": {"dice": f"{minimum}-6" if minimum < 6 else "6"}}
+        elif u and u["type"] == "recharge after rest":
+            usage = {"per_rest": {"rest": "short", "uses": 1}}
         elif u and u["type"] == "per day":
             usage = {"per_day": {"uses": u["times"]}}
         elif u:
@@ -181,7 +183,7 @@ class Converter:
         if prose:
             if usage is None or "recharge" not in usage:
                 self.rec("b", f"{base}.usage", f"prose says Recharge {prose.group(1)}-6 but no recharge usage")
-            elif int(prose.group(1)) != (5 if usage["recharge"]["dice"] == "5-6" else 6):
+            elif int(prose.group(1)) != int(usage["recharge"]["dice"][0]):
                 self.rec("a", f"{base}.usage", f"prose recharge {prose.group(1)} disagrees with structured usage")
         per_day = PER_DAY_NAME_RE.search(raw["name"])
         if per_day:
