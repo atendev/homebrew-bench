@@ -8,7 +8,7 @@ use std::collections::HashMap;
 use serde::{Deserialize, Serialize};
 
 use crate::effect::{
-    Duration, Effect, ModifierChange, ModifierTarget, RollDisposition, Usage,
+    recharge_minimum, Duration, Effect, ModifierChange, ModifierTarget, RollDisposition, Usage,
 };
 use crate::encounter::{
     ActionEconomy, ActiveModifier, Combatant, ConditionInstance, EndState, EncounterState,
@@ -709,26 +709,23 @@ fn decrement_durations(state: &mut EncounterState, events: &mut Vec<EngineEvent>
 fn roll_recharge(state: &mut EncounterState, combatant_id: &str, events: &mut Vec<EngineEvent>) -> Result<(), EngineError> {
     let i = index_of(state, combatant_id)?;
     let block = stat_block(state, &state.combatants[i])?;
-    let abilities: Vec<(String, Option<Usage>)> = block.actions.iter()
+    let abilities: Vec<(String, String, Option<Usage>)> = block.actions.iter()
         .chain(block.traits.iter())
         .chain(block.bonus_actions.iter())
         .chain(block.reactions.iter())
-        .map(|a| (a.name.clone(), a.usage.clone()))
+        .map(|a| (a.id.clone(), a.name.clone(), a.usage.clone()))
         .collect();
     let mut stream = Stream::from_state(state.rng.clone());
     let mut recharged_groups = HashMap::<String, bool>::new();
-    for (name, usage) in abilities {
+    for (id, name, usage) in abilities {
         if let Some(Usage::Recharge { dice, group }) = usage {
-            let group_key = group.clone().unwrap_or_else(|| name.clone());
+            let group_key = group.clone().unwrap_or_else(|| id.clone());
             if recharged_groups.contains_key(&group_key) {
                 continue;
             }
-            let roll = stream.roll_die(6);
-            let recharged = match dice.as_str() {
-                "5-6" => roll >= 5,
-                "6" => roll == 6,
-                _ => false,
-            };
+            let minimum = recharge_minimum(&dice)
+                .ok_or_else(|| EngineError::Illegal(format!("recharge dice '{dice}' on {name} is not 'N-6' or 'N'")))?;
+            let recharged = stream.roll_die(6) >= minimum;
             recharged_groups.insert(group_key.clone(), recharged);
             if recharged {
                 let key = format!("{combatant_id}:{group_key}");
@@ -1304,6 +1301,46 @@ mod tests {
             end_state: EndState::Active,
             death_saves: DeathSaves::default(),
         }
+    }
+
+    fn recharge_state(dice: &str, seed: u64) -> EncounterState {
+        let mut block = test_stat_block("drake", "Drake", 20, 12);
+        block.actions.push(crate::stat_block::AbilityEntry {
+            id: "breath".into(),
+            name: "Breath".into(),
+            desc: None,
+            kind: crate::stat_block::AbilityKind::Modeled,
+            effects: vec![],
+            agent_clauses: vec![],
+            default_resolution: None,
+            usage: Some(Usage::Recharge { dice: dice.into(), group: None }),
+        });
+        let mut drake = test_combatant("drake", "drake", 20, "enemy");
+        drake.resources.insert("drake:breath".into(), 0);
+        let mut state = test_encounter(vec![block], vec![drake]);
+        state.rng = RngState::new(seed);
+        state
+    }
+
+    #[test]
+    fn recharge_dice_ranges_set_the_minimum_roll() {
+        for dice in ["2-6", "3-6", "4-6", "5-6", "6", "4"] {
+            let minimum = recharge_minimum(dice).unwrap();
+            for seed in 1..40 {
+                let roll = Stream::from_state(RngState::new(seed)).roll_die(6);
+                let mut state = recharge_state(dice, seed);
+                let mut events = vec![];
+                roll_recharge(&mut state, "drake", &mut events).unwrap();
+                assert_eq!(state.combatants[0].resources["drake:breath"] == 1, roll >= minimum, "{dice} seed {seed}");
+                assert_eq!(!events.is_empty(), roll >= minimum);
+            }
+        }
+    }
+
+    #[test]
+    fn roll_recharge_errors_on_unparseable_dice() {
+        let mut state = recharge_state("1d6", 1);
+        assert!(roll_recharge(&mut state, "drake", &mut vec![]).is_err());
     }
 
     #[test]

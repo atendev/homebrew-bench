@@ -1,0 +1,166 @@
+{
+  "ability_scores": {
+    "charisma": 8,
+    "constitution": 18,
+    "dexterity": 14,
+    "intelligence": 5,
+    "strength": 18,
+    "wisdom": 10
+  },
+  "actions": [
+    {
+      "desc": "The elemental makes two Slam attacks.",
+      "effects": [
+        {
+          "multiattack": {
+            "steps": [
+              {
+                "action": {
+                  "action_id": "slam",
+                  "count": 2
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "id": "multiattack",
+      "kind": "modeled",
+      "name": "Multiattack"
+    },
+    {
+      "agent_clauses": [
+        "If the target is a Medium or smaller creature, it has the Prone condition."
+      ],
+      "desc": "Melee Attack Roll: +7, reach 5 ft. Hit: 13 (2d8 + 4) Bludgeoning damage. If the target is a Medium or smaller creature, it has the Prone condition.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "2d8",
+                "magical": false,
+                "modifier": 4,
+                "type": "bludgeoning"
+              }
+            ],
+            "modifier": 7,
+            "on_hit": [],
+            "range": null,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "slam",
+      "kind": "partly_modeled",
+      "name": "Slam"
+    },
+    {
+      "agent_clauses": [
+        "If the target is a Large or smaller creature, it has the Grappled condition (escape DC 14). Until the grapple ends, the target has the Restrained condition, is suffocating unless it can breathe water, and takes 9 (2d8) Bludgeoning damage at the start of each of the elemental’s turns. The elemental can grapple one Large creature or up to two Medium or smaller creatures at a time with Whelm. As an action, a creature within 5 feet of the elemental can pull a creature out of it by succeeding on a DC 14 Strength (Athletics) check"
+      ],
+      "desc": "Strength Saving Throw: DC 15, each creature in the elemental’s space. Failure: 22 (4d8 + 4) Bludgeoning damage. If the target is a Large or smaller creature, it has the Grappled condition (escape DC 14). Until the grapple ends, the target has the Restrained condition, is suffocating unless it can breathe water, and takes 9 (2d8) Bludgeoning damage at the start of each of the elemental’s turns. The elemental can grapple one Large creature or up to two Medium or smaller creatures at a time with Whelm. As an action, a creature within 5 feet of the elemental can pull a creature out of it by succeeding on a DC 14 Strength (Athletics) check. Success: Half damage only.",
+      "effects": [
+        {
+          "saving_throw": {
+            "ability": "str",
+            "creature_type_gate": null,
+            "damage": [
+              {
+                "dice": "4d8",
+                "magical": false,
+                "modifier": 4,
+                "type": "bludgeoning"
+              }
+            ],
+            "dc": 15,
+            "half_on_success": true,
+            "hp_gate": null,
+            "immunity_after_success": false,
+            "no_damage_on_success": false,
+            "on_failure": [],
+            "repeat_save": null,
+            "two_stage": null
+          }
+        }
+      ],
+      "id": "whelm",
+      "kind": "partly_modeled",
+      "name": "Whelm",
+      "usage": {
+        "recharge": {
+          "dice": "4-6"
+        }
+      }
+    }
+  ],
+  "alignment": "neutral",
+  "armor_class": [
+    {
+      "value": 14
+    }
+  ],
+  "challenge_rating": 5,
+  "condition_immunities": [
+    "exhaustion",
+    "grappled",
+    "paralyzed",
+    "petrified",
+    "poisoned",
+    "prone",
+    "restrained",
+    "unconscious"
+  ],
+  "damage_immunities": [
+    "poison"
+  ],
+  "damage_resistances": [
+    "acid",
+    "fire"
+  ],
+  "hit_points": {
+    "average": 114,
+    "dice": "12d10+48"
+  },
+  "id": "water-elemental",
+  "initiative": 2,
+  "languages": [
+    "Primordial (Aquan)"
+  ],
+  "name": "Water Elemental",
+  "proficiency_bonus": 3,
+  "schema_version": "1",
+  "senses": {
+    "darkvision": 60,
+    "passive_perception": 10
+  },
+  "size": "large",
+  "source": "srd-5.2.1",
+  "speeds": {
+    "swim": {
+      "feet": 90
+    },
+    "walk": {
+      "feet": 30
+    }
+  },
+  "traits": [
+    {
+      "default_resolution": "skipped",
+      "desc": "If the elemental takes Cold damage, its Speed decreases by 20 feet until the end of its next turn.",
+      "id": "freeze",
+      "kind": "unmodeled",
+      "name": "Freeze"
+    },
+    {
+      "default_resolution": "skipped",
+      "desc": "The elemental can enter an enemy’s space and stop there. It can move through a space as narrow as 1 inch without expending extra movement to do so.",
+      "id": "water-form",
+      "kind": "unmodeled",
+      "name": "Water Form"
+    }
+  ],
+  "type": "elemental",
+  "xp": 1800
+}

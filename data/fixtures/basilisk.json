@@ -1,0 +1,86 @@
+{
+  "ability_scores": {
+    "charisma": 7,
+    "constitution": 15,
+    "dexterity": 8,
+    "intelligence": 2,
+    "strength": 16,
+    "wisdom": 8
+  },
+  "actions": [
+    {
+      "desc": "Melee Attack Roll: +5, reach 5 ft. Hit: 10 (2d6 + 3) Piercing damage plus 7 (2d6) Poison damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "2d6",
+                "magical": false,
+                "modifier": 3,
+                "type": "piercing"
+              },
+              {
+                "dice": "2d6",
+                "magical": false,
+                "modifier": 0,
+                "type": "poison"
+              }
+            ],
+            "modifier": 5,
+            "on_hit": [],
+            "range": null,
+            "reach": 5,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "bite",
+      "kind": "modeled",
+      "name": "Bite"
+    }
+  ],
+  "alignment": "unaligned",
+  "armor_class": [
+    {
+      "value": 15
+    }
+  ],
+  "bonus_actions": [
+    {
+      "default_resolution": "skipped",
+      "desc": "Constitution Saving Throw: DC 12, each creature in a 30-foot Cone. If the basilisk sees its reflection in the Cone, the basilisk must make this save. First Failure: The target has the Restrained condition and repeats the save at the end of its next turn if it is still Restrained, ending the effect on itself on a success. Second Failure: The target has the Petrified condition instead of the Restrained condition.",
+      "id": "petrifying-gaze",
+      "kind": "unmodeled",
+      "name": "Petrifying Gaze",
+      "usage": {
+        "recharge": {
+          "dice": "4-6"
+        }
+      }
+    }
+  ],
+  "challenge_rating": 3,
+  "hit_points": {
+    "average": 52,
+    "dice": "8d8+16"
+  },
+  "id": "basilisk",
+  "initiative": -1,
+  "name": "Basilisk",
+  "proficiency_bonus": 2,
+  "schema_version": "1",
+  "senses": {
+    "darkvision": 60,
+    "passive_perception": 9
+  },
+  "size": "medium",
+  "source": "srd-5.2.1",
+  "speeds": {
+    "walk": {
+      "feet": 20
+    }
+  },
+  "type": "monstrosity",
+  "xp": 700
+}

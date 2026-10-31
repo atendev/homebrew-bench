@@ -2,9 +2,9 @@
   "summary": {
     "commit": "a6212beb4b278917c2cff41c2b04c4ef4f3e0d6f",
     "monsters": 341,
-    "graduated": 299,
-    "blocked": 42,
-    "open_blocking": 45,
+    "graduated": 305,
+    "blocked": 36,
+    "open_blocking": 39,
     "corrections": 77
   },
   "entries": [
@@ -1001,13 +1001,6 @@
       "path": "traits.legendary-resistance",
       "status": "open",
       "summary": "classified unmodeled (default skipped)"
-    },
-    {
-      "monster": "air-elemental",
-      "class": "b",
-      "path": "actions.whirlwind.usage",
-      "status": "open",
-      "summary": "recharge 4-6 has no engine range"
     },
     {
       "monster": "air-elemental",
@@ -2439,13 +2432,6 @@
     },
     {
       "monster": "basilisk",
-      "class": "b",
-      "path": "bonus_actions.petrifying-gaze.usage",
-      "status": "open",
-      "summary": "recharge 4-6 has no engine range"
-    },
-    {
-      "monster": "basilisk",
       "class": "d",
       "path": "actions.bite",
       "status": "open",
@@ -2653,13 +2639,6 @@
       "path": "traits.spider-climb",
       "status": "open",
       "summary": "classified unmodeled (default skipped)"
-    },
-    {
-      "monster": "blink-dog",
-      "class": "b",
-      "path": "bonus_actions.teleport.usage",
-      "status": "open",
-      "summary": "recharge 4-6 has no engine range"
     },
     {
       "monster": "blink-dog",
@@ -3171,13 +3150,6 @@
       "path": "traits.magic-resistance",
       "status": "open",
       "summary": "classified unmodeled (default skipped)"
-    },
-    {
-      "monster": "cloaker",
-      "class": "b",
-      "path": "bonus_actions.phantasms.usage",
-      "status": "open",
-      "summary": "usage type 'recharge after rest' is not representable"
     },
     {
       "monster": "cloaker",
@@ -7682,13 +7654,6 @@
     },
     {
       "monster": "pit-fiend",
-      "class": "b",
-      "path": "actions.hellfire-spellcasting.usage",
-      "status": "open",
-      "summary": "recharge 4-6 has no engine range"
-    },
-    {
-      "monster": "pit-fiend",
       "class": "d",
       "path": "actions.bite",
       "status": "open",
@@ -10549,13 +10514,6 @@
       "path": "reactions.parry",
       "status": "open",
       "summary": "classified unmodeled (default skipped)"
-    },
-    {
-      "monster": "water-elemental",
-      "class": "b",
-      "path": "actions.whelm.usage",
-      "status": "open",
-      "summary": "recharge 4-6 has no engine range"
     },
     {
       "monster": "water-elemental",

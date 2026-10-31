@@ -1,0 +1,160 @@
+{
+  "ability_scores": {
+    "charisma": 6,
+    "constitution": 14,
+    "dexterity": 20,
+    "intelligence": 6,
+    "strength": 14,
+    "wisdom": 10
+  },
+  "actions": [
+    {
+      "desc": "The elemental makes two Thunderous Slam attacks.",
+      "effects": [
+        {
+          "multiattack": {
+            "steps": [
+              {
+                "action": {
+                  "action_id": "thunderous-slam",
+                  "count": 2
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "id": "multiattack",
+      "kind": "modeled",
+      "name": "Multiattack"
+    },
+    {
+      "desc": "Melee Attack Roll: +8, reach 10 ft. Hit: 14 (2d8 + 5) Thunder damage.",
+      "effects": [
+        {
+          "attack": {
+            "damage": [
+              {
+                "dice": "2d8",
+                "magical": false,
+                "modifier": 5,
+                "type": "thunder"
+              }
+            ],
+            "modifier": 8,
+            "on_hit": [],
+            "range": null,
+            "reach": 10,
+            "target_count": 1
+          }
+        }
+      ],
+      "id": "thunderous-slam",
+      "kind": "modeled",
+      "name": "Thunderous Slam"
+    },
+    {
+      "agent_clauses": [
+        "and the target is pushed up to 20 feet straight away from the elemental and has the Prone condition"
+      ],
+      "desc": "Strength Saving Throw: DC 13, one Medium or smaller creature in the elemental’s space. Failure: 24 (4d10 + 2) Thunder damage, and the target is pushed up to 20 feet straight away from the elemental and has the Prone condition. Success: Half damage only.",
+      "effects": [
+        {
+          "saving_throw": {
+            "ability": "str",
+            "creature_type_gate": null,
+            "damage": [
+              {
+                "dice": "4d10",
+                "magical": false,
+                "modifier": 2,
+                "type": "thunder"
+              }
+            ],
+            "dc": 13,
+            "half_on_success": true,
+            "hp_gate": null,
+            "immunity_after_success": false,
+            "no_damage_on_success": false,
+            "on_failure": [],
+            "repeat_save": null,
+            "two_stage": null
+          }
+        }
+      ],
+      "id": "whirlwind",
+      "kind": "partly_modeled",
+      "name": "Whirlwind",
+      "usage": {
+        "recharge": {
+          "dice": "4-6"
+        }
+      }
+    }
+  ],
+  "alignment": "neutral",
+  "armor_class": [
+    {
+      "value": 15
+    }
+  ],
+  "challenge_rating": 5,
+  "condition_immunities": [
+    "exhaustion",
+    "grappled",
+    "paralyzed",
+    "petrified",
+    "poisoned",
+    "prone",
+    "restrained",
+    "unconscious"
+  ],
+  "damage_immunities": [
+    "poison",
+    "thunder"
+  ],
+  "damage_resistances": [
+    "bludgeoning",
+    "lightning",
+    "piercing",
+    "slashing"
+  ],
+  "hit_points": {
+    "average": 90,
+    "dice": "12d10+24"
+  },
+  "id": "air-elemental",
+  "initiative": 5,
+  "languages": [
+    "Primordial (Auran)"
+  ],
+  "name": "Air Elemental",
+  "proficiency_bonus": 3,
+  "schema_version": "1",
+  "senses": {
+    "darkvision": 60,
+    "passive_perception": 10
+  },
+  "size": "large",
+  "source": "srd-5.2.1",
+  "speeds": {
+    "fly": {
+      "feet": 90,
+      "hover": true
+    },
+    "walk": {
+      "feet": 10
+    }
+  },
+  "traits": [
+    {
+      "default_resolution": "skipped",
+      "desc": "The elemental can enter a creature’s space and stop there. It can move through a space as narrow as 1 inch without expending extra movement to do so.",
+      "id": "air-form",
+      "kind": "unmodeled",
+      "name": "Air Form"
+    }
+  ],
+  "type": "elemental",
+  "xp": 1800
+}
