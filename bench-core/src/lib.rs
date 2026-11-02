@@ -5,6 +5,7 @@
 
 #![allow(dead_code)]
 
+pub mod batch;
 pub mod config;
 pub mod digest;
 pub mod effect;
@@ -21,6 +22,7 @@ pub mod schema;
 pub mod spell;
 pub mod store;
 pub mod stat_block;
+pub mod tactics;
 
 /// Engine version written into encounter state files.
 pub const ENGINE_VERSION: &str = env!("CARGO_PKG_VERSION");

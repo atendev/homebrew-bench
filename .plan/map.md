@@ -56,12 +56,15 @@ Both modes ship in phase 1. Everything the engine can't model is labeled agent j
 - [SRD importer, review pipeline and fixtures](closed/028-srd-importer-review-pipeline-and-fixtures.md): all 341 SRD monsters graduate with the review at exit 0. Multiattacks can cast through Spellcasting and pick one of several step sets (an empty set makes a step optional), the self-reference check reads every sentence-initial subject, and the Hydra's five Bites are a recorded known limit. See `docs/adr/0005-closed-effect-vocabulary-with-agent-clauses.md`.
 - [Live mode CLI, overrides, log, public view and replay](closed/030-live-mode-cli-overrides-log-public-view-and-replay.md): the `bench` CLI runs every live command as a fold over the command history, so `undo` restores the dice and `replay` re-derives each state hash. PC dice prompts hold the request until `respond`. The public view hides monster numbers, damage amounts and the seed. `keep_encounters = false` prunes at the next `start`. PC initiative prompts and a concentration-save stream bug move to ticket 041.
 - [PC initiative prompts, concentration save stream and standing assumptions](closed/041-pc-initiative-prompts-and-concentration-stream.md): ask mode prompts for PC initiative at `bench start` and `bench add`, the concentration save draws from the action's own stream, `bench override --standing` records standing assumptions and tags its subject's event lines (a later plain override on the path drops it), and `(player dice)` is set per event. Release notes start in `CHANGELOG.md`.
+- [Batch tactics policy and batch runner](closed/031-batch-tactics-policy-and-batch-runner.md): `bench batch` plays one monster against a party across levels with tactics policy v1 for both sides, refuses unresolved homebrew abilities unless an `abilities.<id>` assumption covers them, replays any fight by global index with `--fight`, and writes an accessible HTML report plus three sampled logs. The ticket 027 engine gaps are closed, conditions can end on damage, and breaking concentration ends what it held.
 
 ## Not yet specified
 
 - Upcast spell scaling: `resolve_cast` ignores `Cast.slot_level` and `upcast`, so a dragon's level 3 Acid Arrow resolves at the effects file's base level. This depends on how the effects file states per-level scaling.
 
 - Player-dice marks for heal, temporary hit point and death save events: these dice go through the prompt but their events carry no `player_dice` flag yet. This depends on whether those events gain roll fields.
+
+- Batch policy gaps: v1 gives buffs, forced movement and teleports no score, takes no reactions, and the engine only logs opportunity attacks. This depends on how the baseline curve reads once ticket 032 commits it.
 
 - Magic items in the standard party: ruled out for phase 1, revisit if the CR baseline curve shows the party falling off SRD monsters at high levels.
 
@@ -77,10 +80,9 @@ Both modes ship in phase 1. Everything the engine can't model is labeled agent j
 
 Takeable now, in order:
 
-- Batch tactics policy and batch runner (task)
+- Empirical CR baseline curve and embedded reference data (task)
 
 Blocked:
 
-- Empirical CR baseline curve and embedded reference data (task), blocked by Batch tactics policy and batch runner
 - Agent skill and house-rule templates (task), blocked by Empirical CR baseline curve and embedded reference data
 - Release packaging, legal notices and installers (task), blocked by Empirical CR baseline curve and embedded reference data and Agent skill and house-rule templates

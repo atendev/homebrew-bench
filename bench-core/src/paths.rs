@@ -59,6 +59,24 @@ pub fn house_rule_dirs(cwd: impl AsRef<Path>) -> anyhow::Result<Vec<PathBuf>> {
     ])
 }
 
+/// Party folders for `--party <name>`, project layer first:
+/// `./.bench/parties/<name>/`, then `~/.bench/parties/<name>/`.
+pub fn party_dirs(name: &str, cwd: impl AsRef<Path>) -> anyhow::Result<Vec<PathBuf>> {
+    Ok(vec![
+        cwd.as_ref().join(".bench").join("parties").join(name),
+        home_dir()?.join("parties").join(name),
+    ])
+}
+
+/// Batch report folder: `reports/` under the home or workspace directory.
+pub fn reports_dir(output: config::OutputTarget, cwd: impl AsRef<Path>) -> anyhow::Result<PathBuf> {
+    let base = match output {
+        config::OutputTarget::Home => home_dir()?,
+        config::OutputTarget::Workspace => workspace_dir(cwd)?,
+    };
+    Ok(base.join("reports"))
+}
+
 /// Path to the encounter index file.
 pub fn index_file() -> anyhow::Result<PathBuf> {
     Ok(home_dir()?.join("index"))

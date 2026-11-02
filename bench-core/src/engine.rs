@@ -150,6 +150,12 @@ fn initiative_order(state: &EncounterState, rolls: &HashMap<String, i32>, groupe
 
 /// Resolve one whole action or lifecycle command.
 pub fn step(state: &mut EncounterState, request: StepRequest) -> Result<StepResponse, EngineError> {
+    let events = step_events(state, request)?;
+    Ok(response(state, events))
+}
+
+/// Like [`step`] but skips the state digest. Batch runs call this thousands of times.
+pub fn step_events(state: &mut EncounterState, request: StepRequest) -> Result<Vec<EngineEvent>, EngineError> {
     if state.pending.is_some() && !matches!(request, StepRequest::Respond { .. }) {
         return Err(EngineError::Pending("answer the pending prompt first".into()));
     }
@@ -164,7 +170,14 @@ pub fn step(state: &mut EncounterState, request: StepRequest) -> Result<StepResp
         StepRequest::Respond { values, accept } => respond(state, values, accept)?,
         StepRequest::RollInitiative(options) => roll_initiative(state, options)?,
     };
-    Ok(response(state, events))
+    Ok(events)
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum ActionSection {
+    Action,
+    Bonus,
+    Reaction,
 }
 
 fn resolve_action(
@@ -177,18 +190,30 @@ fn resolve_action(
     if !can_act(&state.combatants[actor_index]) {
         return Err(EngineError::Illegal(format!("{actor_id} cannot act")));
     }
-    if let Some(active) = &state.active_turn {
-        if active != actor_id {
-            return Err(EngineError::Illegal(format!("{actor_id} is not the active combatant")));
-        }
-    }
-    let action = {
+    let (action, section) = {
         let block = stat_block(state, &state.combatants[actor_index])?;
-        block.actions.iter().find(|a| a.id == action_id).cloned()
+        block.actions.iter().find(|a| a.id == action_id).map(|a| (a.clone(), ActionSection::Action))
+            .or_else(|| block.bonus_actions.iter().find(|a| a.id == action_id).map(|a| (a.clone(), ActionSection::Bonus)))
+            .or_else(|| block.reactions.iter().find(|a| a.id == action_id).map(|a| (a.clone(), ActionSection::Reaction)))
             .ok_or_else(|| EngineError::NotFound(format!("action {action_id} not found")))?
     };
-    if state.combatants[actor_index].action_economy.action_used {
-        return Err(EngineError::Illegal("action already used this turn".into()));
+    if section != ActionSection::Reaction {
+        if let Some(active) = &state.active_turn {
+            if active != actor_id {
+                return Err(EngineError::Illegal(format!("{actor_id} is not the active combatant")));
+            }
+        }
+    }
+    {
+        let economy = &state.combatants[actor_index].action_economy;
+        let (used, label) = match section {
+            ActionSection::Action => (economy.action_used, "action"),
+            ActionSection::Bonus => (economy.bonus_action_used, "bonus action"),
+            ActionSection::Reaction => (economy.reaction_used, "reaction"),
+        };
+        if used {
+            return Err(EngineError::Illegal(format!("{label} already used")));
+        }
     }
     // Check and decrement usage limits
     if let Some(usage) = &action.usage {
@@ -239,7 +264,12 @@ fn resolve_action(
         }
     }
     state.rng = stream.state();
-    state.combatants[actor_index].action_economy.action_used = true;
+    let economy = &mut state.combatants[actor_index].action_economy;
+    match section {
+        ActionSection::Action => economy.action_used = true,
+        ActionSection::Bonus => economy.bonus_action_used = true,
+        ActionSection::Reaction => economy.reaction_used = true,
+    }
     Ok(events)
 }
 
@@ -254,6 +284,8 @@ fn resolve_effect(
     match effect {
         Effect::Attack(attack) => {
             for target_id in target_ids.iter().take(attack.target_count.max(1) as usize) {
+                let retargeted = retarget_if_down(state, actor_id, target_id);
+                let target_id = &retargeted;
                 let target_index = index_of(state, target_id)?;
                 let target = state.combatants[target_index].clone();
                 let actor = state.combatants[index_of(state, actor_id)?].clone();
@@ -292,7 +324,7 @@ fn resolve_effect(
                         damage += adjust_damage(state, &target, amount, die.damage_type);
                     }
                     let marked = state.player_dice.all_entered_since(actor_id);
-                    apply_damage(state, stream, &target.id, damage, Some(actor_id), marked, events)?;
+                    apply_damage(state, stream, &target.id, damage, Some(actor_id), marked, critical, events)?;
                     for effect in &attack.on_hit {
                         resolve_effect(state, stream, actor_id, effect.clone(), &[target_id.clone()], events)?;
                     }
@@ -308,7 +340,7 @@ fn resolve_effect(
                     continue;
                 }
                 let amount = adjust_damage(state, &target, amount, damage.damage_type);
-                apply_damage(state, stream, target_id, amount, Some(actor_id), marked, events)?;
+                apply_damage(state, stream, target_id, amount, Some(actor_id), marked, false, events)?;
             }
         }
         Effect::SavingThrow(save) => {
@@ -325,6 +357,7 @@ fn resolve_effect(
                         condition: condition.condition,
                         duration: condition.duration.clone(),
                         source: Some(actor_id.into()),
+                        ends_on_damage: condition.ends_on_damage,
                     });
                     events.push(event("condition", format!("{target_id} is {}", format!("{:?}", condition.condition).to_lowercase()), actor_id, target_id));
                 }
@@ -348,7 +381,7 @@ fn resolve_effect(
             let amount = roll_dice(state, stream, actor_id, &heal.dice)? as i32 + heal.modifier;
             for target_id in target_ids {
                 let i = index_of(state, target_id)?;
-                state.combatants[i].hp = (state.combatants[i].hp + amount).min(state.combatants[i].max_hp);
+                state.combatants[i].hp = (state.combatants[i].hp.max(0) + amount).min(state.combatants[i].max_hp);
                 // Restore from unconscious if healed above 0
                 if state.combatants[i].hp > 0 && state.combatants[i].end_state == EndState::Unconscious {
                     state.combatants[i].end_state = EndState::Active;
@@ -395,7 +428,7 @@ fn resolve_effect(
         }
         Effect::Cast(cast) => {
             events.push(event("cast", format!("{} casts {}", actor_id, cast.spell_id), actor_id, actor_id));
-            resolve_cast(state, stream, actor_id, &cast.spell_id, target_ids, events)?;
+            cast_spell(state, stream, actor_id, &cast, target_ids, events)?;
         }
         Effect::RollModifier(roll_mod) => {
             state.active_modifiers.push(ActiveModifier {
@@ -411,7 +444,9 @@ fn resolve_effect(
         }
         Effect::Area(area) => {
             events.push(event("area", format!("{} creates an area effect", actor_id), actor_id, actor_id));
-            let _ = area;
+            let count = area.target_count.map_or(target_ids.len(), |n| n.max(1) as usize);
+            let hit: Vec<String> = target_ids.iter().take(count).cloned().collect();
+            resolve_effect(state, stream, actor_id, *area.effect, &hit, events)?;
         }
     }
     Ok(())
@@ -445,11 +480,14 @@ fn resolve_save(
         player_dice: marked,
     });
     if !success {
+        for effect in &save.on_failure {
+            resolve_effect(state, stream, actor_id, effect.clone(), &[target_id.to_string()], events)?;
+        }
         for damage in save.damage.iter().filter(|d| damage_applies(&target, actor_id, d)) {
             let amount = roll_dice(state, stream, actor_id, &damage.dice)? as i32 + damage.modifier;
             let amount = adjust_damage(state, &target, amount, damage.damage_type);
             let marked = state.player_dice.all_entered_since(actor_id);
-            apply_damage(state, stream, target_id, amount, Some(actor_id), marked, events)?;
+            apply_damage(state, stream, target_id, amount, Some(actor_id), marked, false, events)?;
         }
     } else if save.no_damage_on_success {
         // no damage on success
@@ -458,14 +496,14 @@ fn resolve_save(
             let rolled = roll_dice(state, stream, actor_id, &damage.dice)? as i32 + damage.modifier;
             let amount = adjust_damage(state, &target, rolled, damage.damage_type) / 2;
             let marked = state.player_dice.all_entered_since(actor_id);
-            apply_damage(state, stream, target_id, amount, Some(actor_id), marked, events)?;
+            apply_damage(state, stream, target_id, amount, Some(actor_id), marked, false, events)?;
         }
     } else {
         for damage in save.damage.iter().filter(|d| damage_applies(&target, actor_id, d)) {
             let amount = roll_dice(state, stream, actor_id, &damage.dice)? as i32 + damage.modifier;
             let amount = adjust_damage(state, &target, amount, damage.damage_type);
             let marked = state.player_dice.all_entered_since(actor_id);
-            apply_damage(state, stream, target_id, amount, Some(actor_id), marked, events)?;
+            apply_damage(state, stream, target_id, amount, Some(actor_id), marked, false, events)?;
         }
     }
     Ok(())
@@ -493,7 +531,11 @@ fn resolve_multiattack_steps(
                 // tactics policy will supply them as part of its plan. When that lands, the
                 // engine will use those picks instead of this deterministic fallback.
                 let pick = pick.min(options.len() as u32);
-                for opt in options.into_iter().take(pick as usize) {
+                let chosen: Vec<usize> = match state.player_dice.picks.pop_front() {
+                    Some(indexes) => indexes.into_iter().filter(|i| *i < options.len()).take(pick as usize).collect(),
+                    None => (0..pick as usize).collect(),
+                };
+                for opt in chosen.into_iter().map(|i| options[i].clone()) {
                     let label = opt.cast.as_ref().map_or(opt.action_id.as_str(), |c| c.spell_id.as_str());
                     events.push(multiattack_choice_event(actor_id, label));
                     for _ in 0..opt.count {
@@ -504,8 +546,9 @@ fn resolve_multiattack_steps(
             MultiattackStep::Alternatives { sets } => {
                 // Same deterministic fallback as `Choice`: the first set, until live prompts
                 // and the batch tactics policy supply the pick.
-                let Some(set) = sets.into_iter().next() else { continue };
-                events.push(multiattack_choice_event(actor_id, "alternative 1"));
+                let index = state.player_dice.picks.pop_front().and_then(|v| v.first().copied()).unwrap_or(0);
+                let Some(set) = sets.into_iter().nth(index) else { continue };
+                events.push(multiattack_choice_event(actor_id, &format!("alternative {}", index + 1)));
                 resolve_multiattack_steps(state, stream, actor_id, set, target_ids, events)?;
             }
         }
@@ -545,15 +588,16 @@ fn resolve_multiattack_slot(
     resolve_effect(state, stream, actor_id, Effect::Cast(cast.clone()), target_ids, events)
 }
 
-fn resolve_cast(
+fn cast_spell(
     state: &mut EncounterState,
     stream: &mut Stream,
     actor_id: &str,
-    spell_id: &str,
+    cast: &crate::effect::Cast,
     target_ids: &[String],
     events: &mut Vec<EngineEvent>,
 ) -> Result<(), EngineError> {
-    // In phase 1, spell effects are resolved from the embedded spell effects file.
+    let spell_id = cast.spell_id.as_str();
+    // In phase 1, spell effects are resolved from the spell effects file.
     // If the spell is not found, the cast is treated as unmodeled and logged only.
     let spell_effects = match load_spell_effects() {
         Ok(effects) => effects,
@@ -569,39 +613,190 @@ fn resolve_cast(
             return Ok(());
         }
     };
+    let i = index_of(state, actor_id)?;
+    let ctx = {
+        let block = stat_block(state, &state.combatants[i])?;
+        spend_slot(&state.combatants[i], block, cast)?;
+        cast_context(block, cast)
+    };
+    if let Some(level) = cast.slot_level.filter(|l| *l > 0) {
+        if stat_block(state, &state.combatants[i])?.spell_slots.is_some() {
+            *state.combatants[i].resources.entry(format!("{actor_id}:slot:{level}")).or_insert(0) += 1;
+        }
+    }
     if spell.concentration {
-        let i = index_of(state, actor_id)?;
         if state.combatants[i].concentration.is_some() {
             break_concentration(state, actor_id, events)?;
         }
         state.combatants[i].concentration = Some(spell_id.into());
         events.push(event("concentration", format!("{} begins concentrating on {}", actor_id, spell_id), actor_id, actor_id));
     }
+    let cantrip = cast.slot_level.unwrap_or(0) == 0;
     for effect in spell.effects {
+        let effect = match &ctx {
+            Some(ctx) => bind_effect(effect, ctx, cantrip),
+            None => effect,
+        };
         resolve_effect(state, stream, actor_id, effect, target_ids, events)?;
     }
     Ok(())
 }
 
-fn load_spell_effects() -> Result<HashMap<String, crate::spell::SpellEffect>, EngineError> {
-    let manifest = env!("CARGO_MANIFEST_DIR");
-    let root = std::path::Path::new(manifest)
-        .parent()
-        .ok_or_else(|| EngineError::Invalid("workspace root not found".into()))?;
-    let path = root.join("data/spells/effects.json");
-    let text = std::fs::read_to_string(&path)
-        .map_err(|e| EngineError::Invalid(format!("failed to read spell effects: {e}")))?;
-    let value: serde_json::Value = serde_json::from_str(&text)
-        .map_err(|e| EngineError::Invalid(format!("invalid spell effects json: {e}")))?;
-    let mut map = HashMap::new();
-    if let Some(obj) = value.as_object() {
-        for (key, entry_value) in obj {
-            let spell: crate::spell::SpellEffect = serde_json::from_value(entry_value.clone())
-                .map_err(|e| EngineError::Invalid(format!("spell {key} invalid: {e}")))?;
-            map.insert(key.clone(), spell);
-        }
+/// A PC with spell slots can cast a leveled spell only while a slot of that level is left.
+fn spend_slot(actor: &Combatant, block: &StatBlock, cast: &crate::effect::Cast) -> Result<(), EngineError> {
+    let (Some(slots), Some(level)) = (&block.spell_slots, cast.slot_level.filter(|l| *l > 0)) else {
+        return Ok(());
+    };
+    let max = slots.get(usize::from(level) - 1).copied().unwrap_or(0) as i32;
+    let used = actor.resources.get(&format!("{}:slot:{level}", actor.id)).copied().unwrap_or(0);
+    if used >= max {
+        return Err(EngineError::Illegal(format!("{} has no level {level} spell slot left", actor.id)));
     }
-    Ok(map)
+    Ok(())
+}
+
+fn load_spell_effects() -> Result<&'static HashMap<String, crate::spell::SpellEffect>, EngineError> {
+    static CACHE: std::sync::OnceLock<Result<HashMap<String, crate::spell::SpellEffect>, String>> = std::sync::OnceLock::new();
+    CACHE
+        .get_or_init(|| {
+            let manifest = env!("CARGO_MANIFEST_DIR");
+            let root = std::path::Path::new(manifest).parent().ok_or("workspace root not found")?;
+            let path = root.join("data/spells/effects.json");
+            let text = std::fs::read_to_string(&path).map_err(|e| format!("failed to read spell effects: {e}"))?;
+            let value: serde_json::Value = serde_json::from_str(&text).map_err(|e| format!("invalid spell effects json: {e}"))?;
+            let mut map = HashMap::new();
+            if let Some(obj) = value.as_object() {
+                for (key, entry_value) in obj {
+                    let spell: crate::spell::SpellEffect = serde_json::from_value(entry_value.clone())
+                        .map_err(|e| format!("spell {key} invalid: {e}"))?;
+                    map.insert(key.clone(), spell);
+                }
+            }
+            Ok(map)
+        })
+        .as_ref()
+        .map_err(|e| EngineError::Invalid(e.clone()))
+}
+
+/// Batch fights let the remaining attacks of a multiattack move to a living opponent once the
+/// chosen target is down. Live mode leaves the choice to the caller.
+fn retarget_if_down(state: &EncounterState, actor_id: &str, target_id: &str) -> String {
+    if !state.player_dice.retarget_downed {
+        return target_id.to_string();
+    }
+    let down = |c: &Combatant| c.end_state != EndState::Active;
+    let Ok(t) = index_of(state, target_id) else { return target_id.to_string() };
+    if !down(&state.combatants[t]) {
+        return target_id.to_string();
+    }
+    let Some(actor_side) = state.combatants.iter().find(|c| c.id == actor_id).map(|c| c.side_id.clone()) else {
+        return target_id.to_string();
+    };
+    state
+        .combatants
+        .iter()
+        .find(|c| c.side_id != actor_side && !down(c))
+        .map_or_else(|| target_id.to_string(), |c| c.id.clone())
+}
+
+/// Effects of a cast with the caster's numbers bound in, and whether the spell needs concentration.
+pub fn bound_cast_effects(block: &StatBlock, cast: &crate::effect::Cast) -> Option<(Vec<Effect>, bool)> {
+    let spell = load_spell_effects().ok()?.get(&cast.spell_id)?;
+    let cantrip = cast.slot_level.unwrap_or(0) == 0;
+    let effects = match cast_context(block, cast) {
+        Some(ctx) => spell.effects.iter().cloned().map(|e| bind_effect(e, &ctx, cantrip)).collect(),
+        None => spell.effects.clone(),
+    };
+    Some((effects, spell.concentration))
+}
+
+/// Whether the ability can be used right now: its usage allows it and any spell slot is left.
+pub fn ability_ready(state: &EncounterState, actor_id: &str, ability: &crate::stat_block::AbilityEntry) -> bool {
+    let Ok(i) = index_of(state, actor_id) else { return false };
+    let actor = &state.combatants[i];
+    let Ok(block) = stat_block(state, actor) else { return false };
+    let key = |id: &str| format!("{actor_id}:{id}");
+    let ready = match &ability.usage {
+        None | Some(Usage::AtWill) => true,
+        Some(Usage::Recharge { group, .. }) => {
+            actor.resources.get(&key(group.as_deref().unwrap_or(&ability.id))).copied().unwrap_or(1) > 0
+        }
+        Some(Usage::PerDay { uses }) | Some(Usage::PerRest { uses, .. }) => {
+            actor.resources.get(&key(&ability.id)).copied().unwrap_or(0) < *uses as i32
+        }
+        Some(Usage::CooldownUntilNextTurn) => actor.resources.get(&key(&ability.id)).copied().unwrap_or(1) > 0,
+    };
+    ready
+        && ability.effects.iter().all(|e| match e {
+            Effect::Cast(c) => spend_slot(actor, block, c).is_ok(),
+            _ => true,
+        })
+}
+
+/// Spellcasting numbers a caster's stat block lends to the spells it casts.
+struct CastContext {
+    save_dc: i32,
+    attack_bonus: i32,
+    heal_bonus: i32,
+    dice_multiplier: u32,
+}
+
+fn cast_context(block: &StatBlock, cast: &crate::effect::Cast) -> Option<CastContext> {
+    let sc = block.spellcasting.as_ref()?;
+    let is_cantrip = cast.slot_level.unwrap_or(0) == 0;
+    let dice_multiplier = match (is_cantrip, block.level) {
+        (true, Some(l)) => 1 + u32::from(l >= 5) + u32::from(l >= 11) + u32::from(l >= 17),
+        _ => 1,
+    };
+    Some(CastContext {
+        save_dc: sc.save_dc,
+        attack_bonus: sc.attack_bonus,
+        heal_bonus: block.ability_scores.modifier(sc.ability),
+        dice_multiplier,
+    })
+}
+
+fn scale_dice(expr: &str, multiplier: u32) -> String {
+    if multiplier <= 1 {
+        return expr.to_string();
+    }
+    match expr.split_once('d').and_then(|(n, rest)| n.parse::<u32>().ok().map(|n| (n, rest))) {
+        Some((n, rest)) => format!("{}d{rest}", n * multiplier),
+        None => expr.to_string(),
+    }
+}
+
+fn bind_effect(effect: Effect, ctx: &CastContext, cantrip_damage: bool) -> Effect {
+    let scale = |damage: &mut Vec<crate::effect::Damage>| {
+        if cantrip_damage {
+            for d in damage.iter_mut() {
+                d.dice = scale_dice(&d.dice, ctx.dice_multiplier);
+            }
+        }
+    };
+    match effect {
+        Effect::Attack(mut a) => {
+            a.modifier += ctx.attack_bonus;
+            scale(&mut a.damage);
+            Effect::Attack(a)
+        }
+        Effect::SavingThrow(mut st) => {
+            if st.dc == 0 {
+                st.dc = ctx.save_dc;
+            }
+            scale(&mut st.damage);
+            Effect::SavingThrow(st)
+        }
+        Effect::Heal(mut h) => {
+            h.modifier += ctx.heal_bonus;
+            Effect::Heal(h)
+        }
+        Effect::Area(mut area) => {
+            area.effect = Box::new(bind_effect(*area.effect, ctx, cantrip_damage));
+            Effect::Area(area)
+        }
+        other => other,
+    }
 }
 
 fn move_combatant(
@@ -631,6 +826,9 @@ fn move_combatant(
     if let Some(target_id) = target_id {
         let was_engaged = state.combatants[i].engagement.contains(&target_id.to_string());
         state.combatants[i].ranges.insert(target_id.into(), band);
+        if let Ok(j) = index_of(state, target_id) {
+            state.combatants[j].ranges.insert(actor_id.into(), band);
+        }
         if band == RangeBand::Engaged {
             if !state.combatants[i].engagement.contains(&target_id.to_string()) {
                 state.combatants[i].engagement.push(target_id.into());
@@ -812,8 +1010,7 @@ fn roll_death_saves(state: &mut EncounterState, combatant_id: &str, events: &mut
     if state.combatants[i].end_state != EndState::Unconscious {
         return Ok(());
     }
-    let is_pc = stat_block(state, &state.combatants[i])?.class.is_some();
-    if !is_pc {
+    if !stat_block(state, &state.combatants[i])?.dying {
         return Ok(());
     }
     let mut stream = Stream::from_state(state.rng.clone());
@@ -888,14 +1085,60 @@ fn reset_cooldowns(state: &mut EncounterState, combatant_id: &str) {
         Ok(i) => i,
         Err(_) => return,
     };
-    let prefix = format!("{combatant_id}:");
-    let keys: Vec<String> = state.combatants[i].resources.keys()
-        .filter(|k| k.starts_with(&prefix))
-        .cloned()
+    let Ok(block) = stat_block(state, &state.combatants[i]) else { return };
+    let keys: Vec<String> = block
+        .actions
+        .iter()
+        .chain(&block.bonus_actions)
+        .chain(&block.reactions)
+        .chain(&block.legendary_actions)
+        .filter(|a| matches!(a.usage, Some(Usage::CooldownUntilNextTurn)))
+        .map(|a| format!("{combatant_id}:{}", a.id))
         .collect();
     for key in keys {
         state.combatants[i].resources.insert(key, 1);
     }
+    state.combatants[i].resources.remove(&format!("{combatant_id}:legendary"));
+}
+
+/// Spend one legendary action between turns. The engine tracks the per-round budget; the
+/// ability list has no cost field, so every legendary action costs one use.
+pub fn use_legendary_action(
+    state: &mut EncounterState,
+    actor_id: &str,
+    action_id: &str,
+    target_ids: &[String],
+) -> Result<Vec<EngineEvent>, EngineError> {
+    let i = index_of(state, actor_id)?;
+    if !can_act(&state.combatants[i]) {
+        return Err(EngineError::Illegal(format!("{actor_id} cannot act")));
+    }
+    let (action, budget) = {
+        let block = stat_block(state, &state.combatants[i])?;
+        let action = block.legendary_actions.iter().find(|a| a.id == action_id).cloned()
+            .ok_or_else(|| EngineError::NotFound(format!("legendary action {action_id} not found")))?;
+        (action, block.legendary_uses_per_round as i32)
+    };
+    let key = format!("{actor_id}:legendary");
+    let used = state.combatants[i].resources.get(&key).copied().unwrap_or(0);
+    if used >= budget {
+        return Err(EngineError::Illegal(format!("{actor_id} has no legendary actions left this round")));
+    }
+    if let Some(Usage::Recharge { group, .. }) = &action.usage {
+        let rkey = format!("{actor_id}:{}", group.as_deref().unwrap_or(action_id));
+        if state.combatants[i].resources.get(&rkey).copied().unwrap_or(1) <= 0 {
+            return Err(EngineError::Illegal(format!("{action_id} is not recharged")));
+        }
+        state.combatants[i].resources.insert(rkey, 0);
+    }
+    state.combatants[i].resources.insert(key, used + 1);
+    let mut stream = Stream::from_state(state.rng.clone());
+    let mut events = vec![event("legendary", format!("{actor_id} uses legendary action {}", action.name), actor_id, actor_id)];
+    for effect in action.effects {
+        resolve_effect(state, &mut stream, actor_id, effect, target_ids, &mut events)?;
+    }
+    state.rng = stream.state();
+    Ok(events)
 }
 
 fn respond(state: &mut EncounterState, values: Vec<u32>, accept: bool) -> Result<Vec<EngineEvent>, EngineError> {
@@ -919,9 +1162,37 @@ fn apply_damage(
     amount: i32,
     source_id: Option<&str>,
     marked: bool,
+    critical: bool,
     events: &mut Vec<EngineEvent>,
 ) -> Result<(), EngineError> {
     let i = index_of(state, target_id)?;
+    if state.combatants[i].end_state == EndState::Unconscious && amount > 0 {
+        let failures = if critical { 2 } else { 1 };
+        state.combatants[i].death_saves.failures += failures;
+        events.push(EngineEvent {
+            kind: "damage".into(),
+            message: format!("{target_id} takes {amount} damage while down"),
+            actor_id: source_id.map(|s| s.into()),
+            target_id: Some(target_id.into()),
+            roll: None,
+            total: None,
+            damage: Some(amount),
+            player_dice: marked,
+        });
+        events.push(event("death_save", format!("{target_id} suffers {failures} death save failure(s) from the hit"), source_id.unwrap_or(target_id), target_id));
+        if state.combatants[i].death_saves.failures >= 3 {
+            state.combatants[i].end_state = EndState::Dead;
+            events.push(event("dies", format!("{target_id} dies"), target_id, target_id));
+        }
+        return Ok(());
+    }
+    if amount > 0 {
+        let before = state.combatants[i].conditions.len();
+        state.combatants[i].conditions.retain(|c| !c.ends_on_damage);
+        if state.combatants[i].conditions.len() < before {
+            events.push(event("condition_expire", format!("{target_id} is roused by the damage"), target_id, target_id));
+        }
+    }
     let mut remaining = amount.max(0);
     let absorbed = remaining.min(state.combatants[i].temp_hp);
     state.combatants[i].temp_hp -= absorbed;
@@ -964,13 +1235,19 @@ fn apply_damage(
             break_concentration(state, target_id, events)?;
         }
     }
-    if state.combatants[i].hp <= 0 {
-        let is_pc = stat_block(state, &state.combatants[i])?.class.is_some();
-        if is_pc {
+    if state.combatants[i].hp <= 0 && state.combatants[i].end_state == EndState::Active {
+        let dying = stat_block(state, &state.combatants[i])?.dying;
+        if dying && -state.combatants[i].hp >= state.combatants[i].max_hp {
+            state.combatants[i].end_state = EndState::Dead;
+            events.push(event("dies", format!("{target_id} dies from massive damage"), target_id, target_id));
+        } else if dying {
+            state.combatants[i].hp = 0;
             state.combatants[i].end_state = EndState::Unconscious;
             state.combatants[i].death_saves = DeathSaves::default();
+            events.push(event("unconscious", format!("{target_id} falls unconscious"), target_id, target_id));
         } else {
             state.combatants[i].end_state = EndState::Dead;
+            events.push(event("dies", format!("{target_id} dies"), target_id, target_id));
         }
     }
     Ok(())
@@ -1188,6 +1465,11 @@ fn break_concentration(
     let i = index_of(state, target_id)?;
     if state.combatants[i].concentration.take().is_some() {
         events.push(event("concentration", format!("{target_id} loses concentration"), target_id, target_id));
+        let held = |d: &Duration, source: &Option<String>| matches!(d, Duration::Concentration) && source.as_deref() == Some(target_id);
+        for c in &mut state.combatants {
+            c.conditions.retain(|x| !held(&x.duration, &x.source));
+        }
+        state.active_modifiers.retain(|m| !held(&m.remaining, &m.source));
     }
     Ok(())
 }
@@ -1500,6 +1782,7 @@ mod tests {
         });
         let mut fighter_block = test_stat_block("fighter", "Fighter", 20, 16);
         fighter_block.class = Some("fighter".into());
+        fighter_block.dying = true;
         let fighter = test_combatant("fighter", "fighter", 20, "ally");
         let goblin = test_combatant("goblin", "goblin", 7, "enemy");
         let mut state = test_encounter(
@@ -1606,6 +1889,7 @@ mod tests {
             condition: Condition::Blinded,
             duration: Duration::Rounds(1),
             source: None,
+            ends_on_damage: false,
         });
         let state = test_encounter(
             vec![test_stat_block("fighter", "Fighter", 20, 16), test_stat_block("goblin", "Goblin", 7, 15)],
@@ -1918,7 +2202,7 @@ mod tests {
     }
 
     fn condition_from(condition: Condition, source: &str) -> ConditionInstance {
-        ConditionInstance { condition, duration: Duration::Permanent, source: Some(source.into()) }
+        ConditionInstance { condition, duration: Duration::Permanent, source: Some(source.into()), ends_on_damage: false }
     }
 
     #[test]
@@ -2024,5 +2308,331 @@ mod tests {
         let parsed: Damage = serde_json::from_str(json).unwrap();
         assert_eq!(parsed.if_target, Some(Condition::Grappled));
         assert!(parsed.if_target_from_actor);
+    }
+
+    fn fx(value: serde_json::Value) -> Effect {
+        serde_json::from_value(value).unwrap()
+    }
+
+    fn ability(id: &str, effects: Vec<Effect>, usage: Option<Usage>) -> crate::stat_block::AbilityEntry {
+        crate::stat_block::AbilityEntry {
+            id: id.into(),
+            name: id.into(),
+            desc: None,
+            kind: crate::stat_block::AbilityKind::Modeled,
+            effects,
+            agent_clauses: vec![],
+            default_resolution: None,
+            usage,
+        }
+    }
+
+    fn cast(spell_id: &str, slot_level: Option<u8>) -> crate::effect::Cast {
+        crate::effect::Cast { spell_id: spell_id.into(), slot_level, upcast: false }
+    }
+
+    fn caster_block(level: u8) -> StatBlock {
+        let mut block = test_stat_block("mage", "Mage", 30, 12);
+        block.class = Some("caster".into());
+        block.dying = true;
+        block.level = Some(level);
+        block.ability_scores.wisdom = 16;
+        block.spellcasting = Some(crate::stat_block::Spellcasting { ability: Ability::Wis, save_dc: 15, attack_bonus: 7 });
+        block
+    }
+
+    fn pc_block(id: &str, hp: i32) -> StatBlock {
+        let mut block = test_stat_block(id, id, hp, 10);
+        block.class = Some("fighter".into());
+        block.dying = true;
+        block
+    }
+
+    fn smash(modifier: i32, dice: &str, bonus: i32) -> crate::stat_block::AbilityEntry {
+        ability(
+            "smash",
+            vec![fx(serde_json::json!({"attack": {"modifier": modifier, "reach": 5, "target_count": 1,
+                "damage": [{"dice": dice, "type": "bludgeoning", "modifier": bonus}]}}))],
+            None,
+        )
+    }
+
+    /// A brute that attacks a PC; the PC starts in the given state.
+    fn brute_vs_pc(pc_hp: i32, attack: crate::stat_block::AbilityEntry, setup: impl FnOnce(&mut Combatant)) -> EncounterState {
+        let mut brute = test_stat_block("brute", "Brute", 50, 10);
+        brute.actions.push(attack);
+        let mut pc = test_combatant("pc", "pc", pc_hp, "ally");
+        setup(&mut pc);
+        let mut state = test_encounter(vec![pc_block("pc", pc_hp), brute], vec![pc, test_combatant("brute", "brute", 50, "enemy")]);
+        state.active_turn = Some("brute".into());
+        state
+    }
+
+    fn act(state: &mut EncounterState, actor: &str, action: &str, targets: &[&str]) -> Result<Vec<EngineEvent>, EngineError> {
+        let target_ids = targets.iter().map(|t| t.to_string()).collect();
+        step_events(state, StepRequest::Action { actor_id: actor.into(), action_id: action.into(), target_ids })
+    }
+
+    #[test]
+    fn casts_take_save_dc_and_attack_bonus_from_the_caster() {
+        let block = caster_block(1);
+        let (effects, _) = bound_cast_effects(&block, &cast("fireball", Some(3))).unwrap();
+        assert!(matches!(&effects[0], Effect::SavingThrow(s) if s.dc == 15));
+        let (effects, _) = bound_cast_effects(&block, &cast("fire-bolt", None)).unwrap();
+        assert!(matches!(&effects[0], Effect::Attack(a) if a.modifier == 7));
+    }
+
+    #[test]
+    fn heal_casts_add_the_spellcasting_modifier() {
+        let (effects, _) = bound_cast_effects(&caster_block(1), &cast("cure-wounds", Some(1))).unwrap();
+        assert!(matches!(&effects[0], Effect::Heal(h) if h.modifier == 3));
+    }
+
+    #[test]
+    fn cantrip_dice_scale_at_levels_5_11_and_17() {
+        for (level, dice) in [(4, "1d10"), (5, "2d10"), (11, "3d10"), (17, "4d10")] {
+            let (effects, _) = bound_cast_effects(&caster_block(level), &cast("fire-bolt", None)).unwrap();
+            let Effect::Attack(a) = &effects[0] else { panic!("fire bolt is an attack") };
+            assert_eq!(a.damage[0].dice, dice, "level {level}");
+        }
+        let (effects, _) = bound_cast_effects(&caster_block(17), &cast("fireball", Some(3))).unwrap();
+        assert!(matches!(&effects[0], Effect::SavingThrow(s) if s.damage[0].dice == "8d6"), "leveled spells do not scale");
+    }
+
+    #[test]
+    fn leveled_casts_spend_a_slot_and_refuse_without_one() {
+        let mut block = caster_block(1);
+        block.spell_slots = Some(vec![1]);
+        block.actions.push(ability("cure-wounds", vec![Effect::Cast(cast("cure-wounds", Some(1)))], None));
+        let mut state = test_encounter(vec![block], vec![test_combatant("mage", "mage", 30, "ally")]);
+        let entry = state.stat_blocks[0].stat_block.actions[0].clone();
+        assert!(ability_ready(&state, "mage", &entry));
+        act(&mut state, "mage", "cure-wounds", &["mage"]).unwrap();
+        assert_eq!(state.combatants[0].resources["mage:slot:1"], 1);
+        assert!(!ability_ready(&state, "mage", &entry));
+        state.combatants[0].action_economy = ActionEconomy::default();
+        let err = act(&mut state, "mage", "cure-wounds", &["mage"]).unwrap_err();
+        assert!(matches!(err, EngineError::Illegal(m) if m.contains("spell slot")));
+    }
+
+    #[test]
+    fn bonus_action_runs_once_per_turn_beside_the_action() {
+        let mut block = pc_block("pc", 40);
+        block.bonus_actions.push(ability("second-wind", vec![fx(serde_json::json!({"heal": {"dice": "1d1", "modifier": 9}}))], None));
+        block.actions.push(ability("wait", vec![], None));
+        let mut pc = test_combatant("pc", "pc", 40, "ally");
+        pc.hp = 10;
+        let mut state = test_encounter(vec![block], vec![pc]);
+        act(&mut state, "pc", "second-wind", &["pc"]).unwrap();
+        assert_eq!(state.combatants[0].hp, 20);
+        assert!(state.combatants[0].action_economy.bonus_action_used);
+        let err = act(&mut state, "pc", "second-wind", &["pc"]).unwrap_err();
+        assert!(matches!(err, EngineError::Illegal(m) if m.contains("bonus action")));
+        act(&mut state, "pc", "wait", &[]).unwrap();
+    }
+
+    #[test]
+    fn reactions_run_off_turn_once_until_the_owner_starts_a_turn() {
+        let mut block = caster_block(1);
+        block.spell_slots = Some(vec![4]);
+        block.reactions.push(ability("shield", vec![Effect::Cast(cast("shield", Some(1)))], None));
+        let mut state = test_encounter(
+            vec![block, test_stat_block("brute", "Brute", 50, 10)],
+            vec![test_combatant("brute", "brute", 50, "enemy"), test_combatant("mage", "mage", 30, "ally")],
+        );
+        assert_eq!(state.active_turn.as_deref(), Some("brute"));
+        act(&mut state, "mage", "shield", &["mage"]).unwrap();
+        assert_eq!(ac_modifier(&state, &state.combatants[1].clone()), 5);
+        let err = act(&mut state, "mage", "shield", &["mage"]).unwrap_err();
+        assert!(matches!(err, EngineError::Illegal(m) if m.contains("reaction")));
+        end_turn_events(&mut state).unwrap();
+        assert!(!state.combatants[1].action_economy.reaction_used);
+    }
+
+    #[test]
+    fn a_hit_on_a_downed_pc_adds_death_save_failures() {
+        for seed in 1..60 {
+            let mut state = brute_vs_pc(20, smash(30, "1d6", 0), |pc| {
+                pc.hp = 0;
+                pc.end_state = EndState::Unconscious;
+            });
+            state.rng = RngState::new(seed);
+            let events = act(&mut state, "brute", "smash", &["pc"]).unwrap();
+            let natural = events.iter().find(|e| e.kind == "attack").and_then(|e| e.roll).unwrap();
+            let expected = match natural {
+                1 => 0,
+                20 => 2,
+                _ => 1,
+            };
+            assert_eq!(state.combatants[0].death_saves.failures, expected, "seed {seed} rolled {natural}");
+            assert_eq!(state.combatants[0].hp, 0, "damage while down never goes below 0");
+        }
+    }
+
+    #[test]
+    fn three_failures_from_hits_kill_a_downed_pc() {
+        let mut state = brute_vs_pc(20, smash(30, "1d6", 0), |pc| {
+            pc.hp = 0;
+            pc.end_state = EndState::Unconscious;
+            pc.death_saves.failures = 2;
+        });
+        state.rng = RngState::new(2);
+        let events = act(&mut state, "brute", "smash", &["pc"]).unwrap();
+        if events.iter().any(|e| e.kind == "damage") {
+            assert_eq!(state.combatants[0].end_state, EndState::Dead);
+        }
+    }
+
+    #[test]
+    fn massive_damage_kills_a_pc_outright() {
+        let mut state = brute_vs_pc(10, smash(30, "1d1", 40), |_| {});
+        state.rng = RngState::new(3);
+        let events = act(&mut state, "brute", "smash", &["pc"]).unwrap();
+        assert!(events.iter().any(|e| e.kind == "damage"));
+        assert_eq!(state.combatants[0].end_state, EndState::Dead);
+    }
+
+    #[test]
+    fn the_dying_field_not_the_class_decides_who_makes_death_saves() {
+        let mut state = brute_vs_pc(10, smash(30, "1d1", 12), |_| {});
+        state.stat_blocks[0].stat_block.class = None;
+        state.rng = RngState::new(3);
+        act(&mut state, "brute", "smash", &["pc"]).unwrap();
+        assert_eq!(state.combatants[0].end_state, EndState::Unconscious, "dying creature without a class");
+
+        let mut state = brute_vs_pc(10, smash(30, "1d1", 12), |_| {});
+        state.stat_blocks[0].stat_block.dying = false;
+        state.rng = RngState::new(3);
+        act(&mut state, "brute", "smash", &["pc"]).unwrap();
+        assert_eq!(state.combatants[0].end_state, EndState::Dead, "classed creature without the dying rules");
+    }
+
+    #[test]
+    fn healing_a_downed_pc_restores_consciousness_and_clears_saves() {
+        let mut block = caster_block(1);
+        block.actions.push(ability("mend", vec![fx(serde_json::json!({"heal": {"dice": "1d1", "modifier": 4}}))], None));
+        let mut downed = test_combatant("pc", "pc", 20, "ally");
+        downed.hp = 0;
+        downed.end_state = EndState::Unconscious;
+        downed.death_saves = DeathSaves { successes: 1, failures: 2 };
+        let mut state = test_encounter(vec![block, pc_block("pc", 20)], vec![test_combatant("mage", "mage", 30, "ally"), downed]);
+        let events = act(&mut state, "mage", "mend", &["pc"]).unwrap();
+        assert!(events.iter().any(|e| e.kind == "revive"));
+        assert_eq!((state.combatants[1].hp, state.combatants[1].end_state), (5, EndState::Active));
+        assert_eq!(state.combatants[1].death_saves.failures, 0);
+    }
+
+    #[test]
+    fn legendary_actions_follow_the_per_round_budget() {
+        let mut dragon = test_stat_block("dragon", "Dragon", 100, 18);
+        dragon.legendary_uses_per_round = 2;
+        dragon.legendary_actions.push(smash(5, "1d1", 0));
+        let mut state = test_encounter(
+            vec![dragon, pc_block("pc", 200)],
+            vec![test_combatant("pc", "pc", 200, "ally"), test_combatant("dragon", "dragon", 100, "enemy")],
+        );
+        let targets = ["pc".to_string()];
+        use_legendary_action(&mut state, "dragon", "smash", &targets).unwrap();
+        use_legendary_action(&mut state, "dragon", "smash", &targets).unwrap();
+        assert!(matches!(use_legendary_action(&mut state, "dragon", "smash", &targets), Err(EngineError::Illegal(_))));
+        end_turn_events(&mut state).unwrap();
+        assert_eq!(state.active_turn.as_deref(), Some("dragon"));
+        use_legendary_action(&mut state, "dragon", "smash", &targets).unwrap();
+    }
+
+    #[test]
+    fn cooldown_abilities_come_back_at_the_start_of_the_owners_turn() {
+        let mut block = test_stat_block("brute", "Brute", 50, 10);
+        let mut slam = smash(5, "1d1", 0);
+        slam.usage = Some(Usage::CooldownUntilNextTurn);
+        block.actions.push(slam);
+        let mut state = test_encounter(vec![block, pc_block("pc", 200)], vec![
+            test_combatant("brute", "brute", 50, "enemy"),
+            test_combatant("pc", "pc", 200, "ally"),
+        ]);
+        act(&mut state, "brute", "smash", &["pc"]).unwrap();
+        let entry = state.stat_blocks[0].stat_block.actions[0].clone();
+        assert!(!ability_ready(&state, "brute", &entry));
+        end_turn_events(&mut state).unwrap();
+        end_turn_events(&mut state).unwrap();
+        assert_eq!(state.active_turn.as_deref(), Some("brute"));
+        assert!(ability_ready(&state, "brute", &entry));
+    }
+
+    #[test]
+    fn area_wrapper_caps_the_targets_it_resolves() {
+        let mut block = test_stat_block("drake", "Drake", 50, 10);
+        block.actions.push(ability(
+            "spit",
+            vec![fx(serde_json::json!({"area": {"area": {"cone": {"size": 15}}, "origin": "self_", "target_count": 2,
+                "effect": {"damage": {"dice": "1d1", "type": "acid", "modifier": 2}}}}))],
+            None,
+        ));
+        let mut blocks = vec![block];
+        let mut combatants = vec![test_combatant("drake", "drake", 50, "enemy")];
+        for id in ["a", "b", "c"] {
+            blocks.push(pc_block(id, 20));
+            combatants.push(test_combatant(id, id, 20, "ally"));
+        }
+        let mut state = test_encounter(blocks, combatants);
+        act(&mut state, "drake", "spit", &["a", "b", "c"]).unwrap();
+        let hp: Vec<i32> = state.combatants[1..].iter().map(|c| c.hp).collect();
+        assert_eq!(hp, vec![17, 17, 20]);
+    }
+
+    #[test]
+    fn failed_saves_apply_their_on_failure_effects() {
+        let mut block = test_stat_block("gorgon", "Gorgon", 50, 10);
+        block.actions.push(ability(
+            "gaze",
+            vec![fx(serde_json::json!({"saving_throw": {"ability": "con", "dc": 40, "half_on_success": false,
+                "no_damage_on_success": true, "damage": [], "on_failure":[{"condition": {"condition": "restrained", "duration": {"rounds": 1}}}]}}))],
+            None,
+        ));
+        let mut state = test_encounter(vec![block, pc_block("pc", 20)], vec![
+            test_combatant("gorgon", "gorgon", 50, "enemy"),
+            test_combatant("pc", "pc", 20, "ally"),
+        ]);
+        act(&mut state, "gorgon", "gaze", &["pc"]).unwrap();
+        assert!(state.combatants[1].conditions.iter().any(|c| c.condition == Condition::Restrained));
+    }
+
+    #[test]
+    fn damage_ends_conditions_marked_ends_on_damage() {
+        let blocks = vec![test_stat_block("a", "A", 20, 10), test_stat_block("b", "B", 20, 10)];
+        let mut state = test_encounter(blocks, vec![test_combatant("a", "a", 20, "ally"), test_combatant("b", "b", 20, "enemy")]);
+        state.combatants[1].conditions.push(ConditionInstance { condition: Condition::Unconscious, duration: Duration::Concentration, source: Some("a".into()), ends_on_damage: true });
+        state.combatants[1].conditions.push(ConditionInstance { condition: Condition::Prone, duration: Duration::Permanent, source: None, ends_on_damage: false });
+        let mut stream = Stream::from_seed(1);
+        let mut events = Vec::new();
+        apply_damage(&mut state, &mut stream, "b", 3, Some("a"), false, false, &mut events).unwrap();
+        let left: Vec<Condition> = state.combatants[1].conditions.iter().map(|c| c.condition).collect();
+        assert_eq!(left, vec![Condition::Prone]);
+        assert!(events.iter().any(|e| e.message.contains("roused")));
+    }
+
+    #[test]
+    fn breaking_concentration_ends_what_it_held() {
+        let blocks = vec![test_stat_block("a", "A", 20, 10), test_stat_block("b", "B", 20, 10)];
+        let mut state = test_encounter(blocks, vec![test_combatant("a", "a", 20, "ally"), test_combatant("b", "b", 20, "enemy")]);
+        state.combatants[0].concentration = Some("hold-person".into());
+        state.combatants[1].conditions.push(ConditionInstance { condition: Condition::Paralyzed, duration: Duration::Concentration, source: Some("a".into()), ends_on_damage: false });
+        state.combatants[1].conditions.push(ConditionInstance { condition: Condition::Prone, duration: Duration::Concentration, source: Some("b".into()), ends_on_damage: false });
+        state.active_modifiers.push(ActiveModifier { target: ModifierTarget::ArmorClass, change: ModifierChange::Add(2), remaining: Duration::Concentration, source: Some("a".into()) });
+        let mut events = Vec::new();
+        break_concentration(&mut state, "a", &mut events).unwrap();
+        assert_eq!(state.combatants[1].conditions.len(), 1);
+        assert_eq!(state.combatants[1].conditions[0].condition, Condition::Prone);
+        assert!(state.active_modifiers.is_empty());
+    }
+
+    #[test]
+    fn moving_mirrors_the_band_on_the_target() {
+        let blocks = vec![test_stat_block("a", "A", 20, 10), test_stat_block("b", "B", 20, 10)];
+        let mut state = test_encounter(blocks, vec![test_combatant("a", "a", 20, "ally"), test_combatant("b", "b", 20, "enemy")]);
+        state.combatants[0].ranges.insert("b".into(), RangeBand::Near);
+        state.combatants[1].ranges.insert("a".into(), RangeBand::Near);
+        move_combatant(&mut state, "a", Some("b"), RangeBand::Far, 30).unwrap();
+        assert_eq!(state.combatants[1].ranges["a"], RangeBand::Far);
     }
 }

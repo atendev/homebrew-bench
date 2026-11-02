@@ -179,6 +179,9 @@ pub struct Damage {
 pub struct ConditionEffect {
     pub condition: Condition,
     pub duration: Duration,
+    /// The condition ends when the creature takes damage, as with Sleep.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub ends_on_damage: bool,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub source_ability: Option<String>,
 }

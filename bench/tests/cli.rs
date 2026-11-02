@@ -272,8 +272,59 @@ fn help_json_lists_every_command() {
     let names: Vec<&str> = catalog["commands"].as_array().unwrap().iter().map(|c| c["name"].as_str().unwrap()).collect();
     for name in [
         "start", "action", "move", "respond", "end-turn", "end", "state", "list", "clean", "override", "roll", "add",
-        "remove", "undo", "replay", "log",
+        "remove", "undo", "replay", "log", "batch",
     ] {
         assert!(names.contains(&name), "{name} missing from {names:?}");
     }
+}
+
+#[test]
+fn batch_is_byte_identical_and_fight_replays_its_log() {
+    let bench = Bench::new();
+    let args = ["batch", "ogre", "--seed", "5", "--levels", "2-3", "--fights", "3"];
+    let run = |out: &str| {
+        let mut a = args.to_vec();
+        a.extend_from_slice(&["--out", out]);
+        bench.ok(&a)
+    };
+    let first = run("one");
+    let second = run("two");
+    let html = |dir: &str| std::fs::read_to_string(bench.cwd.join(dir).join("report.html")).unwrap();
+    assert_eq!(html("one"), html("two"));
+    assert_eq!(first["levels"], second["levels"]);
+    assert_eq!(first["master_seed"], 5);
+    assert_eq!(first["levels"].as_array().unwrap().len(), 2);
+    let sample = &first["samples"][0];
+    let index = sample["index"].as_u64().unwrap().to_string();
+    let replay = bench.ok(&["batch", "ogre", "--seed", "5", "--fights", "3", "--fight", index.as_str()]);
+    let file = bench.cwd.join("one").join(sample["file"].as_str().unwrap());
+    assert_eq!(replay["log"].as_str().unwrap(), std::fs::read_to_string(file).unwrap());
+    assert!(replay["log"].as_str().unwrap().contains("STANDING ASSUMPTIONS"));
+}
+
+#[test]
+fn batch_refuses_unresolved_homebrew_until_assumed() {
+    let bench = Bench::new();
+    let mut monster: Value = serde_json::from_str(&std::fs::read_to_string(data("fixtures/ogre.json")).unwrap()).unwrap();
+    monster["id"] = "odd-ogre".into();
+    monster["actions"][0]["agent_clauses"] = serde_json::json!(["It does something strange."]);
+    let id = monster["actions"][0]["id"].as_str().unwrap().to_string();
+    let path = bench.cwd.join("odd-ogre.json");
+    std::fs::write(&path, monster.to_string()).unwrap();
+    let path = path.display().to_string();
+    let (code, json) = bench.run(&["batch", path.as_str(), "--levels", "1", "--fights", "1", "--seed", "1"]);
+    assert_ne!(code, 0);
+    assert_eq!(json["error"]["code"], "unmodeled_ability_refused");
+    assert_eq!(json["error"]["details"]["abilities"][0], id.as_str());
+    let assume = format!("abilities.{id}=ignored");
+    let out = bench.ok(&["batch", path.as_str(), "--levels", "1", "--fights", "1", "--seed", "1", "--assume", assume.as_str(), "--out", "r"]);
+    assert_eq!(out["standing_assumptions"][0]["path"], format!("abilities.{id}"));
+}
+
+#[test]
+fn batch_argument_errors() {
+    let bench = Bench::new();
+    assert_eq!(bench.err(&["batch", "no-such-monster", "--seed", "1"]), "not_found");
+    assert_eq!(bench.err(&["batch", "ogre", "--levels", "0-3", "--seed", "1"]), "invalid_argument");
+    assert_eq!(bench.err(&["batch", "ogre", "--party", "missing", "--seed", "1"]), "not_found");
 }
