@@ -27,7 +27,7 @@ Read `digest.active_turn` after every command. For each turn:
 
 1. **Declare.** On a PC's turn, ask the user what the PC does. On a monster's turn, choose its action from its stat block and say what it attempts.
 2. **Resolve, one command per declared action.**
-   - `bench move <actor> <engaged|near|far> --target <id>` moves relative to one combatant. Always pass `--target`: without it the command spends movement and logs the move but changes no ranges or engagement. To move away from several combatants, run one targeted move per combatant. `--feet <n>` sets the feet available for the move; it defaults to the remaining speed. `digest` lists each combatant's `ranges` and `engagement`.
+   - `bench move <actor> <engaged|near|far> --target <id>` moves relative to one combatant. Without `--target` the actor moves to that band relative to every other combatant and breaks every engagement it leaves. It costs the largest single-pair change, and dead, unconscious and stable combatants neither add to the cost nor get an `opportunity_attack` event. Moving to `engaged` always needs `--target`. `--feet <n>` sets the feet available for the move; it defaults to the remaining speed. `digest` lists each combatant's `ranges` and `engagement`.
    - `bench action <actor> <action-id> <target-id>...` resolves one action, bonus action, or reaction by its id from the stat block, every roll inside it included. Multiattack, spells and saves all go through this command.
 3. **Answer prompts.** When `pending` is set, the encounter waits. `pending.message` says what it needs.
    - A PC dice prompt goes to the user. Pass their natural die faces with `bench respond <face>...`, or `bench respond --decline` to let the engine roll the rest.
@@ -43,7 +43,7 @@ Each of these is agent judgment. Label it, then record it through `bench roll <d
 
 - **Agent clauses and unmodeled abilities.** `bench action` runs only an ability's `effects`. Before you resolve one, check its `kind` and `agent_clauses` in the stat block, and apply any text the effects leave out after the command returns. A spell missing from the effects file comes back as an `unmodeled_cast` event; resolve that spell yourself.
 - **Reactions.** The engine opens no reaction windows. When a trigger happens, such as a creature leaving engagement or a spell being cast, ask the user whether a PC reacts and decide for monsters. A reaction listed on the stat block runs with `bench action <actor> <reaction-id> <target-id>` out of turn.
-  Opportunity attacks are never rolled by the engine. A targeted move that breaks engagement returns an `opportunity_attack` event naming who may attack. `bench action` refuses an ordinary attack off-turn, so resolve the attack with `bench roll` and apply the damage with `bench override`.
+  Opportunity attacks are never rolled by the engine. A move that breaks engagement returns an `opportunity_attack` event naming who may attack. `bench action` refuses an ordinary attack off-turn, so resolve the attack with `bench roll` and apply the damage with `bench override`.
 - **Legendary actions.** Live mode has no command for them. Resolve them between turns with `bench roll` and `bench override`.
 - **Lighting, terrain, cover**, and every ruling the ruleset leaves open.
 

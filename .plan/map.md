@@ -62,6 +62,7 @@ Both modes ship in phase 1. Everything the engine can't model is labeled agent j
 - [Agent skill and house-rule templates](closed/033-agent-skill-and-house-rule-templates.md): `.agents/skills/homebrew-bench/` holds a short `SKILL.md` (bootstrap, house-rule loading, honest output) plus batch, live and house-rule references and a template, with a `.claude/skills` symlink, a root `AGENTS.md`, and a test that checks every documented command and flag against `bench help --json`. The skill follows the real CLI where the ticket differed, and two engine defects became tickets.
 - [Release packaging, legal notices and installers](closed/034-release-packaging-legal-notices-and-installers.md): root `LICENSE` (MIT), `NOTICE` and `README.md`, cargo-dist archives for five targets holding `bench`, the notices and the skill, and `install.sh`/`install.ps1`/`update.sh` that install into `~/.bench/` and copy the skill to detected agents. A clone builds itself, and a missing release archive clones and builds that release. `install.ps1` still needs a manual Windows run.
 - [Batch sample replay command for homebrew files](closed/042-batch-sample-replay-command.md): `BatchSpec` carries the `bench batch` arguments as passed, so each sample's `replay` string keeps the file path, `--party`, the assumptions and their reason, shell-quoted, and adds `--levels` for a party missing levels. Fixture replays are unchanged.
+- [Untargeted move changes no positions](closed/043-untargeted-move-changes-no-positions.md): `bench move` without `--target` moves the actor relative to every other combatant and breaks every engagement, priced at the largest single-pair change among active combatants, with `opportunity_attack` events only from active ones. Untargeted `engaged` is refused, and batch is unaffected.
 
 ## Not yet specified
 
@@ -87,4 +88,4 @@ Both modes ship in phase 1. Everything the engine can't model is labeled agent j
 
 Takeable now, in order:
 
-- Untargeted move changes no positions (task)
+- None. The remaining work sits in Not yet specified.

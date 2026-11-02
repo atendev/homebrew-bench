@@ -133,7 +133,7 @@ enum Commands {
         actor: String,
         #[arg(value_enum)]
         band: Band,
-        /// Move relative to this combatant only.
+        /// Move relative to this combatant only. Required to move to engaged.
         #[arg(long)]
         target: Option<String>,
         /// Feet spent; defaults to the remaining walking speed.

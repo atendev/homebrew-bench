@@ -827,54 +827,86 @@ fn move_combatant(
     feet: u32,
 ) -> Result<Vec<EngineEvent>, EngineError> {
     let i = index_of(state, actor_id)?;
-    let current = target_id
-        .and_then(|id| state.combatants[i].ranges.get(id).copied())
-        .unwrap_or(RangeBand::Engaged);
-    let cost = match (current, band) {
+    // (combatant id, whether it prices the move and may react to it)
+    let others: Vec<(String, bool)> = match target_id {
+        Some(id) => vec![(id.to_string(), true)],
+        None if band == RangeBand::Engaged => {
+            return Err(EngineError::Illegal("an untargeted move cannot engage; pass --target".into()));
+        }
+        None => state
+            .combatants
+            .iter()
+            .filter(|c| c.id != actor_id)
+            .map(|c| (c.id.clone(), c.end_state == EndState::Active))
+            .collect(),
+    };
+    let cost = others
+        .iter()
+        .filter(|(_, counts)| *counts)
+        .map(|(id, _)| band_change_cost(state.combatants[i].ranges.get(id).copied().unwrap_or(RangeBand::Engaged), band))
+        .max()
+        .unwrap_or(0);
+    if feet < cost {
+        return Err(EngineError::Illegal(format!("movement requires {cost} feet")));
+    }
+    state.combatants[i].action_economy.movement_used_feet += cost;
+    let mut events = vec![event("movement", format!("{actor_id} moves to {}", format!("{band:?}").to_lowercase()), actor_id, target_id.unwrap_or(actor_id))];
+    for (other, may_react) in &others {
+        set_band(state, i, actor_id, other, band, *may_react, &mut events)?;
+    }
+    Ok(events)
+}
+
+fn band_change_cost(current: RangeBand, band: RangeBand) -> u32 {
+    match (current, band) {
         (RangeBand::Engaged, RangeBand::Engaged)
         | (RangeBand::Near, RangeBand::Near)
         | (RangeBand::Far, RangeBand::Far) => 0,
         (RangeBand::Engaged, RangeBand::Near) | (RangeBand::Near, RangeBand::Engaged) => 5,
         (RangeBand::Near, RangeBand::Far) | (RangeBand::Far, RangeBand::Near) => 30,
         (RangeBand::Engaged, RangeBand::Far) | (RangeBand::Far, RangeBand::Engaged) => 35,
-    };
-    if feet < cost {
-        return Err(EngineError::Illegal(format!("movement requires {cost} feet")));
     }
-    state.combatants[i].action_economy.movement_used_feet += cost;
-    let mut events = vec![event("movement", format!("{actor_id} moves to {}", format!("{band:?}").to_lowercase()), actor_id, target_id.unwrap_or(actor_id))];
-    if let Some(target_id) = target_id {
-        let was_engaged = state.combatants[i].engagement.contains(&target_id.to_string());
-        state.combatants[i].ranges.insert(target_id.into(), band);
-        if let Ok(j) = index_of(state, target_id) {
-            state.combatants[j].ranges.insert(actor_id.into(), band);
+}
+
+fn set_band(
+    state: &mut EncounterState,
+    i: usize,
+    actor_id: &str,
+    target_id: &str,
+    band: RangeBand,
+    may_react: bool,
+    events: &mut Vec<EngineEvent>,
+) -> Result<(), EngineError> {
+    let was_engaged = state.combatants[i].engagement.contains(&target_id.to_string());
+    state.combatants[i].ranges.insert(target_id.into(), band);
+    if let Ok(j) = index_of(state, target_id) {
+        state.combatants[j].ranges.insert(actor_id.into(), band);
+    }
+    if band == RangeBand::Engaged {
+        if !state.combatants[i].engagement.contains(&target_id.to_string()) {
+            state.combatants[i].engagement.push(target_id.into());
         }
-        if band == RangeBand::Engaged {
-            if !state.combatants[i].engagement.contains(&target_id.to_string()) {
-                state.combatants[i].engagement.push(target_id.into());
-            }
-            let j = index_of(state, target_id)?;
-            if !state.combatants[j].engagement.contains(&actor_id.to_string()) {
-                state.combatants[j].engagement.push(actor_id.into());
-            }
-        } else {
-            state.combatants[i].engagement.retain(|id| id != target_id);
+        let j = index_of(state, target_id)?;
+        if !state.combatants[j].engagement.contains(&actor_id.to_string()) {
+            state.combatants[j].engagement.push(actor_id.into());
+        }
+    } else {
+        state.combatants[i].engagement.retain(|id| id != target_id);
+        if let Ok(j) = index_of(state, target_id) {
+            state.combatants[j].engagement.retain(|id| id != actor_id);
+        }
+        // Leaving engagement opens Opportunity Attack reaction window
+        if was_engaged && may_react {
             if let Ok(j) = index_of(state, target_id) {
-                state.combatants[j].engagement.retain(|id| id != actor_id);
-            }
-            // Leaving engagement opens Opportunity Attack reaction window
-            if was_engaged {
-                if let Ok(j) = index_of(state, target_id) {
-                    if state.combatants[j].action_economy.reaction_used {
-                        events.push(event("opportunity_attack", format!("{target_id} has no reaction available"), target_id, actor_id));
-                    } else {
-                        events.push(event("opportunity_attack", format!("{target_id} may use an Opportunity Attack on {actor_id}"), target_id, actor_id));
-                    }
+                if state.combatants[j].action_economy.reaction_used {
+                    events.push(event("opportunity_attack", format!("{target_id} has no reaction available"), target_id, actor_id));
+                } else {
+                    events.push(event("opportunity_attack", format!("{target_id} may use an Opportunity Attack on {actor_id}"), target_id, actor_id));
                 }
             }
         }
     }
-    Ok(events)
+    Ok(())
 }
 
 fn end_turn_events(state: &mut EncounterState) -> Result<Vec<EngineEvent>, EngineError> {
@@ -2654,5 +2686,60 @@ mod tests {
         state.combatants[1].ranges.insert("a".into(), RangeBand::Near);
         move_combatant(&mut state, "a", Some("b"), RangeBand::Far, 30).unwrap();
         assert_eq!(state.combatants[1].ranges["a"], RangeBand::Far);
+    }
+
+    fn three_way_encounter() -> EncounterState {
+        let blocks = vec![test_stat_block("a", "A", 20, 10), test_stat_block("b", "B", 20, 10), test_stat_block("c", "C", 20, 10)];
+        let mut state = test_encounter(blocks, vec![test_combatant("a", "a", 20, "ally"), test_combatant("b", "b", 20, "enemy"), test_combatant("c", "c", 20, "enemy")]);
+        state.combatants[0].ranges.insert("b".into(), RangeBand::Engaged);
+        state.combatants[1].ranges.insert("a".into(), RangeBand::Engaged);
+        state.combatants[0].engagement.push("b".into());
+        state.combatants[1].engagement.push("a".into());
+        state.combatants[0].ranges.insert("c".into(), RangeBand::Near);
+        state.combatants[2].ranges.insert("a".into(), RangeBand::Near);
+        state
+    }
+
+    #[test]
+    fn untargeted_move_changes_the_band_to_everyone() {
+        let mut state = three_way_encounter();
+        let events = move_combatant(&mut state, "a", None, RangeBand::Far, 35).unwrap();
+        assert_eq!(state.combatants[0].ranges["b"], RangeBand::Far);
+        assert_eq!(state.combatants[0].ranges["c"], RangeBand::Far);
+        assert_eq!(state.combatants[1].ranges["a"], RangeBand::Far);
+        assert_eq!(state.combatants[2].ranges["a"], RangeBand::Far);
+        assert!(state.combatants[0].engagement.is_empty());
+        assert!(state.combatants[1].engagement.is_empty());
+        let attacks: Vec<_> = events.iter().filter(|e| e.kind == "opportunity_attack").collect();
+        assert_eq!(attacks.len(), 1);
+        assert!(attacks[0].message.starts_with("b may use"));
+    }
+
+    #[test]
+    fn untargeted_move_costs_the_largest_single_pair() {
+        let mut state = three_way_encounter();
+        let err = move_combatant(&mut state, "a", None, RangeBand::Far, 30).unwrap_err();
+        assert!(err.to_string().contains("35 feet"));
+        assert_eq!(state.combatants[0].ranges["b"], RangeBand::Engaged);
+        move_combatant(&mut state, "a", None, RangeBand::Far, 35).unwrap();
+        assert_eq!(state.combatants[0].action_economy.movement_used_feet, 35);
+    }
+
+    #[test]
+    fn untargeted_move_skips_combatants_that_are_down() {
+        let mut state = three_way_encounter();
+        state.combatants[1].end_state = EndState::Dead;
+        let events = move_combatant(&mut state, "a", None, RangeBand::Far, 30).unwrap();
+        assert!(events.iter().all(|e| e.kind != "opportunity_attack"));
+        assert_eq!(state.combatants[0].ranges["b"], RangeBand::Far);
+        assert_eq!(state.combatants[0].ranges["c"], RangeBand::Far);
+        assert!(state.combatants[0].engagement.is_empty());
+        assert!(state.combatants[1].engagement.is_empty());
+    }
+
+    #[test]
+    fn untargeted_move_cannot_engage() {
+        let mut state = three_way_encounter();
+        assert!(move_combatant(&mut state, "a", None, RangeBand::Engaged, 30).is_err());
     }
 }
