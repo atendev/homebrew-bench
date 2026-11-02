@@ -45,6 +45,15 @@ impl LogLine {
         Self { text: text.into(), public: Visibility::Hidden }
     }
 
+    /// Append `tag` to the full line and to a replaced public line; hidden lines stay hidden.
+    pub fn tagged(mut self, tag: &str) -> Self {
+        self.text.push_str(tag);
+        if let Visibility::Replaced(public) = &mut self.public {
+            public.push_str(tag);
+        }
+        self
+    }
+
     /// The public rendering of this line, or `None` when it is hidden.
     pub fn public_text(&self) -> Option<&str> {
         match &self.public {
@@ -123,6 +132,16 @@ mod tests {
             lines,
             state_hash: format!("h{index}"),
         }
+    }
+
+    #[test]
+    fn tagged_lines_carry_the_tag_into_the_public_view() {
+        let tag = " [standing assumption: goblin.hp]";
+        let replaced = LogLine::replaced("goblin takes 4 damage", "goblin takes damage (bloodied)").tagged(tag);
+        assert_eq!(replaced.text, format!("goblin takes 4 damage{tag}"));
+        assert_eq!(replaced.public_text(), Some(format!("goblin takes damage (bloodied){tag}").as_str()));
+        assert_eq!(LogLine::same("hit").tagged(tag).public_text(), Some(format!("hit{tag}").as_str()));
+        assert_eq!(LogLine::hidden("recharge").tagged(tag).public_text(), None);
     }
 
     #[test]

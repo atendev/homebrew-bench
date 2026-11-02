@@ -18,6 +18,8 @@ Write root `NOTICE`, `LICENSE`, and `README.md`, configure `cargo-dist` release 
 
 Consult `implement`, `tdd`, and `domain-modeling`.
 
+Release notes start from `CHANGELOG.md` (Unreleased), which includes replay-compatibility notes for encounters recorded before ticket 041.
+
 Key decisions to implement:
 - **Legal notices and root docs (`docs/adr/0013-embedded-reference-data-and-skill-packaging.md`, closed tickets 019, 021):**
   - Root `NOTICE` file containing the verbatim SRD 5.2.1 CC-BY-4.0 attribution statement with `https://www.dndbeyond.com/srd`, an explicit modification notice (stating that SRD material was reformatted, restructured, and analyzed), no other attribution to Wizards, and the `5e-database` MIT notice (matching `data/srd/README.md`).
