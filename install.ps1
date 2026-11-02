@@ -1,6 +1,6 @@
 # Install or update `bench`, its legal notices, and the homebrew-bench agent skill.
 #
-#   irm https://raw.githubusercontent.com/atendev/homebrew-bench/main/install.ps1 | iex
+#   irm https://raw.githubusercontent.com/atendev/homebrew-bench/master/install.ps1 | iex
 #   ./install.ps1 [--no-skills] [--agent <name>]... [--version <tag>] [--from-source]
 #
 # Environment overrides: BENCH_HOME (default %USERPROFILE%\.bench), BENCH_REPO

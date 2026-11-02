@@ -2,7 +2,7 @@
 # Refresh an existing bench install. Takes the same options as install.sh and
 # keeps config.toml, index, parties/, house-rules/, encounters/ and reports/.
 #
-#   curl -fsSL https://raw.githubusercontent.com/atendev/homebrew-bench/main/update.sh | sh
+#   curl -fsSL https://raw.githubusercontent.com/atendev/homebrew-bench/master/update.sh | sh
 
 set -eu
 

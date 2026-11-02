@@ -1,7 +1,7 @@
 #!/bin/sh
 # Install or update `bench`, its legal notices, and the homebrew-bench agent skill.
 #
-#   curl -fsSL https://raw.githubusercontent.com/atendev/homebrew-bench/main/install.sh | sh
+#   curl -fsSL https://raw.githubusercontent.com/atendev/homebrew-bench/master/install.sh | sh
 #   ./install.sh [--no-skills] [--agent <name>]... [--version <tag>] [--from-source]
 #
 # Environment overrides: BENCH_HOME (default ~/.bench), BENCH_REPO (owner/name),

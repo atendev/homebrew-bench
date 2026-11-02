@@ -12,13 +12,13 @@ Test D&D 5e homebrew monsters by running combats and reading the numbers.
 macOS and Linux:
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/atendev/homebrew-bench/main/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/atendev/homebrew-bench/master/install.sh | sh
 ```
 
 Windows (PowerShell):
 
 ```powershell
-irm https://raw.githubusercontent.com/atendev/homebrew-bench/main/install.ps1 | iex
+irm https://raw.githubusercontent.com/atendev/homebrew-bench/master/install.ps1 | iex
 ```
 
 The installer downloads the release archive for your platform and puts these in `~/.bench/` (`%USERPROFILE%\.bench` on Windows):
