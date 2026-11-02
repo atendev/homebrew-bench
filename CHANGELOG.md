@@ -13,6 +13,9 @@
 - Fixtures, the spell effects file, the standard party and the baseline are embedded in `bench` at compile time. `bench fixture list`, `bench fixture show <id>` and `bench party show [--level <1-20>]` print them, and a bare fixture or standard party id works wherever `bench start`, `bench add` and `bench batch` take a stat block path.
 - Batch warns when a monster casts a spell the effects file lacks, since those casts do nothing.
 - The `homebrew-bench` agent skill in `.agents/skills/homebrew-bench/` teaches any agent batch mode, live mode and house rules, with a house-rule template. `.claude/skills/homebrew-bench` links to it and `AGENTS.md` points to it.
+- `install.sh` (macOS, Linux) and `install.ps1` (Windows) install `bench`, `NOTICE`, `LICENSE` and the skill into `~/.bench/`, then copy the skill to `~/.agents/skills/` and to `~/.claude/`, `~/.cline/` and `~/.kiro/` when those agents are present. They take `--no-skills`, `--agent <name>`, `--version <tag>` and `--from-source`, verify the release checksum, build the checkout when run from a clone, clone and build the requested release when no archive fits the platform, exit 2 on a usage error, and keep `config.toml`, `index`, `parties/`, `house-rules/`, `encounters/` and `reports/` on re-run. `update.sh` re-runs the installer.
+- Release archives for macOS (x86_64, arm64), Linux (x86_64, arm64) and Windows (x86_64) are built by cargo-dist and hold `bench`, `NOTICE`, `LICENSE` and the `homebrew-bench` skill.
+- Root `README.md`, `LICENSE` (MIT) and `NOTICE`, which carries the SRD 5.2.1 CC-BY-4.0 attribution, a note of the changes made to the SRD material, and the 5e-database MIT notice.
 
 ### Changed
 

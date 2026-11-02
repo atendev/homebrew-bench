@@ -3,7 +3,7 @@ id: 034
 title: Release packaging, legal notices and installers
 type: task
 mode: AFK
-status: open
+status: closed
 blocked_by:
   - 032
 claimed: false
@@ -33,3 +33,13 @@ Key decisions to implement:
   - Add automated tests exercising installer flag parsing, directory layout, skill target detection, idempotent re-runs preserving `config.toml`, and `--from-source` local installation into a temporary `HOME`.
 
 ## Resolution
+
+Built. Root `LICENSE` is MIT, from the workspace `license` field. Root `NOTICE` carries the verbatim SRD 5.2.1 statement, a modification note (reformatted, restructured, corrected, and analyzed for the baseline curve), and the 5e-database MIT text copied from `data/srd/LICENSE-5e-database.md`. Root `README.md` covers what the tool does, installing, updating, and asking an agent for batch or live mode.
+
+`[workspace.metadata.dist]` in `Cargo.toml` (cargo-dist 0.34.0) builds `bench-<triple>.tar.gz` for macOS and Linux on x86_64 and arm64, and `.zip` for x86_64 Windows. Each archive holds `bench`, `NOTICE`, `LICENSE` and `homebrew-bench/`, with a `.sha256` beside it. dist's own installers are off. `dist generate` wrote `.github/workflows/release.yml`, which runs on version tags.
+
+`install.sh` and `install.ps1` take `--no-skills`, `--agent <claude|cline|kiro|agents|all>` (repeatable; replaces detection), `--version <tag>` and `--from-source`. Usage errors exit 2. They verify the checksum when the `.sha256` exists. Run from a clone with no `--version`, they build the checkout. When the archive for a requested release is missing, they clone that release and build it rather than the local checkout. They write `bin/bench`, `NOTICE`, `LICENSE` and `skills/homebrew-bench/` under `~/.bench/`, create `config.toml` (matching `Config::default()`) and `index` only when missing, and copy the skill as plain files to `~/.agents/skills/` plus each detected agent. `update.sh` re-runs `install.sh`. No `update.ps1`: re-run `install.ps1`.
+
+Deviations: no Windows fallback for the repo `.claude/skills` symlink, because the installer always copies from the canonical `.agents/skills/homebrew-bench/`.
+
+Verification: `bench/tests/install.rs` runs `install.sh` in a sandboxed HOME and PATH against `file://` releases and a fake `cargo` (10 tests), plus an ignored test that builds with real cargo (passes). A real archive from `dist build` installed and ran. `install.ps1` was reviewed by reading only, because pwsh is not installed here, so it needs a manual Windows run before the first release. Haiku audit: round 1 raised 8 points (6 fixed, 2 rejected with sources), round 2 approved. Reports: [requirements](../reports/034-requirements.md), [implementation](../reports/034-implementation.md).
