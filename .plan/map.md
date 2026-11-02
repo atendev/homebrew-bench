@@ -66,15 +66,7 @@ Both modes ship in phase 1. Everything the engine can't model is labeled agent j
 
 ## Not yet specified
 
-- Upcast spell scaling: `resolve_cast` ignores `Cast.slot_level` and `upcast`, so a dragon's level 3 Acid Arrow resolves at the effects file's base level. This depends on how the effects file states per-level scaling.
-
-- Player-dice marks for heal, temporary hit point and death save events: these dice go through the prompt but their events carry no `player_dice` flag yet. This depends on whether those events gain roll fields.
-
-- Batch policy gaps: v1 gives buffs, forced movement and teleports no score, takes no reactions, and the engine only logs opportunity attacks. The committed curve now exists; revisit when a ticket needs the policy to score these.
-
-- Live mode gaps the skill routes through agent judgment: the engine opens no reaction windows, has no live command for legendary actions, never rolls opportunity attacks (and refuses an ordinary attack off-turn), and has no lighting setting though roll modifiers name one. Revisit when live play shows which of these costs the DM most.
-
-- Magic items in the standard party: ruled out for phase 1, revisit if the CR baseline curve shows the party falling off SRD monsters at high levels.
+- Nothing. Every earlier patch graduated into tickets 044 to 052 on 2026-11-02.
 
 ## Out of scope
 
@@ -88,4 +80,15 @@ Both modes ship in phase 1. Everything the engine can't model is labeled agent j
 
 Takeable now, in order:
 
-- None. The remaining work sits in Not yet specified.
+- Engine-rolled opportunity attacks (grilling)
+- Batch policy scores buffs, forced movement and teleports (grilling)
+- Live legendary actions (grilling)
+- Upcast spell scaling (grilling)
+- Encounter lighting setting (grilling)
+- Player-dice marks for heal, temporary hit point and death save events (task, AFK)
+- Does the standard party fall off at high levels (task, AFK)
+
+Blocked:
+
+- Batch policy takes reactions (grilling), waits on Engine-rolled opportunity attacks
+- Live reaction windows (grilling), waits on Engine-rolled opportunity attacks
