@@ -21,6 +21,7 @@
 
 - Effective CR reads "around 1 or trivial" when a monster is already Low at level 1 (was "1 or lower").
 - The tactics policy no longer recurses without end when two combatants each carry condition effects; a control effect nested more than two threat evaluations deep counts as zero. This fixed a stack overflow on the Dryad and moves the policy to v2.
+- The `replay` command on each batch sample, and on `bench batch --fight` output, now reruns the fight for a homebrew file. It keeps the monster argument, `--party`, `--assumptions`, `--assume` and `--assume-reason` as passed, adds `--levels` when the party lacks some of levels 1 to 20, and shell-quotes each value. Before, it named the monster by id and dropped the assumptions.
 - A move now sets the range band on both combatants, not only the mover.
 - The log now says when a creature falls unconscious or dies from damage.
 - A condition can end when its creature takes damage. Sleep and Hypnotic Pattern now work this way.

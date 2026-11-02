@@ -39,6 +39,24 @@ pub struct BatchSpec {
     pub assumptions: Vec<StandingAssumption>,
     /// The curve to compare against; `None` compares against party level only.
     pub baseline: Option<Baseline>,
+    /// The arguments the batch was named by, so each sample's replay command reruns it.
+    /// `None` names the monster by id and the party by `party_name`.
+    pub invocation: Option<Invocation>,
+}
+
+/// The `bench batch` arguments that `BatchSpec` holds only in parsed form.
+#[derive(Debug, Clone)]
+pub struct Invocation {
+    /// The monster argument as passed: a stat block path or fixture id.
+    pub monster: String,
+    /// The `--party` folder name as passed; `None` is the built-in standard party.
+    pub party: Option<String>,
+    /// The `--assumptions` file as passed.
+    pub assumptions_file: Option<String>,
+    /// Each `--assume path=value` as passed, in order.
+    pub assume: Vec<String>,
+    /// `--assume-reason`, when it differs from the default.
+    pub assume_reason: Option<String>,
 }
 
 /// Why a batch cannot run.
@@ -454,18 +472,47 @@ pub fn log_file_name(monster: &str, level: u8, index: u64) -> String {
     format!("{monster}-level-{level}-fight-{index}.txt")
 }
 
-fn replay_command(spec: &BatchSpec, index: u64) -> String {
-    let mut cmd = format!("bench batch {} --seed {} --fight {index}", spec.monster.id, spec.master_seed);
+/// The POSIX shell command that replays fight `index` of this batch with its full log.
+pub fn replay_command(spec: &BatchSpec, index: u64) -> String {
+    let inv = spec.invocation.as_ref();
+    let monster = inv.map_or(&spec.monster.id, |i| &i.monster);
+    let party = match inv {
+        Some(i) => i.party.as_ref(),
+        None => Some(&spec.party_name).filter(|p| p.as_str() != "standard"),
+    };
+    let mut cmd = format!("bench batch {} --seed {} --fight {index}", shell_quote(monster), spec.master_seed);
     if spec.fights != DEFAULT_FIGHTS {
         cmd.push_str(&format!(" --fights {}", spec.fights));
     }
     if spec.max_rounds != DEFAULT_MAX_ROUNDS {
         cmd.push_str(&format!(" --max-rounds {}", spec.max_rounds));
     }
-    if spec.party_name != "standard" {
-        cmd.push_str(&format!(" --party {}", spec.party_name));
+    if let Some(party) = party {
+        cmd.push_str(&format!(" --party {}", shell_quote(party)));
+    }
+    if (1..=20).any(|l| !spec.party.contains_key(&l)) {
+        cmd.push_str(&format!(" --levels {}", level_of(index, spec.fights)));
+    }
+    let Some(inv) = inv else { return cmd };
+    if let Some(file) = &inv.assumptions_file {
+        cmd.push_str(&format!(" --assumptions {}", shell_quote(file)));
+    }
+    for a in &inv.assume {
+        cmd.push_str(&format!(" --assume {}", shell_quote(a)));
+    }
+    if let Some(reason) = &inv.assume_reason {
+        cmd.push_str(&format!(" --assume-reason {}", shell_quote(reason)));
     }
     cmd
+}
+
+fn shell_quote(word: &str) -> String {
+    let plain = |c: char| c.is_ascii_alphanumeric() || "-_./=:,+@%".contains(c);
+    if !word.is_empty() && word.chars().all(plain) {
+        word.to_string()
+    } else {
+        format!("'{}'", word.replace('\'', r"'\''"))
+    }
 }
 
 fn fight(spec: &BatchSpec, constants: &PolicyConstants, level: u8, index: u64, with_log: bool) -> Result<FightResult, BatchError> {
@@ -1162,6 +1209,7 @@ mod tests {
             master_seed: 42,
             assumptions: vec![],
             baseline: None,
+            invocation: None,
         }
     }
 
@@ -1196,6 +1244,33 @@ mod tests {
         assert!(log.contains("STANDING ASSUMPTIONS") && log.contains("DECISION") && log.contains("RESULT"));
         assert_eq!(a.summary.levels.len(), 2);
         assert_eq!(a.summary.samples.len(), 3);
+    }
+
+    #[test]
+    fn replay_command_quotes_the_invocation_and_names_the_level_for_partial_parties() {
+        let mut s = spec(fixture("ogre"), vec![1], 4);
+        assert_eq!(replay_command(&s, 2), "bench batch ogre --seed 42 --fight 2 --fights 4");
+        s.invocation = Some(Invocation {
+            monster: "ogre".into(),
+            party: Some("standard".into()),
+            assumptions_file: None,
+            assume: vec![],
+            assume_reason: None,
+        });
+        assert_eq!(replay_command(&s, 2), "bench batch ogre --seed 42 --fight 2 --fights 4 --party standard");
+        s.invocation = Some(Invocation {
+            monster: "brews/my ogre.json".into(),
+            party: Some("mine".into()),
+            assumptions_file: Some("a.json".into()),
+            assume: vec!["abilities.x=ignored".into()],
+            assume_reason: Some("the DM's call".into()),
+        });
+        s.party.retain(|&l, _| l == 3);
+        s.party_name = "mine".into();
+        assert_eq!(
+            replay_command(&s, 9),
+            r"bench batch 'brews/my ogre.json' --seed 42 --fight 9 --fights 4 --party mine --levels 3 --assumptions a.json --assume abilities.x=ignored --assume-reason 'the DM'\''s call'"
+        );
     }
 
     #[test]

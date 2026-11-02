@@ -61,6 +61,7 @@ Both modes ship in phase 1. Everything the engine can't model is labeled agent j
 - [Empirical CR baseline curve and embedded reference data](closed/032-empirical-cr-baseline-curve-and-embedded-reference-data.md): `data/baseline/curve.json` covers all 341 fixtures (174 with agent clauses left out), three-fixture pooling and thin labels, `bench batch` states a four-part verdict plus SRD facts and stale warnings, the four datasets are embedded in `bench` with `fixture`, `party` and `baseline` commands, and fixing a Dryad stack overflow moved the tactics policy to v2.
 - [Agent skill and house-rule templates](closed/033-agent-skill-and-house-rule-templates.md): `.agents/skills/homebrew-bench/` holds a short `SKILL.md` (bootstrap, house-rule loading, honest output) plus batch, live and house-rule references and a template, with a `.claude/skills` symlink, a root `AGENTS.md`, and a test that checks every documented command and flag against `bench help --json`. The skill follows the real CLI where the ticket differed, and two engine defects became tickets.
 - [Release packaging, legal notices and installers](closed/034-release-packaging-legal-notices-and-installers.md): root `LICENSE` (MIT), `NOTICE` and `README.md`, cargo-dist archives for five targets holding `bench`, the notices and the skill, and `install.sh`/`install.ps1`/`update.sh` that install into `~/.bench/` and copy the skill to detected agents. A clone builds itself, and a missing release archive clones and builds that release. `install.ps1` still needs a manual Windows run.
+- [Batch sample replay command for homebrew files](closed/042-batch-sample-replay-command.md): `BatchSpec` carries the `bench batch` arguments as passed, so each sample's `replay` string keeps the file path, `--party`, the assumptions and their reason, shell-quoted, and adds `--levels` for a party missing levels. Fixture replays are unchanged.
 
 ## Not yet specified
 
@@ -86,5 +87,4 @@ Both modes ship in phase 1. Everything the engine can't model is labeled agent j
 
 Takeable now, in order:
 
-- Batch sample replay command for homebrew files (task)
 - Untargeted move changes no positions (task)

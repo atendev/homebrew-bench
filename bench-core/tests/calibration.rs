@@ -28,6 +28,7 @@ fn spec(id: &str, levels: Vec<u8>, fights: u32) -> BatchSpec {
         master_seed: 7,
         assumptions,
         baseline: None,
+        invocation: None,
     }
 }
 
