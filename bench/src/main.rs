@@ -23,6 +23,8 @@ use clap::{Args, CommandFactory, Parser, Subcommand, ValueEnum};
 use serde::Serialize;
 use serde_json::Value;
 
+const DEFAULT_ASSUME_REASON: &str = "set on the bench batch command line";
+
 #[derive(Parser)]
 #[command(name = "bench")]
 #[command(version = ENGINE_VERSION)]
@@ -255,7 +257,7 @@ enum Commands {
         #[arg(long)]
         assume: Vec<String>,
         /// Reason recorded for every `--assume`.
-        #[arg(long, default_value = "set on the bench batch command line")]
+        #[arg(long, default_value = DEFAULT_ASSUME_REASON)]
         assume_reason: String,
         /// JSON file holding a list of `{path, value, reason}` standing assumptions.
         #[arg(long)]
@@ -685,12 +687,19 @@ fn run_batch(args: BatchArgs) -> Result<String, CodedError> {
             Some(Err(e)) => return Err(batch_error(e)),
             None => None,
         },
+        invocation: Some(batch::Invocation {
+            monster: args.monster.clone(),
+            party: args.party.clone(),
+            assumptions_file: args.assumptions.clone(),
+            assume: args.assume.clone(),
+            assume_reason: (args.assume_reason != DEFAULT_ASSUME_REASON).then(|| args.assume_reason.clone()),
+        }),
     };
     if let Some(index) = args.fight {
         let result = batch::replay_fight(&spec, index).map_err(batch_error)?;
         let mut out = serde_json::to_value(&result).unwrap_or_default();
         out["master_seed"] = spec.master_seed.into();
-        out["replay"] = format!("bench batch {} --seed {} --fight {index}", spec.monster.id, spec.master_seed).into();
+        out["replay"] = batch::replay_command(&spec, index).into();
         out["log"] = result.log.unwrap_or_default().into();
         return ok(out);
     }

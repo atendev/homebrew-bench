@@ -65,6 +65,6 @@ Present the result from the JSON on stdout, then point to `report_path` for the 
 6. The active house rules the numbers leave out.
 7. The sampled logs in `samples`, each with its file, level and fight index.
 
-To replay one fight with its full log, rerun the original command unchanged (same file path, `--seed`, `--fights`, `--assumptions` and every other flag) with `--fight <index>` added. The `replay` string in `samples` names the monster by its id and drops the assumptions, so it fails for a homebrew file; build the command yourself.
+To replay one fight with its full log, run its `replay` string from `samples` in the same working directory as the batch. It is a POSIX shell command that keeps the monster argument, seed and assumptions as you passed them.
 
 Report what the numbers show. Give no pass or fail grade and no redesign advice unless the user asks for it. When they ask, keep advice tied to a number in the report.

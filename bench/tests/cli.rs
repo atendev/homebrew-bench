@@ -321,6 +321,79 @@ fn batch_refuses_unresolved_homebrew_until_assumed() {
     assert_eq!(out["standing_assumptions"][0]["path"], format!("abilities.{id}"));
 }
 
+fn shell_words(cmd: &str) -> Vec<String> {
+    let mut words = Vec::new();
+    let mut word: Option<String> = None;
+    let mut chars = cmd.chars();
+    while let Some(c) = chars.next() {
+        match c {
+            ' ' => words.extend(word.take()),
+            '\'' => {
+                let w = word.get_or_insert_with(String::new);
+                for q in chars.by_ref() {
+                    if q == '\'' {
+                        break;
+                    }
+                    w.push(q);
+                }
+            }
+            '\\' => word.get_or_insert_with(String::new).extend(chars.next()),
+            _ => word.get_or_insert_with(String::new).push(c),
+        }
+    }
+    words.extend(word);
+    words
+}
+
+#[test]
+fn sample_replay_commands_rerun_homebrew_files_with_their_assumptions() {
+    let bench = Bench::new();
+    let mut monster: Value = serde_json::from_str(&std::fs::read_to_string(data("fixtures/ogre.json")).unwrap()).unwrap();
+    monster["id"] = "odd-ogre".into();
+    monster["actions"][0]["agent_clauses"] = serde_json::json!(["It does something strange."]);
+    let id = monster["actions"][0]["id"].as_str().unwrap().to_string();
+    std::fs::write(bench.cwd.join("my brew.json"), monster.to_string()).unwrap();
+    let file_assumption = serde_json::json!([{ "path": "policy.weights.control", "value": 0.5, "reason": "file" }]);
+    std::fs::write(bench.cwd.join("assume.json"), file_assumption.to_string()).unwrap();
+    let assume = format!("abilities.{id}=ignored");
+    let args = [
+        "batch", "my brew.json", "--levels", "2", "--fights", "3", "--seed", "9", "--assumptions", "assume.json", "--assume",
+        assume.as_str(), "--assume-reason", "the DM's call", "--out", "r",
+    ];
+    let out = bench.ok(&args);
+    for sample in out["samples"].as_array().unwrap() {
+        let replay = sample["replay"].as_str().unwrap();
+        let words = shell_words(replay);
+        assert_eq!(words[..2], ["bench", "batch"], "{replay}");
+        let argv: Vec<&str> = words[1..].iter().map(String::as_str).collect();
+        let fight = bench.ok(&argv);
+        let file = bench.cwd.join("r").join(sample["file"].as_str().unwrap());
+        assert_eq!(fight["log"].as_str().unwrap(), std::fs::read_to_string(file).unwrap(), "{replay}");
+        assert_eq!(fight["replay"].as_str().unwrap(), replay);
+    }
+    let html = std::fs::read_to_string(bench.cwd.join("r/report.html")).unwrap();
+    assert!(html.contains("my brew.json"));
+}
+
+#[test]
+fn sample_replay_commands_keep_a_local_party_that_shadows_the_standard_name() {
+    let bench = Bench::new();
+    let dir = bench.cwd.join(".bench/parties/standard");
+    std::fs::create_dir_all(&dir).unwrap();
+    for file in ["standard-defender-02.json", "standard-striker-02.json"] {
+        std::fs::copy(data(&format!("party/standard/{file}")), dir.join(file)).unwrap();
+    }
+    let out = bench.ok(&["batch", "ogre", "--party", "standard", "--levels", "2", "--fights", "2", "--seed", "3", "--out", "r"]);
+    let sample = &out["samples"][0];
+    let replay = sample["replay"].as_str().unwrap();
+    assert!(replay.contains("--party standard --levels 2"), "{replay}");
+    let words = shell_words(replay);
+    let argv: Vec<&str> = words[1..].iter().map(String::as_str).collect();
+    let fight = bench.ok(&argv);
+    let file = bench.cwd.join("r").join(sample["file"].as_str().unwrap());
+    assert_eq!(fight["log"].as_str().unwrap(), std::fs::read_to_string(file).unwrap());
+}
+
 #[test]
 fn batch_argument_errors() {
     let bench = Bench::new();

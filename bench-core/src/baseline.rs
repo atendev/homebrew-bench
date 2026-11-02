@@ -406,6 +406,7 @@ fn run_fixture(spec: &GenerateSpec, block: &StatBlock) -> Result<Done, BatchErro
         master_seed: fixture_seed(spec.base_seed, &block.id),
         assumptions,
         baseline: None,
+        invocation: None,
     };
     let results = batch::run_fights(&run)?;
     let cells = run
