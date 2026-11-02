@@ -5,10 +5,12 @@
 
 #![allow(dead_code)]
 
+pub mod baseline;
 pub mod batch;
 pub mod config;
 pub mod digest;
 pub mod effect;
+pub mod embedded;
 pub mod engine;
 pub mod encounter;
 pub mod error;

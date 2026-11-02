@@ -17,7 +17,7 @@ use crate::stat_block::{AbilityEntry, Condition, StatBlock};
 /// Stable policy identifier written into logs, reports and fingerprints.
 pub const POLICY_ID: &str = "homebrew-bench.tactics";
 /// Policy version. Bump it whenever scoring changes, so baselines go stale.
-pub const POLICY_VERSION: u32 = 1;
+pub const POLICY_VERSION: u32 = 2;
 
 /// Score weights. Resource cost is 0.0 because a batch fight is one encounter.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
@@ -182,7 +182,7 @@ impl Fallback {
 
 /// Best plan for `actor_id` in `section`, or `None` when nothing legal scores above zero.
 pub fn choose(state: &EncounterState, actor_id: &str, section: Section, constants: &PolicyConstants) -> Option<Plan> {
-    let ctx = Ctx { state, constants };
+    let ctx = Ctx { state, constants, threat_nesting: std::cell::Cell::new(0) };
     let actor = ctx.combatant(actor_id)?;
     if !can_act(actor) {
         return None;
@@ -210,7 +210,7 @@ pub fn choose(state: &EncounterState, actor_id: &str, section: Section, constant
 
 /// Defensive fallback for a turn where [`choose`] found no action plan.
 pub fn fallback(state: &EncounterState, actor_id: &str, constants: &PolicyConstants) -> Fallback {
-    let ctx = Ctx { state, constants };
+    let ctx = Ctx { state, constants, threat_nesting: std::cell::Cell::new(0) };
     let mut out = Fallback { actor_id: actor_id.into(), movement: vec![], reason: "no ability is ready and in reach".into() };
     let Some(actor) = ctx.combatant(actor_id) else { return out };
     let Some(target) = ctx.ranked_opponents(actor, None).into_iter().next() else {
@@ -254,7 +254,13 @@ fn pick_best(abilities: &[AbilityEntry], candidates: Vec<Plan>) -> Option<Plan> 
 struct Ctx<'a> {
     state: &'a EncounterState,
     constants: &'a PolicyConstants,
+    /// How many `threat` calls are open. A control effect values itself by the
+    /// target's threat, so two combatants with control effects would recurse forever.
+    threat_nesting: std::cell::Cell<u8>,
 }
+
+/// Open `threat` calls past which a control effect is valued at zero.
+const MAX_THREAT_NESTING: u8 = 2;
 
 #[derive(Debug, Clone, Copy, Default)]
 struct Value {
@@ -340,6 +346,14 @@ impl<'a> Ctx<'a> {
     /// Expected damage plus healing the combatant can put out on its next
     /// action, against its living opponents on average.
     fn threat(&self, c: &Combatant) -> f64 {
+        let open = self.threat_nesting.get();
+        self.threat_nesting.set(open + 1);
+        let value = self.threat_unnested(c);
+        self.threat_nesting.set(open);
+        value
+    }
+
+    fn threat_unnested(&self, c: &Combatant) -> f64 {
         if !can_act(c) {
             return 0.0;
         }
@@ -783,7 +797,8 @@ impl<'a> Ctx<'a> {
                 let immune = target_block.condition_immunities.contains(&c.condition);
                 let has = target.conditions.iter().any(|x| x.condition == c.condition);
                 let factor = if immune || has || depth > 3 { 0.0 } else { condition_factor(c.condition) };
-                Value { control: factor * self.threat(target), ..Default::default() }
+                let target_threat = if factor == 0.0 || self.threat_nesting.get() >= MAX_THREAT_NESTING { 0.0 } else { self.threat(target) };
+                Value { control: factor * target_threat, ..Default::default() }
             }
             Effect::Heal(h) => Value { heal: dice_average(&h.dice) + f64::from(h.modifier), ..Default::default() },
             Effect::MoveThenAttack(m) => self.action_value(actor, block, &m.attack_id, target, depth, ranged_in_melee),

@@ -8,9 +8,15 @@
 - `bench batch --seed <s> --fight <i>` replays one fight and prints its full log. Fight indexes run across levels, so index `i` is level `i / fights + 1`.
 - Batch refuses a stat block with unmodeled abilities or agent clauses that have no SRD default resolution, and lists every offending id under `unmodeled_ability_refused`. `--assume abilities.<id>=ignored` clears one. `--assume policy.<constant>=<value>` changes a tactics policy constant, and `--assumptions <file>` reads a JSON list of `{path, value, reason}`.
 - Both sides of a batch fight use tactics policy `homebrew-bench.tactics` v1. Each decision writes a `DECISION` log line with its reason, targets, resource, movement and area assumption.
+- `data/baseline/curve.json` is the committed CR baseline curve: all 341 SRD fixtures fought 100 times per party level 1 to 20 by the standard party under tactics policy v2, with per-`(CR, level)` cells, input fingerprints, and thin-data labels. 174 fixtures carry agent clauses or unmodeled abilities and fight with those left out, listed per fixture under `ignored_abilities`. `bench baseline generate` rebuilds it (rebuild `bench` after changing `data/` first) and `bench baseline status` compares its fingerprints with the ones this binary computes.
+- `bench batch` now compares the run against the curve: a claimed-CR verdict in both directions (including "no threat at this level"), whole-level effective CR, rounds and damage-per-round anomalies against the fixture spread with thin cells named, a basis line, the SRD XP and encounter-budget facts, and a stale-baseline warning when the fixtures, party, tactics policy or engine differ from the curve's.
+- Fixtures, the spell effects file, the standard party and the baseline are embedded in `bench` at compile time. `bench fixture list`, `bench fixture show <id>` and `bench party show [--level <1-20>]` print them, and a bare fixture or standard party id works wherever `bench start`, `bench add` and `bench batch` take a stat block path.
+- Batch warns when a monster casts a spell the effects file lacks, since those casts do nothing.
 
 ### Changed
 
+- Effective CR reads "around 1 or trivial" when a monster is already Low at level 1 (was "1 or lower").
+- The tactics policy no longer recurses without end when two combatants each carry condition effects; a control effect nested more than two threat evaluations deep counts as zero. This fixed a stack overflow on the Dryad and moves the policy to v2.
 - A move now sets the range band on both combatants, not only the mover.
 - The log now says when a creature falls unconscious or dies from damage.
 - A condition can end when its creature takes damage. Sleep and Hypnotic Pattern now work this way.

@@ -659,11 +659,7 @@ fn load_spell_effects() -> Result<&'static HashMap<String, crate::spell::SpellEf
     static CACHE: std::sync::OnceLock<Result<HashMap<String, crate::spell::SpellEffect>, String>> = std::sync::OnceLock::new();
     CACHE
         .get_or_init(|| {
-            let manifest = env!("CARGO_MANIFEST_DIR");
-            let root = std::path::Path::new(manifest).parent().ok_or("workspace root not found")?;
-            let path = root.join("data/spells/effects.json");
-            let text = std::fs::read_to_string(&path).map_err(|e| format!("failed to read spell effects: {e}"))?;
-            let value: serde_json::Value = serde_json::from_str(&text).map_err(|e| format!("invalid spell effects json: {e}"))?;
+            let value: serde_json::Value = serde_json::from_str(crate::embedded::spell_effects_json()).map_err(|e| format!("invalid spell effects json: {e}"))?;
             let mut map = HashMap::new();
             if let Some(obj) = value.as_object() {
                 for (key, entry_value) in obj {
@@ -697,6 +693,30 @@ fn retarget_if_down(state: &EncounterState, actor_id: &str, target_id: &str) -> 
         .iter()
         .find(|c| c.side_id != actor_side && !down(c))
         .map_or_else(|| target_id.to_string(), |c| c.id.clone())
+}
+
+/// Spell ids a stat block casts that the spell effects file does not hold. A cast
+/// of one is logged but does nothing, so a batch names each one.
+pub fn missing_spells(block: &StatBlock) -> Vec<String> {
+    fn walk(value: &serde_json::Value, known: &HashMap<String, crate::spell::SpellEffect>, out: &mut std::collections::BTreeSet<String>) {
+        match value {
+            serde_json::Value::Object(map) => {
+                if let Some(id) = map.get("spell_id").and_then(serde_json::Value::as_str) {
+                    if !known.contains_key(id) {
+                        out.insert(id.to_string());
+                    }
+                }
+                map.values().for_each(|v| walk(v, known, out));
+            }
+            serde_json::Value::Array(items) => items.iter().for_each(|v| walk(v, known, out)),
+            _ => {}
+        }
+    }
+    let mut out = std::collections::BTreeSet::new();
+    if let (Ok(known), Ok(value)) = (load_spell_effects(), serde_json::to_value(block)) {
+        walk(&value, known, &mut out);
+    }
+    out.into_iter().collect()
 }
 
 /// Effects of a cast with the caster's numbers bound in, and whether the spell needs concentration.
