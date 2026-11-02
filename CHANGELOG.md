@@ -23,6 +23,7 @@
 - The tactics policy no longer recurses without end when two combatants each carry condition effects; a control effect nested more than two threat evaluations deep counts as zero. This fixed a stack overflow on the Dryad and moves the policy to v2.
 - The `replay` command on each batch sample, and on `bench batch --fight` output, now reruns the fight for a homebrew file. It keeps the monster argument, `--party`, `--assumptions`, `--assume` and `--assume-reason` as passed, adds `--levels` when the party lacks some of levels 1 to 20, and shell-quotes each value. Before, it named the monster by id and dropped the assumptions.
 - A move now sets the range band on both combatants, not only the mover.
+- `bench move <actor> <near|far>` with no `--target` now moves the actor to that band relative to every other combatant and breaks every engagement it leaves. It costs the largest single-pair band change and returns an `opportunity_attack` event for each engagement it breaks, leaving out combatants that are dead, unconscious or stable. Before, it spent movement and changed no positions. An untargeted move to `engaged` is now refused.
 - The log now says when a creature falls unconscious or dies from damage.
 - A condition can end when its creature takes damage. Sleep and Hypnotic Pattern now work this way.
 - When a caster loses concentration, the conditions and modifiers it held by concentration end.
@@ -37,3 +38,4 @@
 
 - Encounters recorded before the batch runner can diverge under `bench replay` at their first move, first drop to 0 HP, first damage to a sleeping creature, or first lost concentration, because each of these now changes the state differently.
 - Encounters recorded before this change can diverge under `bench replay` from the first concentration save onward, because later dice come from different stream positions. Ask-mode encounters that used `bench add` for a PC diverge at that add, which now raises a prompt instead of rolling. Their starting initiative does not diverge, because their initial snapshot already holds it. Ask-mode encounters recorded after this change start from a snapshot taken before initiative, and replay rolls initiative again from the recorded `bench respond`.
+- Encounters that used `bench move` without `--target` diverge under `bench replay` at that move, which now changes positions, or fail there when the move was to `engaged`.
