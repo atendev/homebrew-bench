@@ -3,7 +3,7 @@ id: 031
 title: Batch tactics policy and batch runner
 type: task
 mode: AFK
-status: open
+status: closed
 blocked_by:
   - 028
   - 030
@@ -36,3 +36,14 @@ Key decisions to implement:
 - **Engine gaps inherited from ticket 027 (see its resolution):** wire caster save DC, attack bonus and heal modifier from `StatBlock.spellcasting` into `Cast`, spend and validate `spell_slots`, scale cantrips by level, add bonus-action and reaction execution, and make a hit on a downed PC add a death-save failure. The standard party cannot be calibrated until these land.
 
 ## Resolution
+
+`bench batch` runs one monster against a party across levels and writes `report.html` plus three sampled logs. Requirements are in `.plan/reports/031-requirements.md`.
+
+- Engine gaps from ticket 027 are closed. Casts take save DC, attack bonus and heal modifier from `StatBlock.spellcasting`. Spell slots are spent and checked. Cantrips scale at levels 5, 11 and 17. Bonus actions and reactions execute with one use per turn. A hit on a downed PC adds a death-save failure, two on a crit. Death rules read `StatBlock.dying` instead of `class`.
+- Other engine changes found while running fights. `move_combatant` sets the band on both combatants. Damage and death now log `falls unconscious` and `dies`. A condition can carry `ends_on_damage`, which Sleep and Hypnotic Pattern now set in `data/spells/effects.json`. Breaking concentration removes the conditions and modifiers that caster held by concentration. Without the last two, a level 1 Sleep held an adult red dragon down for the whole fight.
+- `bench-core/src/tactics.rs` is policy `homebrew-bench.tactics` v1. It follows ADR 0012 for targets, limited use, recharge, legendary windows, movement, areas, healing, revival, consumables and multiattack picks. Constants override through `policy.<name>` assumption paths, and `tactics::fingerprint` hashes id, version and constants. Damage past a target's HP scores as wasted. Saving-throw abilities with no area shape, such as imported breath weapons, read the shape from "each creature in a 60-foot Cone" and log that they did. Buffs, forced movement and teleports score 0 in v1, and the policy takes no reactions.
+- `bench-core/src/batch.rs` runs the fights. Fight indexes are global and level-major (`(level - 1) * fights + i`), so `--fight <i>` needs no level flag. It needs the same `--fights` value, which the replay command in the report includes. Both sides start near. A fight at the round cap is a stalemate, counted apart from wins and losses. When the monster wins, downed PCs count as deaths. Batch refuses abilities that are unmodeled or have agent clauses unless they have an imported default or an `abilities.<id>` assumption. `--assume path=value` and `--assumptions <file>` take standing assumptions. Agent clauses on party blocks are left out and the report says so.
+- The report follows the prototype's section order without the banner and without the duplicate `id="cr"`. The baseline comparison waits for ticket 032. Until then the headline compares effective CR with the claimed CR by party level and carries a "no baseline" warning.
+- `--party <name>` reads a folder of stat blocks, each with `level`, from `./.bench/parties/<name>/` then `~/.bench/parties/<name>/`. Any level the run asks for that the folder lacks fails with `not_found`.
+- Spot checks at seed 7: the ogre (CR 2) reads effective CR 2. The adult red dragon (CR 17, 30 fights per level) reads 18, with legendary resistance and its legendary actions skipped and reported.
+

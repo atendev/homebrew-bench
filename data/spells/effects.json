@@ -1096,6 +1096,7 @@
                     "duration": {
                       "concentration": null
                     },
+                    "ends_on_damage": true,
                     "source_ability": "hypnotic-pattern"
                   }
                 },
@@ -1105,6 +1106,7 @@
                     "duration": {
                       "concentration": null
                     },
+                    "ends_on_damage": true,
                     "source_ability": "hypnotic-pattern"
                   }
                 },
@@ -1936,6 +1938,7 @@
                     "duration": {
                       "rounds": 1
                     },
+                    "ends_on_damage": true,
                     "source_ability": "sleep"
                   }
                 },
@@ -1945,6 +1948,7 @@
                     "duration": {
                       "concentration": null
                     },
+                    "ends_on_damage": true,
                     "source_ability": "sleep"
                   }
                 }

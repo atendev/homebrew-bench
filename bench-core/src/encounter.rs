@@ -45,6 +45,8 @@ pub struct ConditionInstance {
     pub duration: Duration,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub source: Option<String>,
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub ends_on_damage: bool,
 }
 
 /// One active modifier from a timed effect.
@@ -236,6 +238,12 @@ pub struct PlayerDice {
     pub faces: std::collections::VecDeque<u32>,
     /// PC rolls that found no face, in draw order.
     pub missing: Vec<MissingDie>,
+    /// Multiattack picks for the next action, one entry per `Choice` (option indexes) or
+    /// `Alternatives` (one set index) step in resolution order. Empty means the first
+    /// options. Supplied by the batch tactics policy; never stored.
+    pub picks: std::collections::VecDeque<Vec<usize>>,
+    /// Batch mode: attacks aimed at a downed creature move to a living opponent.
+    pub retarget_downed: bool,
     /// Per owner since its last event: (some die used an entered face, some die did not).
     pub since_event: HashMap<String, (bool, bool)>,
     /// Use the engine's draw for any roll past the entered faces.

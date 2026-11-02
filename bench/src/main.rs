@@ -7,8 +7,9 @@ use std::path::PathBuf;
 use std::process;
 
 use bench_core::{
+    batch::{self, BatchError, BatchSpec},
     config::{Config, OutputTarget},
-    encounter::{EncounterState, PcDice, RangeBand, PARTY_SIDE},
+    encounter::{EncounterState, PcDice, RangeBand, StandingAssumption, PARTY_SIDE},
     error::{CodedError, ErrorCode},
     live::{self, Command, Entrant, LiveError, StartSpec},
     log, paths,
@@ -226,6 +227,44 @@ enum Commands {
     Replay {
         #[command(flatten)]
         at: At,
+    },
+    /// Run a batch of fights for one monster against a party and write the report.
+    Batch {
+        /// Monster stat block path, or an SRD fixture id such as `ogre`.
+        monster: String,
+        /// Party level or range, such as `5` or `1-20`.
+        #[arg(long, default_value = "1-20")]
+        levels: String,
+        /// Fights per level.
+        #[arg(long, default_value_t = batch::DEFAULT_FIGHTS)]
+        fights: u32,
+        /// Round cap; a fight that reaches it is a stalemate.
+        #[arg(long, default_value_t = batch::DEFAULT_MAX_ROUNDS)]
+        max_rounds: u32,
+        /// Party folder name, from `./.bench/parties/<name>/` then `~/.bench/parties/<name>/`.
+        #[arg(long)]
+        party: Option<String>,
+        /// Master seed; fresh entropy if omitted. Always echoed in the output.
+        #[arg(long)]
+        seed: Option<u64>,
+        /// Replay one fight by its global index and print its full log. Needs `--seed`.
+        #[arg(long, requires = "seed")]
+        fight: Option<u64>,
+        /// Standing assumption `path=value`, such as `abilities.swallow=ignored` or `policy.weights.control=0.5`. Repeatable.
+        #[arg(long)]
+        assume: Vec<String>,
+        /// Reason recorded for every `--assume`.
+        #[arg(long, default_value = "set on the bench batch command line")]
+        assume_reason: String,
+        /// JSON file holding a list of `{path, value, reason}` standing assumptions.
+        #[arg(long)]
+        assumptions: Option<String>,
+        /// Folder for `report.html` and `logs/`; defaults to `reports/<monster>-seed-<seed>/` under the output directory.
+        #[arg(long)]
+        out: Option<PathBuf>,
+        /// Where the default report folder lives; defaults to `config.toml`.
+        #[arg(long, value_enum)]
+        output: Option<Output>,
     },
     /// Print the plain-text log.
     Log {
@@ -461,6 +500,9 @@ fn run(command: Commands) -> Result<String, CodedError> {
             let removed = prune(&mut index, config.delete_logs)?;
             ok(serde_json::json!({ "removed": removed, "logs_deleted": config.delete_logs }))
         }
+        Commands::Batch { monster, levels, fights, max_rounds, party, seed, fight, assume, assume_reason, assumptions, out, output } => {
+            run_batch(BatchArgs { monster, levels, fights, max_rounds, party, seed, fight, assume, assume_reason, assumptions, out, output })
+        }
         Commands::Help { .. } | Commands::Schema { .. } => unreachable!("handled in main"),
     }
 }
@@ -505,6 +547,113 @@ fn step(at: &At, cmd: Command) -> Result<String, CodedError> {
         index.save()?;
     }
     ok(outcome)
+}
+
+struct BatchArgs {
+    monster: String,
+    levels: String,
+    fights: u32,
+    max_rounds: u32,
+    party: Option<String>,
+    seed: Option<u64>,
+    fight: Option<u64>,
+    assume: Vec<String>,
+    assume_reason: String,
+    assumptions: Option<String>,
+    out: Option<PathBuf>,
+    output: Option<Output>,
+}
+
+fn batch_error(err: BatchError) -> CodedError {
+    match &err {
+        BatchError::Unresolved(ids) => CodedError::new(ErrorCode::UnmodeledAbilityRefused, err.to_string())
+            .with_details(serde_json::json!({ "abilities": ids })),
+        BatchError::Invalid(_) => CodedError::new(ErrorCode::InvalidArgument, err.to_string()),
+        BatchError::NotFound(_) => CodedError::new(ErrorCode::NotFound, err.to_string()),
+    }
+}
+
+fn run_batch(args: BatchArgs) -> Result<String, CodedError> {
+    let cwd = cwd()?;
+    let monster = if std::path::Path::new(&args.monster).is_file() {
+        read_stat_block(&args.monster)?
+    } else if let Some(path) = batch::fixture_path(&args.monster) {
+        read_stat_block(&path.display().to_string())?
+    } else {
+        return Err(CodedError::new(ErrorCode::NotFound, format!("`{}` is neither a stat block file nor an SRD fixture id", args.monster)));
+    };
+    let (party_name, party) = match &args.party {
+        None => ("standard".to_string(), batch::standard_party().map_err(batch_error)?),
+        Some(name) => {
+            let dir = paths::party_dirs(name, &cwd)?.into_iter().find(|d| d.is_dir()).ok_or_else(|| {
+                CodedError::new(ErrorCode::NotFound, format!("party `{name}` not found in ./.bench/parties/ or ~/.bench/parties/"))
+            })?;
+            (name.clone(), batch::load_party_dir(&dir).map_err(batch_error)?)
+        }
+    };
+    let mut assumptions: Vec<StandingAssumption> = Vec::new();
+    if let Some(file) = &args.assumptions {
+        let text = std::fs::read_to_string(file)
+            .map_err(|e| CodedError::new(ErrorCode::NotFound, format!("failed to read {file}: {e}")))?;
+        let list: Vec<StandingAssumption> = serde_json::from_str(&text)
+            .map_err(|e| CodedError::new(ErrorCode::InvalidJson, format!("{file} is not a list of {{path, value, reason}}: {e}")))?;
+        assumptions.extend(list);
+    }
+    for item in &args.assume {
+        let (path, value) = item.split_once('=').ok_or_else(|| {
+            CodedError::new(ErrorCode::InvalidArgument, format!("`{item}` is not `path=value`"))
+        })?;
+        let value = serde_json::from_str(value).unwrap_or_else(|_| Value::String(value.to_string()));
+        assumptions.push(StandingAssumption { path: path.to_string(), value, reason: args.assume_reason.clone() });
+    }
+    let spec = BatchSpec {
+        monster,
+        party_name,
+        party,
+        levels: batch::parse_levels(&args.levels).map_err(batch_error)?,
+        fights: args.fights,
+        max_rounds: args.max_rounds,
+        master_seed: args.seed.unwrap_or_else(rand::random),
+        assumptions,
+    };
+    if let Some(index) = args.fight {
+        let result = batch::replay_fight(&spec, index).map_err(batch_error)?;
+        let mut out = serde_json::to_value(&result).unwrap_or_default();
+        out["master_seed"] = spec.master_seed.into();
+        out["replay"] = format!("bench batch {} --seed {} --fight {index}", spec.monster.id, spec.master_seed).into();
+        out["log"] = result.log.unwrap_or_default().into();
+        return ok(out);
+    }
+    let report = batch::run(&spec).map_err(batch_error)?;
+    let dir = match args.out {
+        Some(dir) => dir,
+        None => {
+            let output = match args.output {
+                Some(Output::Home) => OutputTarget::Home,
+                Some(Output::Workspace) => OutputTarget::Workspace,
+                None => config()?.output,
+            };
+            paths::reports_dir(output, &cwd)?.join(format!("{}-seed-{}", spec.monster.id, spec.master_seed))
+        }
+    };
+    let logs_dir = dir.join("logs");
+    std::fs::create_dir_all(&logs_dir)
+        .map_err(|e| CodedError::new(ErrorCode::Internal, format!("cannot create {}: {e}", logs_dir.display())))?;
+    let write = |path: &std::path::Path, text: &str| {
+        std::fs::write(path, text).map_err(|e| CodedError::new(ErrorCode::Internal, format!("cannot write {}: {e}", path.display())))
+    };
+    let report_path = dir.join("report.html");
+    write(&report_path, &report.html)?;
+    let mut log_paths = Vec::new();
+    for (file, text) in &report.logs {
+        let path = logs_dir.join(file);
+        write(&path, text)?;
+        log_paths.push(path.display().to_string());
+    }
+    let mut out = serde_json::to_value(&report.summary).unwrap_or_default();
+    out["report_path"] = report_path.display().to_string().into();
+    out["log_paths"] = log_paths.into();
+    ok(out)
 }
 
 fn run_schema(action: SchemaAction) -> Result<String, CodedError> {
