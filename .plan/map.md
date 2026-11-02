@@ -65,10 +65,11 @@ Both modes ship in phase 1. Everything the engine can't model is labeled agent j
 - [Untargeted move changes no positions](closed/043-untargeted-move-changes-no-positions.md): `bench move` without `--target` moves the actor relative to every other combatant and breaks every engagement, priced at the largest single-pair change among active combatants, with `opportunity_attack` events only from active ones. Untargeted `engaged` is refused, and batch is unaffected.
 - [Engine-rolled opportunity attacks](closed/044-engine-rolled-opportunity-attacks.md): the engine rolls an opportunity attack only when the move names the reactor (`bench move --opportunity <reactor>[:<attack-id>]`), resolved just before the band change with the first at-will melee action by default, the reaction spent on resolution, no off-turn `bench action`, PC dice only in ask mode, batch unchanged until the reactions ticket, and Disengage and Flyby/Agile modeled first. ADR 0015 is written by the build ticket.
 - [Player-dice marks for heal, temporary hit point and death save events](closed/051-player-dice-marks-for-heal-temp-hp-and-death-saves.md): ask mode marks heal, revive, a new `temp_hp` event and death saves by the ticket 041 rule, death saves carry their d20, and the public view hides monster temp HP amounts.
+- [Does the standard party fall off at high levels](closed/052-does-the-standard-party-fall-off-at-high-levels.md): no fall-off at levels 11 to 18, levels 19 and 20 read High on three or four fixtures, two of them ancient dragons, so ADR 0010's trigger is not clearly met and magic items are ruled out of scope. Findings in `docs/research/052-standard-party-at-high-levels.md`.
 
 ## Not yet specified
 
-- Nothing. Every earlier patch graduated into tickets 044 to 052, then 053 and 054 came from ticket 044 on 2026-11-02.
+- Dragons read a level or more above their CR on the baseline curve from tier 2 up, and the pit fiend and the lich stay hard at high CR (ticket 052). It is not yet clear whether the cause is the SRD's own CR choices, a tactics policy gap such as no reactions or no spreading out against breath weapons, or an engine modeling gap. The batch reactions ticket may answer part of it.
 
 ## Out of scope
 
@@ -76,6 +77,7 @@ Both modes ship in phase 1. Everything the engine can't model is labeled agent j
 - Items, spells, classes, subclasses, and the prose rules reference: separate future maps. The design should not block them.
 - MCP server and long-running server modes: phase 1 is a one-shot CLI. An MCP wrapper can come later over the same commands.
 - Agent-written engine code for house rules: phase 1 applies them as prose through overrides. The house rule format leaves room for it.
+- Magic items in the standard party: the baseline curve shows no fall-off through level 18, and the High cells at levels 19 and 20 are too thin and too concentrated in a few monsters to change the whole party ([Does the standard party fall off at high levels](closed/052-does-the-standard-party-fall-off-at-high-levels.md)).
 - Engine-played monster turns in live mode (a possible `bench auto-turn` that calls the batch tactics policy): phase 1 has the agent choose every monster action. It can be added over the same step function without changing the live contract.
 
 ## Frontier
@@ -86,7 +88,6 @@ Takeable now, in order:
 - Live legendary actions (grilling)
 - Upcast spell scaling (grilling)
 - Encounter lighting setting (grilling)
-- Does the standard party fall off at high levels (task, AFK)
 - Build engine-rolled opportunity attacks (task, AFK)
 
 Blocked:
