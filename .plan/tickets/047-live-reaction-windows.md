@@ -4,7 +4,7 @@ title: Live reaction windows
 type: grilling
 mode: HITL
 status: open
-blocked_by: [044]
+blocked_by: [053]
 claimed: false
 ---
 
@@ -15,5 +15,7 @@ Should live mode open reaction windows when a trigger fires, so the engine promp
 ## Notes
 
 Today the skill tells the agent to ask the user about reactions itself (`.agents/skills/homebrew-bench/references/live-mode.md`, Reactions). Opportunity attacks follow ticket 044's answer. Pending prompts and undo follow ADR 0004. Consult `grilling` and `domain-modeling`.
+
+Scope added by [Engine-rolled opportunity attacks](../closed/044-engine-rolled-opportunity-attacks.md): an opportunity-attack window is a held `Move` request whose prompt asks which listed reactors attack, and its answer fills the `opportunity` list. The build waits on the opportunity-attack build ticket.
 
 ## Resolution

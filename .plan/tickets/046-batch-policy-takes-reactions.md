@@ -4,7 +4,7 @@ title: Batch policy takes reactions
 type: grilling
 mode: HITL
 status: open
-blocked_by: [044]
+blocked_by: [053, 054]
 claimed: false
 ---
 
@@ -15,5 +15,7 @@ When should the batch tactics policy spend a reaction, for both sides? Cover opp
 ## Notes
 
 v1 takes no reactions (ADR 0012, `bench-core/src/tactics.rs`). The six reaction triggers come from ADR 0005. A change here bumps the policy version and the baseline curve. Consult `grilling` and `domain-modeling`.
+
+Scope added by [Engine-rolled opportunity attacks](../closed/044-engine-rolled-opportunity-attacks.md): batch takes opportunity attacks in initiative order, picks the melee leaf by expected damage, fixes the v2 penalty in `tactics.rs` (it counts ranged attacks and is never paid), and bumps the policy to v3 once with one baseline regeneration. Batch adoption waits on the two build tickets for opportunity attacks and for Disengage and no-provoke traits.
 
 ## Resolution

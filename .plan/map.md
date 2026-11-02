@@ -63,10 +63,11 @@ Both modes ship in phase 1. Everything the engine can't model is labeled agent j
 - [Release packaging, legal notices and installers](closed/034-release-packaging-legal-notices-and-installers.md): root `LICENSE` (MIT), `NOTICE` and `README.md`, cargo-dist archives for five targets holding `bench`, the notices and the skill, and `install.sh`/`install.ps1`/`update.sh` that install into `~/.bench/` and copy the skill to detected agents. A clone builds itself, and a missing release archive clones and builds that release. `install.ps1` still needs a manual Windows run.
 - [Batch sample replay command for homebrew files](closed/042-batch-sample-replay-command.md): `BatchSpec` carries the `bench batch` arguments as passed, so each sample's `replay` string keeps the file path, `--party`, the assumptions and their reason, shell-quoted, and adds `--levels` for a party missing levels. Fixture replays are unchanged.
 - [Untargeted move changes no positions](closed/043-untargeted-move-changes-no-positions.md): `bench move` without `--target` moves the actor relative to every other combatant and breaks every engagement, priced at the largest single-pair change among active combatants, with `opportunity_attack` events only from active ones. Untargeted `engaged` is refused, and batch is unaffected.
+- [Engine-rolled opportunity attacks](closed/044-engine-rolled-opportunity-attacks.md): the engine rolls an opportunity attack only when the move names the reactor (`bench move --opportunity <reactor>[:<attack-id>]`), resolved just before the band change with the first at-will melee action by default, the reaction spent on resolution, no off-turn `bench action`, PC dice only in ask mode, batch unchanged until the reactions ticket, and Disengage and Flyby/Agile modeled first. ADR 0015 is written by the build ticket.
 
 ## Not yet specified
 
-- Nothing. Every earlier patch graduated into tickets 044 to 052 on 2026-11-02.
+- Nothing. Every earlier patch graduated into tickets 044 to 052, then 053 and 054 came from ticket 044 on 2026-11-02.
 
 ## Out of scope
 
@@ -80,15 +81,16 @@ Both modes ship in phase 1. Everything the engine can't model is labeled agent j
 
 Takeable now, in order:
 
-- Engine-rolled opportunity attacks (grilling)
 - Batch policy scores buffs, forced movement and teleports (grilling)
 - Live legendary actions (grilling)
 - Upcast spell scaling (grilling)
 - Encounter lighting setting (grilling)
 - Player-dice marks for heal, temporary hit point and death save events (task, AFK)
 - Does the standard party fall off at high levels (task, AFK)
+- Build engine-rolled opportunity attacks (task, AFK)
 
 Blocked:
 
-- Batch policy takes reactions (grilling), waits on Engine-rolled opportunity attacks
-- Live reaction windows (grilling), waits on Engine-rolled opportunity attacks
+- Build Disengage and no-provoke traits (task), waits on Build engine-rolled opportunity attacks
+- Batch policy takes reactions (grilling), waits on both build tickets
+- Live reaction windows (grilling), waits on Build engine-rolled opportunity attacks
