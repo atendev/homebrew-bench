@@ -16,7 +16,7 @@ use crate::encounter::{
     ActionEconomy, CommandRecord, Combatant, EncounterEnd, EncounterSettings, EncounterState, EndState,
     PcDice, PendingPrompt, PlayerDice, RangeBand, Side, StandingAssumption, StatBlockSnapshot, PARTY_SIDE,
 };
-use crate::engine::{self, EngineError, EngineEvent, InitiativeOptions, StepRequest};
+use crate::engine::{self, EngineError, EngineEvent, InitiativeOptions, OpportunityAttack, StepRequest};
 use crate::log::{LogEntry, LogLine};
 use crate::override_path;
 use crate::rng::{RngState, Stream};
@@ -40,6 +40,9 @@ pub enum Command {
         band: RangeBand,
         #[serde(default)]
         feet: Option<u32>,
+        /// Reactors that take an Opportunity Attack on this move, in order.
+        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        opportunity: Vec<OpportunityAttack>,
     },
     Respond {
         #[serde(default)]
@@ -548,14 +551,20 @@ fn apply(state: &mut EncounterState, cmd: &Command) -> Result<Applied, LiveError
             vec![],
             false,
         ),
-        Command::Move { actor, target, band, feet } => {
+        Command::Move { actor, target, band, feet, opportunity } => {
             let feet = match feet {
                 Some(f) => *f,
                 None => remaining_speed(state, actor)?,
             };
             run_engine(
                 state,
-                StepRequest::Move { actor_id: actor.clone(), target_id: target.clone(), band: *band, feet },
+                StepRequest::Move {
+                    actor_id: actor.clone(),
+                    target_id: target.clone(),
+                    band: *band,
+                    feet,
+                    opportunity: opportunity.clone(),
+                },
                 vec![],
                 false,
             )
@@ -1404,6 +1413,71 @@ mod tests {
         let fought = { let cmd = attack(&state); execute(&mut state, cmd) }.unwrap();
         let tag = " [standing assumption: stat_blocks.goblin-warrior.stat_block.armor_class]";
         assert!(lines(&fought).iter().all(|l| l.ends_with(tag)), "{:?}", lines(&fought));
+    }
+
+    const STRIKER: &str = "standard-striker-03";
+    const GOBLIN: &str = "goblin-warrior";
+
+    /// Engage the two combatants, then end turns until `mover` is active.
+    fn engage_then_turn_of(state: &mut EncounterState, mover: &str) {
+        let actor = state.active_turn.clone().expect("active turn");
+        let other = if actor == STRIKER { GOBLIN } else { STRIKER };
+        let engage = Command::Move { actor, target: Some(other.into()), band: RangeBand::Engaged, feet: None, opportunity: vec![] };
+        execute(state, engage).unwrap();
+        while state.active_turn.as_deref() != Some(mover) || state.combatants.iter().any(|c| c.id == mover && c.action_economy.movement_used_feet > 0) {
+            execute(state, Command::EndTurn).unwrap();
+        }
+    }
+
+    fn move_away(mover: &str, reactor: &str) -> Command {
+        Command::Move {
+            actor: mover.into(),
+            target: Some(reactor.into()),
+            band: RangeBand::Near,
+            feet: None,
+            opportunity: vec![OpportunityAttack { reactor_id: reactor.into(), attack_id: None }],
+        }
+    }
+
+    #[test]
+    fn opportunity_attack_on_a_move_undoes_and_replays() {
+        let (mut state, _) = start(spec(PcDice::Engine)).unwrap();
+        engage_then_turn_of(&mut state, STRIKER);
+        let first = execute(&mut state, move_away(STRIKER, GOBLIN)).unwrap();
+        let first_lines = lines(&first);
+        assert_eq!(first_lines[0], "OPPORTUNITY ATTACK goblin-warrior on standard-striker-03 (reaction)", "{first_lines:?}");
+        assert!(first_lines[1].starts_with("Goblin Warrior attacks"), "{first_lines:?}");
+        assert!(state.combatants.iter().find(|c| c.id == GOBLIN).unwrap().action_economy.reaction_used);
+        let stored = state.command_history.last().unwrap().args.clone();
+        assert_eq!(stored["opportunity"][0]["reactor_id"], GOBLIN);
+
+        execute(&mut state, Command::Undo).unwrap();
+        assert!(!state.combatants.iter().find(|c| c.id == GOBLIN).unwrap().action_economy.reaction_used);
+        let again = execute(&mut state, move_away(STRIKER, GOBLIN)).unwrap();
+        assert_eq!(first_lines, lines(&again));
+        assert!(replay(&state).matches);
+    }
+
+    #[test]
+    fn ask_mode_holds_the_move_on_a_pc_reactors_dice() {
+        let (mut state, _) = start(spec(PcDice::Ask)).unwrap();
+        execute(&mut state, Command::Respond { values: vec![10], decline: false }).unwrap();
+        engage_then_turn_of(&mut state, GOBLIN);
+        let before = state.combatants.clone();
+        let asked = execute(&mut state, move_away(GOBLIN, STRIKER)).unwrap();
+        let prompt = asked.pending.clone().expect("dice prompt");
+        assert_eq!((prompt.kind.as_str(), prompt.actor_id.as_str(), prompt.sides), ("dice", STRIKER, Some(20)));
+        assert_eq!(serde_json::to_value(&state.combatants).unwrap(), serde_json::to_value(&before).unwrap());
+
+        let mut answered = vec![];
+        while let Some(p) = state.pending.clone() {
+            let out = execute(&mut state, Command::Respond { values: vec![p.sides.unwrap(); p.remaining as usize], decline: false }).unwrap();
+            answered.extend(lines(&out));
+        }
+        assert!(answered.contains(&"OPPORTUNITY ATTACK standard-striker-03 on goblin-warrior (reaction)".to_string()), "{answered:?}");
+        assert!(answered.iter().any(|l| l.contains("attacks") && l.contains("(player dice)")), "{answered:?}");
+        assert!(state.combatants.iter().find(|c| c.id == STRIKER).unwrap().action_economy.reaction_used);
+        assert!(replay(&state).matches);
     }
 
     #[test]

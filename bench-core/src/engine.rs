@@ -21,10 +21,29 @@ use crate::stat_block::{Ability, Condition, DamageType, DeathSaves, StatBlock};
 #[serde(rename_all = "snake_case")]
 pub enum StepRequest {
     Action { actor_id: String, action_id: String, target_ids: Vec<String> },
-    Move { actor_id: String, target_id: Option<String>, band: RangeBand, feet: u32 },
+    Move {
+        actor_id: String,
+        target_id: Option<String>,
+        band: RangeBand,
+        feet: u32,
+        /// Opportunity Attacks taken on this move, resolved in this order
+        /// right before the band changes (ADR 0015).
+        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        opportunity: Vec<OpportunityAttack>,
+    },
     EndTurn,
     Respond { values: Vec<u32>, accept: bool },
     RollInitiative(InitiativeOptions),
+}
+
+/// A reactor that takes its Opportunity Attack on a move. Without `attack_id`
+/// it uses its first at-will melee attack in stat-block order, looking inside
+/// Multiattack steps.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, schemars::JsonSchema)]
+pub struct OpportunityAttack {
+    pub reactor_id: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub attack_id: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, schemars::JsonSchema)]
@@ -163,8 +182,8 @@ pub fn step_events(state: &mut EncounterState, request: StepRequest) -> Result<V
         StepRequest::Action { actor_id, action_id, target_ids } => {
             resolve_action(state, &actor_id, &action_id, &target_ids)?
         }
-        StepRequest::Move { actor_id, target_id, band, feet } => {
-            move_combatant(state, &actor_id, target_id.as_deref(), band, feet)?
+        StepRequest::Move { actor_id, target_id, band, feet, opportunity } => {
+            move_combatant(state, &actor_id, target_id.as_deref(), band, feet, &opportunity)?
         }
         StepRequest::EndTurn => end_turn_events(state)?,
         StepRequest::Respond { values, accept } => respond(state, values, accept)?,
@@ -215,45 +234,8 @@ fn resolve_action(
             return Err(EngineError::Illegal(format!("{label} already used")));
         }
     }
-    // Check and decrement usage limits
     if let Some(usage) = &action.usage {
-        let key = match usage {
-            Usage::Recharge { group, .. } => {
-                format!("{actor_id}:{}", group.as_deref().unwrap_or(action_id))
-            }
-            _ => format!("{actor_id}:{action_id}"),
-        };
-        match usage {
-            Usage::AtWill => {}
-            Usage::Recharge { .. } => {
-                let remaining = state.combatants[actor_index].resources.get(&key).copied().unwrap_or(1);
-                if remaining <= 0 {
-                    return Err(EngineError::Illegal(format!("{action_id} is not recharged")));
-                }
-                state.combatants[actor_index].resources.insert(key, remaining - 1);
-            }
-            Usage::PerDay { uses } => {
-                let used = state.combatants[actor_index].resources.get(&key).copied().unwrap_or(0);
-                if used >= *uses as i32 {
-                    return Err(EngineError::Illegal(format!("{action_id} has no uses remaining")));
-                }
-                state.combatants[actor_index].resources.insert(key, used + 1);
-            }
-            Usage::PerRest { uses, .. } => {
-                let used = state.combatants[actor_index].resources.get(&key).copied().unwrap_or(0);
-                if used >= *uses as i32 {
-                    return Err(EngineError::Illegal(format!("{action_id} has no uses remaining")));
-                }
-                state.combatants[actor_index].resources.insert(key, used + 1);
-            }
-            Usage::CooldownUntilNextTurn => {
-                let remaining = state.combatants[actor_index].resources.get(&key).copied().unwrap_or(1);
-                if remaining <= 0 {
-                    return Err(EngineError::Illegal(format!("{action_id} is on cooldown")));
-                }
-                state.combatants[actor_index].resources.insert(key, 0);
-            }
-        }
+        spend_usage(state, actor_index, action_id, usage)?;
     }
     let mut stream = Stream::from_state(state.rng.clone());
     let mut events = Vec::new();
@@ -271,6 +253,40 @@ fn resolve_action(
         ActionSection::Reaction => economy.reaction_used = true,
     }
     Ok(events)
+}
+
+fn spend_usage(state: &mut EncounterState, actor_index: usize, action_id: &str, usage: &Usage) -> Result<(), EngineError> {
+    let actor_id = state.combatants[actor_index].id.clone();
+    let key = match usage {
+        Usage::Recharge { group, .. } => format!("{actor_id}:{}", group.as_deref().unwrap_or(action_id)),
+        _ => format!("{actor_id}:{action_id}"),
+    };
+    let resources = &mut state.combatants[actor_index].resources;
+    match usage {
+        Usage::AtWill => {}
+        Usage::Recharge { .. } => {
+            let remaining = resources.get(&key).copied().unwrap_or(1);
+            if remaining <= 0 {
+                return Err(EngineError::Illegal(format!("{action_id} is not recharged")));
+            }
+            resources.insert(key, remaining - 1);
+        }
+        Usage::PerDay { uses } | Usage::PerRest { uses, .. } => {
+            let used = resources.get(&key).copied().unwrap_or(0);
+            if used >= *uses as i32 {
+                return Err(EngineError::Illegal(format!("{action_id} has no uses remaining")));
+            }
+            resources.insert(key, used + 1);
+        }
+        Usage::CooldownUntilNextTurn => {
+            let remaining = resources.get(&key).copied().unwrap_or(1);
+            if remaining <= 0 {
+                return Err(EngineError::Illegal(format!("{action_id} is on cooldown")));
+            }
+            resources.insert(key, 0);
+        }
+    }
+    Ok(())
 }
 
 fn resolve_effect(
@@ -829,9 +845,10 @@ fn move_combatant(
     target_id: Option<&str>,
     band: RangeBand,
     feet: u32,
+    opportunity: &[OpportunityAttack],
 ) -> Result<Vec<EngineEvent>, EngineError> {
     let i = index_of(state, actor_id)?;
-    // (combatant id, whether it prices the move and may react to it)
+    // (combatant id, whether it prices the move)
     let others: Vec<(String, bool)> = match target_id {
         Some(id) => vec![(id.to_string(), true)],
         None if band == RangeBand::Engaged => {
@@ -853,12 +870,183 @@ fn move_combatant(
     if feet < cost {
         return Err(EngineError::Illegal(format!("movement requires {cost} feet")));
     }
+    let provoked: Vec<String> = if band == RangeBand::Engaged {
+        vec![]
+    } else {
+        others
+            .iter()
+            .map(|(id, _)| id.clone())
+            .filter(|id| state.combatants[i].engagement.contains(id))
+            .collect()
+    };
+    let attacks = opportunity
+        .iter()
+        .enumerate()
+        .map(|(n, oa)| {
+            if opportunity[..n].iter().any(|earlier| earlier.reactor_id == oa.reactor_id) {
+                return Err(EngineError::Invalid(format!("{} is named twice", oa.reactor_id)));
+            }
+            let r = index_of(state, &oa.reactor_id)?;
+            if !provoked.contains(&oa.reactor_id) {
+                return Err(EngineError::Illegal(format!(
+                    "{} cannot make an Opportunity Attack: this move does not leave its reach",
+                    oa.reactor_id
+                )));
+            }
+            opportunity_eligibility(state, r, i).map_err(|why| {
+                EngineError::Illegal(format!("{} cannot make an Opportunity Attack: {}", oa.reactor_id, why.reason()))
+            })?;
+            let attack = opportunity_attack_action(stat_block(state, &state.combatants[r])?, oa.attack_id.as_deref())
+                .map_err(|why| EngineError::Illegal(format!("{} cannot make an Opportunity Attack: {why}", oa.reactor_id)))?;
+            if let Some(usage) = &attack.usage {
+                spend_usage(&mut state.clone(), r, &attack.id, usage)?;
+            }
+            Ok((r, attack))
+        })
+        .collect::<Result<Vec<_>, EngineError>>()?;
+
+    let mut events = Vec::new();
+    let mut stream = Stream::from_state(state.rng.clone());
+    for (r, attack) in attacks {
+        let reactor_id = state.combatants[r].id.clone();
+        if let Some(usage) = &attack.usage {
+            spend_usage(state, r, &attack.id, usage)?;
+        }
+        events.push(event("reaction", format!("OPPORTUNITY ATTACK {reactor_id} on {actor_id} (reaction)"), &reactor_id, actor_id));
+        for effect in attack.effects {
+            resolve_effect(state, &mut stream, &reactor_id, effect, &[actor_id.to_string()], &mut events)?;
+        }
+        state.combatants[r].action_economy.reaction_used = true;
+        if !can_act(&state.combatants[i]) {
+            state.rng = stream.state();
+            events.push(event("move_stopped", format!("{actor_id} does not finish its move"), actor_id, actor_id));
+            return Ok(events);
+        }
+    }
+    state.rng = stream.state();
+
     state.combatants[i].action_economy.movement_used_feet += cost;
-    let mut events = vec![event("movement", format!("{actor_id} moves to {}", format!("{band:?}").to_lowercase()), actor_id, target_id.unwrap_or(actor_id))];
-    for (other, may_react) in &others {
-        set_band(state, i, actor_id, other, band, *may_react, &mut events)?;
+    events.push(event("movement", format!("{actor_id} moves to {}", format!("{band:?}").to_lowercase()), actor_id, target_id.unwrap_or(actor_id)));
+    for (other, _) in &others {
+        set_band(state, i, actor_id, other, band)?;
+    }
+    for reactor_id in provoked.iter().filter(|id| !opportunity.iter().any(|oa| &&oa.reactor_id == id)) {
+        let r = index_of(state, reactor_id)?;
+        match opportunity_eligibility(state, r, i) {
+            Ok(()) => events.push(event(
+                "opportunity_attack",
+                format!("{reactor_id} may use an Opportunity Attack on {actor_id}"),
+                reactor_id,
+                actor_id,
+            )),
+            Err(Ineligible::Unseen(why)) => events.push(event(
+                "assumption",
+                format!("ASSUMPTION {why}, so it makes no Opportunity Attack on {actor_id}"),
+                reactor_id,
+                actor_id,
+            )),
+            Err(Ineligible::Rule(_)) => {}
+        }
     }
     Ok(events)
+}
+
+/// Why a creature may not make an Opportunity Attack against a mover.
+enum Ineligible {
+    Rule(String),
+    /// The rule needs a creature the reactor can see; the engine assumes
+    /// Invisible hides the mover from every reactor and Blinded sees nothing.
+    Unseen(String),
+}
+
+impl Ineligible {
+    fn reason(&self) -> String {
+        match self {
+            Ineligible::Rule(why) => why.clone(),
+            Ineligible::Unseen(why) => format!("{why} (assumption)"),
+        }
+    }
+}
+
+/// The one eligibility rule behind both the `opportunity_attack` notice and
+/// the resolver, so the notice never names a reactor the resolver would refuse.
+/// Disengage and the Flyby and Agile no-provoke traits are not checked yet;
+/// the ticket that builds them adds them here.
+fn opportunity_eligibility(state: &EncounterState, reactor: usize, mover: usize) -> Result<(), Ineligible> {
+    let r = &state.combatants[reactor];
+    let m = &state.combatants[mover];
+    let has = |c: &Combatant, condition: Condition| c.conditions.iter().any(|x| x.condition == condition);
+    if r.side_id == m.side_id {
+        return Err(Ineligible::Rule(format!("{} is on {}'s side", r.id, m.id)));
+    }
+    if !can_act(r) {
+        return Err(Ineligible::Rule(format!("{} cannot act", r.id)));
+    }
+    if state.active_modifiers.iter().any(|x| x.target == ModifierTarget::Reactions && x.source.as_deref() == Some(r.id.as_str())) {
+        return Err(Ineligible::Rule(format!("{} cannot take reactions", r.id)));
+    }
+    if r.action_economy.reaction_used {
+        return Err(Ineligible::Rule(format!("{} has already used its reaction", r.id)));
+    }
+    if has(m, Condition::Invisible) {
+        return Err(Ineligible::Unseen(format!("{} cannot see {}, who is invisible", r.id, m.id)));
+    }
+    if has(r, Condition::Blinded) {
+        return Err(Ineligible::Unseen(format!("{} is blinded and cannot see {}", r.id, m.id)));
+    }
+    Ok(())
+}
+
+/// One melee attack: an action whose only effect is an Attack with no range.
+fn is_melee_attack(action: &crate::stat_block::AbilityEntry) -> bool {
+    matches!(action.effects.as_slice(), [Effect::Attack(a)] if a.range.is_none())
+}
+
+/// The attack a reactor uses. A named action may be limited-use; the default is
+/// the first at-will melee attack in stat-block order, reading Multiattack steps
+/// in place (first Choice option first) and skipping steps that cast.
+fn opportunity_attack_action(
+    block: &StatBlock,
+    attack_id: Option<&str>,
+) -> Result<crate::stat_block::AbilityEntry, String> {
+    if let Some(id) = attack_id {
+        let action = block.actions.iter().find(|a| a.id == id).ok_or_else(|| format!("action {id} not found"))?;
+        if !is_melee_attack(action) {
+            return Err(format!("{id} is not a single melee attack"));
+        }
+        return Ok(action.clone());
+    }
+    let at_will = |id: &str| {
+        block
+            .actions
+            .iter()
+            .find(|a| a.id == id && is_melee_attack(a) && matches!(a.usage, None | Some(Usage::AtWill)))
+    };
+    fn leaves<'a>(steps: &'a [crate::effect::MultiattackStep], out: &mut Vec<&'a str>) {
+        use crate::effect::MultiattackStep;
+        for step in steps {
+            match step {
+                MultiattackStep::Action { action_id, cast: None, .. } => out.push(action_id),
+                MultiattackStep::Action { .. } => {}
+                MultiattackStep::Choice { options, .. } => {
+                    out.extend(options.iter().filter(|o| o.cast.is_none()).map(|o| o.action_id.as_str()))
+                }
+                MultiattackStep::Alternatives { sets } => sets.iter().for_each(|set| leaves(set, out)),
+            }
+        }
+    }
+    for action in &block.actions {
+        let mut ids = vec![action.id.as_str()];
+        for effect in &action.effects {
+            if let Effect::Multiattack(multi) = effect {
+                leaves(&multi.steps, &mut ids);
+            }
+        }
+        if let Some(found) = ids.into_iter().find_map(at_will) {
+            return Ok(found.clone());
+        }
+    }
+    Err("it has no at-will melee attack".into())
 }
 
 fn band_change_cost(current: RangeBand, band: RangeBand) -> u32 {
@@ -878,10 +1066,7 @@ fn set_band(
     actor_id: &str,
     target_id: &str,
     band: RangeBand,
-    may_react: bool,
-    events: &mut Vec<EngineEvent>,
 ) -> Result<(), EngineError> {
-    let was_engaged = state.combatants[i].engagement.contains(&target_id.to_string());
     state.combatants[i].ranges.insert(target_id.into(), band);
     if let Ok(j) = index_of(state, target_id) {
         state.combatants[j].ranges.insert(actor_id.into(), band);
@@ -898,16 +1083,6 @@ fn set_band(
         state.combatants[i].engagement.retain(|id| id != target_id);
         if let Ok(j) = index_of(state, target_id) {
             state.combatants[j].engagement.retain(|id| id != actor_id);
-        }
-        // Leaving engagement opens Opportunity Attack reaction window
-        if was_engaged && may_react {
-            if let Ok(j) = index_of(state, target_id) {
-                if state.combatants[j].action_economy.reaction_used {
-                    events.push(event("opportunity_attack", format!("{target_id} has no reaction available"), target_id, actor_id));
-                } else {
-                    events.push(event("opportunity_attack", format!("{target_id} may use an Opportunity Attack on {actor_id}"), target_id, actor_id));
-                }
-            }
         }
     }
     Ok(())
@@ -1914,7 +2089,7 @@ mod tests {
         state.combatants[0].ranges.insert("goblin".into(), RangeBand::Engaged);
         state.combatants[0].engagement.push("goblin".into());
         state.combatants[1].engagement.push("fighter".into());
-        let req = StepRequest::Move { actor_id: "fighter".into(), target_id: Some("goblin".into()), band: RangeBand::Near, feet: 5 };
+        let req = StepRequest::Move { actor_id: "fighter".into(), target_id: Some("goblin".into()), band: RangeBand::Near, feet: 5, opportunity: vec![] };
         let resp = step(&mut state, req).unwrap();
         assert!(resp.events.iter().any(|e| e.kind == "movement"));
         assert!(resp.events.iter().any(|e| e.kind == "opportunity_attack"));
@@ -2755,7 +2930,7 @@ mod tests {
         let mut state = test_encounter(blocks, vec![test_combatant("a", "a", 20, "ally"), test_combatant("b", "b", 20, "enemy")]);
         state.combatants[0].ranges.insert("b".into(), RangeBand::Near);
         state.combatants[1].ranges.insert("a".into(), RangeBand::Near);
-        move_combatant(&mut state, "a", Some("b"), RangeBand::Far, 30).unwrap();
+        move_combatant(&mut state, "a", Some("b"), RangeBand::Far, 30, &[]).unwrap();
         assert_eq!(state.combatants[1].ranges["a"], RangeBand::Far);
     }
 
@@ -2774,7 +2949,7 @@ mod tests {
     #[test]
     fn untargeted_move_changes_the_band_to_everyone() {
         let mut state = three_way_encounter();
-        let events = move_combatant(&mut state, "a", None, RangeBand::Far, 35).unwrap();
+        let events = move_combatant(&mut state, "a", None, RangeBand::Far, 35, &[]).unwrap();
         assert_eq!(state.combatants[0].ranges["b"], RangeBand::Far);
         assert_eq!(state.combatants[0].ranges["c"], RangeBand::Far);
         assert_eq!(state.combatants[1].ranges["a"], RangeBand::Far);
@@ -2789,10 +2964,10 @@ mod tests {
     #[test]
     fn untargeted_move_costs_the_largest_single_pair() {
         let mut state = three_way_encounter();
-        let err = move_combatant(&mut state, "a", None, RangeBand::Far, 30).unwrap_err();
+        let err = move_combatant(&mut state, "a", None, RangeBand::Far, 30, &[]).unwrap_err();
         assert!(err.to_string().contains("35 feet"));
         assert_eq!(state.combatants[0].ranges["b"], RangeBand::Engaged);
-        move_combatant(&mut state, "a", None, RangeBand::Far, 35).unwrap();
+        move_combatant(&mut state, "a", None, RangeBand::Far, 35, &[]).unwrap();
         assert_eq!(state.combatants[0].action_economy.movement_used_feet, 35);
     }
 
@@ -2800,7 +2975,7 @@ mod tests {
     fn untargeted_move_skips_combatants_that_are_down() {
         let mut state = three_way_encounter();
         state.combatants[1].end_state = EndState::Dead;
-        let events = move_combatant(&mut state, "a", None, RangeBand::Far, 30).unwrap();
+        let events = move_combatant(&mut state, "a", None, RangeBand::Far, 30, &[]).unwrap();
         assert!(events.iter().all(|e| e.kind != "opportunity_attack"));
         assert_eq!(state.combatants[0].ranges["b"], RangeBand::Far);
         assert_eq!(state.combatants[0].ranges["c"], RangeBand::Far);
@@ -2811,6 +2986,205 @@ mod tests {
     #[test]
     fn untargeted_move_cannot_engage() {
         let mut state = three_way_encounter();
-        assert!(move_combatant(&mut state, "a", None, RangeBand::Engaged, 30).is_err());
+        assert!(move_combatant(&mut state, "a", None, RangeBand::Engaged, 30, &[]).is_err());
+    }
+
+    fn weapon(id: &str, modifier: i32, damage: i32, range: Option<(u32, u32)>, usage: Option<Usage>) -> crate::stat_block::AbilityEntry {
+        crate::stat_block::AbilityEntry {
+            id: id.into(),
+            name: id.into(),
+            desc: None,
+            kind: crate::stat_block::AbilityKind::Modeled,
+            effects: vec![Effect::Attack(Attack {
+                modifier,
+                reach: range.is_none().then_some(5),
+                range,
+                target_count: 1,
+                damage: vec![Damage { dice: "1d4".into(), damage_type: DamageType::Slashing, modifier: damage, magical: false, if_target: None, if_target_from_actor: false }],
+                on_hit: vec![],
+            })],
+            agent_clauses: vec![],
+            default_resolution: None,
+            usage,
+        }
+    }
+
+    /// `a` (ally) is engaged with enemies `b` and `c`; each enemy has one sure-hit claw.
+    fn provoking_encounter(claw_damage: i32) -> EncounterState {
+        let mut state = three_way_encounter();
+        for id in ["b", "c"] {
+            let snapshot = state.stat_blocks.iter_mut().find(|s| s.id == id).unwrap();
+            snapshot.stat_block.actions.push(weapon("claw", 100, claw_damage, None, None));
+        }
+        state.combatants[0].ranges.insert("c".into(), RangeBand::Engaged);
+        state.combatants[2].ranges.insert("a".into(), RangeBand::Engaged);
+        state.combatants[0].engagement.push("c".into());
+        state.combatants[2].engagement.push("a".into());
+        state.initiative_order = vec!["a".into(), "b".into(), "c".into()];
+        state.active_turn = Some("a".into());
+        state
+    }
+
+    fn oa(reactor: &str, attack: Option<&str>) -> OpportunityAttack {
+        OpportunityAttack { reactor_id: reactor.into(), attack_id: attack.map(Into::into) }
+    }
+
+    #[test]
+    fn named_reactor_attacks_before_the_move_and_spends_its_reaction() {
+        let mut state = provoking_encounter(0);
+        let events = move_combatant(&mut state, "a", None, RangeBand::Far, 35, &[oa("b", None)]).unwrap();
+        let kinds: Vec<_> = events.iter().map(|e| e.kind.as_str()).collect();
+        let reaction = kinds.iter().position(|k| *k == "reaction").expect("reaction line");
+        let movement = kinds.iter().position(|k| *k == "movement").expect("movement line");
+        assert!(reaction < movement && kinds[reaction + 1] == "attack", "{kinds:?}");
+        assert_eq!(events[reaction].message, "OPPORTUNITY ATTACK b on a (reaction)");
+        assert!(state.combatants[1].action_economy.reaction_used);
+        let notices: Vec<_> = events.iter().filter(|e| e.kind == "opportunity_attack").collect();
+        assert_eq!(notices.len(), 1);
+        assert_eq!(notices[0].actor_id.as_deref(), Some("c"));
+        assert_eq!(state.combatants[0].ranges["b"], RangeBand::Far);
+        assert_eq!(state.combatants[0].action_economy.movement_used_feet, 35);
+    }
+
+    #[test]
+    fn a_miss_spends_the_reaction_too() {
+        let mut state = provoking_encounter(0);
+        let snapshot = state.stat_blocks.iter_mut().find(|s| s.id == "b").unwrap();
+        snapshot.stat_block.actions[0] = weapon("claw", -100, 0, None, None);
+        for seed in 1..20 {
+            let mut state = state.clone();
+            state.rng = RngState::new(seed);
+            let events = move_combatant(&mut state, "a", Some("b"), RangeBand::Near, 5, &[oa("b", None)]).unwrap();
+            let attack = events.iter().find(|e| e.kind == "attack").unwrap();
+            if attack.message.ends_with("(miss)") {
+                assert!(state.combatants[1].action_economy.reaction_used);
+                return;
+            }
+        }
+        panic!("no seed missed");
+    }
+
+    #[test]
+    fn the_reaction_comes_back_on_the_reactors_own_turn() {
+        let mut state = provoking_encounter(0);
+        move_combatant(&mut state, "a", Some("b"), RangeBand::Near, 5, &[oa("b", None)]).unwrap();
+        step(&mut state, StepRequest::EndTurn).unwrap();
+        assert_eq!(state.active_turn.as_deref(), Some("b"));
+        assert!(!state.combatants[1].action_economy.reaction_used);
+    }
+
+    #[test]
+    fn a_downed_mover_stops_and_later_reactors_keep_their_reaction() {
+        let mut state = provoking_encounter(50);
+        let events = move_combatant(&mut state, "a", None, RangeBand::Far, 35, &[oa("b", None), oa("c", None)]).unwrap();
+        assert_ne!(state.combatants[0].end_state, EndState::Active);
+        assert_eq!(events.last().unwrap().kind, "move_stopped");
+        assert!(events.iter().all(|e| e.kind != "movement" && e.kind != "opportunity_attack"));
+        assert_eq!(state.combatants[0].action_economy.movement_used_feet, 0);
+        assert_eq!(state.combatants[0].ranges["b"], RangeBand::Engaged);
+        assert!(state.combatants[0].engagement.contains(&"c".to_string()));
+        assert!(!state.combatants[2].action_economy.reaction_used);
+    }
+
+    #[test]
+    fn an_ineligible_named_reactor_fails_the_whole_move() {
+        let base = provoking_encounter(0);
+        let refused = |state: &mut EncounterState, target: Option<&str>, band: RangeBand, named: &[OpportunityAttack], why: &str| {
+            let before = serde_json::to_value(&*state).unwrap();
+            let err = move_combatant(state, "a", target, band, 35, named).unwrap_err();
+            assert!(matches!(err, EngineError::Illegal(_) | EngineError::Invalid(_)), "{err:?}");
+            assert!(err.to_string().contains(why), "{err}");
+            assert_eq!(serde_json::to_value(&*state).unwrap(), before);
+        };
+        let mut used = base.clone();
+        used.combatants[1].action_economy.reaction_used = true;
+        refused(&mut used, None, RangeBand::Far, &[oa("c", None), oa("b", None)], "already used its reaction");
+        refused(&mut base.clone(), Some("c"), RangeBand::Near, &[oa("b", None)], "does not leave its reach");
+        refused(&mut base.clone(), None, RangeBand::Far, &[oa("b", None), oa("b", None)], "named twice");
+        let mut ally = base.clone();
+        ally.combatants[1].side_id = "ally".into();
+        refused(&mut ally, None, RangeBand::Far, &[oa("b", None)], "on a's side");
+        let mut stunned = base.clone();
+        stunned.combatants[1].conditions.push(ConditionInstance { condition: Condition::Stunned, duration: Duration::Rounds(1), source: None, ends_on_damage: false });
+        refused(&mut stunned, None, RangeBand::Far, &[oa("b", None)], "cannot act");
+        let mut slowed = base.clone();
+        slowed.active_modifiers.push(ActiveModifier { target: ModifierTarget::Reactions, change: ModifierChange::None, remaining: Duration::Rounds(1), source: Some("b".into()) });
+        refused(&mut slowed, None, RangeBand::Far, &[oa("b", None)], "cannot take reactions");
+        let mut unseen = base.clone();
+        unseen.combatants[0].conditions.push(ConditionInstance { condition: Condition::Invisible, duration: Duration::Rounds(1), source: None, ends_on_damage: false });
+        refused(&mut unseen, None, RangeBand::Far, &[oa("b", None)], "who is invisible (assumption)");
+        refused(&mut base.clone(), None, RangeBand::Far, &[oa("b", Some("bite"))], "action bite not found");
+    }
+
+    #[test]
+    fn notices_name_only_eligible_reactors() {
+        let mut state = provoking_encounter(0);
+        state.combatants[1].action_economy.reaction_used = true;
+        state.combatants[2].conditions.push(ConditionInstance { condition: Condition::Blinded, duration: Duration::Rounds(1), source: None, ends_on_damage: false });
+        let events = move_combatant(&mut state, "a", None, RangeBand::Far, 35, &[]).unwrap();
+        assert!(events.iter().all(|e| e.kind != "opportunity_attack"), "{events:?}");
+        let assumption = events.iter().find(|e| e.kind == "assumption").expect("sight assumption");
+        assert_eq!(assumption.message, "ASSUMPTION c is blinded and cannot see a, so it makes no Opportunity Attack on a");
+    }
+
+    #[test]
+    fn the_default_attack_is_the_first_at_will_melee_leaf() {
+        use crate::effect::{ChoiceOption, Multiattack, MultiattackStep};
+        let mut block = test_stat_block("m", "M", 20, 10);
+        block.actions = vec![
+            crate::stat_block::AbilityEntry {
+                id: "multiattack".into(),
+                name: "Multiattack".into(),
+                desc: None,
+                kind: crate::stat_block::AbilityKind::Modeled,
+                effects: vec![Effect::Multiattack(Multiattack {
+                    steps: vec![MultiattackStep::Choice {
+                        options: vec![
+                            ChoiceOption { action_id: "spit".into(), count: 1, cast: None },
+                            ChoiceOption { action_id: "gore".into(), count: 1, cast: None },
+                            ChoiceOption { action_id: "bite".into(), count: 1, cast: None },
+                        ],
+                        pick: 1,
+                    }],
+                })],
+                agent_clauses: vec![],
+                default_resolution: None,
+                usage: None,
+            },
+            weapon("bite", 4, 2, None, None),
+            weapon("spit", 4, 2, Some((30, 60)), None),
+            weapon("gore", 4, 2, None, Some(Usage::PerDay { uses: 1 })),
+        ];
+        assert_eq!(opportunity_attack_action(&block, None).unwrap().id, "bite");
+        assert_eq!(opportunity_attack_action(&block, Some("gore")).unwrap().id, "gore");
+        assert!(opportunity_attack_action(&block, Some("spit")).unwrap_err().contains("not a single melee attack"));
+        assert!(opportunity_attack_action(&block, Some("multiattack")).is_err());
+        block.actions.remove(1);
+        assert!(opportunity_attack_action(&block, None).unwrap_err().contains("no at-will melee attack"));
+    }
+
+    #[test]
+    fn a_named_limited_attack_spends_its_use() {
+        let mut state = provoking_encounter(0);
+        let snapshot = state.stat_blocks.iter_mut().find(|s| s.id == "b").unwrap();
+        snapshot.stat_block.actions.push(weapon("gore", 100, 0, None, Some(Usage::PerDay { uses: 1 })));
+        state.combatants[1].resources.insert("b:gore".into(), 1);
+        let err = move_combatant(&mut state.clone(), "a", Some("b"), RangeBand::Near, 5, &[oa("b", Some("gore"))]).unwrap_err();
+        assert!(err.to_string().contains("no uses remaining"), "{err}");
+        state.combatants[1].resources.remove("b:gore");
+        move_combatant(&mut state, "a", Some("b"), RangeBand::Near, 5, &[oa("b", Some("gore"))]).unwrap();
+        assert_eq!(state.combatants[1].resources["b:gore"], 1);
+    }
+
+    #[test]
+    fn a_spent_named_attack_fails_before_any_attack_resolves() {
+        let mut state = provoking_encounter(0);
+        let snapshot = state.stat_blocks.iter_mut().find(|s| s.id == "c").unwrap();
+        snapshot.stat_block.actions.push(weapon("gore", 100, 0, None, Some(Usage::PerDay { uses: 1 })));
+        state.combatants[2].resources.insert("c:gore".into(), 1);
+        let before = serde_json::to_value(&state).unwrap();
+        let err = move_combatant(&mut state, "a", None, RangeBand::Far, 35, &[oa("b", None), oa("c", Some("gore"))]).unwrap_err();
+        assert!(err.to_string().contains("no uses remaining"), "{err}");
+        assert_eq!(serde_json::to_value(&state).unwrap(), before);
     }
 }

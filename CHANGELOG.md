@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- `bench move --opportunity <reactor>[:<attack-id>]` has a reactor take its Opportunity Attack before the move, rolled by the engine. Repeat the flag for several reactors. The default attack is the reactor's first at-will melee attack. The reaction is spent hit or miss and returns on the reactor's own turn. A mover left unable to act stops without moving. A named reactor that can't react fails the move with the reason. Batch results are unchanged. See ADR 0015.
+
+### Changed
+
+- The `opportunity_attack` notice now names only creatures that could still react: enemies that can act, can take reactions, have their reaction, and can see the mover. It no longer reports "has no reaction available", and allies never get it. A reactor that can't see the mover gets an `assumption` line instead.
+
 ## v0.1.0 - 2026-11-02
 
 ### Added

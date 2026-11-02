@@ -613,7 +613,7 @@ fn take_turn(state: &mut EncounterState, actor: &str, constants: &PolicyConstant
                     let fallback = tactics::fallback(state, actor, constants);
                     log.line(format!("  {}", fallback.log_line()));
                     for m in &fallback.movement {
-                        let request = StepRequest::Move { actor_id: actor.into(), target_id: Some(m.target_id.clone()), band: m.band, feet: m.feet };
+                        let request = StepRequest::Move { actor_id: actor.into(), target_id: Some(m.target_id.clone()), band: m.band, feet: m.feet, opportunity: vec![] };
                         if let Ok(events) = engine::step_events(state, request) {
                             log.events(state, &events, damage);
                         }
@@ -632,7 +632,7 @@ fn execute(state: &mut EncounterState, plan: &tactics::Plan) -> Result<Vec<Engin
         let left = m.feet;
         events.extend(engine::step_events(
             state,
-            StepRequest::Move { actor_id: plan.actor_id.clone(), target_id: Some(m.target_id.clone()), band: m.band, feet: left },
+            StepRequest::Move { actor_id: plan.actor_id.clone(), target_id: Some(m.target_id.clone()), band: m.band, feet: left, opportunity: vec![] },
         )?);
     }
     state.player_dice.picks = plan.picks.iter().cloned().collect();

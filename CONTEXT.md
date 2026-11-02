@@ -124,6 +124,10 @@ _Avoid_: Interrupt, callback
 A pending prompt that offers one combatant a chance to use a reaction, such as Shield or an Opportunity Attack, or a legendary action between turns.
 _Avoid_: Trigger, interrupt
 
+**Reactor**:
+A creature that takes a reaction against another's action or movement. For an Opportunity Attack, it is a creature whose engagement the mover breaks. The move names its reactors, and the engine resolves their attacks before the band changes.
+_Avoid_: Responder, defender
+
 **Seed**:
 The number that fixes an encounter's dice stream. Every encounter has one. Batch encounters derive theirs from the batch's master seed and fight index. The same seed and the same commands give the same dice.
 _Avoid_: Random state, entropy

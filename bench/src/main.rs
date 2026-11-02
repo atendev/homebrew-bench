@@ -11,6 +11,7 @@ use bench_core::{
     batch::{self, BatchError, BatchSpec},
     config::{Config, OutputTarget},
     encounter::{EncounterState, PcDice, RangeBand, StandingAssumption, PARTY_SIDE},
+    engine::OpportunityAttack,
     error::{CodedError, ErrorCode},
     live::{self, Command, Entrant, LiveError, StartSpec},
     log, paths,
@@ -139,6 +140,11 @@ enum Commands {
         /// Feet spent; defaults to the remaining walking speed.
         #[arg(long)]
         feet: Option<u32>,
+        /// A creature whose reach the move leaves takes its Opportunity Attack,
+        /// with its first at-will melee attack or the named one. Repeat to name
+        /// several; they resolve in the order given, before the move.
+        #[arg(long, value_name = "REACTOR[:ATTACK]", value_parser = parse_opportunity)]
+        opportunity: Vec<OpportunityAttack>,
         #[command(flatten)]
         at: At,
     },
@@ -419,6 +425,17 @@ fn read_stat_block(path: &str) -> Result<StatBlock, CodedError> {
         .map_err(|e| CodedError::new(ErrorCode::SchemaValidationFailed, format!("{path} is not a stat block: {e}")))
 }
 
+fn parse_opportunity(spec: &str) -> Result<OpportunityAttack, String> {
+    let (reactor, attack) = match spec.split_once(':') {
+        Some((reactor, attack)) => (reactor, Some(attack)),
+        None => (spec, None),
+    };
+    if reactor.is_empty() || attack.is_some_and(str::is_empty) {
+        return Err(format!("`{spec}` is not REACTOR or REACTOR:ATTACK"));
+    }
+    Ok(OpportunityAttack { reactor_id: reactor.into(), attack_id: attack.map(Into::into) })
+}
+
 fn parse_entrant(spec: &str) -> Result<Entrant, CodedError> {
     let (side, rest) = match spec.split_once('=') {
         Some((side, rest)) => (Some(side.to_string()), rest),
@@ -499,8 +516,8 @@ fn run(command: Commands) -> Result<String, CodedError> {
             ok(outcome)
         }
         Commands::Action { actor, action, targets, at } => step(&at, Command::Action { actor, action, targets }),
-        Commands::Move { actor, band, target, feet, at } => {
-            step(&at, Command::Move { actor, target, band: band.into(), feet })
+        Commands::Move { actor, band, target, feet, opportunity, at } => {
+            step(&at, Command::Move { actor, target, band: band.into(), feet, opportunity })
         }
         Commands::Respond { values, decline, at } => step(&at, Command::Respond { values, decline }),
         Commands::EndTurn { at } => step(&at, Command::EndTurn),
