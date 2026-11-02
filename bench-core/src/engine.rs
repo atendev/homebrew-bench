@@ -379,6 +379,7 @@ fn resolve_effect(
         }
         Effect::Heal(heal) => {
             let amount = roll_dice(state, stream, actor_id, &heal.dice)? as i32 + heal.modifier;
+            let marked = state.player_dice.all_entered_since(actor_id);
             for target_id in target_ids {
                 let i = index_of(state, target_id)?;
                 state.combatants[i].hp = (state.combatants[i].hp.max(0) + amount).min(state.combatants[i].max_hp);
@@ -386,13 +387,14 @@ fn resolve_effect(
                 if state.combatants[i].hp > 0 && state.combatants[i].end_state == EndState::Unconscious {
                     state.combatants[i].end_state = EndState::Active;
                     state.combatants[i].death_saves = DeathSaves::default();
-                    events.push(event("revive", format!("{target_id} regains consciousness"), actor_id, target_id));
+                    events.push(EngineEvent { player_dice: marked, ..event("revive", format!("{target_id} regains consciousness"), actor_id, target_id) });
                 }
-                events.push(event("heal", format!("{target_id} regains {amount} HP"), actor_id, target_id));
+                events.push(EngineEvent { player_dice: marked, ..event("heal", format!("{target_id} regains {amount} HP"), actor_id, target_id) });
             }
         }
         Effect::TempHp(temp) => {
             let amount = roll_dice(state, stream, actor_id, &temp.dice)? as i32 + temp.modifier;
+            let marked = state.player_dice.all_entered_since(actor_id);
             for target_id in if target_ids.is_empty() {
                 vec![actor_id.to_string()]
             } else {
@@ -400,6 +402,8 @@ fn resolve_effect(
             } {
                 let i = index_of(state, &target_id)?;
                 state.combatants[i].temp_hp = state.combatants[i].temp_hp.max(amount);
+                let message = format!("{target_id} gains {amount} temporary HP");
+                events.push(EngineEvent { player_dice: marked, ..event("temp_hp", message, actor_id, &target_id) });
             }
         }
         Effect::Teleport(_) => {
@@ -1069,21 +1073,23 @@ fn roll_death_saves(state: &mut EncounterState, combatant_id: &str, events: &mut
     let roll = stream.roll_die(20);
     state.rng = stream.state();
     let roll = player_roll(state, combatant_id, 20, roll);
-    if roll == 20 {
+    let marked = state.player_dice.all_entered_since(combatant_id);
+    let message = if roll == 20 {
         state.combatants[i].hp = 1;
         state.combatants[i].end_state = EndState::Active;
         state.combatants[i].death_saves = DeathSaves::default();
-        events.push(event("death_save", format!("{combatant_id} rolls a natural 20 and regains consciousness"), combatant_id, combatant_id));
+        format!("{combatant_id} rolls a natural 20 and regains consciousness")
     } else if roll == 1 {
         state.combatants[i].death_saves.failures += 2;
-        events.push(event("death_save", format!("{combatant_id} rolls a natural 1: two failures"), combatant_id, combatant_id));
+        format!("{combatant_id} rolls a natural 1: two failures")
     } else if roll >= 10 {
         state.combatants[i].death_saves.successes += 1;
-        events.push(event("death_save", format!("{combatant_id} succeeds a death save"), combatant_id, combatant_id));
+        format!("{combatant_id} succeeds a death save")
     } else {
         state.combatants[i].death_saves.failures += 1;
-        events.push(event("death_save", format!("{combatant_id} fails a death save"), combatant_id, combatant_id));
-    }
+        format!("{combatant_id} fails a death save")
+    };
+    events.push(EngineEvent { roll: Some(roll), player_dice: marked, ..event("death_save", message, combatant_id, combatant_id) });
     if state.combatants[i].death_saves.successes >= 3 {
         state.combatants[i].end_state = EndState::Stable;
         state.combatants[i].death_saves = DeathSaves::default();
@@ -2572,6 +2578,71 @@ mod tests {
         assert!(events.iter().any(|e| e.kind == "revive"));
         assert_eq!((state.combatants[1].hp, state.combatants[1].end_state), (5, EndState::Active));
         assert_eq!(state.combatants[1].death_saves.failures, 0);
+    }
+
+    fn asking_caster(faces: Vec<u32>, engine_fills_rest: bool) -> EncounterState {
+        let mut block = caster_block(1);
+        block.actions.push(ability("mend", vec![fx(serde_json::json!({"heal": {"dice": "2d4", "modifier": 1}}))], None));
+        block.bonus_actions.push(ability("ward", vec![fx(serde_json::json!({"temp_hp": {"dice": "1d6", "modifier": 2}}))], None));
+        let mut ally = test_combatant("pc", "pc", 20, "ally");
+        ally.hp = 5;
+        let mut state = test_encounter(vec![block, pc_block("pc", 20)], vec![test_combatant("mage", "mage", 30, "ally"), ally]);
+        state.settings.pc_dice = PcDice::Ask;
+        state.player_dice.faces = faces.into();
+        state.player_dice.engine_fills_rest = engine_fills_rest;
+        state
+    }
+
+    #[test]
+    fn heal_and_temp_hp_events_are_marked_when_every_die_was_entered() {
+        let mut state = asking_caster(vec![3, 4, 5], false);
+        state.combatants[0].hp = 10;
+        state.combatants[1].hp = 0;
+        state.combatants[1].end_state = EndState::Unconscious;
+        let healed = act(&mut state, "mage", "mend", &["pc", "mage"]).unwrap();
+        let marks: Vec<_> = healed.iter().filter(|e| e.kind == "heal" || e.kind == "revive").map(|e| (e.kind.as_str(), e.player_dice)).collect();
+        assert_eq!(marks, [("revive", true), ("heal", true), ("heal", true)], "{healed:?}");
+        assert_eq!((state.combatants[0].hp, state.combatants[1].hp), (18, 8));
+        let warded = act(&mut state, "mage", "ward", &["pc"]).unwrap();
+        let temp = warded.iter().find(|e| e.kind == "temp_hp").expect("temp hp event");
+        assert!(temp.player_dice, "{warded:?}");
+        assert_eq!(temp.message, "pc gains 7 temporary HP");
+        assert_eq!(state.combatants[1].temp_hp, 7);
+    }
+
+    #[test]
+    fn heal_and_temp_hp_with_an_engine_die_are_not_marked() {
+        let mut state = asking_caster(vec![3], true);
+        let healed = act(&mut state, "mage", "mend", &["pc"]).unwrap();
+        assert!(!healed.iter().find(|e| e.kind == "heal").unwrap().player_dice, "{healed:?}");
+        let warded = act(&mut state, "mage", "ward", &["pc"]).unwrap();
+        assert!(!warded.iter().find(|e| e.kind == "temp_hp").unwrap().player_dice, "{warded:?}");
+        let mut state = asking_caster(vec![], false);
+        state.settings.pc_dice = PcDice::Engine;
+        let warded = act(&mut state, "mage", "ward", &[]).unwrap();
+        let temp = warded.iter().find(|e| e.kind == "temp_hp").unwrap();
+        assert!(!temp.player_dice && temp.target_id.as_deref() == Some("mage"), "{warded:?}");
+    }
+
+    #[test]
+    fn death_save_events_carry_the_d20_and_mark_an_entered_face() {
+        for (face, fills, marked) in [(Some(12), false, true), (Some(1), false, true), (None, true, false)] {
+            let mut state = brute_vs_pc(20, smash(30, "1d6", 0), |pc| {
+                pc.hp = 0;
+                pc.end_state = EndState::Unconscious;
+            });
+            state.settings.pc_dice = PcDice::Ask;
+            state.player_dice.faces = face.into_iter().collect();
+            state.player_dice.engine_fills_rest = fills;
+            let mut events = vec![];
+            roll_death_saves(&mut state, "pc", &mut events).unwrap();
+            let save = events.iter().find(|e| e.kind == "death_save").expect("death save");
+            assert_eq!(save.player_dice, marked, "{events:?}");
+            assert!(save.roll.is_some(), "{events:?}");
+            if let Some(face) = face {
+                assert_eq!(save.roll, Some(face));
+            }
+        }
     }
 
     #[test]
