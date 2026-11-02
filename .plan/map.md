@@ -68,6 +68,7 @@ Both modes ship in phase 1. Everything the engine can't model is labeled agent j
 - [Does the standard party fall off at high levels](closed/052-does-the-standard-party-fall-off-at-high-levels.md): no fall-off at levels 11 to 18, levels 19 and 20 read High on three or four fixtures, two of them ancient dragons, so ADR 0010's trigger is not clearly met and magic items are ruled out of scope. Findings in `docs/research/052-standard-party-at-high-levels.md`.
 
 - [Build engine-rolled opportunity attacks](closed/053-build-engine-rolled-opportunity-attacks.md): `bench move --opportunity <reactor>[:<attack-id>]` resolves named reactors' attacks before the band change through one shared eligibility function, ineligible names fail the move, a downed mover stops without paying feet, and batch is unchanged. See `docs/adr/0015-opportunity-attacks-declared-on-the-move.md`.
+- [Batch policy scores buffs, forced movement and teleports](closed/045-batch-policy-scores-buffs-forced-movement-and-teleports.md): buffs score as self-only incoming-damage reduction over a two-round horizon, forced movement as a fraction of the target's threat in `control`, teleports as the opportunity attacks avoided, all in expected HP. No SRD fixture uses these effects, caster Haste may shift party cells, and the v3 bump and baseline regeneration happen once with the reactions build. Haste's extra action and ally buffs are left to a new ticket.
 
 ## Not yet specified
 
@@ -86,13 +87,14 @@ Both modes ship in phase 1. Everything the engine can't model is labeled agent j
 
 Takeable now, in order:
 
-- Batch policy scores buffs, forced movement and teleports (grilling)
 - Live legendary actions (grilling)
 - Upcast spell scaling (grilling)
 - Encounter lighting setting (grilling)
 - Live reaction windows (grilling)
 - Build Disengage and no-provoke traits (task, AFK)
+- Haste extra action and ally-targeted buffs (grilling)
 
 Blocked:
 
 - Batch policy takes reactions (grilling), waits on Build Disengage and no-provoke traits
+- Build v3 scoring for buffs, forced movement and teleports (task, AFK), waits on Batch policy takes reactions
