@@ -64,6 +64,7 @@ Both modes ship in phase 1. Everything the engine can't model is labeled agent j
 - [Batch sample replay command for homebrew files](closed/042-batch-sample-replay-command.md): `BatchSpec` carries the `bench batch` arguments as passed, so each sample's `replay` string keeps the file path, `--party`, the assumptions and their reason, shell-quoted, and adds `--levels` for a party missing levels. Fixture replays are unchanged.
 - [Untargeted move changes no positions](closed/043-untargeted-move-changes-no-positions.md): `bench move` without `--target` moves the actor relative to every other combatant and breaks every engagement, priced at the largest single-pair change among active combatants, with `opportunity_attack` events only from active ones. Untargeted `engaged` is refused, and batch is unaffected.
 - [Engine-rolled opportunity attacks](closed/044-engine-rolled-opportunity-attacks.md): the engine rolls an opportunity attack only when the move names the reactor (`bench move --opportunity <reactor>[:<attack-id>]`), resolved just before the band change with the first at-will melee action by default, the reaction spent on resolution, no off-turn `bench action`, PC dice only in ask mode, batch unchanged until the reactions ticket, and Disengage and Flyby/Agile modeled first. ADR 0015 is written by the build ticket.
+- [Player-dice marks for heal, temporary hit point and death save events](closed/051-player-dice-marks-for-heal-temp-hp-and-death-saves.md): ask mode marks heal, revive, a new `temp_hp` event and death saves by the ticket 041 rule, death saves carry their d20, and the public view hides monster temp HP amounts.
 
 ## Not yet specified
 
@@ -85,7 +86,6 @@ Takeable now, in order:
 - Live legendary actions (grilling)
 - Upcast spell scaling (grilling)
 - Encounter lighting setting (grilling)
-- Player-dice marks for heal, temporary hit point and death save events (task, AFK)
 - Does the standard party fall off at high levels (task, AFK)
 - Build engine-rolled opportunity attacks (task, AFK)
 

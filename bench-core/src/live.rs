@@ -754,6 +754,7 @@ fn event_line(state: &EncounterState, e: &EngineEvent) -> LogLine {
             LogLine::replaced(text, format!("{target} takes damage ({word})"))
         }
         ("heal", true, Some(word)) => LogLine::replaced(text, format!("{target} regains HP ({word})")),
+        ("temp_hp", true, Some(_)) => LogLine::replaced(text, format!("{target} gains temporary HP")),
         ("recharge", _, _) if !state.is_party(e.actor_id.as_deref().unwrap_or_default()) => LogLine::hidden(text),
         _ => LogLine::same(text),
     }
@@ -1075,6 +1076,25 @@ mod tests {
 
     fn lines(outcome: &Outcome) -> Vec<String> {
         outcome.events.iter().map(|e| e.line.clone()).collect()
+    }
+
+    #[test]
+    fn public_view_hides_monster_temp_hp_amounts() {
+        let (state, _) = start(spec(PcDice::Engine)).unwrap();
+        let gained = |target: &str| EngineEvent {
+            kind: "temp_hp".into(),
+            message: format!("{target} gains 7 temporary HP"),
+            actor_id: Some(target.into()),
+            target_id: Some(target.into()),
+            roll: None,
+            total: None,
+            damage: None,
+            player_dice: false,
+        };
+        let monster = event_line(&state, &gained("goblin-warrior"));
+        assert_eq!(monster, LogLine::replaced("goblin-warrior gains 7 temporary HP", "goblin-warrior gains temporary HP"));
+        let pc = event_line(&state, &gained("standard-striker-03"));
+        assert_eq!(pc, LogLine::same("standard-striker-03 gains 7 temporary HP"));
     }
 
     #[test]
