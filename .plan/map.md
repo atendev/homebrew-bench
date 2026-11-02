@@ -59,6 +59,7 @@ Both modes ship in phase 1. Everything the engine can't model is labeled agent j
 - [Batch tactics policy and batch runner](closed/031-batch-tactics-policy-and-batch-runner.md): `bench batch` plays one monster against a party across levels with tactics policy v1 for both sides, refuses unresolved homebrew abilities unless an `abilities.<id>` assumption covers them, replays any fight by global index with `--fight`, and writes an accessible HTML report plus three sampled logs. The ticket 027 engine gaps are closed, conditions can end on damage, and breaking concentration ends what it held.
 
 - [Empirical CR baseline curve and embedded reference data](closed/032-empirical-cr-baseline-curve-and-embedded-reference-data.md): `data/baseline/curve.json` covers all 341 fixtures (174 with agent clauses left out), three-fixture pooling and thin labels, `bench batch` states a four-part verdict plus SRD facts and stale warnings, the four datasets are embedded in `bench` with `fixture`, `party` and `baseline` commands, and fixing a Dryad stack overflow moved the tactics policy to v2.
+- [Agent skill and house-rule templates](closed/033-agent-skill-and-house-rule-templates.md): `.agents/skills/homebrew-bench/` holds a short `SKILL.md` (bootstrap, house-rule loading, honest output) plus batch, live and house-rule references and a template, with a `.claude/skills` symlink, a root `AGENTS.md`, and a test that checks every documented command and flag against `bench help --json`. The skill follows the real CLI where the ticket differed, and two engine defects became tickets.
 
 ## Not yet specified
 
@@ -67,6 +68,8 @@ Both modes ship in phase 1. Everything the engine can't model is labeled agent j
 - Player-dice marks for heal, temporary hit point and death save events: these dice go through the prompt but their events carry no `player_dice` flag yet. This depends on whether those events gain roll fields.
 
 - Batch policy gaps: v1 gives buffs, forced movement and teleports no score, takes no reactions, and the engine only logs opportunity attacks. The committed curve now exists; revisit when a ticket needs the policy to score these.
+
+- Live mode gaps the skill routes through agent judgment: the engine opens no reaction windows, has no live command for legendary actions, never rolls opportunity attacks (and refuses an ordinary attack off-turn), and has no lighting setting though roll modifiers name one. Revisit when live play shows which of these costs the DM most.
 
 - Magic items in the standard party: ruled out for phase 1, revisit if the CR baseline curve shows the party falling off SRD monsters at high levels.
 
@@ -82,8 +85,6 @@ Both modes ship in phase 1. Everything the engine can't model is labeled agent j
 
 Takeable now, in order:
 
-- Agent skill and house-rule templates (task)
-
-Blocked:
-
-- Release packaging, legal notices and installers (task), blocked by Agent skill and house-rule templates
+- Release packaging, legal notices and installers (task)
+- Batch sample replay command for homebrew files (task)
+- Untargeted move changes no positions (task)

@@ -12,6 +12,7 @@
 - `bench batch` now compares the run against the curve: a claimed-CR verdict in both directions (including "no threat at this level"), whole-level effective CR, rounds and damage-per-round anomalies against the fixture spread with thin cells named, a basis line, the SRD XP and encounter-budget facts, and a stale-baseline warning when the fixtures, party, tactics policy or engine differ from the curve's.
 - Fixtures, the spell effects file, the standard party and the baseline are embedded in `bench` at compile time. `bench fixture list`, `bench fixture show <id>` and `bench party show [--level <1-20>]` print them, and a bare fixture or standard party id works wherever `bench start`, `bench add` and `bench batch` take a stat block path.
 - Batch warns when a monster casts a spell the effects file lacks, since those casts do nothing.
+- The `homebrew-bench` agent skill in `.agents/skills/homebrew-bench/` teaches any agent batch mode, live mode and house rules, with a house-rule template. `.claude/skills/homebrew-bench` links to it and `AGENTS.md` points to it.
 
 ### Changed
 
