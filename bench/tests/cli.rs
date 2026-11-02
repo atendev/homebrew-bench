@@ -272,7 +272,7 @@ fn help_json_lists_every_command() {
     let names: Vec<&str> = catalog["commands"].as_array().unwrap().iter().map(|c| c["name"].as_str().unwrap()).collect();
     for name in [
         "start", "action", "move", "respond", "end-turn", "end", "state", "list", "clean", "override", "roll", "add",
-        "remove", "undo", "replay", "log", "batch",
+        "remove", "undo", "replay", "log", "batch", "fixture", "party", "baseline",
     ] {
         assert!(names.contains(&name), "{name} missing from {names:?}");
     }
@@ -327,4 +327,44 @@ fn batch_argument_errors() {
     assert_eq!(bench.err(&["batch", "no-such-monster", "--seed", "1"]), "not_found");
     assert_eq!(bench.err(&["batch", "ogre", "--levels", "0-3", "--seed", "1"]), "invalid_argument");
     assert_eq!(bench.err(&["batch", "ogre", "--party", "missing", "--seed", "1"]), "not_found");
+}
+
+#[test]
+fn fixture_and_party_commands_print_embedded_data() {
+    let bench = Bench::new();
+    let list = bench.ok(&["fixture", "list"]);
+    assert!(list["count"].as_u64().unwrap() >= 341);
+    let ogre = list["fixtures"].as_array().unwrap().iter().find(|f| f["id"] == "ogre").unwrap();
+    assert_eq!(ogre["challenge_rating"], 2.0);
+    let shown = bench.ok(&["fixture", "show", "ogre"]);
+    assert_eq!(shown["id"], "ogre");
+    assert_eq!(bench.err(&["fixture", "show", "no-such-monster"]), "not_found");
+    let level = bench.ok(&["party", "show", "--level", "3"]);
+    assert_eq!(level["members"].as_array().unwrap().len(), 4);
+    assert_eq!(level["members"][0]["id"], "standard-defender-03");
+    assert_eq!(bench.ok(&["party", "show"])["levels"].as_object().unwrap().len(), 20);
+}
+
+#[test]
+fn bare_fixture_slugs_start_an_encounter_and_files_still_win() {
+    let bench = Bench::new();
+    let out = bench.ok(&["start", "standard-striker-03", "goblin-warrior", "--seed", "3"]);
+    assert!(out.to_string().contains("goblin-warrior"));
+    let path = bench.cwd.join("ogre");
+    std::fs::write(&path, "not json").unwrap();
+    assert_eq!(bench.err(&["start", "ogre", "goblin-warrior"]), "invalid_json");
+}
+
+#[test]
+fn batch_compares_against_the_embedded_curve_outside_the_repo() {
+    let bench = Bench::new();
+    let out = bench.ok(&["batch", "ogre", "--seed", "5", "--levels", "2-3", "--fights", "3", "--out", "r"]);
+    let comparison = &out["comparison"];
+    assert!(comparison["verdict"].as_str().unwrap().contains("CR 2"));
+    assert!(comparison["basis"].as_str().unwrap().starts_with("Basis: "));
+    assert!(out["srd"]["xp"] == 450);
+    let status = bench.ok(&["baseline", "status"]);
+    assert_eq!(status["current"], true);
+    let html = std::fs::read_to_string(bench.cwd.join("r/report.html")).unwrap();
+    assert!(html.contains("Claimed-CR verdict"));
 }

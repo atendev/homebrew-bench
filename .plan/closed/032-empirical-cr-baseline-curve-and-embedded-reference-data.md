@@ -3,7 +3,7 @@ id: 032
 title: Empirical CR baseline curve and embedded reference data
 type: task
 mode: AFK
-status: open
+status: closed
 blocked_by:
   - 031
 claimed: false
@@ -31,3 +31,13 @@ Key decisions to implement:
   - Add regression batch fight tests against representative spellcasting fixtures asserting expected difficulty-band ranges and verifying that missing monster spells do not silently break calibration.
 
 ## Resolution
+
+The curve, the batch comparison, the embedded data and the inspection commands are built.
+
+- `data/baseline/curve.json` holds all 341 SRD fixtures at 100 fights per party level 1 to 20, a per-fixture row, 620 per-`(CR, level)` cells (60 thin) and the fingerprints (fixture set, party, tactics policy id, version and constants, engine version). Hashes go through `serde_json::Value` first so hash-map fields cannot change them. Each fixture derives its seed from the base seed `20261102` and its id, so the file regenerates byte for byte, and a test recomputes one fixture to prove it.
+- 174 fixtures carry agent clauses or unmodeled abilities. They fight with those left out (`abilities.<id>=ignored`), listed per fixture under `ignored_abilities`, so the curve is the monster as the engine plays it. The alternative, dropping them, would have left half the fixtures out.
+- A CR with fewer than three fixtures pools the CRs one ladder step either side; a cell still short of three is thin. CRs 26 to 28 have no fixtures and no cell.
+- `bench batch` uses the embedded curve by default. Its summary and report carry the four-part statement (verdict at the claimed CR both ways with "no threat at this level", effective CR as "around 1 or trivial" or "over 20" at the ends, rounds and damage-per-round anomalies naming thin cells, one basis line), the SRD XP and four-character budget facts, and a stale-baseline warning naming each input that differs.
+- `build.rs` embeds the four data roots. Bare fixture or standard party ids resolve in `start`, `add` and `batch` when no file of that name exists. `bench fixture list|show`, `bench party show [--level]`, `bench baseline status|generate` are new.
+- Spell honesty: batch warns for every spell id a monster casts that the effects file lacks (only `cloud-giant`'s `fog-cloud` today), the curve records them per fixture, and `bench-core/tests/calibration.rs` pins band ranges for archmage, mage, priest, couatl and lich.
+- Found and fixed: the tactics policy recursed forever when two combatants each had condition effects (the Dryad overflowed the stack). A control effect nested more than two threat evaluations deep now counts as zero. That changes scoring, so the policy is v2 and the curve was generated under it.

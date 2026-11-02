@@ -7,6 +7,7 @@ use std::path::PathBuf;
 use std::process;
 
 use bench_core::{
+    baseline, embedded,
     batch::{self, BatchError, BatchSpec},
     config::{Config, OutputTarget},
     encounter::{EncounterState, PcDice, RangeBand, StandingAssumption, PARTY_SIDE},
@@ -266,6 +267,21 @@ enum Commands {
         #[arg(long, value_enum)]
         output: Option<Output>,
     },
+    /// Read-only view of the SRD fixtures embedded in `bench`.
+    Fixture {
+        #[command(subcommand)]
+        action: FixtureAction,
+    },
+    /// Read-only view of the standard party embedded in `bench`.
+    Party {
+        #[command(subcommand)]
+        action: PartyAction,
+    },
+    /// Inspect or regenerate the CR baseline curve.
+    Baseline {
+        #[command(subcommand)]
+        action: BaselineAction,
+    },
     /// Print the plain-text log.
     Log {
         /// Apply the public view filter.
@@ -273,6 +289,48 @@ enum Commands {
         public: bool,
         #[command(flatten)]
         at: At,
+    },
+}
+
+#[derive(Subcommand)]
+enum FixtureAction {
+    /// List embedded fixture ids with name and challenge rating.
+    List,
+    /// Print one embedded fixture stat block.
+    Show {
+        /// Fixture id, such as `ogre`.
+        id: String,
+    },
+}
+
+#[derive(Subcommand)]
+enum PartyAction {
+    /// Print the embedded standard party stat blocks.
+    Show {
+        /// Only this party level.
+        #[arg(long, value_parser = clap::value_parser!(u8).range(1..=20))]
+        level: Option<u8>,
+    },
+}
+
+#[derive(Subcommand)]
+enum BaselineAction {
+    /// Compare the embedded baseline's input fingerprints with the ones this binary computes now.
+    Status,
+    /// Fight every embedded fixture against the standard party and write the curve. Rebuild `bench` after changing `data/` first.
+    Generate {
+        /// Where to write the curve.
+        #[arg(long, default_value = "data/baseline/curve.json")]
+        out: PathBuf,
+        /// Fights per fixture and party level.
+        #[arg(long, default_value_t = batch::DEFAULT_FIGHTS)]
+        fights: u32,
+        /// Base seed; each fixture derives its own from it and its id.
+        #[arg(long, default_value_t = baseline::DEFAULT_BASE_SEED)]
+        seed: u64,
+        /// Worker threads; defaults to the available cores.
+        #[arg(long)]
+        threads: Option<usize>,
     },
 }
 
@@ -338,6 +396,12 @@ fn coded(err: LiveError, override_cmd: bool) -> CodedError {
 }
 
 fn read_stat_block(path: &str) -> Result<StatBlock, CodedError> {
+    if !std::path::Path::new(path).exists() {
+        if let Some(text) = embedded::stat_block_json(path) {
+            return serde_json::from_str(text)
+                .map_err(|e| CodedError::new(ErrorCode::Internal, format!("embedded stat block `{path}` is invalid: {e}")));
+        }
+    }
     let text = std::fs::read_to_string(path)
         .map_err(|e| CodedError::new(ErrorCode::NotFound, format!("failed to read {path}: {e}")))?;
     let value: Value = serde_json::from_str(&text)
@@ -503,6 +567,9 @@ fn run(command: Commands) -> Result<String, CodedError> {
         Commands::Batch { monster, levels, fights, max_rounds, party, seed, fight, assume, assume_reason, assumptions, out, output } => {
             run_batch(BatchArgs { monster, levels, fights, max_rounds, party, seed, fight, assume, assume_reason, assumptions, out, output })
         }
+        Commands::Fixture { action } => run_fixture(action),
+        Commands::Party { action } => run_party(action),
+        Commands::Baseline { action } => run_baseline(action),
         Commands::Help { .. } | Commands::Schema { .. } => unreachable!("handled in main"),
     }
 }
@@ -575,10 +642,8 @@ fn batch_error(err: BatchError) -> CodedError {
 
 fn run_batch(args: BatchArgs) -> Result<String, CodedError> {
     let cwd = cwd()?;
-    let monster = if std::path::Path::new(&args.monster).is_file() {
+    let monster = if std::path::Path::new(&args.monster).is_file() || embedded::stat_block_json(&args.monster).is_some() {
         read_stat_block(&args.monster)?
-    } else if let Some(path) = batch::fixture_path(&args.monster) {
-        read_stat_block(&path.display().to_string())?
     } else {
         return Err(CodedError::new(ErrorCode::NotFound, format!("`{}` is neither a stat block file nor an SRD fixture id", args.monster)));
     };
@@ -615,6 +680,11 @@ fn run_batch(args: BatchArgs) -> Result<String, CodedError> {
         max_rounds: args.max_rounds,
         master_seed: args.seed.unwrap_or_else(rand::random),
         assumptions,
+        baseline: match baseline::embedded() {
+            Some(Ok(b)) => Some(b),
+            Some(Err(e)) => return Err(batch_error(e)),
+            None => None,
+        },
     };
     if let Some(index) = args.fight {
         let result = batch::replay_fight(&spec, index).map_err(batch_error)?;
@@ -654,6 +724,89 @@ fn run_batch(args: BatchArgs) -> Result<String, CodedError> {
     out["report_path"] = report_path.display().to_string().into();
     out["log_paths"] = log_paths.into();
     ok(out)
+}
+
+fn run_fixture(action: FixtureAction) -> Result<String, CodedError> {
+    match action {
+        FixtureAction::List => {
+            let rows = baseline::embedded_fixtures()
+                .map_err(batch_error)?
+                .into_iter()
+                .map(|b| serde_json::json!({ "id": b.id, "name": b.name, "challenge_rating": b.challenge_rating }))
+                .collect::<Vec<_>>();
+            ok(serde_json::json!({ "count": rows.len(), "fixtures": rows }))
+        }
+        FixtureAction::Show { id } => {
+            let text = embedded::fixture_json(&id)
+                .ok_or_else(|| CodedError::new(ErrorCode::NotFound, format!("`{id}` is not an embedded fixture; try `bench fixture list`")))?;
+            ok(serde_json::from_str::<Value>(text)
+                .map_err(|e| CodedError::new(ErrorCode::Internal, format!("embedded fixture `{id}` is invalid: {e}")))?)
+        }
+    }
+}
+
+fn run_party(action: PartyAction) -> Result<String, CodedError> {
+    let PartyAction::Show { level } = action;
+    let party = batch::standard_party().map_err(batch_error)?;
+    match level {
+        Some(level) => {
+            let members = party.get(&level).ok_or_else(|| CodedError::new(ErrorCode::NotFound, format!("no standard party members at level {level}")))?;
+            ok(serde_json::json!({ "party": "standard", "level": level, "members": members }))
+        }
+        None => ok(serde_json::json!({ "party": "standard", "levels": party })),
+    }
+}
+
+fn run_baseline(action: BaselineAction) -> Result<String, CodedError> {
+    let party = batch::standard_party().map_err(batch_error)?;
+    let current = baseline::fingerprints_for(&party, &Default::default());
+    match action {
+        BaselineAction::Status => {
+            let Some(loaded) = baseline::embedded() else {
+                return ok(serde_json::json!({ "embedded": false, "current": false, "reasons": ["no baseline was embedded at build time"] }));
+            };
+            let loaded = loaded.map_err(batch_error)?;
+            let reasons = loaded.stale_reasons(&current);
+            ok(serde_json::json!({
+                "embedded": true,
+                "current": reasons.is_empty(),
+                "reasons": reasons,
+                "fights_per_cell": loaded.fights_per_cell,
+                "fixtures": loaded.fixtures.len(),
+                "excluded": loaded.excluded,
+                "cells": loaded.cells.len(),
+                "committed": loaded.fingerprints,
+                "computed_now": current,
+            }))
+        }
+        BaselineAction::Generate { out, fights, seed, threads } => {
+            let spec = baseline::GenerateSpec {
+                fixtures: baseline::embedded_fixtures().map_err(batch_error)?,
+                party_name: "standard".into(),
+                party: &party,
+                base_seed: seed,
+                fights,
+                max_rounds: batch::DEFAULT_MAX_ROUNDS,
+                threads: threads.unwrap_or_else(|| std::thread::available_parallelism().map_or(1, usize::from)),
+            };
+            let curve = baseline::generate(&spec, &|done, total, id| eprintln!("[{done}/{total}] {id}")).map_err(batch_error)?;
+            if let Some(dir) = out.parent().filter(|d| !d.as_os_str().is_empty()) {
+                std::fs::create_dir_all(dir).map_err(|e| CodedError::new(ErrorCode::Internal, format!("cannot create {}: {e}", dir.display())))?;
+            }
+            let text = serde_json::to_string_pretty(&curve)
+                .map_err(|e| CodedError::new(ErrorCode::Internal, format!("cannot serialize the curve: {e}")))?;
+            std::fs::write(&out, text + "\n")
+                .map_err(|e| CodedError::new(ErrorCode::Internal, format!("cannot write {}: {e}", out.display())))?;
+            ok(serde_json::json!({
+                "path": out.display().to_string(),
+                "fixtures": curve.fixtures.len(),
+                "excluded": curve.excluded,
+                "cells": curve.cells.len(),
+                "thin_cells": curve.cells.iter().filter(|c| c.thin).count(),
+                "fingerprints": curve.fingerprints,
+            }))
+        }
+    }
 }
 
 fn run_schema(action: SchemaAction) -> Result<String, CodedError> {

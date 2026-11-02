@@ -8,7 +8,9 @@
 use std::collections::BTreeMap;
 use std::path::Path;
 
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
+
+use crate::baseline::{self, Baseline, Comparison};
 
 use crate::encounter::{EncounterState, EndState, PcDice, RangeBand, StandingAssumption, PARTY_SIDE};
 use crate::engine::{self, EngineEvent, StepRequest};
@@ -35,6 +37,8 @@ pub struct BatchSpec {
     pub max_rounds: u32,
     pub master_seed: u64,
     pub assumptions: Vec<StandingAssumption>,
+    /// The curve to compare against; `None` compares against party level only.
+    pub baseline: Option<Baseline>,
 }
 
 /// Why a batch cannot run.
@@ -100,7 +104,7 @@ pub struct Spread {
 }
 
 impl Spread {
-    fn of(values: &[f64]) -> Self {
+    pub(crate) fn of(values: &[f64]) -> Self {
         let mut sorted = values.to_vec();
         sorted.sort_by(f64::total_cmp);
         let rank = |p: f64| {
@@ -123,7 +127,7 @@ impl Spread {
 }
 
 /// Difficulty band from the project calibration thresholds (ticket 015).
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum Band {
     Low,
@@ -207,6 +211,20 @@ pub struct Summary {
     pub findings: Vec<Finding>,
     pub warnings: Vec<String>,
     pub samples: Vec<Sample>,
+    pub comparison: Option<Comparison>,
+    pub srd: SrdFacts,
+}
+
+/// SRD 5.2.1 reference numbers for the claimed CR, kept apart from the project-derived reading.
+#[derive(Debug, Clone, Serialize)]
+pub struct SrdFacts {
+    pub xp: Option<u64>,
+    pub proficiency_bonus: Option<u32>,
+    pub level: Option<u8>,
+    /// Four-character XP budget at `level`: Low, Moderate, High.
+    pub budget: Option<[u64; 3]>,
+    /// Which budget the claimed CR's XP fits under, as a plain statement.
+    pub within: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -296,13 +314,7 @@ fn findings(monster: &StatBlock, resolutions: &BTreeMap<String, String>) -> Vec<
 /// Run the whole batch.
 pub fn run(spec: &BatchSpec) -> Result<BatchReport, BatchError> {
     let (constants, resolutions) = prepare(spec)?;
-    let mut results: Vec<FightResult> = Vec::new();
-    for &level in &spec.levels {
-        for i in 0..spec.fights {
-            let index = fight_index(level, i, spec.fights);
-            results.push(fight(spec, &constants, level, index, false)?);
-        }
-    }
+    let results = play(spec, &constants)?;
     let cells: Vec<Cell> = spec
         .levels
         .iter()
@@ -331,7 +343,30 @@ pub fn run(spec: &BatchSpec) -> Result<BatchReport, BatchError> {
         .filter(|f| f.kind == "skipped")
         .map(|f| format!("Skipped mechanic: {} ({}) is not modeled; results may change.", f.name, f.ability_id))
         .collect();
-    warnings.push("No committed CR baseline curve yet (ticket 032); the claimed-CR comparison uses party level only.".into());
+    for spell in engine::missing_spells(&spec.monster) {
+        warnings.push(format!("Spell `{spell}` is not in the spell effects file; a cast of it does nothing, so results may understate this monster."));
+    }
+    let effective = effective_cr(&cells);
+    let fingerprints = baseline::fingerprints_for(&spec.party, &constants);
+    let comparison = spec.baseline.as_ref().map(|b| {
+        baseline::compare(
+            b,
+            &baseline::RunReading {
+                claimed_cr: spec.monster.challenge_rating,
+                cells: &cells,
+                representative_level,
+                effective_cr: &effective,
+                fingerprints: &fingerprints,
+            },
+        )
+    });
+    match &comparison {
+        None => warnings.push("No baseline curve was supplied; the claimed-CR comparison uses party level only.".into()),
+        Some(c) if !c.stale.is_empty() => {
+            warnings.push(format!("Stale baseline: {}. The comparison below may not hold for this run.", c.stale.join("; ")))
+        }
+        Some(_) => {}
+    }
     if spec.fights < DEFAULT_FIGHTS {
         warnings.push(format!("Thin data: {} fights per level, below the 100-fight reference cell.", spec.fights));
     }
@@ -350,16 +385,35 @@ pub fn run(spec: &BatchSpec) -> Result<BatchReport, BatchError> {
         master_seed: spec.master_seed,
         fights_per_level: spec.fights,
         max_rounds: spec.max_rounds,
-        effective_cr: effective_cr(&cells),
+        effective_cr: effective,
         levels: cells,
         representative_level,
         standing_assumptions: spec.assumptions.clone(),
         findings,
         warnings,
         samples,
+        comparison,
+        srd: srd_facts(spec.monster.challenge_rating, representative_level),
     };
     let html = render_html(&summary);
     Ok(BatchReport { summary, html, logs })
+}
+
+/// Play every fight without building a report or logs.
+pub fn run_fights(spec: &BatchSpec) -> Result<Vec<FightResult>, BatchError> {
+    let (constants, _) = prepare(spec)?;
+    play(spec, &constants)
+}
+
+fn play(spec: &BatchSpec, constants: &PolicyConstants) -> Result<Vec<FightResult>, BatchError> {
+    let mut results = Vec::new();
+    for &level in &spec.levels {
+        for i in 0..spec.fights {
+            let index = fight_index(level, i, spec.fights);
+            results.push(fight(spec, constants, level, index, false)?);
+        }
+    }
+    Ok(results)
 }
 
 /// Replay one fight by its global index, with its full log.
@@ -654,7 +708,7 @@ impl Log {
     }
 }
 
-fn cell(level: u8, results: &[&FightResult]) -> Cell {
+pub(crate) fn cell(level: u8, results: &[&FightResult]) -> Cell {
     let n = results.len() as u32;
     let wins = results.iter().filter(|r| r.outcome == Outcome::PartyWin).count() as u32;
     let losses = results.iter().filter(|r| r.outcome == Outcome::MonsterWin).count() as u32;
@@ -695,7 +749,7 @@ pub fn effective_cr(cells: &[Cell]) -> String {
         };
     };
     if first.level == 1 {
-        "1 or lower".into()
+        "around 1 or trivial".into()
     } else {
         first.level.to_string()
     }
@@ -752,13 +806,6 @@ fn pick_samples(results: &[FightResult], level: Option<u8>) -> Vec<(&'static str
     chosen
 }
 
-/// Path of an SRD fixture by id, when one exists.
-pub fn fixture_path(id: &str) -> Option<std::path::PathBuf> {
-    let valid = !id.is_empty() && id.chars().all(|c| c.is_ascii_alphanumeric() || c == '-');
-    let path = Path::new(env!("CARGO_MANIFEST_DIR")).parent()?.join("data/fixtures").join(format!("{id}.json"));
-    (valid && path.is_file()).then_some(path)
-}
-
 /// Parse `--levels`: `n` or `a-b` within 1 to 20.
 pub fn parse_levels(text: &str) -> Result<Vec<u8>, BatchError> {
     let bad = || BatchError::Invalid(format!("`{text}` is not a level or range such as 5 or 1-20"));
@@ -775,11 +822,12 @@ pub fn parse_levels(text: &str) -> Result<Vec<u8>, BatchError> {
     Ok((a..=b).collect())
 }
 
-/// The standard party from `data/party/standard/`.
+/// The standard party, embedded from `data/party/standard/`.
 pub fn standard_party() -> Result<Party, BatchError> {
-    let dir = Path::new(env!("CARGO_MANIFEST_DIR")).parent().map(|p| p.join("data/party/standard"));
-    let dir = dir.ok_or_else(|| BatchError::NotFound("workspace root not found".into()))?;
-    load_party_dir(&dir)
+    let blocks = crate::embedded::standard_party_json()
+        .map(|(path, text)| serde_json::from_str(text).map_err(|e| BatchError::Invalid(format!("embedded party file {path}: {e}"))))
+        .collect::<Result<Vec<StatBlock>, _>>()?;
+    group_party(blocks, "the embedded standard party")
 }
 
 /// A party folder: one stat block JSON file per member, each with `level`.
@@ -792,11 +840,18 @@ pub fn load_party_dir(dir: &Path) -> Result<Party, BatchError> {
         .filter(|p| p.extension().is_some_and(|x| x == "json"))
         .collect();
     files.sort();
-    let mut party = Party::new();
+    let mut blocks = Vec::new();
     for path in files {
         let text = std::fs::read_to_string(&path).map_err(|e| BatchError::Invalid(format!("{}: {e}", path.display())))?;
-        let block: StatBlock = serde_json::from_str(&text).map_err(|e| BatchError::Invalid(format!("{} is not a stat block: {e}", path.display())))?;
-        let level = block.level.ok_or_else(|| BatchError::Invalid(format!("{} has no `level`", path.display())))?;
+        blocks.push(serde_json::from_str(&text).map_err(|e| BatchError::Invalid(format!("{} is not a stat block: {e}", path.display())))?);
+    }
+    group_party(blocks, &format!("party folder {}", dir.display()))
+}
+
+fn group_party(blocks: Vec<StatBlock>, origin: &str) -> Result<Party, BatchError> {
+    let mut party = Party::new();
+    for block in blocks {
+        let level = block.level.ok_or_else(|| BatchError::Invalid(format!("{} in {origin} has no `level`", block.id)))?;
         party.entry(level).or_default().push(block);
     }
     for members in party.values_mut() {
@@ -806,7 +861,7 @@ pub fn load_party_dir(dir: &Path) -> Result<Party, BatchError> {
         });
     }
     if party.is_empty() {
-        return Err(BatchError::NotFound(format!("party folder {} holds no stat blocks", dir.display())));
+        return Err(BatchError::NotFound(format!("{origin} holds no stat blocks")));
     }
     Ok(party)
 }
@@ -823,14 +878,7 @@ fn num(x: f64) -> String {
     format!("{x:.1}")
 }
 
-fn cr_word(cr: f64) -> String {
-    match cr {
-        c if (c - 0.125).abs() < 1e-9 => "1/8".into(),
-        c if (c - 0.25).abs() < 1e-9 => "1/4".into(),
-        c if (c - 0.5).abs() < 1e-9 => "1/2".into(),
-        c => format!("{c}"),
-    }
-}
+use baseline::cr_word;
 
 const STYLE: &str = ":root { color-scheme: light; --ink:#18212b; --muted:#5d6873; --line:#d7dde3; --panel:#f5f7f9; --blue:#075985; --warn:#7c2d12; --good:#166534; }
     * { box-sizing:border-box; }
@@ -890,11 +938,18 @@ pub fn render_html(s: &Summary) -> String {
         (Some(_), None) => "Below claimed CR",
         _ => "No claimed CR",
     };
+    let comparison = match s.comparison.as_ref().map(|c| c.verdict_kind.as_str()) {
+        Some("harder") => "Harder than fixtures",
+        Some("easier") => "Easier than fixtures",
+        Some("no_threat") => "No threat at this level",
+        Some("matches") => "Matches fixtures",
+        _ => comparison,
+    };
     let rep_text = rep.map_or("No representative level".to_string(), |c| format!("At party level {}, this reads {}.", c.level, c.band.word()));
     let band = rep.map_or("—", |c| c.band.word());
     h.push_str("  <section aria-labelledby=\"headline\">\n    <h2 id=\"headline\">Headline reading</h2>\n    <div class=\"grid\">\n");
     h.push_str(&format!("      <div class=\"card\"><span class=\"eyebrow\">Claimed CR</span><strong>{claimed}</strong><span>{xp}</span></div>\n"));
-    h.push_str(&format!("      <div class=\"card\"><span class=\"eyebrow\">Effective CR</span><strong>{}</strong><span>Lowest level reading Low</span></div>\n", esc(&s.effective_cr)));
+    h.push_str(&format!("      <div class=\"card\"><span class=\"eyebrow\">Effective CR</span><strong>{}</strong><span>Lowest whole level reading Low</span></div>\n", esc(&s.effective_cr)));
     h.push_str(&format!("      <div class=\"card\"><span class=\"eyebrow\">Claimed-CR comparison</span><strong>{comparison}</strong><span>{rep_text}</span></div>\n"));
     h.push_str(&format!("      <div class=\"card\"><span class=\"eyebrow\">Representative band</span><strong>{band}</strong><span>Project calibration, not an SRD threshold</span></div>\n    </div>\n"));
     for w in &s.warnings {
@@ -906,7 +961,7 @@ pub fn render_html(s: &Summary) -> String {
         "  <section aria-labelledby=\"levels\">\n    <h2 id=\"levels\">Results by party level</h2>\n    <p>Each row represents {} fights. Median is the primary statistic. Mean follows in parentheses. P10–P90 gives the spread. DPR means total monster damage divided by encounter rounds. Stalemates hit the {}-round cap and count as neither wins nor losses.</p>\n    <div class=\"scroll\">\n      <table>\n        <caption>Results for {name} by party level</caption>\n        <thead><tr><th scope=\"col\">Level</th><th scope=\"col\">Wins</th><th scope=\"col\">Deaths</th><th scope=\"col\">Win rate</th><th scope=\"col\">Rounds</th><th scope=\"col\">Monster DPR</th><th scope=\"col\">Band</th><th scope=\"col\">Flags</th></tr></thead>\n        <tbody>\n",
         s.fights_per_level, s.max_rounds
     ));
-    let effective_level: Option<u8> = s.effective_cr.parse().ok().or((s.effective_cr == "1 or lower").then_some(1));
+    let effective_level: Option<u8> = s.effective_cr.parse().ok().or((s.effective_cr == "around 1 or trivial").then_some(1));
     for c in &s.levels {
         let mut flags = c.flags.clone();
         if Some(c.level) == effective_level {
@@ -925,8 +980,27 @@ pub fn render_html(s: &Summary) -> String {
 
     h.push_str("  <section aria-labelledby=\"cr\">\n    <h2 id=\"cr\">CR comparison and reference facts</h2>\n    <div class=\"two\">\n      <div>\n        <h3 id=\"cr-project\">Project-derived reading</h3>\n        <dl>\n");
     h.push_str("          <dt>Difficulty bands</dt><dd>Low: at least 95% party wins and deaths in under 2% of fights. Moderate: at least 75% wins and deaths in under 15%. High: anything riskier. These are Homebrew Bench calibration thresholds.</dd>\n");
-    h.push_str("          <dt>Effective CR</dt><dd>Lowest whole party level reading Low. Values below level 1 read 1 or lower; values above level 20 read over 20.</dd>\n");
-    h.push_str("          <dt>Baseline</dt><dd>No committed fixture curve yet, so this report compares against party level only. Rounds and DPR flag anomalies; they do not grade CR.</dd>\n        </dl>\n      </div>\n      <div>\n        <h3 id=\"cr-srd\">SRD reference facts</h3>\n        <dl>\n");
+    h.push_str("          <dt>Effective CR</dt><dd>Lowest whole party level reading Low. A monster already Low at level 1 reads around 1 or trivial; one never Low by level 20 reads over 20.</dd>\n");
+    match &s.comparison {
+        None => h.push_str("          <dt>Baseline</dt><dd>No baseline curve was supplied, so this report compares against party level only. Rounds and DPR flag anomalies; they do not grade CR.</dd>\n"),
+        Some(c) => {
+            h.push_str(&format!("          <dt>Claimed-CR verdict</dt><dd>{}</dd>\n", esc(&c.verdict)));
+            if c.anomalies.is_empty() {
+                h.push_str("          <dt>Rounds and damage per round</dt><dd>No level falls outside the fixture spread. These never grade CR.</dd>\n");
+            } else {
+                let items: Vec<String> = c.anomalies.iter().map(|a| format!("<li>{}</li>", esc(a))).collect();
+                h.push_str(&format!("          <dt>Rounds and damage per round</dt><dd>Outside the fixture spread, which flags an anomaly and never grades CR:<ul>{}</ul></dd>\n", items.join("")));
+            }
+            if !c.thin_cells.is_empty() {
+                h.push_str(&format!("          <dt>Thin data</dt><dd>{}</dd>\n", esc(&c.thin_cells.join("; "))));
+            }
+            h.push_str(&format!("          <dt>Basis</dt><dd>{}</dd>\n", esc(c.basis.trim_start_matches("Basis: "))));
+            if !c.stale.is_empty() {
+                h.push_str(&format!("          <dt>Stale baseline</dt><dd class=\"warn\">{}</dd>\n", esc(&c.stale.join("; "))));
+            }
+        }
+    }
+    h.push_str("        </dl>\n      </div>\n      <div>\n        <h3 id=\"cr-srd\">SRD reference facts</h3>\n        <dl>\n");
     match s.claimed_cr {
         Some(cr) => h.push_str(&format!(
             "          <dt>Claimed CR {}</dt><dd>{}. Monster proficiency bonus: +{}.</dd>\n",
@@ -936,7 +1010,13 @@ pub fn render_html(s: &Summary) -> String {
         )),
         None => h.push_str("          <dt>Claimed CR</dt><dd>The stat block states no challenge rating.</dd>\n"),
     }
-    h.push_str("          <dt>SRD anchor</dt><dd>The SRD states that one monster with CR equal to the party level is a Low-difficulty fight for four characters.</dd>\n        </dl>\n      </div>\n    </div>\n  </section>\n\n");
+    if let (Some(level), Some([low, moderate, high])) = (s.srd.level, s.srd.budget) {
+        h.push_str(&format!(
+            "          <dt>Encounter budget at level {level}</dt><dd>For four characters the SRD budget is {} XP Low, {} Moderate, {} High.{}</dd>\n",
+            thousands(low), thousands(moderate), thousands(high), s.srd.within.as_ref().map_or(String::new(), |w| format!(" {}", esc(w)))
+        ));
+    }
+    h.push_str("          <dt>SRD anchor</dt><dd>The SRD says a single monster generally presents a low-difficulty challenge for a party of four characters whose level equals its Challenge Rating. The XP budget above is a separate SRD measure, and the two need not agree.</dd>\n        </dl>\n      </div>\n    </div>\n  </section>\n\n");
 
     h.push_str("  <section aria-labelledby=\"findings\">\n    <h2 id=\"findings\">Wording and coverage findings</h2>\n");
     if s.findings.is_empty() {
@@ -997,6 +1077,35 @@ pub fn render_html(s: &Summary) -> String {
     h
 }
 
+/// SRD 5.2.1 XP budget per character at a party level: Low, Moderate, High.
+fn budget_per_character(level: u8) -> Option<[u64; 3]> {
+    const TABLE: [[u64; 3]; 20] = [
+        [50, 75, 100], [100, 150, 200], [150, 225, 400], [250, 375, 500], [500, 750, 1100], [600, 1000, 1400],
+        [750, 1300, 1700], [1000, 1700, 2100], [1300, 2000, 2600], [1600, 2300, 3100], [1900, 2900, 4100],
+        [2200, 3700, 4700], [2600, 4200, 5400], [2900, 4900, 6200], [3300, 5400, 7800], [3800, 6100, 9800],
+        [4500, 7200, 11700], [5000, 8700, 14200], [5500, 10700, 17200], [6400, 13200, 22000],
+    ];
+    TABLE.get(usize::from(level).checked_sub(1)?).copied()
+}
+
+fn srd_facts(cr: Option<f64>, level: Option<u8>) -> SrdFacts {
+    let xp = cr.and_then(srd_xp);
+    let budget = level.and_then(budget_per_character).map(|b| b.map(|x| x * 4));
+    let within = match (xp, budget) {
+        (Some(xp), Some([low, moderate, high])) => Some(
+            match xp {
+                x if x <= low => "The claimed CR's XP fits the Low budget.",
+                x if x <= moderate => "The claimed CR's XP fits the Moderate budget but not Low.",
+                x if x <= high => "The claimed CR's XP fits the High budget but not Moderate.",
+                _ => "The claimed CR's XP is over the High budget.",
+            }
+            .to_string(),
+        ),
+        _ => None,
+    };
+    SrdFacts { xp, proficiency_bonus: cr.map(proficiency), level, budget, within }
+}
+
 /// SRD 5.2.1 XP by challenge rating.
 fn srd_xp(cr: f64) -> Option<u64> {
     const TABLE: [(f64, u64); 34] = [
@@ -1039,8 +1148,7 @@ mod tests {
     use super::*;
 
     fn fixture(id: &str) -> StatBlock {
-        let path = Path::new(env!("CARGO_MANIFEST_DIR")).parent().unwrap().join(format!("data/fixtures/{id}.json"));
-        serde_json::from_str(&std::fs::read_to_string(path).unwrap()).unwrap()
+        serde_json::from_str(crate::embedded::fixture_json(id).unwrap()).unwrap()
     }
 
     fn spec(monster: StatBlock, levels: Vec<u8>, fights: u32) -> BatchSpec {
@@ -1053,6 +1161,7 @@ mod tests {
             max_rounds: DEFAULT_MAX_ROUNDS,
             master_seed: 42,
             assumptions: vec![],
+            baseline: None,
         }
     }
 
