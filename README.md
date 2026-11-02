@@ -57,6 +57,10 @@ Agents that open the clone itself find the skill without installing it: `.agents
 
 Run `./update.sh`, or the install command again. Either one replaces the binary, notices and skill copies, and leaves `config.toml`, `index`, `parties/`, `house-rules/`, `encounters/` and `reports/` alone.
 
+### Uninstalling
+
+Run `sh uninstall.sh` from a clone or a download. It removes `bench`, its notices, the skill copies and the PATH line, and it asks before each change. Your `config.toml`, `index`, `parties/`, `house-rules/`, `encounters/` and `reports/` stay unless you add `--remove-data`. Add `--dry-run` to see what it would remove without changing anything, or `--yes` to skip the questions.
+
 ## Use
 
 Ask your agent to test a monster or run a fight. Mention the skill if the agent does not pick it up by itself:
