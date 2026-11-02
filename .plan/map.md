@@ -67,6 +67,8 @@ Both modes ship in phase 1. Everything the engine can't model is labeled agent j
 - [Player-dice marks for heal, temporary hit point and death save events](closed/051-player-dice-marks-for-heal-temp-hp-and-death-saves.md): ask mode marks heal, revive, a new `temp_hp` event and death saves by the ticket 041 rule, death saves carry their d20, and the public view hides monster temp HP amounts.
 - [Does the standard party fall off at high levels](closed/052-does-the-standard-party-fall-off-at-high-levels.md): no fall-off at levels 11 to 18, levels 19 and 20 read High on three or four fixtures, two of them ancient dragons, so ADR 0010's trigger is not clearly met and magic items are ruled out of scope. Findings in `docs/research/052-standard-party-at-high-levels.md`.
 
+- [Build engine-rolled opportunity attacks](closed/053-build-engine-rolled-opportunity-attacks.md): `bench move --opportunity <reactor>[:<attack-id>]` resolves named reactors' attacks before the band change through one shared eligibility function, ineligible names fail the move, a downed mover stops without paying feet, and batch is unchanged. See `docs/adr/0015-opportunity-attacks-declared-on-the-move.md`.
+
 ## Not yet specified
 
 - Dragons read a level or more above their CR on the baseline curve from tier 2 up, and the pit fiend and the lich stay hard at high CR (ticket 052). It is not yet clear whether the cause is the SRD's own CR choices, a tactics policy gap such as no reactions or no spreading out against breath weapons, or an engine modeling gap. The batch reactions ticket may answer part of it.
@@ -88,10 +90,9 @@ Takeable now, in order:
 - Live legendary actions (grilling)
 - Upcast spell scaling (grilling)
 - Encounter lighting setting (grilling)
-- Build engine-rolled opportunity attacks (task, AFK)
+- Live reaction windows (grilling)
+- Build Disengage and no-provoke traits (task, AFK)
 
 Blocked:
 
-- Build Disengage and no-provoke traits (task), waits on Build engine-rolled opportunity attacks
-- Batch policy takes reactions (grilling), waits on both build tickets
-- Live reaction windows (grilling), waits on Build engine-rolled opportunity attacks
+- Batch policy takes reactions (grilling), waits on Build Disengage and no-provoke traits
