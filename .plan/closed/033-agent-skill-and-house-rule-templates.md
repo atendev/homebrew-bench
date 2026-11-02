@@ -3,7 +3,7 @@ id: 033
 title: Agent skill and house-rule templates
 type: task
 mode: AFK
-status: open
+status: closed
 blocked_by:
   - 030
   - 032
@@ -38,3 +38,13 @@ Key decisions to implement:
   - Honest narration rule: state no mechanical outcome absent from `events` or `digest`; label every outside call as agent judgment and apply it via `bench override --reason [--rule <slug>]` or `bench roll --reason [--rule <slug>]`; use `--public` when the player-facing public view is active.
 
 ## Resolution
+
+Done 2026-11-02. Requirements in `.plan/reports/033-requirements.md`.
+
+- `.agents/skills/homebrew-bench/SKILL.md` holds what every session needs: find or install `bench`, load house rules, pick a mode, read the JSON envelope, and the honest-output rules. Frontmatter is `name` and `description` only. `references/` holds `batch-mode.md`, `live-mode.md`, `house-rules.md` and a copyable `house-rule-template.md`, each read only when its branch fires.
+- `.claude/skills/homebrew-bench` is a committed relative symlink to `../../.agents/skills/homebrew-bench`, and root `AGENTS.md` points to `SKILL.md`.
+- `bench/tests/skill.rs` checks every `bench ...` call in the skill against `bench help --json` (commands, flags, required flags, enum values), plus the frontmatter, links, symlink, `AGENTS.md` and the template's sections.
+- The skill follows the real CLI where the ticket's wording differs. Intake writes `intake_flags`, not `flags`. Lighting has no engine setting, so it is agent judgment. `--public` exists on `state` and `log` only. Batch cannot apply house rules, so the report names the ones it leaves out. Assumption values never reach the engine: `ignored` or an assumed outcome only clears the refusal, and a `partly_modeled` ability still runs its effects.
+- Live mode raises dice prompts only. The skill routes reactions, opportunity attacks and legendary actions through `bench roll` and `bench override` as agent judgment.
+- Two engine defects surfaced and became tickets: [Batch sample replay command for homebrew files](../tickets/042-batch-sample-replay-command.md) and [Untargeted move changes no positions](../tickets/043-untargeted-move-changes-no-positions.md). The skill works around both.
+- Audit: three Haiku rounds (16 findings, all fixed), then a final pass by the implementing session that fixed four more.

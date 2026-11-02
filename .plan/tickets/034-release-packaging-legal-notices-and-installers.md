@@ -6,7 +6,6 @@ mode: AFK
 status: open
 blocked_by:
   - 032
-  - 033
 claimed: false
 ---
 
