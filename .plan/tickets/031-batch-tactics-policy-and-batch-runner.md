@@ -18,6 +18,8 @@ Implement the deterministic, versioned batch tactics policy in `bench-core` and 
 
 Consult `implement`, `tdd`, `codebase-design`, and `domain-modeling`.
 
+Standing assumptions now exist in live mode (`bench override --standing`, see [PC initiative prompts, concentration save stream and standing assumptions](../closed/041-pc-initiative-prompts-and-concentration-stream.md)). Batch logs still need the standing-assumption header block from ADR 0006.
+
 Key decisions to implement:
 - **Deterministic batch tactics policy (`docs/adr/0012-deterministic-batch-tactics-policy.md`, closed ticket 016):**
   - One deterministic, versioned policy scores legal move-plus-action plans together for both monsters and PCs (`expected_damage = 1.0`, `control = 1.0`, `survival = 1.0`, `resource_cost = 0.0`, all overridable via standing assumptions).

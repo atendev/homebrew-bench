@@ -236,8 +236,8 @@ pub struct PlayerDice {
     pub faces: std::collections::VecDeque<u32>,
     /// PC rolls that found no face, in draw order.
     pub missing: Vec<MissingDie>,
-    /// Faces consumed so far.
-    pub used: usize,
+    /// Per owner since its last event: (some die used an entered face, some die did not).
+    pub since_event: HashMap<String, (bool, bool)>,
     /// Use the engine's draw for any roll past the entered faces.
     pub engine_fills_rest: bool,
     pub next_group: u32,
@@ -264,15 +264,23 @@ impl PlayerDice {
         }
         match self.faces.pop_front() {
             Some(face) => {
-                self.used += 1;
+                self.since_event.entry(owner.into()).or_default().0 = true;
                 face
             }
-            None if self.engine_fills_rest => drawn,
             None => {
-                self.missing.push(missing);
+                self.since_event.entry(owner.into()).or_default().1 = true;
+                if !self.engine_fills_rest {
+                    self.missing.push(missing);
+                }
                 drawn
             }
         }
+    }
+
+    /// Whether every die `owner` rolled since its last event used an entered
+    /// face, then start counting afresh for its next event.
+    pub fn all_entered_since(&mut self, owner: &str) -> bool {
+        matches!(self.since_event.remove(owner), Some((true, false)))
     }
 
     /// The dice to ask for next: the first missing group.

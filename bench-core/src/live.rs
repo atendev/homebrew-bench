@@ -14,7 +14,7 @@ use serde_json::Value;
 use crate::digest::{self, wounded};
 use crate::encounter::{
     ActionEconomy, CommandRecord, Combatant, EncounterEnd, EncounterSettings, EncounterState, EndState,
-    PcDice, PendingPrompt, PlayerDice, RangeBand, Side, StatBlockSnapshot, PARTY_SIDE,
+    PcDice, PendingPrompt, PlayerDice, RangeBand, Side, StandingAssumption, StatBlockSnapshot, PARTY_SIDE,
 };
 use crate::engine::{self, EngineError, EngineEvent, InitiativeOptions, StepRequest};
 use crate::log::{LogEntry, LogLine};
@@ -59,6 +59,9 @@ pub enum Command {
         reason: String,
         #[serde(default)]
         rule: Option<String>,
+        /// Record the override as a standing assumption and tag the lines it affects.
+        #[serde(default)]
+        standing: bool,
     },
     Roll {
         expression: String,
@@ -233,6 +236,7 @@ impl Applied {
                 roll: None,
                 total: None,
                 damage: None,
+                player_dice: false,
             },
             line,
         ));
@@ -318,11 +322,6 @@ pub fn start(spec: StartSpec) -> Result<(EncounterState, Outcome), LiveError> {
         tamper_hash: String::new(),
         player_dice: PlayerDice::default(),
     };
-    let initiative = engine::roll_initiative(
-        &mut state,
-        InitiativeOptions { individual: spec.individual_initiative, surprised: surprised.clone(), pc_dice: false },
-    )?;
-
     let mut applied = Applied::none();
     let pc_dice = match spec.pc_dice {
         PcDice::Engine => "engine",
@@ -349,10 +348,16 @@ pub fn start(spec: StartSpec) -> Result<(EncounterState, Outcome), LiveError> {
     if !surprised.is_empty() {
         applied.push("surprise", None, LogLine::same(format!("surprised: {}", surprised.join(", "))));
     }
-    for e in initiative {
-        let line = LogLine::same(e.message.clone());
-        applied.items.push((e, line));
-    }
+    let initiative = run_engine(
+        &mut state,
+        StepRequest::RollInitiative(InitiativeOptions {
+            individual: spec.individual_initiative,
+            surprised: surprised.clone(),
+        }),
+        vec![],
+        false,
+    )?;
+    applied.items.extend(initiative.items);
     state.initial_snapshot = Some(Box::new(state.bare()));
     let outcome = write_entry(&mut state, None, applied, 0, None);
     Ok((state, outcome))
@@ -565,9 +570,18 @@ fn apply(state: &mut EncounterState, cmd: &Command) -> Result<Applied, LiveError
                 LogLine::same(format!("END encounter ended by agent judgment: {reason}")),
             ))
         }
-        Command::Override { path, value, reason, rule } => {
+        Command::Override { path, value, reason, rule, standing } => {
             let target = override_path::apply(state, path, value.clone()).map_err(LiveError::Invalid)?;
-            let tag = rule_tag(rule);
+            let mut tag = rule_tag(rule);
+            state.standing_assumptions.retain(|a| &a.path != path);
+            if *standing {
+                state.standing_assumptions.push(StandingAssumption {
+                    path: path.clone(),
+                    value: value.clone().unwrap_or(Value::Null),
+                    reason: reason.clone(),
+                });
+                tag.push_str(" [standing assumption]");
+            }
             let change = match value {
                 Some(v) => format!("{path} = {}", compact(v)),
                 None => format!("{path} cleared"),
@@ -597,7 +611,13 @@ fn apply(state: &mut EncounterState, cmd: &Command) -> Result<Applied, LiveError
             Ok(applied)
         }
         Command::Add { stat_block, side: side_id, band, engaged_with } => {
-            add_combatant(state, stat_block, side_id, *band, engaged_with.as_deref())
+            if state.settings.pc_dice == PcDice::Ask && stat_block.class.is_some() {
+                let mut dry_run = state.clone();
+                add_combatant(&mut dry_run, stat_block, side_id, *band, engaged_with.as_deref(), Some(1))?;
+                let owner = dry_run.combatants.last().map(|c| c.id.clone()).unwrap_or_default();
+                return Ok(add_prompt(state, cmd, &owner));
+            }
+            add_combatant(state, stat_block, side_id, *band, engaged_with.as_deref(), None)
         }
         Command::Remove { id, reason } => remove_combatant(state, id, reason),
         Command::Undo => Err(LiveError::Invalid("undo is not replayable as a single step".into())),
@@ -632,12 +652,11 @@ fn run_engine(
         });
         return Ok(Applied::line("prompt", Some(&owner), LogLine::same(format!("PROMPT {message}"))));
     }
-    let player_dice = trial.player_dice.used > 0;
     trial.player_dice = PlayerDice::default();
     *state = trial;
     let mut applied = Applied::none();
     for event in response.events {
-        let line = event_line(state, &event, player_dice);
+        let line = event_line(state, &event).tagged(&assumption_tag(state, &event));
         applied.items.push((event, line));
     }
     Ok(applied)
@@ -660,19 +679,46 @@ fn respond(state: &mut EncounterState, values: &[u32], decline: bool) -> Result<
             return Err(LiveError::Invalid(format!("{bad} is not a face of a d{sides}")));
         }
     }
-    let request: StepRequest = serde_json::from_value(prompt.metadata["request"].clone())
-        .map_err(|e| LiveError::Invalid(format!("the pending prompt is unreadable: {e}")))?;
-    let mut faces: Vec<u32> = serde_json::from_value(prompt.metadata["faces"].clone()).unwrap_or_default();
     let answer = if decline {
         "declined, the engine rolls the rest".to_string()
     } else {
-        faces.extend_from_slice(values);
         format!("answered {} (player dice)", values.iter().map(u32::to_string).collect::<Vec<_>>().join(", "))
     };
+    let unreadable = |e: serde_json::Error| LiveError::Invalid(format!("the pending prompt is unreadable: {e}"));
+    if let Some(add) = prompt.metadata.get("add") {
+        let Command::Add { stat_block, side, band, engaged_with } = serde_json::from_value(add.clone()).map_err(unreadable)? else {
+            return Err(LiveError::Invalid("the pending prompt does not hold an add".into()));
+        };
+        let face = if decline { None } else { values.first().copied() };
+        state.pending = None;
+        let mut applied = add_combatant(state, &stat_block, &side, band, engaged_with.as_deref(), face)?;
+        applied.items.insert(0, prompt_line(&prompt, &answer));
+        return Ok(applied);
+    }
+    let request: StepRequest = serde_json::from_value(prompt.metadata["request"].clone()).map_err(unreadable)?;
+    let mut faces: Vec<u32> = serde_json::from_value(prompt.metadata["faces"].clone()).unwrap_or_default();
+    if !decline {
+        faces.extend_from_slice(values);
+    }
     state.pending = None;
     let mut applied = run_engine(state, request, faces, decline)?;
     applied.items.insert(0, prompt_line(&prompt, &answer));
     Ok(applied)
+}
+
+/// Hold a PC's `bench add` until the user enters its initiative d20.
+fn add_prompt(state: &mut EncounterState, cmd: &Command, owner: &str) -> Applied {
+    let message = format!("{owner}: enter 1 d20 face");
+    state.pending = Some(PendingPrompt {
+        id: format!("dice-{}-0", state.rng.cursor),
+        kind: "dice".into(),
+        actor_id: owner.into(),
+        message: message.clone(),
+        sides: Some(20),
+        remaining: 1,
+        metadata: serde_json::json!({ "add": cmd }),
+    });
+    Applied::line("prompt", Some(owner), LogLine::same(format!("PROMPT {message}")))
 }
 
 fn prompt_line(prompt: &PendingPrompt, answer: &str) -> (EngineEvent, LogLine) {
@@ -686,22 +732,18 @@ fn prompt_line(prompt: &PendingPrompt, answer: &str) -> (EngineEvent, LogLine) {
             roll: None,
             total: None,
             damage: None,
+            player_dice: false,
         },
         LogLine::same(text),
     )
 }
 
-fn event_line(state: &EncounterState, e: &EngineEvent, player_dice: bool) -> LogLine {
-    let owner = match e.kind.as_str() {
-        "save" | "concentration_save" => e.target_id.as_deref(),
-        _ => e.actor_id.as_deref(),
-    };
+fn event_line(state: &EncounterState, e: &EngineEvent) -> LogLine {
     let mut text = e.message.clone();
     if let Some(roll) = e.roll {
         text.push_str(&format!(" [d20 {roll}]"));
     }
-    let by_pc = owner.is_some_and(|o| state.is_party(o) && is_pc(state, o));
-    if player_dice && by_pc && (e.roll.is_some() || e.damage.is_some()) {
+    if e.player_dice {
         text.push_str(" (player dice)");
     }
     let target = e.target_id.as_deref().unwrap_or_default();
@@ -717,13 +759,29 @@ fn event_line(state: &EncounterState, e: &EngineEvent, player_dice: bool) -> Log
     }
 }
 
-fn is_pc(state: &EncounterState, id: &str) -> bool {
-    state
-        .combatants
+/// Names the standing assumptions whose subject is the event's actor or target.
+fn assumption_tag(state: &EncounterState, e: &EngineEvent) -> String {
+    let involved = |id: &str| [e.actor_id.as_deref(), e.target_id.as_deref()].contains(&Some(id));
+    let paths: Vec<&str> = state
+        .standing_assumptions
         .iter()
-        .find(|c| c.id == id)
-        .and_then(|c| state.stat_blocks.iter().find(|s| s.id == c.stat_block_id))
-        .is_some_and(|s| s.stat_block.class.is_some())
+        .filter(|a| {
+            let mut segments = a.path.split('.');
+            match (segments.next(), segments.next()) {
+                (Some("stat_blocks"), Some(block)) => {
+                    state.combatants.iter().any(|c| c.stat_block_id == block && involved(&c.id))
+                }
+                (Some(first), _) => involved(first),
+                _ => false,
+            }
+        })
+        .map(|a| a.path.as_str())
+        .collect();
+    if paths.is_empty() {
+        String::new()
+    } else {
+        format!(" [standing assumption: {}]", paths.join(", "))
+    }
 }
 
 fn add_combatant(
@@ -732,6 +790,7 @@ fn add_combatant(
     side_id: &str,
     band: Option<RangeBand>,
     engaged_with: Option<&str>,
+    face: Option<u32>,
 ) -> Result<Applied, LiveError> {
     if band.is_some() && engaged_with.is_some() {
         return Err(LiveError::Invalid("give either a band or --engaged-with, not both".into()));
@@ -785,7 +844,8 @@ fn add_combatant(
     }
 
     let mut stream = Stream::from_state(state.rng.clone());
-    let natural = stream.roll_die(20);
+    let drawn = stream.roll_die(20);
+    let natural = face.unwrap_or(drawn);
     state.rng = stream.state();
     let total = natural as i32 + block.initiative;
     let slot = state
@@ -804,8 +864,12 @@ fn add_combatant(
     let mut applied = Applied::line(
         "add",
         Some(&id),
-        LogLine::same(format!("ADD {id} ({name}) joins {side_id}, initiative {total}, {position}")),
+        LogLine::same(format!(
+            "ADD {id} ({name}) joins {side_id}, initiative {total}, {position}{}",
+            if face.is_some() { " (player dice)" } else { "" }
+        )),
     );
+    applied.items[0].0.player_dice = face.is_some();
     applied.items[0].0.roll = Some(natural);
     applied.items[0].0.total = Some(total);
     Ok(applied)
@@ -1037,6 +1101,7 @@ mod tests {
                 value: Some(Value::from(3)),
                 reason: "test".into(),
                 rule: None,
+                standing: false,
             },
         )
         .unwrap();
@@ -1050,8 +1115,281 @@ mod tests {
     }
 
     #[test]
+    fn ask_mode_prompts_for_pc_initiative_before_round_one() {
+        let striker = block("party/standard/standard-striker-03.json");
+        let (mut state, started) = start(spec(PcDice::Ask)).unwrap();
+        let prompt = started.pending.clone().expect("initiative prompt");
+        assert_eq!((prompt.kind.as_str(), prompt.actor_id.as_str(), prompt.sides, prompt.remaining), ("dice", "standard-striker-03", Some(20), 1));
+        assert!(lines(&started).iter().any(|l| l.starts_with("PROMPT ")), "{:?}", lines(&started));
+        assert_eq!((state.round, state.active_turn.clone()), (0, None));
+        assert!(matches!(execute(&mut state, Command::EndTurn), Err(LiveError::Pending(_))));
+
+        let answered = execute(&mut state, Command::Respond { values: vec![17], decline: false }).unwrap();
+        assert!(state.pending.is_none());
+        assert_eq!(state.initiative_rolls["standard-striker-03"], 17 + striker.initiative);
+        assert_eq!(state.round, 1);
+        assert!(state.active_turn.is_some());
+        assert!(lines(&answered).iter().any(|l| l.contains("answered 17 (player dice)")), "{:?}", lines(&answered));
+        let rolled = format!("standard-striker-03 rolled {} (player dice)", 17 + striker.initiative);
+        assert!(lines(&answered).contains(&rolled), "{:?}", lines(&answered));
+        assert!(replay(&state).matches);
+
+        execute(&mut state, Command::Undo).unwrap();
+        assert_eq!(state.pending.as_ref().map(|p| p.id.clone()), Some(prompt.id));
+    }
+
+    #[test]
+    fn surprised_pc_enters_both_initiative_dice_and_keeps_the_lower() {
+        let striker = block("party/standard/standard-striker-03.json");
+        let mut surprised = spec(PcDice::Ask);
+        surprised.surprised = vec!["standard-striker-03".into()];
+        let (mut state, started) = start(surprised).unwrap();
+        assert_eq!(started.pending.as_ref().map(|p| p.remaining), Some(2));
+        execute(&mut state, Command::Respond { values: vec![15, 4], decline: false }).unwrap();
+        assert_eq!(state.initiative_rolls["standard-striker-03"], 4 + striker.initiative);
+        assert!(replay(&state).matches);
+    }
+
+    #[test]
+    fn repeated_standing_override_replaces_the_assumption() {
+        let (mut state, _) = start(spec(PcDice::Engine)).unwrap();
+        for hp in [5, 3] {
+            execute(
+                &mut state,
+                Command::Override {
+                    path: "goblin-warrior.hp".into(),
+                    value: Some(Value::from(hp)),
+                    reason: format!("hp {hp}"),
+                    rule: None,
+                    standing: true,
+                },
+            )
+            .unwrap();
+        }
+        assert_eq!(state.standing_assumptions.len(), 1);
+        assert_eq!(state.standing_assumptions[0].value, Value::from(3));
+        let fought = { let cmd = attack(&state); execute(&mut state, cmd) }.unwrap();
+        assert!(lines(&fought).iter().all(|l| l.ends_with(" [standing assumption: goblin-warrior.hp]")), "{:?}", lines(&fought));
+    }
+
+    #[test]
+    fn declined_pc_initiative_is_not_marked_as_player_dice() {
+        let mut two = spec(PcDice::Ask);
+        let striker = two.entrants[0].clone();
+        two.entrants.insert(1, striker);
+        let (mut state, started) = start(two).unwrap();
+        assert_eq!(started.pending.as_ref().map(|p| p.actor_id.as_str()), Some("standard-striker-03-1"));
+        execute(&mut state, Command::Respond { values: vec![12], decline: false }).unwrap();
+        assert_eq!(state.pending.as_ref().map(|p| p.actor_id.as_str()), Some("standard-striker-03-2"));
+        let declined = execute(&mut state, Command::Respond { values: vec![], decline: true }).unwrap();
+        let line = |id: &str| lines(&declined).into_iter().find(|l| l.starts_with(&format!("{id} rolled "))).expect(id);
+        assert!(line("standard-striker-03-1").ends_with("(player dice)"), "{:?}", lines(&declined));
+        assert!(!line("standard-striker-03-2").contains("(player dice)"), "{:?}", lines(&declined));
+    }
+
+    #[test]
+    fn declined_damage_after_an_entered_attack_roll_is_not_marked() {
+        let (mut state, _) = start(spec(PcDice::Ask)).unwrap();
+        execute(&mut state, Command::Respond { values: vec![10], decline: false }).unwrap();
+        if state.active_turn.as_deref() != Some("standard-striker-03") {
+            execute(&mut state, Command::EndTurn).unwrap();
+        }
+        let asked = { let cmd = attack(&state); execute(&mut state, cmd) }.unwrap();
+        let d20s = asked.pending.expect("attack roll prompt").remaining as usize;
+        let hit = execute(&mut state, Command::Respond { values: vec![20; d20s], decline: false }).unwrap();
+        assert_eq!(hit.pending.as_ref().map(|p| p.kind.as_str()), Some("dice"), "{:?}", lines(&hit));
+        let resolved = lines(&execute(&mut state, Command::Respond { values: vec![], decline: true }).unwrap());
+        let attack_line = resolved.iter().find(|l| l.contains(" attacks ")).expect("attack line");
+        assert!(attack_line.ends_with("(player dice)"), "{resolved:?}");
+        let damage_line = resolved.iter().find(|l| l.starts_with("goblin-warrior takes ")).expect("damage line");
+        assert!(!damage_line.contains("(player dice)"), "{resolved:?}");
+    }
+
+    #[test]
+    fn grouped_ask_initiative_marks_every_pc_sharing_the_roll() {
+        let mut grouped = spec(PcDice::Ask);
+        let striker = grouped.entrants[0].clone();
+        grouped.entrants.insert(1, striker);
+        grouped.individual_initiative = false;
+        let (mut state, started) = start(grouped).unwrap();
+        assert_eq!(started.pending.as_ref().map(|p| p.remaining), Some(1));
+        let answered = lines(&execute(&mut state, Command::Respond { values: vec![13], decline: false }).unwrap());
+        assert!(state.pending.is_none());
+        for id in ["standard-striker-03-1", "standard-striker-03-2"] {
+            let line = answered.iter().find(|l| l.starts_with(&format!("{id} rolled "))).expect(id);
+            assert!(line.ends_with("(player dice)"), "{answered:?}");
+        }
+        let goblin = answered.iter().find(|l| l.starts_with("goblin-warrior rolled ")).unwrap();
+        assert!(!goblin.contains("(player dice)"), "{answered:?}");
+    }
+
+    #[test]
+    fn plain_override_clears_a_standing_assumption_on_the_same_path() {
+        let (mut state, _) = start(spec(PcDice::Engine)).unwrap();
+        for standing in [true, false] {
+            execute(
+                &mut state,
+                Command::Override {
+                    path: "goblin-warrior.hp".into(),
+                    value: Some(Value::from(5)),
+                    reason: "t".into(),
+                    rule: None,
+                    standing,
+                },
+            )
+            .unwrap();
+        }
+        assert!(state.standing_assumptions.is_empty());
+        let fought = { let cmd = attack(&state); execute(&mut state, cmd) }.unwrap();
+        assert!(!lines(&fought).iter().any(|l| l.contains("standing assumption")), "{:?}", lines(&fought));
+    }
+
+    #[test]
+    fn ask_mode_prompts_for_an_added_pc_initiative() {
+        let striker = block("party/standard/standard-striker-03.json");
+        let (mut state, _) = start(spec(PcDice::Ask)).unwrap();
+        execute(&mut state, Command::Respond { values: vec![10], decline: false }).unwrap();
+        let add = |block: &StatBlock, side: &str| Command::Add {
+            stat_block: Box::new(block.clone()),
+            side: side.into(),
+            band: None,
+            engaged_with: None,
+        };
+        let goblin = block("fixtures/goblin-warrior.json");
+        assert!(execute(&mut state, add(&goblin, "monsters")).unwrap().pending.is_none());
+
+        let asked = execute(&mut state, add(&striker, PARTY_SIDE)).unwrap();
+        let prompt = asked.pending.expect("initiative prompt for the added PC");
+        assert_eq!((prompt.sides, prompt.remaining), (Some(20), 1));
+        assert!(!state.combatants.iter().any(|c| c.id == "standard-striker-03-2"));
+        assert!(matches!(execute(&mut state, Command::EndTurn), Err(LiveError::Pending(_))));
+
+        let added = lines(&execute(&mut state, Command::Respond { values: vec![14], decline: false }).unwrap());
+        assert_eq!(state.initiative_rolls["standard-striker-03-2"], 14 + striker.initiative);
+        let line = added.iter().find(|l| l.starts_with("ADD standard-striker-03-2 ")).expect("add line");
+        assert!(line.ends_with("(player dice)"), "{added:?}");
+        assert!(replay(&state).matches);
+
+        execute(&mut state, Command::Undo).unwrap();
+        assert!(state.pending.is_some());
+        let declined = lines(&execute(&mut state, Command::Respond { values: vec![], decline: true }).unwrap());
+        let line = declined.iter().find(|l| l.starts_with("ADD standard-striker-03-2 ")).expect("add line");
+        assert!(!line.contains("(player dice)"), "{declined:?}");
+    }
+
+    #[test]
+    fn engine_mode_rolls_pc_initiative_without_a_prompt() {
+        let (state, started) = start(spec(PcDice::Engine)).unwrap();
+        assert!(started.pending.is_none());
+        assert_eq!(state.round, 1);
+        assert_eq!(state.initiative_order.len(), 2);
+    }
+
+    #[test]
+    fn standing_override_records_an_assumption_and_tags_affected_lines() {
+        let (mut state, _) = start(spec(PcDice::Engine)).unwrap();
+        let set = execute(
+            &mut state,
+            Command::Override {
+                path: "goblin-warrior.hp".into(),
+                value: Some(Value::from(5)),
+                reason: "wounded scout".into(),
+                rule: None,
+                standing: true,
+            },
+        )
+        .unwrap();
+        assert_eq!(state.standing_assumptions.len(), 1);
+        assert_eq!(state.standing_assumptions[0].path, "goblin-warrior.hp");
+        assert_eq!(state.standing_assumptions[0].value, Value::from(5));
+        assert_eq!(state.standing_assumptions[0].reason, "wounded scout");
+        assert!(lines(&set)[0].ends_with("(reason: wounded scout) [standing assumption]"), "{:?}", lines(&set));
+
+        let fought = { let cmd = attack(&state); execute(&mut state, cmd) }.unwrap();
+        assert!(
+            lines(&fought).iter().all(|l| l.ends_with(" [standing assumption: goblin-warrior.hp]")),
+            "{:?}",
+            lines(&fought)
+        );
+        let public = crate::log::render_public(&state.log);
+        assert!(public.contains("OVERRIDE goblin-warrior.hp (reason: wounded scout) [standing assumption]"), "{public}");
+        assert!(replay(&state).matches);
+
+        execute(&mut state, Command::Undo).unwrap();
+        execute(&mut state, Command::Undo).unwrap();
+        assert!(state.standing_assumptions.is_empty());
+    }
+
+    #[test]
+    fn public_view_keeps_the_assumption_tag_on_monster_damage() {
+        let (mut state, _) = start(spec(PcDice::Engine)).unwrap();
+        execute(
+            &mut state,
+            Command::Override {
+                path: "goblin-warrior.max_hp".into(),
+                value: Some(Value::from(100)),
+                reason: "elite".into(),
+                rule: None,
+                standing: true,
+            },
+        )
+        .unwrap();
+        let damage = |state: &EncounterState| {
+            crate::log::render_public(&state.log).lines().find(|l| l.contains("goblin-warrior takes damage (")).map(str::to_string)
+        };
+        for _ in 0..20 {
+            if damage(&state).is_some() {
+                break;
+            }
+            if state.active_turn.as_deref() == Some("standard-striker-03") {
+                let cmd = attack(&state);
+                execute(&mut state, cmd).unwrap();
+            }
+            execute(&mut state, Command::EndTurn).unwrap();
+        }
+        let line = damage(&state).expect("the striker hits the goblin within ten rounds");
+        assert!(line.ends_with(" [standing assumption: goblin-warrior.max_hp]"), "{line}");
+        let full = crate::log::render(&state.log);
+        assert!(full.lines().any(|l| l.contains("goblin-warrior takes ") && l.ends_with(" damage [standing assumption: goblin-warrior.max_hp]")), "{full}");
+    }
+
+    #[test]
+    fn plain_override_sets_no_assumption() {
+        let (mut state, _) = start(spec(PcDice::Engine)).unwrap();
+        let set = execute(
+            &mut state,
+            Command::Override { path: "goblin-warrior.hp".into(), value: Some(Value::from(5)), reason: "t".into(), rule: None, standing: false },
+        )
+        .unwrap();
+        assert!(state.standing_assumptions.is_empty());
+        assert!(!lines(&set)[0].contains("standing assumption"));
+        let fought = { let cmd = attack(&state); execute(&mut state, cmd) }.unwrap();
+        assert!(!lines(&fought).iter().any(|l| l.contains("standing assumption")));
+    }
+
+    #[test]
+    fn stat_block_assumption_tags_every_combatant_using_the_block() {
+        let (mut state, _) = start(spec(PcDice::Engine)).unwrap();
+        execute(
+            &mut state,
+            Command::Override {
+                path: "stat_blocks.goblin-warrior.stat_block.armor_class".into(),
+                value: Some(serde_json::json!([{ "value": 30 }])),
+                reason: "shield wall".into(),
+                rule: None,
+                standing: true,
+            },
+        )
+        .unwrap();
+        let fought = { let cmd = attack(&state); execute(&mut state, cmd) }.unwrap();
+        let tag = " [standing assumption: stat_blocks.goblin-warrior.stat_block.armor_class]";
+        assert!(lines(&fought).iter().all(|l| l.ends_with(tag)), "{:?}", lines(&fought));
+    }
+
+    #[test]
     fn pending_dice_prompt_gates_commands() {
         let (mut state, _) = start(spec(PcDice::Ask)).unwrap();
+        execute(&mut state, Command::Respond { values: vec![10], decline: false }).unwrap();
         if state.active_turn.as_deref() != Some("standard-striker-03") {
             execute(&mut state, Command::EndTurn).unwrap();
         }
@@ -1088,6 +1426,7 @@ mod tests {
                 value: Some(Value::from(5)),
                 reason: "earlier fight".into(),
                 rule: None,
+                standing: false,
             },
         )
         .unwrap();
@@ -1109,7 +1448,7 @@ mod tests {
     fn override_clears_one_array_element() {
         let (mut state, _) = start(spec(PcDice::Engine)).unwrap();
         let set = |state: &mut EncounterState, value: Option<Value>, path: &str| {
-            execute(state, Command::Override { path: path.into(), value, reason: "t".into(), rule: None })
+            execute(state, Command::Override { path: path.into(), value, reason: "t".into(), rule: None, standing: false })
         };
         set(&mut state, Some(serde_json::json!(["prone", "poisoned"])), "goblin-warrior.conditions").unwrap();
         set(&mut state, None, "goblin-warrior.conditions.0").unwrap();

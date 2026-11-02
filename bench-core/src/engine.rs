@@ -24,6 +24,7 @@ pub enum StepRequest {
     Move { actor_id: String, target_id: Option<String>, band: RangeBand, feet: u32 },
     EndTurn,
     Respond { values: Vec<u32>, accept: bool },
+    RollInitiative(InitiativeOptions),
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, schemars::JsonSchema)]
@@ -40,6 +41,9 @@ pub struct EngineEvent {
     pub total: Option<i32>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub damage: Option<i32>,
+    /// Every die behind this event came from a face the user entered.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub player_dice: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, schemars::JsonSchema)]
@@ -55,8 +59,6 @@ pub struct InitiativeOptions {
     pub individual: bool,
     #[serde(default)]
     pub surprised: Vec<String>,
-    #[serde(default)]
-    pub pc_dice: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -77,34 +79,40 @@ impl std::fmt::Display for EngineError {
 
 impl std::error::Error for EngineError {}
 
-/// Roll initiative and initialize the first turn.
+/// Roll initiative and initialize the first turn. PC d20s go through the
+/// player dice like every other PC roll, so `pc_dice = ask` prompts for them.
 pub fn roll_initiative(
     state: &mut EncounterState,
     options: InitiativeOptions,
 ) -> Result<Vec<EngineEvent>, EngineError> {
     let mut stream = Stream::from_state(state.rng.clone());
     let mut rolls: HashMap<String, i32> = HashMap::new();
-    let mut grouped_rolls: HashMap<String, u32> = HashMap::new();
-    for c in &state.combatants {
-        let block = stat_block(state, c)?;
-        let d20 = if !options.individual {
-            *grouped_rolls.entry(c.stat_block_id.clone()).or_insert_with(|| {
+    let mut grouped_rolls: HashMap<String, (u32, bool)> = HashMap::new();
+    let mut entered: HashMap<String, bool> = HashMap::new();
+    let entrants = state
+        .combatants
+        .iter()
+        .map(|c| Ok((c.id.clone(), c.stat_block_id.clone(), stat_block(state, c)?.initiative)))
+        .collect::<Result<Vec<_>, EngineError>>()?;
+    for (id, block_id, bonus) in entrants {
+        let (d20, marked) = match grouped_rolls.get(&block_id) {
+            Some(shared) if !options.individual => *shared,
+            _ => {
                 let first = stream.roll_die(20);
-                if options.surprised.iter().any(|id| id == &c.id) {
-                    first.min(stream.roll_die(20))
+                let first = player_roll(state, &id, 20, first);
+                let d20 = if options.surprised.contains(&id) {
+                    let second = stream.roll_die(20);
+                    first.min(player_roll_in(state, &id, 20, second, false))
                 } else {
                     first
-                }
-            })
-        } else {
-            let first = stream.roll_die(20);
-            if options.surprised.iter().any(|id| id == &c.id) {
-                first.min(stream.roll_die(20))
-            } else {
-                first
+                };
+                let shared = (d20, state.player_dice.all_entered_since(&id));
+                grouped_rolls.insert(block_id, shared);
+                shared
             }
         };
-        rolls.insert(c.id.clone(), d20 as i32 + block.initiative);
+        entered.insert(id.clone(), marked);
+        rolls.insert(id, d20 as i32 + bonus);
     }
     state.rng = stream.state();
     state.initiative_order = initiative_order(state, &rolls, !options.individual);
@@ -124,6 +132,7 @@ pub fn roll_initiative(
             roll: None,
             total: rolls.get(id).copied(),
             damage: None,
+            player_dice: entered[id],
         })
         .collect();
     Ok(events)
@@ -153,6 +162,7 @@ pub fn step(state: &mut EncounterState, request: StepRequest) -> Result<StepResp
         }
         StepRequest::EndTurn => end_turn_events(state)?,
         StepRequest::Respond { values, accept } => respond(state, values, accept)?,
+        StepRequest::RollInitiative(options) => roll_initiative(state, options)?,
     };
     Ok(response(state, events))
 }
@@ -261,6 +271,7 @@ fn resolve_effect(
                 let ac = stat_block(state, &target)?.armor_class.first().map(|a| a.value).unwrap_or(10) + ac_modifier(state, &target);
                 let critical = natural == 20;
                 let hit = critical || (natural != 1 && total >= ac);
+                let marked = state.player_dice.all_entered_since(actor_id);
                 events.push(EngineEvent {
                     kind: "attack".into(),
                     message: format!("{} attacks {}: {} vs AC {} ({})", actor.name, target.name, total, ac, if hit { "hit" } else { "miss" }),
@@ -269,6 +280,7 @@ fn resolve_effect(
                     roll: Some(natural),
                     total: Some(total),
                     damage: None,
+                    player_dice: marked,
                 });
                 if hit {
                     let mut damage = 0;
@@ -279,7 +291,8 @@ fn resolve_effect(
                         }
                         damage += adjust_damage(state, &target, amount, die.damage_type);
                     }
-                    apply_damage(state, &target.id, damage, Some(actor_id), events)?;
+                    let marked = state.player_dice.all_entered_since(actor_id);
+                    apply_damage(state, stream, &target.id, damage, Some(actor_id), marked, events)?;
                     for effect in &attack.on_hit {
                         resolve_effect(state, stream, actor_id, effect.clone(), &[target_id.clone()], events)?;
                     }
@@ -288,13 +301,14 @@ fn resolve_effect(
         }
         Effect::Damage(damage) => {
             let amount = roll_dice(state, stream, actor_id, &damage.dice)? as i32 + damage.modifier;
+            let marked = state.player_dice.all_entered_since(actor_id);
             for target_id in target_ids {
                 let target = state.combatants[index_of(state, target_id)?].clone();
                 if !damage_applies(&target, actor_id, &damage) {
                     continue;
                 }
                 let amount = adjust_damage(state, &target, amount, damage.damage_type);
-                apply_damage(state, target_id, amount, Some(actor_id), events)?;
+                apply_damage(state, stream, target_id, amount, Some(actor_id), marked, events)?;
             }
         }
         Effect::SavingThrow(save) => {
@@ -419,6 +433,7 @@ fn resolve_save(
         + save_modifier(state, &target, save.ability);
     let roll = player_roll(state, target_id, 20, roll);
     let success = roll as i32 + modifier >= save.dc;
+    let marked = state.player_dice.all_entered_since(target_id);
     events.push(EngineEvent {
         kind: "save".into(),
         message: format!("{target_id} {} the save", if success { "passes" } else { "fails" }),
@@ -427,12 +442,14 @@ fn resolve_save(
         roll: Some(roll),
         total: Some(roll as i32 + modifier),
         damage: None,
+        player_dice: marked,
     });
     if !success {
         for damage in save.damage.iter().filter(|d| damage_applies(&target, actor_id, d)) {
             let amount = roll_dice(state, stream, actor_id, &damage.dice)? as i32 + damage.modifier;
             let amount = adjust_damage(state, &target, amount, damage.damage_type);
-            apply_damage(state, target_id, amount, Some(actor_id), events)?;
+            let marked = state.player_dice.all_entered_since(actor_id);
+            apply_damage(state, stream, target_id, amount, Some(actor_id), marked, events)?;
         }
     } else if save.no_damage_on_success {
         // no damage on success
@@ -440,13 +457,15 @@ fn resolve_save(
         for damage in save.damage.iter().filter(|d| damage_applies(&target, actor_id, d)) {
             let rolled = roll_dice(state, stream, actor_id, &damage.dice)? as i32 + damage.modifier;
             let amount = adjust_damage(state, &target, rolled, damage.damage_type) / 2;
-            apply_damage(state, target_id, amount, Some(actor_id), events)?;
+            let marked = state.player_dice.all_entered_since(actor_id);
+            apply_damage(state, stream, target_id, amount, Some(actor_id), marked, events)?;
         }
     } else {
         for damage in save.damage.iter().filter(|d| damage_applies(&target, actor_id, d)) {
             let amount = roll_dice(state, stream, actor_id, &damage.dice)? as i32 + damage.modifier;
             let amount = adjust_damage(state, &target, amount, damage.damage_type);
-            apply_damage(state, target_id, amount, Some(actor_id), events)?;
+            let marked = state.player_dice.all_entered_since(actor_id);
+            apply_damage(state, stream, target_id, amount, Some(actor_id), marked, events)?;
         }
     }
     Ok(())
@@ -503,6 +522,7 @@ fn multiattack_choice_event(actor_id: &str, choice: &str) -> EngineEvent {
         roll: None,
         total: None,
         damage: None,
+        player_dice: false,
     }
 }
 
@@ -843,6 +863,7 @@ fn process_repeat_saves(state: &mut EncounterState, combatant_id: &str, events: 
             let roll = player_roll(state, combatant_id, 20, roll);
             let dc = 10;
             let success = roll as i32 + modifier >= dc;
+            let marked = state.player_dice.all_entered_since(combatant_id);
             events.push(EngineEvent {
                 kind: "repeat_save".into(),
                 message: format!("{combatant_id} {} repeat save DC {dc}", if success { "passes" } else { "fails" }),
@@ -851,6 +872,7 @@ fn process_repeat_saves(state: &mut EncounterState, combatant_id: &str, events: 
                 roll: Some(roll),
                 total: Some(roll as i32 + modifier),
                 damage: None,
+                player_dice: marked,
             });
             if success {
                 state.combatants[i].conditions.remove(idx);
@@ -892,9 +914,11 @@ fn respond(state: &mut EncounterState, values: Vec<u32>, accept: bool) -> Result
 
 fn apply_damage(
     state: &mut EncounterState,
+    stream: &mut Stream,
     target_id: &str,
     amount: i32,
     source_id: Option<&str>,
+    marked: bool,
     events: &mut Vec<EngineEvent>,
 ) -> Result<(), EngineError> {
     let i = index_of(state, target_id)?;
@@ -912,12 +936,12 @@ fn apply_damage(
             roll: None,
             total: None,
             damage: Some(amount),
+            player_dice: marked,
         });
     }
     if remaining > 0 && is_concentrating(&state.combatants[i]) {
         // Constitution save DC = max(10, damage / 2) to maintain concentration
         let dc = (remaining / 2).max(10);
-        let mut stream = Stream::from_state(state.rng.clone());
         let block = stat_block(state, &state.combatants[i])?;
         let roll = stream.roll_die(20);
         let modifier = block.saving_throws.get(&Ability::Con)
@@ -925,7 +949,7 @@ fn apply_damage(
             .unwrap_or_else(|| block.ability_scores.modifier(Ability::Con));
         let roll = player_roll(state, target_id, 20, roll);
         let success = roll as i32 + modifier >= dc;
-        state.rng = stream.state();
+        let marked = state.player_dice.all_entered_since(target_id);
         events.push(EngineEvent {
             kind: "concentration_save".into(),
             message: format!("{target_id} {} concentration save DC {dc}", if success { "passes" } else { "fails" }),
@@ -934,6 +958,7 @@ fn apply_damage(
             roll: Some(roll),
             total: Some(roll as i32 + modifier),
             damage: None,
+            player_dice: marked,
         });
         if !success {
             break_concentration(state, target_id, events)?;
@@ -1208,7 +1233,7 @@ fn can_act(c: &Combatant) -> bool {
 }
 fn index_of(state: &EncounterState, id: &str) -> Result<usize, EngineError> { state.combatants.iter().position(|c| c.id == id).ok_or_else(|| EngineError::NotFound(format!("combatant {id} not found"))) }
 fn stat_block<'a>(state: &'a EncounterState, c: &Combatant) -> Result<&'a StatBlock, EngineError> { state.stat_blocks.iter().find(|s| s.id == c.stat_block_id).map(|s| &s.stat_block).ok_or_else(|| EngineError::NotFound(format!("stat block {} not found", c.stat_block_id))) }
-fn event(kind: &str, message: String, actor_id: &str, target_id: &str) -> EngineEvent { EngineEvent { kind: kind.into(), message, actor_id: Some(actor_id.into()), target_id: Some(target_id.into()), roll: None, total: None, damage: None } }
+fn event(kind: &str, message: String, actor_id: &str, target_id: &str) -> EngineEvent { EngineEvent { kind: kind.into(), message, actor_id: Some(actor_id.into()), target_id: Some(target_id.into()), roll: None, total: None, damage: None, player_dice: false } }
 fn response(state: &EncounterState, events: Vec<EngineEvent>) -> StepResponse { StepResponse { events, digest: serde_json::to_value(state).unwrap_or(serde_json::Value::Null), pending: state.pending.clone() } }
 
 fn resolve_nested_action(
@@ -1599,7 +1624,7 @@ mod tests {
             vec![test_stat_block("fighter", "Fighter", 20, 16), test_stat_block("goblin", "Goblin", 7, 15)],
             vec![fighter, goblin_a, goblin_b],
         );
-        let opts = InitiativeOptions { individual: false, surprised: vec![], pc_dice: false };
+        let opts = InitiativeOptions { individual: false, surprised: vec![] };
         let events = roll_initiative(&mut state, opts).unwrap();
         assert_eq!(events.len(), 3);
         // Grouped initiative means goblin_a and goblin_b share a roll value
@@ -1806,6 +1831,53 @@ mod tests {
         let req = StepRequest::Action { actor_id: "goblin".into(), action_id: "arrow".into(), target_ids: vec!["fighter".into()] };
         let resp = step(&mut state, req).unwrap();
         assert!(resp.events.iter().any(|e| e.kind == "concentration_save" || e.kind == "concentration"));
+    }
+
+    #[test]
+    fn entered_damage_dice_mark_every_target_of_one_damage_roll() {
+        let mut caster = test_stat_block("caster", "Caster", 20, 12);
+        caster.class = Some("wizard".into());
+        caster.actions.push(crate::stat_block::AbilityEntry {
+            id: "burst".into(),
+            name: "Burst".into(),
+            desc: None,
+            kind: crate::stat_block::AbilityKind::Modeled,
+            effects: vec![Effect::Damage(gated("1d6", 0, DamageType::Fire, None, false))],
+            agent_clauses: vec![],
+            default_resolution: None,
+            usage: None,
+        });
+        let combatants = vec![
+            test_combatant("caster", "caster", 20, "ally"),
+            test_combatant("goblin_a", "goblin", 7, "enemy"),
+            test_combatant("goblin_b", "goblin", 7, "enemy"),
+        ];
+        let mut state = test_encounter(vec![caster, test_stat_block("goblin", "Goblin", 7, 15)], combatants);
+        state.settings.pc_dice = PcDice::Ask;
+        state.player_dice.faces = vec![4].into();
+        let targets = vec!["goblin_a".to_string(), "goblin_b".to_string()];
+        let resp = step(&mut state, StepRequest::Action { actor_id: "caster".into(), action_id: "burst".into(), target_ids: targets }).unwrap();
+        let damage: Vec<_> = resp.events.iter().filter(|e| e.kind == "damage").collect();
+        assert_eq!(damage.len(), 2);
+        assert!(damage.iter().all(|e| e.player_dice && e.damage == Some(4)), "{damage:?}");
+    }
+
+    #[test]
+    fn concentration_save_draws_after_the_action_on_the_same_stream() {
+        let damage = vec![gated("1d6", 0, DamageType::Piercing, None, false)];
+        let mut state = attack_state(damage, vec![], |_, fighter| fighter.concentration = Some("bless".into()));
+        let mut expected = Stream::from_state(state.rng.clone());
+        let first = expected.roll_die(20);
+        expected.roll_die(20);
+        expected.roll_die(6);
+        if first == 20 {
+            expected.roll_die(6);
+        }
+        let save_roll = expected.roll_die(20);
+        let resp = step(&mut state, StepRequest::Action { actor_id: "goblin".into(), action_id: "bite".into(), target_ids: vec!["fighter".into()] }).unwrap();
+        let save = resp.events.iter().find(|e| e.kind == "concentration_save").expect("concentration save");
+        assert_eq!(save.roll, Some(save_roll));
+        assert_eq!(state.rng, expected.state());
     }
 
     fn gated(dice: &str, modifier: i32, damage_type: DamageType, condition: Option<Condition>, from_actor: bool) -> Damage {

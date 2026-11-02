@@ -181,6 +181,9 @@ enum Commands {
         /// Clear the field instead of setting it.
         #[arg(long)]
         clear: bool,
+        /// Record the override as a standing assumption; later log lines about its subject name it.
+        #[arg(long)]
+        standing: bool,
         #[command(flatten)]
         why: Reason,
         #[command(flatten)]
@@ -397,10 +400,10 @@ fn run(command: Commands) -> Result<String, CodedError> {
         Commands::Respond { values, decline, at } => step(&at, Command::Respond { values, decline }),
         Commands::EndTurn { at } => step(&at, Command::EndTurn),
         Commands::End { reason, at } => step(&at, Command::End { reason }),
-        Commands::Override { path, value, clear: _, why, at } => {
+        Commands::Override { path, value, clear: _, standing, why, at } => {
             check_rule(&why.rule)?;
             let value = value.map(|v| serde_json::from_str(&v).unwrap_or(Value::String(v)));
-            step(&at, Command::Override { path, value, reason: why.reason, rule: why.rule })
+            step(&at, Command::Override { path, value, reason: why.reason, rule: why.rule, standing })
         }
         Commands::Roll { expression, why, at } => {
             check_rule(&why.rule)?;

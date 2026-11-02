@@ -176,7 +176,11 @@ fn house_rule_slugs_are_checked() {
 #[test]
 fn pending_prompt_gates_commands() {
     let bench = Bench::new();
-    bench.start(&["--pc-dice", "ask"]);
+    let started = bench.start(&["--pc-dice", "ask"]);
+    assert_eq!(started["pending"]["actor_id"], "standard-striker-03");
+    assert_eq!(started["pending"]["sides"], 20);
+    assert_eq!(bench.err(&["end-turn"]), "pending_prompt");
+    bench.ok(&["respond", "12"]);
     if bench.ok(&["state"])["digest"]["active_turn"] != "standard-striker-03" {
         bench.ok(&["end-turn"]);
     }
@@ -188,6 +192,19 @@ fn pending_prompt_gates_commands() {
     bench.ok(&["respond", "--decline"]);
     bench.ok(&["end-turn"]);
     assert_eq!(bench.ok(&["replay"])["matches"], true);
+}
+
+#[test]
+fn standing_override_tags_the_log() {
+    let bench = Bench::new();
+    bench.start(&[]);
+    let set = bench.ok(&["override", "goblin-warrior.hp", "5", "--reason", "wounded scout", "--standing"]);
+    let line = set["events"][0]["line"].as_str().unwrap();
+    assert!(line.ends_with("[standing assumption]"), "{line}");
+    let fought = attack(&bench);
+    let lines = bench.ok(&strs(&fought));
+    let first = lines["events"][0]["line"].as_str().unwrap();
+    assert!(first.ends_with("[standing assumption: goblin-warrior.hp]"), "{first}");
 }
 
 #[test]
