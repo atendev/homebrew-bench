@@ -12,8 +12,11 @@ Test D&D 5e homebrew monsters by running combats and reading the numbers.
 macOS and Linux:
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/atendev/homebrew-bench/master/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/atendev/homebrew-bench/master/install-wizard.sh -o install-wizard.sh
+bash install-wizard.sh
 ```
+
+The wizard asks which agents get the skill, confirms before it installs, and offers to add `bench` to your shell's PATH. To skip the prompts, pipe `install.sh` to `sh` instead.
 
 Windows (PowerShell):
 
