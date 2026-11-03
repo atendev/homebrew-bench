@@ -75,10 +75,12 @@
   },
   "traits": [
     {
-      "default_resolution": "skipped",
       "desc": "The snake doesn’t provoke an Opportunity Attack when it flies out of an enemy’s reach.",
+      "effects": [
+        "no_provoke"
+      ],
       "id": "flyby",
-      "kind": "unmodeled",
+      "kind": "modeled",
       "name": "Flyby"
     }
   ],

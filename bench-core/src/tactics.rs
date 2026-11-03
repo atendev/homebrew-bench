@@ -812,7 +812,7 @@ impl<'a> Ctx<'a> {
             },
             Effect::Area(area) => self.effect_value(actor, block, &area.effect, target, depth + 1, ranged_in_melee).0,
             Effect::Multiattack(multi) => return self.multiattack_value(actor, block, &multi.steps, target, depth, ranged_in_melee),
-            Effect::TempHp(_) | Effect::TimedModifier(_) | Effect::RollModifier(_) | Effect::ForcedMove(_) | Effect::Teleport(_) => Value::default(),
+            Effect::TempHp(_) | Effect::TimedModifier(_) | Effect::RollModifier(_) | Effect::ForcedMove(_) | Effect::Teleport(_) | Effect::NoProvoke => Value::default(),
         };
         (value, vec![])
     }

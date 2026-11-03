@@ -148,6 +148,12 @@ enum Commands {
         #[command(flatten)]
         at: At,
     },
+    /// Take the Disengage action: the actor's moves this turn provoke no Opportunity Attacks.
+    Disengage {
+        actor: String,
+        #[command(flatten)]
+        at: At,
+    },
     /// Answer the pending prompt.
     Respond {
         /// Die faces or choices the prompt asks for.
@@ -516,6 +522,7 @@ fn run(command: Commands) -> Result<String, CodedError> {
             ok(outcome)
         }
         Commands::Action { actor, action, targets, at } => step(&at, Command::Action { actor, action, targets }),
+        Commands::Disengage { actor, at } => step(&at, Command::Disengage { actor }),
         Commands::Move { actor, band, target, feet, opportunity, at } => {
             step(&at, Command::Move { actor, target, band: band.into(), feet, opportunity })
         }

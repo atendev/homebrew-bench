@@ -50,6 +50,9 @@ pub enum Command {
         #[serde(default)]
         decline: bool,
     },
+    Disengage {
+        actor: String,
+    },
     EndTurn,
     End {
         reason: String,
@@ -92,6 +95,7 @@ impl Command {
         match self {
             Command::Action { .. } => "action",
             Command::Move { .. } => "move",
+            Command::Disengage { .. } => "disengage",
             Command::Respond { .. } => "respond",
             Command::EndTurn => "end-turn",
             Command::End { .. } => "end",
@@ -569,6 +573,7 @@ fn apply(state: &mut EncounterState, cmd: &Command) -> Result<Applied, LiveError
                 false,
             )
         }
+        Command::Disengage { actor } => run_engine(state, StepRequest::Disengage { actor_id: actor.clone() }, vec![], false),
         Command::EndTurn => run_engine(state, StepRequest::EndTurn, vec![], false),
         Command::Respond { values, decline } => respond(state, values, *decline),
         Command::End { reason } => {
@@ -1455,6 +1460,24 @@ mod tests {
         assert!(!state.combatants.iter().find(|c| c.id == GOBLIN).unwrap().action_economy.reaction_used);
         let again = execute(&mut state, move_away(STRIKER, GOBLIN)).unwrap();
         assert_eq!(first_lines, lines(&again));
+        assert!(replay(&state).matches);
+    }
+
+    #[test]
+    fn disengage_stops_provocation_and_undoes_and_replays() {
+        let (mut state, _) = start(spec(PcDice::Engine)).unwrap();
+        engage_then_turn_of(&mut state, STRIKER);
+        let out = execute(&mut state, Command::Disengage { actor: STRIKER.into() }).unwrap();
+        assert!(lines(&out)[0].contains("Disengage"), "{:?}", lines(&out));
+        assert!(state.combatants.iter().find(|c| c.id == STRIKER).unwrap().action_economy.disengaged);
+        let refused = execute(&mut state, move_away(STRIKER, GOBLIN));
+        assert!(matches!(&refused, Err(e) if format!("{e:?}").contains("has disengaged")), "{refused:?}");
+        let moved = execute(&mut state, Command::Move { actor: STRIKER.into(), target: Some(GOBLIN.into()), band: RangeBand::Near, feet: None, opportunity: vec![] }).unwrap();
+        assert!(lines(&moved).iter().all(|l| !l.contains("Opportunity Attack")), "{:?}", lines(&moved));
+        assert!(replay(&state).matches);
+        execute(&mut state, Command::Undo).unwrap();
+        execute(&mut state, Command::Undo).unwrap();
+        assert!(!state.combatants.iter().find(|c| c.id == STRIKER).unwrap().action_economy.disengaged);
         assert!(replay(&state).matches);
     }
 

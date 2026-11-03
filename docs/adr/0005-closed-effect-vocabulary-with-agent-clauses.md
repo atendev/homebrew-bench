@@ -14,7 +14,7 @@ SRD imports ship a default resolution for each unmodeled ability or clause, in t
 
 ## Consequences
 
-- A new effect type is an engine change, a schema change and a version bump. Adding one is the way to model a new pattern.
+- A new effect type is an engine change, a schema change and a version bump. Adding one is the way to model a new pattern. Exception: an additive variant (`no_provoke`, ADR 0015) keeps version 1 while no loader checks `schema_version`.
 - The SRD import fills the vocabulary from the structured fields where it can and from a hand-authored effects layer where the text carries the mechanic. The import review lists each mismatch.
 - `recharge` usage accepts an optional `group` key (for example `breath_weapons` on the two breath actions of a metallic dragon). Abilities sharing a `group` on the same combatant share one recharge state and roll once at the start of the turn.
 - Target design, built in tickets 036 to 039 (the first two bullets are built; the recharge and size items wait on tickets 038 and 039):

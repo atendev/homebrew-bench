@@ -519,7 +519,7 @@ None.
 - `death-dog` `actions.bite`: classified partly_modeled
 - `death-dog` `actions.multiattack`: classified modeled
 - `deer` `actions.ram`: classified modeled
-- `deer` `traits.agile`: classified unmodeled (default skipped)
+- `deer` `traits.agile`: classified modeled
 - `deva` `actions.holy-mace`: classified modeled
 - `deva` `actions.multiattack`: classified modeled
 - `deva` `actions.spellcasting`: classified unmodeled (default skipped)
@@ -639,7 +639,7 @@ None.
 - `flesh-golem` `traits.magic-resistance`: classified unmodeled (default skipped)
 - `flying-snake` `actions.bite`: classified modeled
 - `flying-snake` `actions.bite.damage`: correction applied: Upstream structured damage omits the flat 1 Piercing damage that precedes the dice damage. [flying-snake actions.bite.desc: "Melee Attack Roll: +4, reach 5 ft. Hit: 1 Piercing damage plus 5 (2d4) Poison damage."]
-- `flying-snake` `traits.flyby`: classified unmodeled (default skipped)
+- `flying-snake` `traits.flyby`: classified modeled
 - `frog` `actions.bite`: classified modeled
 - `frog` `actions.bite.damage`: correction applied: Upstream omits structured damage array for flat 1 Piercing damage. [frog actions.bite.desc: "Melee Attack Roll: +3, reach 5 ft. Hit: 1 Piercing damage."]
 - `frog` `traits.amphibious`: classified unmodeled (default skipped)
@@ -650,7 +650,7 @@ None.
 - `frost-giant` `bonus_actions.war-cry`: classified unmodeled (default skipped)
 - `gargoyle` `actions.claw`: classified modeled
 - `gargoyle` `actions.multiattack`: classified modeled
-- `gargoyle` `traits.flyby`: classified unmodeled (default skipped)
+- `gargoyle` `traits.flyby`: classified modeled
 - `gelatinous-cube` `actions.engulf`: classified partly_modeled
 - `gelatinous-cube` `actions.pseudopod`: classified modeled
 - `gelatinous-cube` `traits.ooze-cube`: classified unmodeled (default skipped)
@@ -712,7 +712,7 @@ None.
 - `giant-owl` `actions.spellcasting`: classified unmodeled (default skipped)
 - `giant-owl` `actions.spellcasting`: spellcasting is not modeled; spells are absent from the stat block effects
 - `giant-owl` `actions.talons`: classified modeled
-- `giant-owl` `traits.flyby`: classified unmodeled (default skipped)
+- `giant-owl` `traits.flyby`: classified modeled
 - `giant-rat` `actions.bite`: classified modeled
 - `giant-rat` `traits.pack-tactics`: classified unmodeled (default skipped)
 - `giant-scorpion` `actions.claw`: classified partly_modeled
@@ -737,7 +737,7 @@ None.
 - `giant-vulture` `actions.gouge`: classified partly_modeled
 - `giant-vulture` `traits.pack-tactics`: classified unmodeled (default skipped)
 - `giant-wasp` `actions.sting`: classified modeled
-- `giant-wasp` `traits.flyby`: classified unmodeled (default skipped)
+- `giant-wasp` `traits.flyby`: classified modeled
 - `giant-weasel` `actions.bite`: classified modeled
 - `giant-wolf-spider` `actions.bite`: classified modeled
 - `giant-wolf-spider` `traits.spider-climb`: classified unmodeled (default skipped)
@@ -838,7 +838,7 @@ None.
 - `hill-giant` `actions.tree-club`: classified partly_modeled
 - `hippogriff` `actions.multiattack`: classified modeled
 - `hippogriff` `actions.rend`: classified modeled
-- `hippogriff` `traits.flyby`: classified unmodeled (default skipped)
+- `hippogriff` `traits.flyby`: classified modeled
 - `hippopotamus` `actions.bite`: classified modeled
 - `hippopotamus` `actions.multiattack`: classified modeled
 - `hippopotamus` `traits.hold-breath`: classified unmodeled (default skipped)
@@ -1077,7 +1077,7 @@ None.
 - `otyugh` `actions.tentacle-slam`: classified partly_modeled
 - `owl` `actions.talons`: classified modeled
 - `owl` `actions.talons.damage`: correction applied: Upstream omits structured damage array for flat 1 Slashing damage. [owl actions.talons.desc: "Melee Attack Roll: +3, reach 5 ft. Hit: 1 Slashing damage."]
-- `owl` `traits.flyby`: classified unmodeled (default skipped)
+- `owl` `traits.flyby`: classified modeled
 - `owlbear` `actions.multiattack`: classified modeled
 - `owlbear` `actions.rend`: classified modeled
 - `panther` `actions.rend`: classified modeled
@@ -1142,7 +1142,7 @@ None.
 - `pseudodragon` `actions.sting`: classified partly_modeled
 - `pseudodragon` `traits.magic-resistance`: classified unmodeled (default skipped)
 - `pteranodon` `actions.bite`: classified modeled
-- `pteranodon` `traits.flyby`: classified unmodeled (default skipped)
+- `pteranodon` `traits.flyby`: classified modeled
 - `purple-worm` `actions.bite`: classified partly_modeled
 - `purple-worm` `actions.multiattack`: classified modeled
 - `purple-worm` `actions.tail-stinger`: classified modeled
@@ -1166,7 +1166,7 @@ None.
 - `rakshasa` `traits.greater-magic-resistance`: classified unmodeled (default skipped)
 - `rat` `actions.bite`: classified modeled
 - `rat` `actions.bite.damage`: correction applied: Upstream omits structured damage array for flat 1 Piercing damage. [rat actions.bite.desc: "Melee Attack Roll: +2, reach 5 ft. Hit: 1 Piercing damage."]
-- `rat` `traits.agile`: classified unmodeled (default skipped)
+- `rat` `traits.agile`: classified modeled
 - `raven` `actions.beak`: classified modeled
 - `raven` `actions.beak.damage`: correction applied: Upstream omits structured damage array for flat 1 Piercing damage. [raven actions.beak.desc: "Melee Attack Roll: +4, reach 5 ft. Hit: 1 Piercing damage."]
 - `raven` `traits.mimicry`: classified unmodeled (default skipped)

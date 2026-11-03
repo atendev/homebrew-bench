@@ -219,6 +219,13 @@ pub struct AbilityEntry {
     pub usage: Option<Usage>,
 }
 
+impl AbilityEntry {
+    /// Flyby and Agile: the creature never provokes an Opportunity Attack by moving.
+    pub fn is_no_provoke(&self) -> bool {
+        self.effects.iter().any(|e| matches!(e, crate::effect::Effect::NoProvoke))
+    }
+}
+
 /// A complete stat block. Monsters, SRD fixtures, and the standard party share
 /// this schema.
 #[derive(Debug, Clone, Serialize, Deserialize, schemars::JsonSchema)]
@@ -296,6 +303,20 @@ pub struct StatBlock {
     pub pasted_source: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub intake_flags: Vec<IntakeFlag>,
+}
+
+impl StatBlock {
+    /// The first ability, in any list, that stops this creature provoking
+    /// Opportunity Attacks.
+    pub fn no_provoke_ability(&self) -> Option<&AbilityEntry> {
+        self.traits
+            .iter()
+            .chain(&self.actions)
+            .chain(&self.bonus_actions)
+            .chain(&self.reactions)
+            .chain(&self.legendary_actions)
+            .find(|a| a.is_no_provoke())
+    }
 }
 
 #[cfg(test)]

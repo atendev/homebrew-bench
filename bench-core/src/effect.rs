@@ -365,6 +365,8 @@ pub enum Effect {
     UseAction(UseAction),
     Cast(Cast),
     Area(AreaEffect),
+    /// The creature never provokes an Opportunity Attack by moving (Flyby, Agile).
+    NoProvoke,
 }
 
 /// Resource map for usage tracking on a combatant.
