@@ -69,6 +69,7 @@ Both modes ship in phase 1. Everything the engine can't model is labeled agent j
 
 - [Build engine-rolled opportunity attacks](closed/053-build-engine-rolled-opportunity-attacks.md): `bench move --opportunity <reactor>[:<attack-id>]` resolves named reactors' attacks before the band change through one shared eligibility function, ineligible names fail the move, a downed mover stops without paying feet, and batch is unchanged. See `docs/adr/0015-opportunity-attacks-declared-on-the-move.md`.
 - [Batch policy scores buffs, forced movement and teleports](closed/045-batch-policy-scores-buffs-forced-movement-and-teleports.md): buffs score as self-only incoming-damage reduction over a two-round horizon, forced movement as a fraction of the target's threat in `control`, teleports as the opportunity attacks avoided, all in expected HP. No SRD fixture uses these effects, caster Haste may shift party cells, and the v3 bump and baseline regeneration happen once with the reactions build. Haste's extra action and ally buffs are left to a new ticket.
+- [Build Disengage and no-provoke traits](closed/054-build-disengage-and-no-provoke-traits.md): `bench disengage` sets a flag until the actor's turn ends, Flyby and Agile import as the `no_provoke` effect (Flyby read like Agile), one eligibility function reads both, the schema stays at version 1 by recorded exception, and batch output is unchanged. See `docs/adr/0015-opportunity-attacks-declared-on-the-move.md`.
 
 ## Not yet specified
 
@@ -91,10 +92,9 @@ Takeable now, in order:
 - Upcast spell scaling (grilling)
 - Encounter lighting setting (grilling)
 - Live reaction windows (grilling)
-- Build Disengage and no-provoke traits (task, AFK)
+- Batch policy takes reactions (grilling)
 - Haste extra action and ally-targeted buffs (grilling)
 
 Blocked:
 
-- Batch policy takes reactions (grilling), waits on Build Disengage and no-provoke traits
 - Build v3 scoring for buffs, forced movement and teleports (task, AFK), waits on Batch policy takes reactions
