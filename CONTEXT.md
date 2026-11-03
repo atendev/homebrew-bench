@@ -124,6 +124,10 @@ _Avoid_: Interrupt, callback
 A pending prompt that offers one combatant a chance to use a reaction, such as Shield or an Opportunity Attack, or a legendary action between turns.
 _Avoid_: Trigger, interrupt
 
+**Disengage**:
+The standard action that spends the actor's action and sets a flag until its turn ends. Its moves provoke no Opportunity Attack. Flyby and Agile give the same effect permanently as the `no_provoke` trait effect.
+_Avoid_: Withdraw
+
 **Reactor**:
 A creature that takes a reaction against another's action or movement. For an Opportunity Attack, it is a creature whose engagement the mover breaks. The move names its reactors, and the engine resolves their attacks before the band changes.
 _Avoid_: Responder, defender

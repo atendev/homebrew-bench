@@ -5,7 +5,7 @@
   "max_rounds": 20,
   "party": "standard",
   "fingerprints": {
-    "fixture_set": "d11fb55060bf8ca9e287639c4cff51b384613fd48cb46be5dc67729e90ae3f7c",
+    "fixture_set": "73b5f2a1698a2a2f7d1a579785eacbb7dc6eadfc0c7125771bb72f75e1864208",
     "party": "bbb60ff18844c6acecbaa85f1d77c97a90d3bbaaa3360a00e169e07a3292fb29",
     "policy_id": "homebrew-bench.tactics",
     "policy_version": 2,

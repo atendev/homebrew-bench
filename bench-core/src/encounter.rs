@@ -114,6 +114,9 @@ pub struct ActionEconomy {
     pub bonus_action_used: bool,
     pub reaction_used: bool,
     pub movement_used_feet: u32,
+    /// Took the Disengage action this turn; its moves provoke nothing until the turn ends (ADR 0015).
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub disengaged: bool,
 }
 
 /// A standing assumption applied by the agent at intake.
@@ -495,5 +498,22 @@ mod tests {
         state.round = 1;
         state.update_tamper_hash();
         assert_eq!(state.tamper_hash, first);
+    }
+}
+
+#[cfg(test)]
+mod disengage_tests {
+    use super::*;
+
+    #[test]
+    fn action_economy_without_the_disengaged_flag_still_loads() {
+        let old = r#"{"action_used":true,"bonus_action_used":false,"reaction_used":false,"movement_used_feet":10}"#;
+        let economy: ActionEconomy = serde_json::from_str(old).unwrap();
+        assert!(economy.action_used && !economy.disengaged);
+        let unchanged = serde_json::to_value(&economy).unwrap();
+        assert!(unchanged.get("disengaged").is_none(), "{unchanged}");
+        assert_eq!(serde_json::from_value::<ActionEconomy>(unchanged).unwrap().movement_used_feet, 10);
+        let set = ActionEconomy { disengaged: true, ..economy };
+        assert_eq!(serde_json::to_value(&set).unwrap()["disengaged"], true);
     }
 }

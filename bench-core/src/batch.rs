@@ -317,6 +317,8 @@ fn findings(monster: &StatBlock, resolutions: &BTreeMap<String, String>) -> Vec<
                 DefaultResolution::Neutral => ("neutral", "SRD default: no combat effect.".into()),
                 DefaultResolution::BaseForm => ("base_form", "SRD default: the monster stays in its stat-block form.".into()),
             }
+        } else if a.is_no_provoke() {
+            ("skipped", "Not modeled in phase 1; results may understate or overstate the monster.".into())
         } else if a.kind == AbilityKind::Inert {
             ("inert", "No combat effect in this encounter.".into())
         } else if !a.agent_clauses.is_empty() {
@@ -745,7 +747,7 @@ impl Log {
         ));
         self.line(format!("  Monster damage per round: {:.1}.", f64::from(damage) / f64::from(rounds.max(1))));
         self.line(format!("  PC deaths: {deaths}."));
-        for a in all_abilities(&spec.monster).filter(|a| a.default_resolution == Some(DefaultResolution::Skipped)) {
+        for a in all_abilities(&spec.monster).filter(|a| a.default_resolution == Some(DefaultResolution::Skipped) || a.is_no_provoke()) {
             self.line(format!("  Skipped mechanic warning: {} may change this result.", a.name));
         }
     }

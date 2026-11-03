@@ -144,6 +144,8 @@ def dice_text(dice, modifier):
     return f"{dice}{modifier:+d}" if modifier else dice
 
 
+NO_PROVOKE = re.compile(r"^The [\w -]+ doesn.t provoke an Opportunity Attack when it (?:flies|moves) out of an enemy.s reach\.$")
+
 class Review:
     def __init__(self):
         self.entries = []
@@ -569,6 +571,8 @@ class Converter:
         elif raw.get("dc"):
             effect, clauses = self.saving_throw(raw, base)
             effects = [effect] if effect else []
+        if section == "traits" and NO_PROVOKE.search(desc):
+            effects = ["no_provoke"]
         usage = self.usage(raw, base)
         if usage:
             entry["usage"] = usage

@@ -6,6 +6,9 @@
 
 - `bench move --opportunity <reactor>[:<attack-id>]` has a reactor take its Opportunity Attack before the move, rolled by the engine. Repeat the flag for several reactors. The default attack is the reactor's first at-will melee attack. The reaction is spent hit or miss and returns on the reactor's own turn. A mover left unable to act stops without moving. A named reactor that can't react fails the move with the reason. Batch results are unchanged. See ADR 0015.
 
+- `bench disengage <actor>` takes the Disengage action: it spends the action, and the actor's moves for the rest of the turn provoke nothing. A flag on the actor lasts until its turn ends.
+- Flyby and Agile (nine SRD monsters) import as the `no_provoke` effect, so those creatures never provoke an Opportunity Attack. Flyby is not limited to flying out of reach. Batch numbers are unchanged and batch still lists these traits as skipped mechanics; the baseline curve was regenerated for the new fixture fingerprint with identical numbers. See ADR 0015.
+
 ### Changed
 
 - The `opportunity_attack` notice now names only creatures that could still react: enemies that can act, can take reactions, have their reaction, and can see the mover. It no longer reports "has no reaction available", and allies never get it. A reactor that can't see the mover gets an `assumption` line instead.

@@ -271,7 +271,7 @@ fn help_json_lists_every_command() {
     let catalog = bench.ok(&["help", "--json"]);
     let names: Vec<&str> = catalog["commands"].as_array().unwrap().iter().map(|c| c["name"].as_str().unwrap()).collect();
     for name in [
-        "start", "action", "move", "respond", "end-turn", "end", "state", "list", "clean", "override", "roll", "add",
+        "start", "action", "move", "disengage", "respond", "end-turn", "end", "state", "list", "clean", "override", "roll", "add",
         "remove", "undo", "replay", "log", "batch", "fixture", "party", "baseline",
     ] {
         assert!(names.contains(&name), "{name} missing from {names:?}");

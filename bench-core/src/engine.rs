@@ -31,6 +31,8 @@ pub enum StepRequest {
         #[serde(default, skip_serializing_if = "Vec::is_empty")]
         opportunity: Vec<OpportunityAttack>,
     },
+    /// The Disengage action: spends the action and sets the turn flag.
+    Disengage { actor_id: String },
     EndTurn,
     Respond { values: Vec<u32>, accept: bool },
     RollInitiative(InitiativeOptions),
@@ -185,6 +187,7 @@ pub fn step_events(state: &mut EncounterState, request: StepRequest) -> Result<V
         StepRequest::Move { actor_id, target_id, band, feet, opportunity } => {
             move_combatant(state, &actor_id, target_id.as_deref(), band, feet, &opportunity)?
         }
+        StepRequest::Disengage { actor_id } => disengage(state, &actor_id)?,
         StepRequest::EndTurn => end_turn_events(state)?,
         StepRequest::Respond { values, accept } => respond(state, values, accept)?,
         StepRequest::RollInitiative(options) => roll_initiative(state, options)?,
@@ -253,6 +256,24 @@ fn resolve_action(
         ActionSection::Reaction => economy.reaction_used = true,
     }
     Ok(events)
+}
+
+/// The Disengage action. The flag lasts until the actor's turn ends.
+fn disengage(state: &mut EncounterState, actor_id: &str) -> Result<Vec<EngineEvent>, EngineError> {
+    let i = index_of(state, actor_id)?;
+    if !can_act(&state.combatants[i]) {
+        return Err(EngineError::Illegal(format!("{actor_id} cannot act")));
+    }
+    if state.active_turn.as_deref().is_some_and(|active| active != actor_id) {
+        return Err(EngineError::Illegal(format!("{actor_id} is not the active combatant")));
+    }
+    let economy = &mut state.combatants[i].action_economy;
+    if economy.action_used {
+        return Err(EngineError::Illegal("action already used".into()));
+    }
+    economy.action_used = true;
+    economy.disengaged = true;
+    Ok(vec![event("disengage", format!("{actor_id} takes the Disengage action"), actor_id, actor_id)])
 }
 
 fn spend_usage(state: &mut EncounterState, actor_index: usize, action_id: &str, usage: &Usage) -> Result<(), EngineError> {
@@ -462,6 +483,7 @@ fn resolve_effect(
                 source: Some(actor_id.into()),
             });
         }
+        Effect::NoProvoke => {}
         Effect::Area(area) => {
             events.push(event("area", format!("{} creates an area effect", actor_id), actor_id, actor_id));
             let count = area.target_count.map_or(target_ids.len(), |n| n.max(1) as usize);
@@ -970,8 +992,8 @@ impl Ineligible {
 
 /// The one eligibility rule behind both the `opportunity_attack` notice and
 /// the resolver, so the notice never names a reactor the resolver would refuse.
-/// Disengage and the Flyby and Agile no-provoke traits are not checked yet;
-/// the ticket that builds them adds them here.
+/// A mover that took Disengage this turn, or has a no-provoke trait (Flyby,
+/// Agile), provokes nothing. Flyby is not limited to flying out of reach.
 fn opportunity_eligibility(state: &EncounterState, reactor: usize, mover: usize) -> Result<(), Ineligible> {
     let r = &state.combatants[reactor];
     let m = &state.combatants[mover];
@@ -987,6 +1009,14 @@ fn opportunity_eligibility(state: &EncounterState, reactor: usize, mover: usize)
     }
     if r.action_economy.reaction_used {
         return Err(Ineligible::Rule(format!("{} has already used its reaction", r.id)));
+    }
+    if m.action_economy.disengaged {
+        return Err(Ineligible::Rule(format!("{} has disengaged", m.id)));
+    }
+    if let Some(block) = state.stat_blocks.iter().find(|s| s.id == m.stat_block_id) {
+        if let Some(t) = block.stat_block.no_provoke_ability() {
+            return Err(Ineligible::Rule(format!("{} does not provoke ({})", m.id, t.name)));
+        }
     }
     if has(m, Condition::Invisible) {
         return Err(Ineligible::Unseen(format!("{} cannot see {}, who is invisible", r.id, m.id)));
@@ -1091,6 +1121,9 @@ fn set_band(
 fn end_turn_events(state: &mut EncounterState) -> Result<Vec<EngineEvent>, EngineError> {
     let current = state.active_turn.clone().ok_or_else(|| EngineError::Invalid("encounter has no active turn".into()))?;
     let mut events = vec![event("end_turn", format!("{current} ends its turn"), &current, &current)];
+    if let Ok(i) = index_of(state, &current) {
+        state.combatants[i].action_economy.disengaged = false;
+    }
 
     // Decrement durations on active modifiers
     decrement_durations(state, &mut events);
@@ -3027,6 +3060,87 @@ mod tests {
 
     fn oa(reactor: &str, attack: Option<&str>) -> OpportunityAttack {
         OpportunityAttack { reactor_id: reactor.into(), attack_id: attack.map(Into::into) }
+    }
+
+    fn no_provoke_trait() -> crate::stat_block::AbilityEntry {
+        crate::stat_block::AbilityEntry {
+            id: "flyby".into(),
+            name: "Flyby".into(),
+            desc: None,
+            kind: crate::stat_block::AbilityKind::Modeled,
+            effects: vec![Effect::NoProvoke],
+            agent_clauses: vec![],
+            default_resolution: None,
+            usage: None,
+        }
+    }
+
+    #[test]
+    fn disengage_spends_the_action_and_the_next_move_provokes_nothing() {
+        let mut state = provoking_encounter(0);
+        let events = step_events(&mut state, StepRequest::Disengage { actor_id: "a".into() }).unwrap();
+        assert!(events.iter().any(|e| e.kind == "disengage"), "{events:?}");
+        assert!(state.combatants[0].action_economy.action_used);
+        assert!(state.combatants[0].action_economy.disengaged);
+        let events = move_combatant(&mut state, "a", None, RangeBand::Far, 35, &[]).unwrap();
+        assert!(events.iter().all(|e| e.kind != "opportunity_attack"), "{events:?}");
+        assert_eq!(state.combatants[0].ranges["b"], RangeBand::Far);
+    }
+
+    #[test]
+    fn disengage_refuses_a_named_reactor_with_the_reason() {
+        let mut state = provoking_encounter(0);
+        step_events(&mut state, StepRequest::Disengage { actor_id: "a".into() }).unwrap();
+        let err = move_combatant(&mut state, "a", None, RangeBand::Far, 35, &[oa("b", None)]).unwrap_err();
+        assert!(err.to_string().contains("b cannot make an Opportunity Attack: a has disengaged"), "{err}");
+        assert!(!state.combatants[1].action_economy.reaction_used);
+    }
+
+    #[test]
+    fn disengage_needs_the_active_turn_and_an_unused_action() {
+        let mut state = provoking_encounter(0);
+        let err = step_events(&mut state, StepRequest::Disengage { actor_id: "b".into() }).unwrap_err();
+        assert!(err.to_string().contains("not the active combatant"), "{err}");
+        step_events(&mut state, StepRequest::Disengage { actor_id: "a".into() }).unwrap();
+        let err = step_events(&mut state, StepRequest::Disengage { actor_id: "a".into() }).unwrap_err();
+        assert!(err.to_string().contains("action already used"), "{err}");
+        state.combatants[0].action_economy = ActionEconomy::default();
+        state.combatants[0].end_state = EndState::Dead;
+        assert!(step_events(&mut state, StepRequest::Disengage { actor_id: "a".into() }).is_err());
+    }
+
+    #[test]
+    fn disengage_ends_with_the_movers_turn() {
+        let mut state = provoking_encounter(0);
+        step_events(&mut state, StepRequest::Disengage { actor_id: "a".into() }).unwrap();
+        step_events(&mut state, StepRequest::EndTurn).unwrap();
+        assert!(!state.combatants[0].action_economy.disengaged, "the flag ends with the turn");
+        for _ in 0..2 {
+            step_events(&mut state, StepRequest::EndTurn).unwrap();
+        }
+        assert_eq!(state.active_turn.as_deref(), Some("a"));
+        assert!(!state.combatants[0].action_economy.disengaged);
+    }
+
+    #[test]
+    fn a_no_provoke_trait_means_no_notice_and_no_named_reactor() {
+        let mut state = provoking_encounter(0);
+        let snapshot = state.stat_blocks.iter_mut().find(|s| s.id == "a").unwrap();
+        snapshot.stat_block.traits.push(no_provoke_trait());
+        let err = move_combatant(&mut state.clone(), "a", None, RangeBand::Far, 35, &[oa("b", None)]).unwrap_err();
+        assert!(err.to_string().contains("b cannot make an Opportunity Attack: a does not provoke (Flyby)"), "{err}");
+        let events = move_combatant(&mut state, "a", None, RangeBand::Far, 35, &[]).unwrap();
+        assert!(events.iter().all(|e| e.kind != "opportunity_attack"), "{events:?}");
+        assert!(!state.combatants[1].action_economy.reaction_used);
+    }
+
+    #[test]
+    fn a_no_provoke_effect_outside_traits_still_counts() {
+        let mut state = provoking_encounter(0);
+        let snapshot = state.stat_blocks.iter_mut().find(|s| s.id == "a").unwrap();
+        snapshot.stat_block.bonus_actions.push(no_provoke_trait());
+        let err = move_combatant(&mut state, "a", None, RangeBand::Far, 35, &[oa("b", None)]).unwrap_err();
+        assert!(err.to_string().contains("a does not provoke (Flyby)"), "{err}");
     }
 
     #[test]

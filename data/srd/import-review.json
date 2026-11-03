@@ -3394,7 +3394,7 @@
       "class": "d",
       "path": "traits.agile",
       "status": "open",
-      "summary": "classified unmodeled (default skipped)"
+      "summary": "classified modeled"
     },
     {
       "monster": "deva",
@@ -4241,7 +4241,7 @@
       "class": "d",
       "path": "traits.flyby",
       "status": "open",
-      "summary": "classified unmodeled (default skipped)"
+      "summary": "classified modeled"
     },
     {
       "monster": "frog",
@@ -4325,7 +4325,7 @@
       "class": "d",
       "path": "traits.flyby",
       "status": "open",
-      "summary": "classified unmodeled (default skipped)"
+      "summary": "classified modeled"
     },
     {
       "monster": "gelatinous-cube",
@@ -4766,7 +4766,7 @@
       "class": "d",
       "path": "traits.flyby",
       "status": "open",
-      "summary": "classified unmodeled (default skipped)"
+      "summary": "classified modeled"
     },
     {
       "monster": "giant-rat",
@@ -4941,7 +4941,7 @@
       "class": "d",
       "path": "traits.flyby",
       "status": "open",
-      "summary": "classified unmodeled (default skipped)"
+      "summary": "classified modeled"
     },
     {
       "monster": "giant-weasel",
@@ -5662,7 +5662,7 @@
       "class": "d",
       "path": "traits.flyby",
       "status": "open",
-      "summary": "classified unmodeled (default skipped)"
+      "summary": "classified modeled"
     },
     {
       "monster": "hippopotamus",
@@ -7391,7 +7391,7 @@
       "class": "d",
       "path": "traits.flyby",
       "status": "open",
-      "summary": "classified unmodeled (default skipped)"
+      "summary": "classified modeled"
     },
     {
       "monster": "owlbear",
@@ -7853,7 +7853,7 @@
       "class": "d",
       "path": "traits.flyby",
       "status": "open",
-      "summary": "classified unmodeled (default skipped)"
+      "summary": "classified modeled"
     },
     {
       "monster": "purple-worm",
@@ -8028,7 +8028,7 @@
       "class": "d",
       "path": "traits.agile",
       "status": "open",
-      "summary": "classified unmodeled (default skipped)"
+      "summary": "classified modeled"
     },
     {
       "monster": "raven",

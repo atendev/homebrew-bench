@@ -69,10 +69,12 @@
   },
   "traits": [
     {
-      "default_resolution": "skipped",
       "desc": "The rat doesn’t provoke an Opportunity Attack when it moves out of an enemy’s reach.",
+      "effects": [
+        "no_provoke"
+      ],
       "id": "agile",
-      "kind": "unmodeled",
+      "kind": "modeled",
       "name": "Agile"
     }
   ],
