@@ -81,6 +81,7 @@ Both modes ship in phase 1. Everything the engine can't model is labeled agent j
 - [Haste extra action and ally-targeted buffs](closed/055-haste-extra-action-and-ally-targeted-buffs.md): a timed modifier has a bearer apart from its source, `target` by default or `self`, so riders under a failed save or a hit land on the target instead of the attacker (the old reading was a defect). Only the most potent (else most recent) casting of one spell applies on a bearer, a modifier can end on damage, Speed modifiers are read through one walk-speed function, and Fly becomes an agent clause. Built in ticket 065. A modifier can grant an extra action limited to listed uses (Haste's: one attack or Disengage, spent with `--extra`) and can apply effects when it ends (Haste's lethargy). Built in ticket 066. Under v3 the batch policy casts a buff on the self or ally it values most and uses the extra action (added to ticket 056).
 - [Fix Advantage and Disadvantage cancellation](closed/061-fix-advantage-disadvantage-cancellation.md): attack rolls set one Advantage flag and one Disadvantage flag across every source and roll straight with both, through one `combined_disposition` helper that ticket 060's saves reuse. `improve` and `worsen` are gone, the engine is 0.1.2, and the baseline stays stale for ticket 056. Seven gaps against the 2024 conditions went to ticket 067.
 - [Align attack-roll condition sources with the 2024 conditions](closed/067-align-attack-roll-condition-sources-with-2024-rules.md): all seven gaps close in one build (ticket 068). Blinded and Petrified targets give Advantage and a Restrained attacker Disadvantage. "Within 5 feet" reads as engaged, so a Prone target gives Disadvantage to attackers outside engagement, and hits on Paralyzed or Unconscious targets from an engaged attacker are critical. Sight is one rule with no ranges (Invisible is hidden unless the observer has Blindsight or Truesight; Blinded sees only with Blindsight), used by Invisible, Frightened and Opportunity Attacks. The grappler and the source of fear are the condition's `source`. A downed PC counts as Unconscious and Prone for attacks. Recorded in ADR 0017. The engine bumps one patch before ticket 056's regeneration, and 056 makes the policy read the same sources under v3. Its audit added the Stable PC damage fix to 068 and turned condition effects on saving throws (auto-fail Strength and Dexterity, Restrained Dexterity Disadvantage) into build ticket 069, which waits on ticket 060.
+- [Build upcast spell scaling](closed/059-build-upcast-spell-scaling.md): casts resolve at their cast level through one `scaled_effects` function shared by the engine and the batch policy, all 84 effects entries carry `level` with the faulty rules fixed and unapplied higher-slot text in `upcast_clause`, `bench action --slot` picks a PC's slot, batch warns on upcasts with an unapplied clause, and the engine is 0.1.3 with the standard party regenerated and the baseline left stale for ticket 056.
 
 ## Not yet specified
 
@@ -105,7 +106,6 @@ Both modes ship in phase 1. Everything the engine can't model is labeled agent j
 
 Takeable now, in order:
 
-- Build upcast spell scaling (task, AFK)
 - Build encounter lighting (task, AFK)
 - Build live reaction windows (task, AFK)
 - Build modifier bearers and Speed modifiers (task, AFK)
@@ -115,6 +115,6 @@ Blocked:
 
 - Build Haste extra action and lethargy (task, AFK), waits on Build modifier bearers and Speed modifiers
 - Build batch reactions policy (task, AFK), waits on Build live reaction windows; it moves the policy to v3
-- Build v3 scoring for buffs, forced movement and teleports (task, AFK), waits on Build upcast spell scaling, Build encounter lighting, Build live reaction windows, Build batch reactions policy, Build modifier bearers and Speed modifiers, Build Haste extra action and lethargy, Build attack-roll condition sources and Build saving-throw condition sources; it regenerates the baseline once
+- Build v3 scoring for buffs, forced movement and teleports (task, AFK), waits on Build encounter lighting, Build live reaction windows, Build batch reactions policy, Build modifier bearers and Speed modifiers, Build Haste extra action and lethargy, Build attack-roll condition sources and Build saving-throw condition sources; it regenerates the baseline once
 - Build saving-throw condition sources (task, AFK), waits on Build encounter lighting
 - Do dragons still read above their CR on the v3 curve (task, AFK), waits on Build v3 scoring; it takes over the dragon fog item, whose reactions half policy v3 now covers
