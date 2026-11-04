@@ -3,9 +3,9 @@ id: 062
 title: Build live reaction windows
 type: task
 mode: AFK
-status: open
+status: closed
 blocked_by: [047]
-claimed: true
+claimed: false
 ---
 
 ## Question
@@ -112,3 +112,28 @@ Overlaps:
 - [Build batch reactions policy](063-build-batch-reactions-policy.md), the build for ticket 046, waits on this one, since it replaces the batch decider and turns windows on for batch.
 
 ## Resolution
+
+Built on branch `ticket-062-build-live-reaction-windows`.
+
+- Schema. `ReactionTrigger` is now one variant, `hit_by_attack_roll { attack: any | melee | ranged }`, with `AttackFilter::matches` (melee means `range: None`). `AbilityEntry.trigger` is optional and left out when unset. `Duration::TriggeringAttack` is new. The loader refuses a `trigger` outside `reactions` ("a trigger belongs on a reaction") and a `triggering_attack` duration, anywhere in an entry's effects, on an entry without a hit trigger. The checks sit in the `deserialize_with` hooks ticket 060 added, beside the roll-modifier check. `schema_version` stays 1.
+- Engine. `bench-core/src/reaction.rs` holds `ReactionWindow`, `WindowTrigger`, `ReactionOption`, `ReactionAnswer` and `ReactionDecider`, which lives on `state.reactions` and is never stored. `can_react` is factored out of `opportunity_eligibility`. `opportunity_windows` and `hit_window` list the windows, and `ask` consults the decider. `StepRequest::Move` gained `declined`. A taken hit reaction goes through `resolve_action` with the attacker as target, then an `attack_rechecked` event reports the hit against the new AC. `triggering_attack` modifiers and conditions whose source is the target end after each attack on that target.
+- Live. One `Held` record is the metadata of both prompt kinds: request, faces, `engine_fills_rest`, hit answers, an `answered` count and the window. Fields at their defaults are left out, so dice prompts read and write as before. `Command::Respond` gained `take`. `bench respond --take [<id>]` and `--decline` answer.
+- Importer. 8 fixtures changed: Parry on bandit captain, erinyes, gladiator, knight, marilith, noble and warrior veteran, plus the pirate captain's Riposte with its agent clause. Each has a review note that holding a weapon is assumed. 341 of 341 graduate. The stone giant's Deflect Missile gets no trigger and stays mis-modeled: its damage reduction is dropped and its save fires without the trigger. The generator writes the Shield trigger, which changed 20 standard caster files, and `--check` passes.
+- Batch numbers are unchanged. Release builds of `master` and this branch ran `bench batch <id> --levels <1|5|11> --fights 40 --seed 7` on the knight, the pirate captain (`--assume` for rapier and riposte), the ogre and the goblin warrior (`--assume` for scimitar and shortbow). All 12 `levels` objects are identical.
+- Old encounters. `bench-core/tests/data/engine-0.1.4-state.json` was written by master's binary: a move, an ogre hit on the Shield caster, an end-turn, and a move leaving the ogre's reach without `--opportunity`. On this branch it loads through `store::load`, passes `store::check`, re-serializes unchanged, replays matching every hash, and undoes with no window opening.
+- Version 0.1.5. `a_fixture_regenerates_to_its_committed_row` still passes and is not ignored. The party stale reason was already allowed by ticket 059. `cargo test --workspace` passes, and clippy shows only the four warnings already on master.
+- ADR 0018 is written, numbered 0018 because 0017 (sight rules) already existed. ADRs 0004, 0005 and 0015 are amended. `live-mode.md`, `batch-mode.md` and `CHANGELOG.md` are updated. CONTEXT.md already held the terms.
+
+Readings chosen where the ticket was open:
+
+- The gate rides on `StartSpec.reaction_windows`, because batch builds its encounters through `live::start`. `bench start` passes true and batch passes false.
+- The live decider always waits on an Opportunity Attack window, since those answers live in the held move's lists. Its queue answers hit windows only.
+- A move stops at its first unanswered window. An unanswered hit window is recorded and the run continues as a pass, the way a missing die does. A window after a missing die passes unasked, so prompts come in the order the engine met them.
+- An Opportunity Attack window offers the reactor's default attack first, then every other ready single melee attack in stat-block order.
+- `respond --take` with no id is stored in the history with the offered id filled in.
+- Public view: a monster window's opening line and a monster's decline are hidden, and its take is shown. The public digest shows no pending prompt while a monster's window is open. A declined Opportunity Attack still leaves the `opportunity_attack` notice, public as before.
+- A reaction prompt has `sides: null` and `remaining: 1`.
+- `settings.reaction_windows` can be changed with `bench override` like any settings field. It isn't documented as a way to turn windows off.
+
+No follow-up tickets.
+

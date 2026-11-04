@@ -14,7 +14,7 @@ Build the batch reaction policy decided in [Batch policy takes reactions](../clo
 
 ## Notes
 
-Consult `tdd`, `codebase-design`, `domain-modeling` and `code-review`. Read ADRs 0012, 0015 and 0017 (written by ticket 062) first, and the decider seam ticket 062 built. Don't change how live mode decides windows.
+Consult `tdd`, `codebase-design`, `domain-modeling` and `code-review`. Read ADRs 0012, 0015 and 0018 (written by ticket 062) first, and the decider seam ticket 062 built. Don't change how live mode decides windows.
 
 Engine seam (`bench-core/src/engine.rs`):
 - The policy needs, for each window: the reactor, the window kind, the options on offer, and the mover or attacker. A hit window also needs the attack total, the target's AC before the reaction, and whether the d20 was a natural 20. If 062's window description lacks any of these, add them. This adds fields only. Live behavior and the stored state must not change, and `ENGINE_VERSION` does not move for it.
@@ -37,7 +37,7 @@ Policy (`bench-core/src/tactics.rs`):
 - Log a reason line for every decided window, in the shape of plan reasons, such as `goblin-warrior: Opportunity Attack on standard-caster-03 (scimitar, expected 4.2 > reserve 0.0)` or `standard-caster-05: Shield (17 vs AC 13+5 turns the hit into a miss)`. Passed windows log one line too, so a sampled log shows why a reaction was held.
 
 Batch (`bench-core/src/batch.rs`):
-- Set `settings.reaction_windows = true` on every batch encounter and install the policy decider with the run's `PolicyConstants`.
+- Pass `reaction_windows: true` in batch's `StartSpec` (it sets `settings.reaction_windows`) and install the policy decider with the run's `PolicyConstants`. 062's decider is `ReactionDecider` in `bench-core/src/reaction.rs`, an enum on `state.reactions`; add a policy variant beside `PassAll`.
 - Keep passing an empty `opportunity` list on moves. The windows fill it.
 - The report's method sentence: replace "takes no reactions" with what v3 does, in one sentence. Ticket 056 rewrites the buff half of the same sentence.
 
@@ -55,7 +55,7 @@ Tests (write them first):
 
 Docs:
 - Amend ADR 0012: a reactions paragraph covering the hit flip rule, the Opportunity Attack against the reserve, the shared penalty, decisions one window at a time, and no Disengage plans. Name the 0.1 constant.
-- Amend ADR 0015's consequence that batch is unchanged until ticket 046, and ADR 0017's batch decider note, to point at policy v3.
+- Amend ADR 0015's consequence that batch is unchanged until ticket 046, and ADR 0018's decider seam bullet, to point at policy v3.
 - `.agents/skills/homebrew-bench/references/batch-mode.md`: batch now takes Opportunity Attacks, Shield and Parry. Riposte's extra attack stays an agent clause.
 - `CHANGELOG.md` under Unreleased: policy v3 takes reactions, the penalty fix, and the curve reading stale until it is regenerated.
 

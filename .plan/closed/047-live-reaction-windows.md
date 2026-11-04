@@ -22,7 +22,7 @@ Scope added by [Live legendary actions](../closed/048-live-legendary-actions.md)
 
 ## Resolution
 
-Decided on 2026-11-04 by a subagent the user delegated the decision to ("use subagents for making decisions"). It grilled itself one sub-question at a time against ADRs 0004, 0005, 0015 and 0016, tickets 007, 013, 044 and 048, the engine code and the 2024 PHB. Build ticket: [Build live reaction windows](../tickets/062-build-live-reaction-windows.md).
+Decided on 2026-11-04 by a subagent the user delegated the decision to ("use subagents for making decisions"). It grilled itself one sub-question at a time against ADRs 0004, 0005, 0015 and 0016, tickets 007, 013, 044 and 048, the engine code and the 2024 PHB. Build ticket: [Build live reaction windows](062-build-live-reaction-windows.md).
 
 **Facts that shaped it.**
 - No stat-block reaction carries a trigger. `ReactionTrigger` in `bench-core/src/effect.rs` is never read, and its six variants are not ADR 0005's six. The engine can't tell when any reaction applies.
