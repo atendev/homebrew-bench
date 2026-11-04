@@ -2156,8 +2156,8 @@ fn apply_damage(
             state.combatants[i].end_state = EndState::Unconscious;
             events.push(event("destabilize", format!("{target_id} is no longer stable"), source_id.unwrap_or(target_id), target_id));
         }
-        let failures = if critical { 2 } else { 1 };
-        state.combatants[i].death_saves.failures += failures;
+        let absorbed = amount.min(state.combatants[i].temp_hp);
+        state.combatants[i].temp_hp -= absorbed;
         events.push(EngineEvent {
             kind: "damage".into(),
             message: format!("{target_id} takes {amount} damage while down"),
@@ -2168,6 +2168,13 @@ fn apply_damage(
             damage: Some(amount),
             player_dice: marked,
         });
+        if amount - absorbed >= state.combatants[i].max_hp {
+            state.combatants[i].end_state = EndState::Dead;
+            events.push(event("dies", format!("{target_id} dies from massive damage"), target_id, target_id));
+            return Ok(());
+        }
+        let failures = if critical { 2 } else { 1 };
+        state.combatants[i].death_saves.failures += failures;
         events.push(event("death_save", format!("{target_id} suffers {failures} death save failure(s) from the hit"), source_id.unwrap_or(target_id), target_id));
         if state.combatants[i].death_saves.failures >= 3 {
             state.combatants[i].end_state = EndState::Dead;
@@ -5897,6 +5904,46 @@ mod tests {
         failing.combatants[0].death_saves.failures = 2;
         let (after, _, _) = bite_on(&failing, |n| n > 1 && n < 20);
         assert_eq!(fighter_of(&after).end_state, EndState::Dead);
+    }
+
+    #[test]
+    fn damage_at_or_over_max_hp_kills_a_downed_pc() {
+        let downed = |end_state, max_hp, temp_hp| {
+            let mut state = one_damage_bite(|_, f| {
+                f.hp = 0;
+                f.max_hp = max_hp;
+                f.temp_hp = temp_hp;
+                f.end_state = end_state;
+            });
+            disengage_bite(&mut state, RangeBand::Far);
+            state
+        };
+        let hit = |n: u32| n > 1 && n < 20;
+
+        let (after, _, events) = bite_on(&downed(EndState::Unconscious, 1, 0), hit);
+        assert_eq!(fighter_of(&after).end_state, EndState::Dead);
+        assert!(events.iter().any(|e| e.message == "fighter dies from massive damage"), "{events:?}");
+
+        let (after, _, _) = bite_on(&downed(EndState::Unconscious, 2, 0), hit);
+        assert_eq!((fighter_of(&after).end_state, fighter_of(&after).death_saves.failures), (EndState::Unconscious, 1));
+
+        let (after, _, _) = bite_on(&downed(EndState::Stable, 1, 0), hit);
+        assert_eq!(fighter_of(&after).end_state, EndState::Dead);
+
+        let (after, _, _) = bite_on(&downed(EndState::Unconscious, 1, 1), hit);
+        let fighter = fighter_of(&after);
+        assert_eq!((fighter.end_state, fighter.death_saves.failures, fighter.temp_hp), (EndState::Unconscious, 1, 0), "temporary HP soaks the hit first");
+
+        let engaged = one_damage_bite(|_, f| {
+            f.hp = 0;
+            f.max_hp = 2;
+            f.end_state = EndState::Unconscious;
+        });
+        let (after, attack, events) = bite_on(&engaged, hit);
+        assert!(attack.message.contains("(critical: unconscious, within 5 feet)"), "{}", attack.message);
+        assert_eq!(fighter_of(&after).end_state, EndState::Dead, "the critical's 2 damage meets max HP 2");
+        assert!(events.iter().any(|e| e.message == "fighter dies from massive damage"), "{events:?}");
+        assert_eq!(fighter_of(&after).death_saves.failures, 0, "massive damage kills without counting failures");
     }
 
     #[test]
