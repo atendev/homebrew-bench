@@ -19,6 +19,7 @@ use crate::encounter::{
 use crate::engine::{self, EngineError, EngineEvent, InitiativeOptions, LegendaryUse, OpportunityAttack, StepRequest};
 use crate::log::{LogEntry, LogLine};
 use crate::override_path;
+use crate::reaction::{ReactionAnswer, ReactionDecider, ReactionWindow, Reactions, WindowTrigger};
 use crate::rng::{RngState, Stream};
 use crate::stat_block::StatBlock;
 use crate::effect::Lighting;
@@ -53,6 +54,9 @@ pub enum Command {
         values: Vec<u32>,
         #[serde(default)]
         decline: bool,
+        /// Take the offered reaction with this id; empty when only one is offered.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        take: Option<String>,
     },
     Disengage {
         actor: String,
@@ -213,6 +217,8 @@ pub struct StartSpec {
     pub individual_initiative: bool,
     pub pc_dice: PcDice,
     pub lighting: Lighting,
+    /// Open reaction windows (ADR 0018). `bench start` sets it; batch leaves it off.
+    pub reaction_windows: bool,
 }
 
 /// Result of `bench replay`.
@@ -337,12 +343,13 @@ pub fn start(spec: StartSpec) -> Result<(EncounterState, Outcome), LiveError> {
         pending: None,
         rng: RngState::new(spec.seed),
         initiative_rolls: HashMap::new(),
-        settings: EncounterSettings { pc_dice: spec.pc_dice, lighting: spec.lighting },
+        settings: EncounterSettings { pc_dice: spec.pc_dice, lighting: spec.lighting, reaction_windows: spec.reaction_windows },
         ended: None,
         initial_snapshot: None,
         log: vec![],
         tamper_hash: String::new(),
         player_dice: PlayerDice::default(),
+        reactions: Default::default(),
     };
     let mut applied = Applied::none();
     let pc_dice = match spec.pc_dice {
@@ -373,12 +380,10 @@ pub fn start(spec: StartSpec) -> Result<(EncounterState, Outcome), LiveError> {
     }
     let initiative = run_engine(
         &mut state,
-        StepRequest::RollInitiative(InitiativeOptions {
+        Held::new(StepRequest::RollInitiative(InitiativeOptions {
             individual: spec.individual_initiative,
             surprised: surprised.clone(),
-        }),
-        vec![],
-        false,
+        })),
     )?;
     applied.items.extend(initiative.items);
     state.initial_snapshot = Some(Box::new(state.bare()));
@@ -405,10 +410,26 @@ pub fn execute(state: &mut EncounterState, cmd: Command) -> Result<Outcome, Live
             )));
         }
     }
+    let cmd = with_sole_option(state, cmd);
     let round = state.round;
     let turn = state.active_turn.clone();
     let applied = apply(state, &cmd)?;
     Ok(write_entry(state, Some(&cmd), applied, round, turn))
+}
+
+/// `respond --take` with no id names the one reaction on offer, so the history
+/// records which reaction was taken.
+fn with_sole_option(state: &EncounterState, cmd: Command) -> Command {
+    let Command::Respond { values, decline, take: Some(id) } = cmd else { return cmd };
+    let sole = state
+        .pending
+        .as_ref()
+        .filter(|p| p.kind == "reaction" && id.is_empty())
+        .and_then(|p| serde_json::from_value::<Held>(p.metadata.clone()).ok())
+        .and_then(|held| held.window)
+        .filter(|w| w.options.len() == 1)
+        .map(|w| w.options[0].id.clone());
+    Command::Respond { values, decline, take: Some(sole.unwrap_or(id)) }
 }
 
 /// Re-execute the command history and check each command's state hash.
@@ -572,14 +593,12 @@ fn apply(state: &mut EncounterState, cmd: &Command) -> Result<Applied, LiveError
             slot,
         } => run_engine(
             state,
-            StepRequest::Action {
+            Held::new(StepRequest::Action {
                 actor_id: actor.clone(),
                 action_id: action.clone(),
                 target_ids: targets.clone(),
                 slot_level: *slot,
-            },
-            vec![],
-            false,
+            }),
         ),
         Command::Move { actor, target, band, feet, opportunity } => {
             let feet = match feet {
@@ -588,22 +607,19 @@ fn apply(state: &mut EncounterState, cmd: &Command) -> Result<Applied, LiveError
             };
             run_engine(
                 state,
-                StepRequest::Move {
+                Held::new(StepRequest::Move {
                     actor_id: actor.clone(),
                     target_id: target.clone(),
                     band: *band,
                     feet,
                     opportunity: opportunity.clone(),
-                },
-                vec![],
-                false,
+                    declined: vec![],
+                }),
             )
         }
-        Command::Disengage { actor } => run_engine(state, StepRequest::Disengage { actor_id: actor.clone() }, vec![], false),
-        Command::EndTurn { legendary } => {
-            run_engine(state, StepRequest::EndTurn { legendary: legendary.clone() }, vec![], false)
-        }
-        Command::Respond { values, decline } => respond(state, values, *decline),
+        Command::Disengage { actor } => run_engine(state, Held::new(StepRequest::Disengage { actor_id: actor.clone() })),
+        Command::EndTurn { legendary } => run_engine(state, Held::new(StepRequest::EndTurn { legendary: legendary.clone() })),
+        Command::Respond { values, decline, take } => respond(state, values, *decline, take.as_deref()),
         Command::End { reason } => {
             state.ended = Some(EncounterEnd { round: state.round, reason: reason.clone() });
             Ok(Applied::line(
@@ -666,35 +682,72 @@ fn apply(state: &mut EncounterState, cmd: &Command) -> Result<Applied, LiveError
     }
 }
 
-/// Resolve an engine request. With `pc_dice = ask`, the request runs on a copy;
-/// if a PC roll found no face, the copy is discarded and a dice prompt holds the
-/// request until `bench respond` supplies faces and it runs again.
-fn run_engine(
-    state: &mut EncounterState,
+/// A request a pending prompt holds, with everything its rerun needs. Stored as
+/// the prompt's metadata; fields at their defaults are left out, so dice
+/// prompts read and write as they did before reaction windows.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+struct Held {
+    #[serde(deserialize_with = "held_request")]
     request: StepRequest,
+    #[serde(default)]
     faces: Vec<u32>,
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     engine_fills_rest: bool,
-) -> Result<Applied, LiveError> {
+    /// Hit-window answers so far, in window order.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    answers: Vec<ReactionAnswer>,
+    /// Reaction windows answered so far in this command.
+    #[serde(default, skip_serializing_if = "is_zero")]
+    answered: u32,
+    /// The window a reaction prompt offers.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    window: Option<ReactionWindow>,
+}
+
+impl Held {
+    fn new(request: StepRequest) -> Self {
+        Self { request, faces: vec![], engine_fills_rest: false, answers: vec![], answered: 0, window: None }
+    }
+}
+
+fn is_zero(n: &u32) -> bool {
+    *n == 0
+}
+
+fn held_request<'de, D: serde::Deserializer<'de>>(deserializer: D) -> Result<StepRequest, D::Error> {
+    stored_request(&Value::deserialize(deserializer)?).map_err(serde::de::Error::custom)
+}
+
+/// Resolve an engine request on a copy. If a PC roll found no face, or a
+/// reaction window found no answer, the copy is discarded and a prompt holds
+/// the request until `bench respond` answers it and it runs again. Prompts come
+/// in the order the engine met them.
+fn run_engine(state: &mut EncounterState, held: Held) -> Result<Applied, LiveError> {
     let mut trial = state.clone();
-    if !matches!(request, StepRequest::Respond { .. }) {
+    if !matches!(held.request, StepRequest::Respond { .. }) {
         trial.pending = None;
     }
-    trial.player_dice = PlayerDice { faces: faces.clone().into(), engine_fills_rest, ..Default::default() };
-    let response = engine::step(&mut trial, request.clone())?;
+    trial.player_dice = PlayerDice { faces: held.faces.clone().into(), engine_fills_rest: held.engine_fills_rest, ..Default::default() };
+    trial.reactions = Reactions { decider: ReactionDecider::Queued(held.answers.clone().into()), waiting: None };
+    let response = engine::step(&mut trial, held.request.clone())?;
+    if let Some(window) = trial.reactions.waiting.take() {
+        return Ok(reaction_prompt(state, held, window));
+    }
     if let Some((sides, owner, count)) = trial.player_dice.next_prompt() {
         let message = format!("{owner}: enter {count} d{sides} face{}", if count == 1 { "" } else { "s" });
         state.pending = Some(PendingPrompt {
-            id: format!("dice-{}-{}", state.rng.cursor, faces.len()),
+            id: format!("dice-{}-{}", state.rng.cursor, held.faces.len()),
             kind: "dice".into(),
             actor_id: owner.clone(),
             message: message.clone(),
             sides: Some(sides),
             remaining: count,
-            metadata: serde_json::json!({ "request": request, "faces": faces }),
+            metadata: serde_json::to_value(&held).unwrap_or_default(),
         });
         return Ok(Applied::line("prompt", Some(&owner), LogLine::same(format!("PROMPT {message}"))));
     }
     trial.player_dice = PlayerDice::default();
+    trial.reactions = Reactions::default();
     *state = trial;
     let mut applied = Applied::none();
     for event in response.events {
@@ -704,12 +757,48 @@ fn run_engine(
     Ok(applied)
 }
 
-fn respond(state: &mut EncounterState, values: &[u32], decline: bool) -> Result<Applied, LiveError> {
+/// Hold the request on a `reaction` prompt for one window. A monster's window
+/// stays out of the public view unless it takes the reaction.
+fn reaction_prompt(state: &mut EncounterState, held: Held, window: ReactionWindow) -> Applied {
+    let options = window.options.iter().map(|o| o.id.as_str()).collect::<Vec<_>>();
+    let message = match &window.trigger {
+        WindowTrigger::Opportunity { mover_id } => {
+            format!("{}: Opportunity Attack on {mover_id} ({})?", window.reactor_id, options.join(", "))
+        }
+        WindowTrigger::Hit { attacker_id, total, ac, critical } => format!(
+            "{}: hit by {attacker_id} (attack {total} vs AC {ac}{}), take {}?",
+            window.reactor_id,
+            if *critical { ", critical hit" } else { "" },
+            options.join(" or ")
+        ),
+    };
+    let reactor = window.reactor_id.clone();
+    let line = format!("PROMPT {message}");
+    let line = if state.is_party(&reactor) { LogLine::same(line) } else { LogLine::hidden(line) };
+    state.pending = Some(PendingPrompt {
+        id: format!("reaction-{}-{}", state.rng.cursor, held.answered),
+        kind: "reaction".into(),
+        actor_id: reactor.clone(),
+        message,
+        sides: None,
+        remaining: 1,
+        metadata: serde_json::to_value(Held { window: Some(window), ..held }).unwrap_or_default(),
+    });
+    Applied::line("prompt", Some(&reactor), line)
+}
+
+fn respond(state: &mut EncounterState, values: &[u32], decline: bool, take: Option<&str>) -> Result<Applied, LiveError> {
     let prompt = state.pending.clone().ok_or_else(|| LiveError::Invalid("there is no pending prompt".into()))?;
+    if prompt.kind == "reaction" {
+        return respond_reaction(state, &prompt, values, decline, take);
+    }
+    if take.is_some() {
+        return Err(LiveError::Invalid(format!("--take answers a reaction prompt; `{}` asks for dice", prompt.id)));
+    }
     if prompt.kind != "dice" {
-        let mut applied = run_engine(state, StepRequest::Respond { values: values.to_vec(), accept: !decline }, vec![], false)?;
+        let mut applied = run_engine(state, Held::new(StepRequest::Respond { values: values.to_vec(), accept: !decline }))?;
         let answer = if decline { "declined".to_string() } else { format!("answered {values:?}") };
-        applied.items.insert(0, prompt_line(&prompt, &answer));
+        applied.items.insert(0, prompt_line(&prompt, &answer, false));
         return Ok(applied);
     }
     let sides = prompt.sides.unwrap_or(0);
@@ -726,7 +815,6 @@ fn respond(state: &mut EncounterState, values: &[u32], decline: bool) -> Result<
     } else {
         format!("answered {} (player dice)", values.iter().map(u32::to_string).collect::<Vec<_>>().join(", "))
     };
-    let unreadable = |e: serde_json::Error| LiveError::Invalid(format!("the pending prompt is unreadable: {e}"));
     if let Some(add) = prompt.metadata.get("add") {
         let Command::Add { stat_block, side, band, engaged_with } = serde_json::from_value(add.clone()).map_err(unreadable)? else {
             return Err(LiveError::Invalid("the pending prompt does not hold an add".into()));
@@ -734,21 +822,69 @@ fn respond(state: &mut EncounterState, values: &[u32], decline: bool) -> Result<
         let face = if decline { None } else { values.first().copied() };
         state.pending = None;
         let mut applied = add_combatant(state, &stat_block, &side, band, engaged_with.as_deref(), face)?;
-        applied.items.insert(0, prompt_line(&prompt, &answer));
+        applied.items.insert(0, prompt_line(&prompt, &answer, false));
         return Ok(applied);
     }
-    let request = stored_request(&prompt.metadata["request"]).map_err(unreadable)?;
-    let mut faces: Vec<u32> = serde_json::from_value(prompt.metadata["faces"].clone()).unwrap_or_default();
+    let mut held: Held = serde_json::from_value(prompt.metadata.clone()).map_err(unreadable)?;
     if !decline {
-        faces.extend_from_slice(values);
+        held.faces.extend_from_slice(values);
     }
+    held.engine_fills_rest |= decline;
     state.pending = None;
-    let mut applied = run_engine(state, request, faces, decline)?;
-    applied.items.insert(0, prompt_line(&prompt, &answer));
+    let mut applied = run_engine(state, held)?;
+    applied.items.insert(0, prompt_line(&prompt, &answer, false));
     Ok(applied)
 }
 
-/// The request a dice prompt holds. Prompts saved before end-turn took
+fn unreadable(e: serde_json::Error) -> LiveError {
+    LiveError::Invalid(format!("the pending prompt is unreadable: {e}"))
+}
+
+/// Answer a reaction window. An Opportunity Attack answer joins the held move's
+/// `opportunity` or `declined` list; a hit answer joins the queued answers.
+/// Either way the held request runs again from the state before the command.
+fn respond_reaction(
+    state: &mut EncounterState,
+    prompt: &PendingPrompt,
+    values: &[u32],
+    decline: bool,
+    take: Option<&str>,
+) -> Result<Applied, LiveError> {
+    if !values.is_empty() {
+        return Err(LiveError::Invalid("a reaction prompt takes `--take [<id>]` or `--decline`, not dice faces".into()));
+    }
+    let mut held: Held = serde_json::from_value(prompt.metadata.clone()).map_err(unreadable)?;
+    let window = held.window.take().ok_or_else(|| LiveError::Invalid("the pending prompt holds no reaction window".into()))?;
+    let listed = || window.options.iter().map(|o| o.id.as_str()).collect::<Vec<_>>().join(", ");
+    let answer = match (decline, take) {
+        (true, Some(_)) => return Err(LiveError::Invalid("choose `--take` or `--decline`, not both".into())),
+        (false, None) => return Err(LiveError::Invalid(format!("answer with `--take [<id>]` or `--decline`; the options are {}", listed()))),
+        (true, None) => ReactionAnswer::Pass,
+        (false, Some("")) if window.options.len() == 1 => ReactionAnswer::Take(window.options[0].id.clone()),
+        (false, Some("")) => return Err(LiveError::Invalid(format!("several reactions are on offer; name one with `--take <id>`: {}", listed()))),
+        (false, Some(id)) if window.option(id).is_some() => ReactionAnswer::Take(id.into()),
+        (false, Some(id)) => return Err(LiveError::Invalid(format!("{id} is not on offer; the options are {}", listed()))),
+    };
+    match (&window.trigger, &mut held.request) {
+        (WindowTrigger::Opportunity { .. }, StepRequest::Move { opportunity, declined, .. }) => match &answer {
+            ReactionAnswer::Take(id) => opportunity.push(OpportunityAttack { reactor_id: window.reactor_id.clone(), attack_id: Some(id.clone()) }),
+            ReactionAnswer::Pass => declined.push(window.reactor_id.clone()),
+        },
+        (WindowTrigger::Opportunity { .. }, _) => return Err(LiveError::Invalid("an Opportunity Attack prompt must hold a move".into())),
+        (WindowTrigger::Hit { .. }, _) => held.answers.push(answer.clone()),
+    }
+    held.answered += 1;
+    state.pending = None;
+    let (text, hidden) = match &answer {
+        ReactionAnswer::Take(id) => (format!("answered: takes {}", window.option(id).map_or(id.as_str(), |o| o.name.as_str())), false),
+        ReactionAnswer::Pass => ("declined".to_string(), !state.is_party(&window.reactor_id)),
+    };
+    let mut applied = run_engine(state, held)?;
+    applied.items.insert(0, prompt_line(prompt, &text, hidden));
+    Ok(applied)
+}
+
+/// The request a prompt holds. Prompts saved before end-turn took
 /// legendary actions hold a bare `"end_turn"`.
 fn stored_request(value: &Value) -> Result<StepRequest, serde_json::Error> {
     if value.as_str() == Some("end_turn") {
@@ -772,8 +908,9 @@ fn add_prompt(state: &mut EncounterState, cmd: &Command, owner: &str) -> Applied
     Applied::line("prompt", Some(owner), LogLine::same(format!("PROMPT {message}")))
 }
 
-fn prompt_line(prompt: &PendingPrompt, answer: &str) -> (EngineEvent, LogLine) {
+fn prompt_line(prompt: &PendingPrompt, answer: &str, hidden: bool) -> (EngineEvent, LogLine) {
     let text = format!("PROMPT {} {answer}", prompt.message);
+    let line = if hidden { LogLine::hidden(text.clone()) } else { LogLine::same(text.clone()) };
     (
         EngineEvent {
             kind: "prompt_answered".into(),
@@ -785,7 +922,7 @@ fn prompt_line(prompt: &PendingPrompt, answer: &str) -> (EngineEvent, LogLine) {
             damage: None,
             player_dice: false,
         },
-        LogLine::same(text),
+        line,
     )
 }
 
@@ -937,7 +1074,7 @@ fn remove_combatant(state: &mut EncounterState, id: &str, reason: &str) -> Resul
     }
     let mut applied = Applied::line("remove", Some(id), LogLine::same(format!("REMOVE {id} (reason: {reason})")));
     if state.active_turn.as_deref() == Some(id) && state.initiative_order.len() > 1 {
-        let turn = run_engine(state, StepRequest::end_turn(), vec![], true)?;
+        let turn = run_engine(state, Held { engine_fills_rest: true, ..Held::new(StepRequest::end_turn()) })?;
         applied.items.extend(turn.items);
     }
     state.combatants.retain(|c| c.id != id);
@@ -1098,6 +1235,7 @@ pub fn roll_expression(stream: &mut Stream, expression: &str) -> Result<(i32, Ve
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::reaction::{ReactionWindow, WindowTrigger};
 
     fn block(rel: &str) -> StatBlock {
         let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../data").join(rel);
@@ -1117,6 +1255,7 @@ mod tests {
             individual_initiative: true,
             pc_dice,
             lighting: Lighting::Unspecified,
+            reaction_windows: true,
         }
     }
 
@@ -1299,7 +1438,7 @@ mod tests {
         assert_eq!((state.round, state.active_turn.clone()), (0, None));
         assert!(matches!(execute(&mut state, Command::end_turn()), Err(LiveError::Pending(_))));
 
-        let answered = execute(&mut state, Command::Respond { values: vec![17], decline: false }).unwrap();
+        let answered = execute(&mut state, Command::Respond { values: vec![17], decline: false, take: None }).unwrap();
         assert!(state.pending.is_none());
         assert_eq!(state.initiative_rolls["standard-striker-03"], 17 + striker.initiative);
         assert_eq!(state.round, 1);
@@ -1320,7 +1459,7 @@ mod tests {
         surprised.surprised = vec!["standard-striker-03".into()];
         let (mut state, started) = start(surprised).unwrap();
         assert_eq!(started.pending.as_ref().map(|p| p.remaining), Some(2));
-        execute(&mut state, Command::Respond { values: vec![15, 4], decline: false }).unwrap();
+        execute(&mut state, Command::Respond { values: vec![15, 4], decline: false, take: None }).unwrap();
         assert_eq!(state.initiative_rolls["standard-striker-03"], 4 + striker.initiative);
         assert!(replay(&state).matches);
     }
@@ -1354,9 +1493,9 @@ mod tests {
         two.entrants.insert(1, striker);
         let (mut state, started) = start(two).unwrap();
         assert_eq!(started.pending.as_ref().map(|p| p.actor_id.as_str()), Some("standard-striker-03-1"));
-        execute(&mut state, Command::Respond { values: vec![12], decline: false }).unwrap();
+        execute(&mut state, Command::Respond { values: vec![12], decline: false, take: None }).unwrap();
         assert_eq!(state.pending.as_ref().map(|p| p.actor_id.as_str()), Some("standard-striker-03-2"));
-        let declined = execute(&mut state, Command::Respond { values: vec![], decline: true }).unwrap();
+        let declined = execute(&mut state, Command::Respond { values: vec![], decline: true, take: None }).unwrap();
         let line = |id: &str| lines(&declined).into_iter().find(|l| l.starts_with(&format!("{id} rolled "))).expect(id);
         assert!(line("standard-striker-03-1").ends_with("(player dice)"), "{:?}", lines(&declined));
         assert!(!line("standard-striker-03-2").contains("(player dice)"), "{:?}", lines(&declined));
@@ -1365,15 +1504,15 @@ mod tests {
     #[test]
     fn declined_damage_after_an_entered_attack_roll_is_not_marked() {
         let (mut state, _) = start(spec(PcDice::Ask)).unwrap();
-        execute(&mut state, Command::Respond { values: vec![10], decline: false }).unwrap();
+        execute(&mut state, Command::Respond { values: vec![10], decline: false, take: None }).unwrap();
         if state.active_turn.as_deref() != Some("standard-striker-03") {
             execute(&mut state, Command::end_turn()).unwrap();
         }
         let asked = { let cmd = attack(&state); execute(&mut state, cmd) }.unwrap();
         let d20s = asked.pending.expect("attack roll prompt").remaining as usize;
-        let hit = execute(&mut state, Command::Respond { values: vec![20; d20s], decline: false }).unwrap();
+        let hit = execute(&mut state, Command::Respond { values: vec![20; d20s], decline: false, take: None }).unwrap();
         assert_eq!(hit.pending.as_ref().map(|p| p.kind.as_str()), Some("dice"), "{:?}", lines(&hit));
-        let resolved = lines(&execute(&mut state, Command::Respond { values: vec![], decline: true }).unwrap());
+        let resolved = lines(&execute(&mut state, Command::Respond { values: vec![], decline: true, take: None }).unwrap());
         let attack_line = resolved.iter().find(|l| l.contains(" attacks ")).expect("attack line");
         assert!(attack_line.ends_with("(player dice)"), "{resolved:?}");
         let damage_line = resolved.iter().find(|l| l.starts_with("goblin-warrior takes ")).expect("damage line");
@@ -1388,7 +1527,7 @@ mod tests {
         grouped.individual_initiative = false;
         let (mut state, started) = start(grouped).unwrap();
         assert_eq!(started.pending.as_ref().map(|p| p.remaining), Some(1));
-        let answered = lines(&execute(&mut state, Command::Respond { values: vec![13], decline: false }).unwrap());
+        let answered = lines(&execute(&mut state, Command::Respond { values: vec![13], decline: false, take: None }).unwrap());
         assert!(state.pending.is_none());
         for id in ["standard-striker-03-1", "standard-striker-03-2"] {
             let line = answered.iter().find(|l| l.starts_with(&format!("{id} rolled "))).expect(id);
@@ -1423,7 +1562,7 @@ mod tests {
     fn ask_mode_prompts_for_an_added_pc_initiative() {
         let striker = block("party/standard/standard-striker-03.json");
         let (mut state, _) = start(spec(PcDice::Ask)).unwrap();
-        execute(&mut state, Command::Respond { values: vec![10], decline: false }).unwrap();
+        execute(&mut state, Command::Respond { values: vec![10], decline: false, take: None }).unwrap();
         let add = |block: &StatBlock, side: &str| Command::Add {
             stat_block: Box::new(block.clone()),
             side: side.into(),
@@ -1439,7 +1578,7 @@ mod tests {
         assert!(!state.combatants.iter().any(|c| c.id == "standard-striker-03-2"));
         assert!(matches!(execute(&mut state, Command::end_turn()), Err(LiveError::Pending(_))));
 
-        let added = lines(&execute(&mut state, Command::Respond { values: vec![14], decline: false }).unwrap());
+        let added = lines(&execute(&mut state, Command::Respond { values: vec![14], decline: false, take: None }).unwrap());
         assert_eq!(state.initiative_rolls["standard-striker-03-2"], 14 + striker.initiative);
         let line = added.iter().find(|l| l.starts_with("ADD standard-striker-03-2 ")).expect("add line");
         assert!(line.ends_with("(player dice)"), "{added:?}");
@@ -1447,7 +1586,7 @@ mod tests {
 
         execute(&mut state, Command::Undo).unwrap();
         assert!(state.pending.is_some());
-        let declined = lines(&execute(&mut state, Command::Respond { values: vec![], decline: true }).unwrap());
+        let declined = lines(&execute(&mut state, Command::Respond { values: vec![], decline: true, take: None }).unwrap());
         let line = declined.iter().find(|l| l.starts_with("ADD standard-striker-03-2 ")).expect("add line");
         assert!(!line.contains("(player dice)"), "{declined:?}");
     }
@@ -1625,7 +1764,7 @@ mod tests {
     #[test]
     fn ask_mode_holds_the_move_on_a_pc_reactors_dice() {
         let (mut state, _) = start(spec(PcDice::Ask)).unwrap();
-        execute(&mut state, Command::Respond { values: vec![10], decline: false }).unwrap();
+        execute(&mut state, Command::Respond { values: vec![10], decline: false, take: None }).unwrap();
         engage_then_turn_of(&mut state, GOBLIN);
         let before = state.combatants.clone();
         let asked = execute(&mut state, move_away(GOBLIN, STRIKER)).unwrap();
@@ -1635,7 +1774,7 @@ mod tests {
 
         let mut answered = vec![];
         while let Some(p) = state.pending.clone() {
-            let out = execute(&mut state, Command::Respond { values: vec![p.sides.unwrap(); p.remaining as usize], decline: false }).unwrap();
+            let out = execute(&mut state, Command::Respond { values: vec![p.sides.unwrap(); p.remaining as usize], decline: false, take: None }).unwrap();
             answered.extend(lines(&out));
         }
         assert!(answered.contains(&"OPPORTUNITY ATTACK standard-striker-03 on goblin-warrior (reaction)".to_string()), "{answered:?}");
@@ -1647,7 +1786,7 @@ mod tests {
     #[test]
     fn pending_dice_prompt_gates_commands() {
         let (mut state, _) = start(spec(PcDice::Ask)).unwrap();
-        execute(&mut state, Command::Respond { values: vec![10], decline: false }).unwrap();
+        execute(&mut state, Command::Respond { values: vec![10], decline: false, take: None }).unwrap();
         if state.active_turn.as_deref() != Some("standard-striker-03") {
             execute(&mut state, Command::end_turn()).unwrap();
         }
@@ -1657,14 +1796,14 @@ mod tests {
         assert!(asked.events[0].line.starts_with("PROMPT "));
         assert!(matches!(execute(&mut state, Command::end_turn()), Err(LiveError::Pending(_))));
         assert!(matches!(
-            execute(&mut state, Command::Respond { values: vec![1; prompt.remaining as usize + 1], decline: false }),
+            execute(&mut state, Command::Respond { values: vec![1; prompt.remaining as usize + 1], decline: false, take: None }),
             Err(LiveError::Invalid(_))
         ));
 
         let mut answered = vec![];
         while let Some(p) = state.pending.clone() {
             let face = p.sides.unwrap();
-            let out = execute(&mut state, Command::Respond { values: vec![face; p.remaining as usize], decline: false }).unwrap();
+            let out = execute(&mut state, Command::Respond { values: vec![face; p.remaining as usize], decline: false, take: None }).unwrap();
             answered.extend(lines(&out));
         }
         assert!(answered.iter().any(|l| l.contains("(player dice)")), "{answered:?}");
@@ -1799,7 +1938,7 @@ mod tests {
     #[test]
     fn ask_mode_holds_the_whole_end_turn_on_a_pc_legendary_attack() {
         let (mut state, _) = start(legendary_spec(PcDice::Ask)).unwrap();
-        execute(&mut state, Command::Respond { values: vec![10], decline: false }).unwrap();
+        execute(&mut state, Command::Respond { values: vec![10], decline: false, take: None }).unwrap();
         until_turn(&mut state, GOBLIN);
         let before = (serde_json::to_value(&state.combatants).unwrap(), state.round);
         let asked = execute(&mut state, legendary(STRIKER, "volley", GOBLIN)).unwrap();
@@ -1809,7 +1948,7 @@ mod tests {
 
         let mut answered = vec![];
         while let Some(p) = state.pending.clone() {
-            let out = execute(&mut state, Command::Respond { values: vec![p.sides.unwrap(); p.remaining as usize], decline: false }).unwrap();
+            let out = execute(&mut state, Command::Respond { values: vec![p.sides.unwrap(); p.remaining as usize], decline: false, take: None }).unwrap();
             answered.extend(lines(&out));
         }
         assert_eq!(answered.iter().filter(|l| l.contains("ends its turn")).count(), 1, "{answered:?}");
@@ -1878,5 +2017,285 @@ mod tests {
         value["settings"]["lighting"] = "normal".into();
         let renamed: EncounterState = serde_json::from_value(value).unwrap();
         assert_eq!(renamed.settings.lighting, Lighting::Unspecified);
+    }
+
+    fn reaction_spec(entrants: &[(&str, &str)], seed: u64, pc_dice: PcDice) -> StartSpec {
+        StartSpec {
+            entrants: entrants
+                .iter()
+                .map(|(rel, side)| Entrant { stat_block: block(rel), side: side.to_string(), band: RangeBand::Near })
+                .collect(),
+            seed,
+            ..spec(pc_dice)
+        }
+    }
+
+    fn take(id: &str) -> Command {
+        Command::Respond { values: vec![], decline: false, take: Some(id.into()) }
+    }
+
+    fn decline() -> Command {
+        Command::Respond { values: vec![], decline: true, take: None }
+    }
+
+    fn step_to(actor: &str, band: RangeBand, target: Option<&str>) -> Command {
+        Command::Move { actor: actor.into(), target: target.map(Into::into), band, feet: None, opportunity: vec![] }
+    }
+
+    fn swing(actor: &str, action: &str, target: &str) -> Command {
+        Command::Action { actor: actor.into(), action: action.into(), targets: vec![target.into()], slot: None }
+    }
+
+    fn window(state: &EncounterState) -> ReactionWindow {
+        let held: Held = serde_json::from_value(state.pending.as_ref().expect("prompt").metadata.clone()).unwrap();
+        held.window.expect("reaction window")
+    }
+
+    const CASTER_FILE: &str = "party/standard/standard-caster-05.json";
+
+    /// An ogre's greatclub hit that Shield would turn into a miss, held on its prompt.
+    fn ogre_hits_the_caster() -> (EncounterState, i32) {
+        for seed in 1..300 {
+            let (mut state, _) = start(reaction_spec(&[(CASTER_FILE, PARTY_SIDE), ("fixtures/ogre.json", "monsters")], seed, PcDice::Engine)).unwrap();
+            turn_of(&mut state, "ogre");
+            execute(&mut state, step_to("ogre", RangeBand::Engaged, Some(CASTER))).unwrap();
+            execute(&mut state, swing("ogre", "greatclub", CASTER)).unwrap();
+            if state.pending.is_none() {
+                continue;
+            }
+            let WindowTrigger::Hit { total, critical, .. } = window(&state).trigger else { panic!("hit window") };
+            if !critical && total < 17 {
+                return (state, total);
+            }
+        }
+        panic!("no seed");
+    }
+
+    #[test]
+    fn a_hit_holds_the_action_on_a_reaction_prompt_and_take_answers_it() {
+        let (mut state, total) = ogre_hits_the_caster();
+        let prompt = state.pending.clone().unwrap();
+        assert_eq!(prompt.kind, "reaction");
+        assert_eq!(prompt.actor_id, CASTER);
+        assert!(prompt.id.starts_with("reaction-"), "{}", prompt.id);
+        assert_eq!(prompt.message, format!("{CASTER}: hit by ogre (attack {total} vs AC 12), take shield?"));
+        assert_eq!(state.log.last().unwrap().lines[0].text, format!("PROMPT {}", prompt.message));
+        let hp = state.combatants.iter().find(|c| c.id == CASTER).unwrap().max_hp;
+
+        let taken = execute(&mut state, take("")).unwrap();
+        assert_eq!(state.command_history.last().unwrap().args["take"], "shield");
+        let lines = lines(&taken);
+        assert_eq!(lines[0], format!("PROMPT {} answered: takes Shield", prompt.message));
+        assert!(lines.contains(&format!("REACTION {CASTER}: Shield (hit by ogre)")), "{lines:?}");
+        assert!(lines.iter().any(|l| l.ends_with("vs AC 17 (miss) after Shield")), "{lines:?}");
+        let caster = state.combatants.iter().find(|c| c.id == CASTER).unwrap();
+        assert_eq!(caster.hp, hp);
+        assert!(caster.action_economy.reaction_used);
+        assert!(state.pending.is_none());
+        assert!(replay(&state).matches);
+
+        execute(&mut state, Command::Undo).unwrap();
+        assert_eq!(state.pending.as_ref().map(|p| p.id.clone()), Some(prompt.id.clone()));
+        let declined = execute(&mut state, decline()).unwrap();
+        assert_eq!(lines_of(&declined)[0], format!("PROMPT {} declined", prompt.message));
+        assert!(state.combatants.iter().find(|c| c.id == CASTER).unwrap().hp < hp);
+        assert!(replay(&state).matches);
+        let public = crate::log::render_public(&state.log);
+        assert!(public.contains(&format!("PROMPT {} declined", prompt.message)), "a PC's window stays public: {public}");
+    }
+
+    fn lines_of(outcome: &Outcome) -> Vec<String> {
+        lines(outcome)
+    }
+
+    #[test]
+    fn a_reaction_prompt_refuses_dice_bad_ids_and_mixed_answers() {
+        let (mut state, _) = ogre_hits_the_caster();
+        let refused = |state: &mut EncounterState, cmd: Command| match execute(state, cmd) {
+            Err(LiveError::Invalid(why)) => why,
+            other => panic!("{other:?}"),
+        };
+        assert!(refused(&mut state, Command::Respond { values: vec![3], decline: false, take: None }).contains("not dice faces"));
+        assert!(refused(&mut state, take("parry")).contains("parry is not on offer; the options are shield"));
+        assert!(refused(&mut state, Command::Respond { values: vec![], decline: true, take: Some("shield".into()) }).contains("not both"));
+        assert!(refused(&mut state, Command::Respond { values: vec![], decline: false, take: None }).contains("--take"));
+        assert_eq!(state.pending.as_ref().unwrap().kind, "reaction");
+    }
+
+    #[test]
+    fn take_on_a_dice_prompt_is_refused() {
+        let (mut state, _) = start(spec(PcDice::Ask)).unwrap();
+        assert_eq!(state.pending.as_ref().unwrap().kind, "dice");
+        assert!(matches!(execute(&mut state, take("")), Err(LiveError::Invalid(why)) if why.contains("asks for dice")));
+    }
+
+    #[test]
+    fn opportunity_windows_ask_each_reactor_in_initiative_order_and_nest_shield() {
+        let goblin = "fixtures/goblin-warrior.json";
+        for seed in 1..300 {
+            let (mut state, _) = start(reaction_spec(&[(CASTER_FILE, PARTY_SIDE), (goblin, "monsters"), (goblin, "monsters")], seed, PcDice::Engine)).unwrap();
+            turn_of(&mut state, CASTER);
+            for g in ["goblin-warrior-1", "goblin-warrior-2"] {
+                execute(&mut state, step_to(CASTER, RangeBand::Engaged, Some(g))).unwrap();
+            }
+            let order: Vec<String> = state.initiative_order.iter().filter(|id| id.starts_with("goblin")).cloned().collect();
+            let asked = execute(&mut state, step_to(CASTER, RangeBand::Near, None)).unwrap();
+            let first = state.pending.clone().expect("first window");
+            assert_eq!(first.actor_id, order[0]);
+            assert_eq!(first.message, format!("{}: Opportunity Attack on {CASTER} (scimitar)?", order[0]));
+            assert_eq!(lines(&asked), [format!("PROMPT {}", first.message)]);
+            let second = execute(&mut state, take("")).unwrap();
+            let next = state.pending.clone().expect("second window");
+            assert_eq!(next.actor_id, order[1]);
+            assert_ne!(next.id, first.id);
+            assert!(lines(&second).iter().all(|l| !l.starts_with("OPPORTUNITY ATTACK")), "asked before any attack: {:?}", lines(&second));
+            assert!(digest_of(&state, true)["pending"].is_null(), "a monster's open window stays private");
+            assert_eq!(digest_of(&state, false)["pending"]["kind"], "reaction");
+            let resolved = execute(&mut state, decline()).unwrap();
+            let Some(shield) = state.pending.clone() else { continue };
+            assert_eq!((shield.kind.as_str(), shield.actor_id.as_str()), ("reaction", CASTER), "{:?}", lines(&resolved));
+            let nested = execute(&mut state, take("shield")).unwrap();
+            let nested = lines(&nested);
+            assert_eq!(nested.iter().filter(|l| l.starts_with("OPPORTUNITY ATTACK")).count(), 1, "{nested:?}");
+            assert!(nested.contains(&format!("REACTION {CASTER}: Shield (hit by {})", order[0])), "{nested:?}");
+            assert!(nested.iter().any(|l| l == &format!("{CASTER} moves to near")), "{nested:?}");
+            let declined = state.combatants.iter().find(|c| c.id == order[1]).unwrap();
+            assert!(!declined.action_economy.reaction_used);
+            assert!(replay(&state).matches, "{:?}", replay(&state));
+
+            let public = crate::log::render_public(&state.log);
+            assert!(public.contains(&format!("PROMPT {} answered: takes Scimitar", first.message)), "{public}");
+            assert!(!public.contains(&next.message), "a declined monster window stays private: {public}");
+            assert!(crate::log::render(&state.log).contains(&format!("PROMPT {} declined", next.message)));
+
+            execute(&mut state, Command::Undo).unwrap();
+            assert_eq!(state.pending.as_ref().map(|p| p.id.clone()), Some(shield.id));
+            assert!(replay(&state).matches);
+            return;
+        }
+        panic!("no seed where the first goblin hits");
+    }
+
+    #[test]
+    fn a_legendary_hit_holds_the_end_turn_on_shield_and_ticks_durations_once() {
+        let mut ogre = block("fixtures/ogre.json");
+        let mut club = ogre.actions[0].clone();
+        club.id = "club".into();
+        ogre.legendary_actions.push(club);
+        ogre.legendary_uses_per_round = 1;
+        for seed in 1..300 {
+            let mut spec = reaction_spec(&[(CASTER_FILE, PARTY_SIDE)], seed, PcDice::Engine);
+            spec.entrants.push(Entrant { stat_block: ogre.clone(), side: "monsters".into(), band: RangeBand::Near });
+            let (mut state, _) = start(spec).unwrap();
+            turn_of(&mut state, CASTER);
+            let round = state.round;
+            let ending = Command::EndTurn { legendary: vec![LegendaryUse { holder_id: "ogre".into(), action_id: "club".into(), target_ids: vec![CASTER.into()] }] };
+            execute(&mut state, ending).unwrap();
+            let Some(prompt) = state.pending.clone() else { continue };
+            assert_eq!(prompt.kind, "reaction");
+            assert_eq!(state.active_turn.as_deref(), Some(CASTER), "the end-turn is held");
+            let answered = lines(&execute(&mut state, take("shield")).unwrap());
+            assert_eq!(answered.iter().filter(|l| l.ends_with("ends its turn")).count(), 1, "{answered:?}");
+            assert_eq!(state.active_turn.as_deref(), Some("ogre"));
+            assert!(state.round == round || state.round == round + 1);
+            let shield = state.active_modifiers.iter().find(|m| m.source.as_deref() == Some(CASTER)).expect("shield");
+            assert!(matches!(shield.remaining, crate::effect::Duration::Rounds(1)));
+            assert!(replay(&state).matches);
+            return;
+        }
+        panic!("no seed hit");
+    }
+
+    fn striker_vs_knight(seed: u64) -> EncounterState {
+        let (mut state, _) = start(reaction_spec(&[("party/standard/standard-striker-03.json", PARTY_SIDE), ("fixtures/knight.json", "monsters")], seed, PcDice::Ask)).unwrap();
+        execute(&mut state, Command::Respond { values: vec![10], decline: false, take: None }).unwrap();
+        while state.active_turn.as_deref() != Some("standard-striker-03") {
+            execute(&mut state, Command::end_turn()).unwrap();
+            while state.pending.is_some() {
+                execute(&mut state, decline()).unwrap();
+            }
+        }
+        state
+    }
+
+    #[test]
+    fn ask_mode_interleaves_dice_and_a_monster_parry_window_keeping_the_faces() {
+        let mut state = striker_vs_knight(1);
+        let attack = execute(&mut state, swing("standard-striker-03", "shortsword", "knight")).unwrap();
+        assert_eq!(state.pending.as_ref().unwrap().kind, "dice", "{:?}", lines(&attack));
+        execute(&mut state, Command::Respond { values: vec![19], decline: false, take: None }).unwrap();
+        let parry = state.pending.clone().expect("parry window");
+        assert_eq!((parry.kind.as_str(), parry.actor_id.as_str()), ("reaction", "knight"));
+        assert!(parry.message.starts_with("knight: hit by standard-striker-03"), "{}", parry.message);
+        let taken = execute(&mut state, take("parry")).unwrap();
+        let mut all = lines(&taken);
+        while let Some(p) = state.pending.clone() {
+            assert_eq!(p.kind, "dice");
+            all.extend(lines(&execute(&mut state, Command::Respond { values: vec![1; p.remaining as usize], decline: false, take: None }).unwrap()));
+        }
+        let attack = all.iter().find(|l| l.contains("attacks Knight")).expect("attack line");
+        assert!(attack.contains("[d20 19] (player dice)"), "{all:?}");
+        assert!(all.iter().any(|l| l.contains("after Parry")), "{all:?}");
+        assert!(replay(&state).matches);
+    }
+
+    #[test]
+    fn a_declined_dice_prompt_stays_engine_filled_through_a_reaction_window() {
+        for seed in 1..300 {
+            let mut state = striker_vs_knight(seed);
+            execute(&mut state, swing("standard-striker-03", "shortsword", "knight")).unwrap();
+            execute(&mut state, decline()).unwrap();
+            let Some(parry) = state.pending.clone() else { continue };
+            assert_eq!(parry.kind, "reaction");
+            assert_eq!(parry.metadata["engine_fills_rest"], true);
+            execute(&mut state, decline()).unwrap();
+            assert!(state.pending.is_none(), "the declined dice are not asked again: {:?}", state.pending);
+            assert!(replay(&state).matches);
+            return;
+        }
+        panic!("no seed hit");
+    }
+
+    #[test]
+    fn a_dice_prompt_holds_only_the_request_and_faces_and_old_ones_still_load() {
+        let (state, _) = start(spec(PcDice::Ask)).unwrap();
+        let metadata = state.pending.unwrap().metadata;
+        let keys: Vec<&String> = metadata.as_object().unwrap().keys().collect();
+        assert_eq!(keys, ["faces", "request"]);
+        let old: Held = serde_json::from_value(serde_json::json!({"request": "end_turn", "faces": [3]})).unwrap();
+        assert!(matches!(old.request, StepRequest::EndTurn { .. }) && old.faces == [3] && !old.engine_fills_rest);
+        let bare = serde_json::json!({"command": "respond", "values": [4]});
+        let cmd: Command = serde_json::from_value(bare.clone()).unwrap();
+        assert!(matches!(&cmd, Command::Respond { take: None, .. }));
+        assert_eq!(serde_json::to_value(&cmd).unwrap(), serde_json::json!({"command": "respond", "values": [4], "decline": false}));
+    }
+
+    fn old_state() -> (std::path::PathBuf, EncounterState) {
+        let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/data/engine-0.1.4-state.json");
+        let state = crate::store::load(&path, crate::store::VersionCheck::Require).expect("an engine 0.1.4 state loads");
+        (path, state)
+    }
+
+    #[test]
+    fn an_engine_0_1_4_state_passes_the_tamper_check_and_refolds_without_windows() {
+        let (path, state) = old_state();
+        crate::store::check(&state, &path).unwrap();
+        assert_eq!(state.engine_version, "0.1.4");
+        assert!(!state.settings.reaction_windows);
+        let on_disk: Value = serde_json::from_str(&std::fs::read_to_string(&path).unwrap()).unwrap();
+        assert_eq!(serde_json::to_value(&state).unwrap(), on_disk, "re-serializes unchanged");
+        let names: Vec<&str> = state.command_history.iter().map(|r| r.name.as_str()).collect();
+        assert_eq!(names, ["move", "action", "end-turn", "move"]);
+        assert!(crate::log::render(&state.log).contains("ogre may use an Opportunity Attack on standard-caster-05"));
+        let report = replay(&state);
+        assert!(report.matches, "{report:?}");
+        let mut state = state;
+        for _ in 0..2 {
+            execute(&mut state, Command::Undo).unwrap();
+            assert!(state.pending.is_none());
+            assert!(replay(&state).matches);
+        }
+        let caster = state.combatants.iter().find(|c| c.id == CASTER).unwrap();
+        assert!(caster.hp < caster.max_hp, "the ogre's hit stands without a Shield window");
     }
 }

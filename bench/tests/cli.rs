@@ -195,6 +195,29 @@ fn pending_prompt_gates_commands() {
 }
 
 #[test]
+fn respond_take_answers_an_opportunity_attack_window() {
+    let bench = Bench::new();
+    bench.start(&[]);
+    if bench.ok(&["state"])["digest"]["active_turn"] != "standard-striker-03" {
+        bench.ok(&["end-turn"]);
+    }
+    bench.ok(&["move", "standard-striker-03", "engaged", "--target", "goblin-warrior"]);
+    let held = bench.ok(&["move", "standard-striker-03", "near"]);
+    assert_eq!(held["pending"]["kind"], "reaction");
+    assert_eq!(held["pending"]["message"], "goblin-warrior: Opportunity Attack on standard-striker-03 (scimitar)?");
+    assert_eq!(bench.err(&["respond", "4"]), "invalid_argument");
+    assert_eq!(bench.err(&["respond", "--take", "shortbow"]), "invalid_argument");
+    let out = bench.ok(&["respond", "--take"]);
+    let lines: Vec<&str> = out["events"].as_array().unwrap().iter().map(|e| e["line"].as_str().unwrap()).collect();
+    assert_eq!(lines[0], "PROMPT goblin-warrior: Opportunity Attack on standard-striker-03 (scimitar)? answered: takes Scimitar");
+    assert_eq!(lines[1], "OPPORTUNITY ATTACK goblin-warrior on standard-striker-03 (reaction)");
+    assert_eq!(bench.ok(&["replay"])["matches"], true);
+    bench.ok(&["undo"]);
+    bench.ok(&["respond", "--decline"]);
+    assert_eq!(bench.ok(&["replay"])["matches"], true);
+}
+
+#[test]
 fn end_turn_takes_declared_legendary_actions() {
     let bench = Bench::new();
     let mut goblin: Value = serde_json::from_str(&std::fs::read_to_string(data("fixtures/goblin-warrior.json")).unwrap()).unwrap();

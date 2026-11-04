@@ -40,6 +40,8 @@ Write the list to an assumptions file, one object per assumption:
 
 Pass it with `--assumptions <file>`. A one-off can use `--assume abilities.<id>=ignored --assume-reason "<why>"` instead. `policy.<constant>` paths tune the batch tactics policy; change them only when the user asks.
 
+The batch tactics policy takes no reactions. Parry (on the knight and six other SRD fixtures), the pirate captain's Riposte and the standard caster's Shield are modeled for live mode and no longer show as skipped findings, but batch fights never use them, so a monster with Parry may read weaker than it plays. Tell the user when the monster has one.
+
 House rules do not reach batch fights: `bench batch` runs the ruleset and the tactics policy only. Tell the user which active house rules the numbers leave out.
 
 Done when every unresolved ability id has a model, an `ignored`, or an assumed outcome the user approved.

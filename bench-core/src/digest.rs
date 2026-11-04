@@ -97,7 +97,8 @@ fn build(state: &EncounterState, public: bool) -> Value {
             v
         })
         .collect();
-    let pending = state.pending.as_ref().map(|p| {
+    let hidden_window = |p: &&crate::encounter::PendingPrompt| public && p.kind == "reaction" && !state.is_party(&p.actor_id);
+    let pending = state.pending.as_ref().filter(|p| !hidden_window(p)).map(|p| {
         if public && !state.is_party(&p.actor_id) {
             serde_json::json!({"id": p.id, "kind": p.kind, "actor_id": p.actor_id})
         } else {

@@ -501,7 +501,12 @@
       ],
       "id": "shield",
       "kind": "partly_modeled",
-      "name": "Shield"
+      "name": "Shield",
+      "trigger": {
+        "hit_by_attack_roll": {
+          "attack": "any"
+        }
+      }
     }
   ],
   "saving_throws": {

@@ -3,7 +3,7 @@
 use serde::{Deserialize, Deserializer, Serialize};
 use std::collections::HashMap;
 
-use crate::effect::{Effect, Lighting, Usage};
+use crate::effect::{Effect, Lighting, ReactionTrigger, Usage};
 
 /// Ability score names.
 #[derive(
@@ -217,6 +217,9 @@ pub struct AbilityEntry {
     pub default_resolution: Option<DefaultResolution>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub usage: Option<Usage>,
+    /// On a reaction, the trigger that opens a reaction window for it.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub trigger: Option<ReactionTrigger>,
 }
 
 impl AbilityEntry {
@@ -274,7 +277,8 @@ pub struct StatBlock {
     pub actions: Vec<AbilityEntry>,
     #[serde(default, skip_serializing_if = "Vec::is_empty", deserialize_with = "action_entries")]
     pub bonus_actions: Vec<AbilityEntry>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty", deserialize_with = "action_entries")]
+    /// The only list a `trigger` may appear in.
+    #[serde(default, skip_serializing_if = "Vec::is_empty", deserialize_with = "reaction_entries")]
     pub reactions: Vec<AbilityEntry>,
     #[serde(default, skip_serializing_if = "Vec::is_empty", deserialize_with = "action_entries")]
     pub legendary_actions: Vec<AbilityEntry>,
@@ -309,6 +313,7 @@ pub struct StatBlock {
 fn trait_entries<'de, D: Deserializer<'de>>(deserializer: D) -> Result<Vec<AbilityEntry>, D::Error> {
     let entries = Vec::<AbilityEntry>::deserialize(deserializer)?;
     for entry in &entries {
+        check_trigger(entry, false)?;
         for effect in &entry.effects {
             match effect {
                 Effect::RollModifier(m) if m.lighting == Lighting::Unspecified => {
@@ -323,13 +328,33 @@ fn trait_entries<'de, D: Deserializer<'de>>(deserializer: D) -> Result<Vec<Abili
 }
 
 fn action_entries<'de, D: Deserializer<'de>>(deserializer: D) -> Result<Vec<AbilityEntry>, D::Error> {
+    checked_entries(deserializer, false)
+}
+
+fn reaction_entries<'de, D: Deserializer<'de>>(deserializer: D) -> Result<Vec<AbilityEntry>, D::Error> {
+    checked_entries(deserializer, true)
+}
+
+fn checked_entries<'de, D: Deserializer<'de>>(deserializer: D, reactions: bool) -> Result<Vec<AbilityEntry>, D::Error> {
     let entries = Vec::<AbilityEntry>::deserialize(deserializer)?;
     for entry in &entries {
+        check_trigger(entry, reactions)?;
         for effect in &entry.effects {
             refuse_roll_modifier(entry, effect)?;
         }
     }
     Ok(entries)
+}
+
+fn check_trigger<E: serde::de::Error>(entry: &AbilityEntry, reaction: bool) -> Result<(), E> {
+    if entry.trigger.is_some() && !reaction {
+        return Err(E::custom(format!("{}: a trigger belongs on a reaction", entry.id)));
+    }
+    let hit_trigger = matches!(entry.trigger, Some(ReactionTrigger::HitByAttackRoll { .. }));
+    if !hit_trigger && entry.effects.iter().any(Effect::holds_triggering_attack) {
+        return Err(E::custom(format!("{}: a triggering_attack duration needs a hit trigger", entry.id)));
+    }
+    Ok(())
 }
 
 fn refuse_roll_modifier<E: serde::de::Error>(entry: &AbilityEntry, effect: &Effect) -> Result<(), E> {
@@ -478,5 +503,79 @@ mod tests {
             .expect_err("refused");
             assert!(err.contains("can't be keyed to unspecified lighting"), "{err}");
         }
+    }
+
+    fn parry() -> serde_json::Value {
+        serde_json::json!({
+            "id": "parry", "name": "Parry", "kind": "modeled",
+            "trigger": {"hit_by_attack_roll": {"attack": "melee"}},
+            "effects": [{"timed_modifier": {"target": "armor_class", "change": {"add": 2}, "duration": "triggering_attack"}}]
+        })
+    }
+
+    #[test]
+    fn a_hit_trigger_on_a_reaction_loads_and_round_trips() {
+        let block = kobold_with(|v| v["reactions"] = serde_json::json!([parry()])).unwrap();
+        let trigger = block.reactions[0].trigger.expect("trigger");
+        assert_eq!(trigger, ReactionTrigger::HitByAttackRoll { attack: crate::effect::AttackFilter::Melee });
+        let value = serde_json::to_value(&block.reactions[0]).unwrap();
+        assert_eq!(value["trigger"], parry()["trigger"]);
+        assert_eq!(value["effects"][0]["timed_modifier"]["duration"], "triggering_attack");
+        assert!(serde_json::to_value(&block.actions[0]).unwrap().get("trigger").is_none());
+    }
+
+    #[test]
+    fn a_trigger_outside_reactions_is_refused_at_load() {
+        let refused = [
+            kobold_with(|v| v["actions"] = serde_json::json!([parry()])),
+            kobold_with(|v| v["bonus_actions"] = serde_json::json!([parry()])),
+            kobold_with(|v| v["legendary_actions"] = serde_json::json!([parry()])),
+            kobold_with(|v| v["traits"] = serde_json::json!([parry()])),
+        ];
+        for result in refused {
+            let err = result.expect_err("refused");
+            assert!(err.contains("a trigger belongs on a reaction"), "{err}");
+        }
+    }
+
+    #[test]
+    fn a_triggering_attack_duration_without_a_hit_trigger_is_refused_at_load() {
+        let untriggered = || {
+            let mut p = parry();
+            p.as_object_mut().unwrap().remove("trigger");
+            p
+        };
+        let nested = serde_json::json!({"id": "slam", "name": "Slam", "effects": [{"attack": {
+            "modifier": 4, "reach": 5, "range": null, "target_count": 1, "damage": [],
+            "on_hit": [{"condition": {"condition": "prone", "duration": "triggering_attack"}}]}}]});
+        let refused = [
+            kobold_with(|v| v["reactions"] = serde_json::json!([untriggered()])),
+            kobold_with(|v| v["actions"] = serde_json::json!([untriggered()])),
+            kobold_with(|v| v["actions"] = serde_json::json!([nested])),
+        ];
+        for result in refused {
+            let err = result.expect_err("refused");
+            assert!(err.contains("a triggering_attack duration needs a hit trigger"), "{err}");
+        }
+    }
+
+    #[test]
+    fn every_fixture_and_party_stat_block_loads() {
+        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../data");
+        let mut dirs = vec![root.join("fixtures"), root.join("party/standard")];
+        let mut loaded = 0;
+        while let Some(dir) = dirs.pop() {
+            for entry in std::fs::read_dir(&dir).unwrap() {
+                let path = entry.unwrap().path();
+                if path.is_dir() {
+                    dirs.push(path);
+                } else if path.extension().is_some_and(|e| e == "json") {
+                    let text = std::fs::read_to_string(&path).unwrap();
+                    serde_json::from_str::<StatBlock>(&text).unwrap_or_else(|e| panic!("{}: {e}", path.display()));
+                    loaded += 1;
+                }
+            }
+        }
+        assert!(loaded > 341, "{loaded}");
     }
 }

@@ -161,6 +161,11 @@ pub struct EncounterSettings {
     /// `unspecified`, so state files written before it existed keep their hashes.
     #[serde(default, skip_serializing_if = "crate::effect::Lighting::is_unspecified")]
     pub lighting: crate::effect::Lighting,
+    /// The engine opens reaction windows (ADR 0018). `bench start` sets it; batch
+    /// encounters and live encounters saved before it existed leave it off, so
+    /// their histories refold as recorded.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub reaction_windows: bool,
 }
 
 /// Record of an encounter ended early through `bench end`.
@@ -236,6 +241,10 @@ pub struct EncounterState {
     #[serde(skip)]
     #[schemars(skip)]
     pub player_dice: PlayerDice,
+    /// Who answers reaction windows for the command being resolved. Never stored.
+    #[serde(skip)]
+    #[schemars(skip)]
+    pub reactions: crate::reaction::Reactions,
 }
 
 /// Faces the user entered for PC rolls, consumed in draw order while one
@@ -493,6 +502,7 @@ mod tests {
             log: vec![],
             tamper_hash: String::new(),
             player_dice: Default::default(),
+            reactions: Default::default(),
         };
         state.update_tamper_hash();
         let first = state.tamper_hash.clone();
