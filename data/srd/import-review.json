@@ -2470,7 +2470,14 @@
       "class": "d",
       "path": "reactions.parry",
       "status": "open",
-      "summary": "classified unmodeled (default skipped)"
+      "summary": "Parry pattern: hit trigger and AC modifier from the prose; holding a weapon is assumed"
+    },
+    {
+      "monster": "bandit-captain",
+      "class": "d",
+      "path": "reactions.parry",
+      "status": "open",
+      "summary": "classified modeled"
     },
     {
       "monster": "barbed-devil",
@@ -4220,7 +4227,14 @@
       "class": "d",
       "path": "reactions.parry",
       "status": "open",
-      "summary": "classified unmodeled (default skipped)"
+      "summary": "Parry pattern: hit trigger and AC modifier from the prose; holding a weapon is assumed"
+    },
+    {
+      "monster": "erinyes",
+      "class": "d",
+      "path": "reactions.parry",
+      "status": "open",
+      "summary": "classified modeled"
     },
     {
       "monster": "erinyes",
@@ -5298,7 +5312,14 @@
       "class": "d",
       "path": "reactions.parry",
       "status": "open",
-      "summary": "classified unmodeled (default skipped)"
+      "summary": "Parry pattern: hit trigger and AC modifier from the prose; holding a weapon is assumed"
+    },
+    {
+      "monster": "gladiator",
+      "class": "d",
+      "path": "reactions.parry",
+      "status": "open",
+      "summary": "classified modeled"
     },
     {
       "monster": "gnoll-warrior",
@@ -6411,7 +6432,14 @@
       "class": "d",
       "path": "reactions.parry",
       "status": "open",
-      "summary": "classified unmodeled (default skipped)"
+      "summary": "Parry pattern: hit trigger and AC modifier from the prose; holding a weapon is assumed"
+    },
+    {
+      "monster": "knight",
+      "class": "d",
+      "path": "reactions.parry",
+      "status": "open",
+      "summary": "classified modeled"
     },
     {
       "monster": "kobold-warrior",
@@ -6936,7 +6964,14 @@
       "class": "d",
       "path": "reactions.parry",
       "status": "open",
-      "summary": "classified unmodeled (default skipped)"
+      "summary": "Parry pattern: hit trigger and AC modifier from the prose; holding a weapon is assumed"
+    },
+    {
+      "monster": "marilith",
+      "class": "d",
+      "path": "reactions.parry",
+      "status": "open",
+      "summary": "classified modeled"
     },
     {
       "monster": "marilith",
@@ -7489,7 +7524,14 @@
       "class": "d",
       "path": "reactions.parry",
       "status": "open",
-      "summary": "classified unmodeled (default skipped)"
+      "summary": "Parry pattern: hit trigger and AC modifier from the prose; holding a weapon is assumed"
+    },
+    {
+      "monster": "noble",
+      "class": "d",
+      "path": "reactions.parry",
+      "status": "open",
+      "summary": "classified modeled"
     },
     {
       "monster": "ochre-jelly",
@@ -7818,7 +7860,14 @@
       "class": "d",
       "path": "reactions.riposte",
       "status": "open",
-      "summary": "classified unmodeled (default skipped)"
+      "summary": "Parry pattern: hit trigger and AC modifier from the prose; holding a weapon is assumed"
+    },
+    {
+      "monster": "pirate-captain",
+      "class": "d",
+      "path": "reactions.riposte",
+      "status": "open",
+      "summary": "classified partly_modeled"
     },
     {
       "monster": "pit-fiend",
@@ -10779,7 +10828,14 @@
       "class": "d",
       "path": "reactions.parry",
       "status": "open",
-      "summary": "classified unmodeled (default skipped)"
+      "summary": "Parry pattern: hit trigger and AC modifier from the prose; holding a weapon is assumed"
+    },
+    {
+      "monster": "warrior-veteran",
+      "class": "d",
+      "path": "reactions.parry",
+      "status": "open",
+      "summary": "classified modeled"
     },
     {
       "monster": "water-elemental",

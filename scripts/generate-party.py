@@ -150,6 +150,13 @@ def build_feature(feature, level):
     return entry
 
 
+def hit_trigger(casting_time):
+    """The reaction trigger a spell's casting time states, or None. Only "when you are hit by an attack roll" is modeled."""
+    if casting_time.startswith("Reaction") and "when you are hit by an attack roll" in casting_time:
+        return {"hit_by_attack_roll": {"attack": "any"}}
+    return None
+
+
 def spell_entry(spell_id, name, tier, effects_entry):
     clauses = effects_entry.get("agent_clauses", [])
     if not effects_entry["effects"] and not clauses:
@@ -203,7 +210,11 @@ def spells_for_level(role, slots, standard, effects, srd_times):
         if slot is None:
             skipped.append(spell_id)
             continue
-        placed[slot].append(spell_entry(spell_id, name, tier, effects[spell_id]))
+        entry = spell_entry(spell_id, name, tier, effects[spell_id])
+        trigger = hit_trigger(casting_time)
+        if trigger:
+            entry["trigger"] = trigger
+        placed[slot].append(entry)
     return placed, skipped
 
 

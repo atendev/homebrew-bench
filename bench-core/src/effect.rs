@@ -5,16 +5,33 @@ use std::collections::HashMap;
 
 use crate::stat_block::{Ability, Condition, DamageType};
 
-/// Reaction triggers.
+/// The trigger on a reaction entry that makes the engine open a reaction window
+/// (ADR 0018). The Opportunity Attack is not a variant: every creature has it.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum ReactionTrigger {
-    HitByAttack,
-    MissedByAttack,
-    EnemyEntersReach,
-    AllyHitWithinRange,
-    TargetFailsSave,
-    StartOfTurn,
+    /// The creature is hit by an attack roll the filter matches (Shield, Parry).
+    HitByAttackRoll { attack: AttackFilter },
+}
+
+/// Which attack rolls a hit trigger answers. A melee attack is one with no range.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, schemars::JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum AttackFilter {
+    Any,
+    Melee,
+    Ranged,
+}
+
+impl AttackFilter {
+    /// Whether an attack roll made with `attack` matches the filter.
+    pub fn matches(self, attack: &Attack) -> bool {
+        match self {
+            AttackFilter::Any => true,
+            AttackFilter::Melee => attack.range.is_none(),
+            AttackFilter::Ranged => attack.range.is_some(),
+        }
+    }
 }
 
 /// Passive triggers.
@@ -237,6 +254,9 @@ pub enum Duration {
     Concentration,
     Instant,
     Permanent,
+    /// Ends once the attack that opened the reaction window has resolved (Parry).
+    /// Only an entry with a hit trigger may use it.
+    TriggeringAttack,
 }
 
 /// Timed modifier applied to a combatant.
@@ -430,6 +450,18 @@ impl Effect {
             Effect::Attack(a) => a.on_hit.iter().any(Effect::holds_roll_modifier),
             Effect::SavingThrow(s) => s.on_failure.iter().any(Effect::holds_roll_modifier),
             Effect::Area(a) => a.effect.holds_roll_modifier(),
+            _ => false,
+        }
+    }
+
+    /// Whether this effect, or one nested in it, lasts for the triggering attack.
+    pub fn holds_triggering_attack(&self) -> bool {
+        match self {
+            Effect::TimedModifier(m) => matches!(m.duration, Duration::TriggeringAttack),
+            Effect::Condition(c) => matches!(c.duration, Duration::TriggeringAttack),
+            Effect::Attack(a) => a.on_hit.iter().any(Effect::holds_triggering_attack),
+            Effect::SavingThrow(s) => s.on_failure.iter().any(Effect::holds_triggering_attack),
+            Effect::Area(a) => a.effect.holds_triggering_attack(),
             _ => false,
         }
     }

@@ -20,10 +20,12 @@ Blocking entries are classes a (structured field contradicts prose), b (structur
 missing or not representable in the closed vocabulary) and c (contradicts an SRD ruleset
 table). The script exits 1 while any blocking entry is open. A correction that matches
 nothing upstream aborts the run. Prose is read only to detect mismatches, never to produce data,
-with three exceptions upstream has no field for: the exact Flyby/Agile sentence becomes no_provoke,
+with four exceptions upstream has no field for: the exact Flyby/Agile sentence becomes no_provoke,
 "can't take this action again until the start of its next turn" becomes
-cooldown_until_next_turn with a review note, and the three sunlight and Bright Light sentences
-become lighting roll modifiers with a review note. See ADR 0008.
+cooldown_until_next_turn with a review note, the three sunlight and Bright Light sentences
+become lighting roll modifiers with a review note, and the Parry sentence ("is hit by a melee
+attack roll while holding a weapon ... adds N to its AC against that attack") becomes a hit
+trigger with a triggering_attack AC modifier and a review note. See ADR 0008.
 """
 
 import json
@@ -177,6 +179,8 @@ LIGHTING_SENTENCES = [
     (re.compile(r"While in Bright Light, the [a-z]+(?: [a-z]+)* has Disadvantage on attack rolls\."),
      "bright_light", ["attack_rolls"]),
 ]
+PARRY = re.compile(r"^Trigger: The ([\w -]+) is hit by a melee attack roll while holding a weapon\. "
+                   r"Response: The \1 adds (\d+) to its AC against that attack, possibly causing it to miss\.(?: (.+))?$")
 NO_PROVOKE = re.compile(r"^The [\w -]+ doesn.t provoke an Opportunity Attack when it (?:flies|moves) out of an enemy.s reach\.$")
 
 class Review:
@@ -612,6 +616,13 @@ class Converter:
             effects = [effect] if effect else []
         if section == "traits" and NO_PROVOKE.search(desc):
             effects = ["no_provoke"]
+        parry = PARRY.match(desc) if section == "reactions" else None
+        if parry:
+            entry["trigger"] = {"hit_by_attack_roll": {"attack": "melee"}}
+            effects = [{"timed_modifier": {"target": "armor_class", "change": {"add": int(parry.group(2))},
+                                           "duration": "triggering_attack"}}]
+            clauses = [parry.group(3)] if parry.group(3) else []
+            self.rec("d", base, "Parry pattern: hit trigger and AC modifier from the prose; holding a weapon is assumed")
         lit = False
         if section == "traits":
             lit_effects, rest = lighting_modifiers(desc)

@@ -8,12 +8,13 @@ use std::collections::HashMap;
 use serde::{Deserialize, Serialize};
 
 use crate::effect::{
-    recharge_minimum, Duration, Effect, Lighting, ModifierChange, ModifierTarget, RollDisposition, Usage,
+    recharge_minimum, Duration, Effect, Lighting, ModifierChange, ModifierTarget, ReactionTrigger, RollDisposition, Usage,
 };
 use crate::encounter::{
     ActionEconomy, ActiveModifier, Combatant, ConditionInstance, EndState, EncounterState,
     PcDice, PendingPrompt, RangeBand,
 };
+use crate::reaction::{ReactionAnswer, ReactionOption, ReactionWindow, WindowTrigger};
 use crate::rng::Stream;
 use crate::stat_block::{Ability, Condition, DamageType, DeathSaves, StatBlock};
 
@@ -37,6 +38,9 @@ pub enum StepRequest {
         /// right before the band changes (ADR 0015).
         #[serde(default, skip_serializing_if = "Vec::is_empty")]
         opportunity: Vec<OpportunityAttack>,
+        /// Reactors whose Opportunity Attack window was declined (ADR 0018).
+        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        declined: Vec<String>,
     },
     /// The Disengage action: spends the action and sets the turn flag.
     Disengage { actor_id: String },
@@ -222,8 +226,8 @@ pub fn step_events(state: &mut EncounterState, request: StepRequest) -> Result<V
         StepRequest::Action { actor_id, action_id, target_ids, slot_level } => {
             resolve_action(state, &actor_id, &action_id, &target_ids, slot_level)?
         }
-        StepRequest::Move { actor_id, target_id, band, feet, opportunity } => {
-            move_combatant(state, &actor_id, target_id.as_deref(), band, feet, &opportunity)?
+        StepRequest::Move { actor_id, target_id, band, feet, opportunity, declined } => {
+            move_combatant(state, &actor_id, target_id.as_deref(), band, feet, &opportunity, &declined)?
         }
         StepRequest::Disengage { actor_id } => disengage(state, &actor_id)?,
         StepRequest::EndTurn { legendary } => end_turn_events(state, &legendary)?,
@@ -420,9 +424,10 @@ fn resolve_effect(
                     RollDisposition::Normal => d20a,
                 };
                 let total = natural as i32 + attack.modifier + attack_modifier(state, &actor)?;
-                let ac = stat_block(state, &target)?.armor_class.first().map(|a| a.value).unwrap_or(10) + ac_modifier(state, &target);
+                let base_ac = stat_block(state, &target)?.armor_class.first().map(|a| a.value).unwrap_or(10);
+                let ac = base_ac + ac_modifier(state, &target);
                 let critical = natural == 20;
-                let hit = critical || (natural != 1 && total >= ac);
+                let mut hit = critical || (natural != 1 && total >= ac);
                 let marked = state.player_dice.all_entered_since(actor_id);
                 events.push(EngineEvent {
                     kind: "attack".into(),
@@ -434,6 +439,35 @@ fn resolve_effect(
                     damage: None,
                     player_dice: marked,
                 });
+                if hit && state.settings.reaction_windows {
+                    let trigger = WindowTrigger::Hit { attacker_id: actor_id.into(), total, ac, critical };
+                    if let Some(window) = hit_window(state, target_index, &attack, trigger) {
+                        let answer = ask(state, window.clone(), events);
+                        if let Some(ReactionAnswer::Take(id)) = answer {
+                            let name = window.option(&id).ok_or_else(|| EngineError::Invalid(format!("{target_id} has no reaction {id} for this hit")))?.name.clone();
+                            events.push(event("reaction", format!("REACTION {target_id}: {name} (hit by {actor_id})"), target_id, actor_id));
+                            state.rng = stream.state();
+                            events.extend(resolve_action(state, target_id, &id, &[actor_id.to_string()], None)?);
+                            *stream = Stream::from_state(state.rng.clone());
+                            let ac = base_ac + ac_modifier(state, &state.combatants[target_index]);
+                            hit = critical || (natural != 1 && total >= ac);
+                            events.push(EngineEvent {
+                                kind: "attack_rechecked".into(),
+                                message: format!("{} attacks {}: {} vs AC {} ({}) after {name}", actor.name, target.name, total, ac, if hit { "hit" } else { "miss" }),
+                                actor_id: Some(actor_id.into()),
+                                target_id: Some(target_id.clone()),
+                                roll: None,
+                                total: Some(total),
+                                damage: None,
+                                player_dice: false,
+                            });
+                            let clauses = stat_block(state, &state.combatants[target_index])?.reactions.iter().find(|a| a.id == id).map(|a| a.agent_clauses.clone()).unwrap_or_default();
+                            for clause in clauses {
+                                events.push(event("agent_clause", format!("{target_id} {name}, agent clause: {clause}"), target_id, actor_id));
+                            }
+                        }
+                    }
+                }
                 if hit {
                     let mut damage = 0;
                     for die in attack.damage.iter().filter(|d| damage_applies(&target, actor_id, d)) {
@@ -449,6 +483,7 @@ fn resolve_effect(
                         resolve_effect(state, stream, actor_id, effect.clone(), &[target_id.clone()], events)?;
                     }
                 }
+                end_triggering_attack(state, target_id);
             }
         }
         Effect::Damage(damage) => {
@@ -1143,6 +1178,7 @@ fn move_combatant(
     band: RangeBand,
     feet: u32,
     opportunity: &[OpportunityAttack],
+    declined: &[String],
 ) -> Result<Vec<EngineEvent>, EngineError> {
     let i = index_of(state, actor_id)?;
     // (combatant id, whether it prices the move)
@@ -1176,7 +1212,7 @@ fn move_combatant(
             .filter(|id| state.combatants[i].engagement.contains(id))
             .collect()
     };
-    let attacks = opportunity
+    let mut attacks = opportunity
         .iter()
         .enumerate()
         .map(|(n, oa)| {
@@ -1201,8 +1237,30 @@ fn move_combatant(
             Ok((r, attack))
         })
         .collect::<Result<Vec<_>, EngineError>>()?;
+    let mut attacking: Vec<String> = opportunity.iter().map(|oa| oa.reactor_id.clone()).collect();
+    let mut reasons = Vec::new();
+    if state.settings.reaction_windows {
+        let open: Vec<String> = provoked.iter().filter(|id| !attacking.contains(id) && !declined.contains(id)).cloned().collect();
+        for window in opportunity_windows(state, i, &open) {
+            match ask(state, window.clone(), &mut reasons) {
+                None => return Ok(vec![]),
+                Some(ReactionAnswer::Pass) => {}
+                Some(ReactionAnswer::Take(id)) => {
+                    let reactor_id = window.reactor_id;
+                    if window.options.iter().all(|o| o.id != id) {
+                        return Err(EngineError::Invalid(format!("{reactor_id} has no Opportunity Attack {id}")));
+                    }
+                    let r = index_of(state, &reactor_id)?;
+                    let attack = opportunity_attack_action(stat_block(state, &state.combatants[r])?, Some(&id))
+                        .map_err(|why| EngineError::Illegal(format!("{reactor_id} cannot make an Opportunity Attack: {why}")))?;
+                    attacks.push((r, attack));
+                    attacking.push(reactor_id);
+                }
+            }
+        }
+    }
 
-    let mut events = Vec::new();
+    let mut events = reasons;
     let mut stream = Stream::from_state(state.rng.clone());
     for (r, attack) in attacks {
         let reactor_id = state.combatants[r].id.clone();
@@ -1227,7 +1285,7 @@ fn move_combatant(
     for (other, _) in &others {
         set_band(state, i, actor_id, other, band)?;
     }
-    for reactor_id in provoked.iter().filter(|id| !opportunity.iter().any(|oa| &&oa.reactor_id == id)) {
+    for reactor_id in provoked.iter().filter(|id| !attacking.contains(id) && !declined.contains(id)) {
         let r = index_of(state, reactor_id)?;
         match opportunity_eligibility(state, r, i) {
             Ok(()) => events.push(event(
@@ -1276,15 +1334,7 @@ fn opportunity_eligibility(state: &EncounterState, reactor: usize, mover: usize)
     if r.side_id == m.side_id {
         return Err(Ineligible::Rule(format!("{} is on {}'s side", r.id, m.id)));
     }
-    if !can_act(r) {
-        return Err(Ineligible::Rule(format!("{} cannot act", r.id)));
-    }
-    if state.active_modifiers.iter().any(|x| x.target == ModifierTarget::Reactions && x.source.as_deref() == Some(r.id.as_str())) {
-        return Err(Ineligible::Rule(format!("{} cannot take reactions", r.id)));
-    }
-    if r.action_economy.reaction_used {
-        return Err(Ineligible::Rule(format!("{} has already used its reaction", r.id)));
-    }
+    can_react(state, r).map_err(Ineligible::Rule)?;
     if m.action_economy.disengaged {
         return Err(Ineligible::Rule(format!("{} has disengaged", m.id)));
     }
@@ -1300,6 +1350,107 @@ fn opportunity_eligibility(state: &EncounterState, reactor: usize, mover: usize)
         return Err(Ineligible::Unseen(format!("{} is blinded and cannot see {}", r.id, m.id)));
     }
     Ok(())
+}
+
+/// The checks every reaction shares: the reactor can act, nothing forbids it
+/// reactions, and its reaction is unspent.
+fn can_react(state: &EncounterState, r: &Combatant) -> Result<(), String> {
+    if !can_act(r) {
+        return Err(format!("{} cannot act", r.id));
+    }
+    if state.active_modifiers.iter().any(|x| x.target == ModifierTarget::Reactions && x.source.as_deref() == Some(r.id.as_str())) {
+        return Err(format!("{} cannot take reactions", r.id));
+    }
+    if r.action_economy.reaction_used {
+        return Err(format!("{} has already used its reaction", r.id));
+    }
+    Ok(())
+}
+
+/// The Opportunity Attack windows a move opens: one per reactor in `reactors`
+/// that passes [`opportunity_eligibility`] and has a melee attack to make, in
+/// initiative order. The default attack is offered first, then every other
+/// ready single melee attack in stat-block order.
+fn opportunity_windows(state: &EncounterState, mover: usize, reactors: &[String]) -> Vec<ReactionWindow> {
+    let mover_id = &state.combatants[mover].id;
+    let mut windows: Vec<ReactionWindow> = reactors
+        .iter()
+        .filter_map(|reactor_id| {
+            let r = index_of(state, reactor_id).ok()?;
+            opportunity_eligibility(state, r, mover).ok()?;
+            let block = stat_block(state, &state.combatants[r]).ok()?;
+            let first = opportunity_attack_action(block, None).ok();
+            let others = block.actions.iter().filter(|a| {
+                is_melee_attack(a) && !matches!(&first, Some(f) if f.id == a.id) && ability_ready(state, reactor_id, a)
+            });
+            let options: Vec<ReactionOption> = first.iter().chain(others).map(|a| ReactionOption { id: a.id.clone(), name: a.name.clone() }).collect();
+            (!options.is_empty()).then(|| ReactionWindow {
+                reactor_id: reactor_id.clone(),
+                trigger: WindowTrigger::Opportunity { mover_id: mover_id.clone() },
+                options,
+            })
+        })
+        .collect();
+    let rank = |id: &str| state.initiative_order.iter().position(|x| x == id).unwrap_or(usize::MAX);
+    windows.sort_by_key(|w| rank(&w.reactor_id));
+    windows
+}
+
+/// The window a hit opens for the creature hit: its ready reactions whose hit
+/// trigger matches the attack, if it can react at all. A critical hit opens it too.
+fn hit_window(state: &EncounterState, target: usize, attack: &crate::effect::Attack, trigger: WindowTrigger) -> Option<ReactionWindow> {
+    let reactor = &state.combatants[target];
+    if matches!(&trigger, WindowTrigger::Hit { attacker_id, .. } if *attacker_id == reactor.id) {
+        return None;
+    }
+    can_react(state, reactor).ok()?;
+    let options: Vec<ReactionOption> = stat_block(state, reactor)
+        .ok()?
+        .reactions
+        .iter()
+        .filter(|a| matches!(a.trigger, Some(ReactionTrigger::HitByAttackRoll { attack: filter }) if filter.matches(attack)))
+        .filter(|a| ability_ready(state, &reactor.id, a))
+        .map(|a| ReactionOption { id: a.id.clone(), name: a.name.clone() })
+        .collect();
+    (!options.is_empty()).then(|| ReactionWindow { reactor_id: reactor.id.clone(), trigger, options })
+}
+
+/// Ask the encounter's decider about one window. `None` means the window waits
+/// for an answer; the engine records it, and the caller throws the run away and
+/// prompts. Once a prompt is owed, by an earlier window or a missing PC die,
+/// every later window passes unasked. A decider's reason becomes a
+/// `reaction_reason` event.
+fn ask(state: &mut EncounterState, window: ReactionWindow, events: &mut Vec<EngineEvent>) -> Option<ReactionAnswer> {
+    if state.reactions.waiting.is_some() {
+        return None;
+    }
+    if !state.player_dice.missing.is_empty() {
+        return Some(ReactionAnswer::Pass);
+    }
+    let mut decider = std::mem::take(&mut state.reactions.decider);
+    let decision = decider.decide(state, &window);
+    state.reactions.decider = decider;
+    match decision {
+        crate::reaction::Decision::Answer { answer, reason } => {
+            if let Some(reason) = reason {
+                events.push(event("reaction_reason", reason, &window.reactor_id, &window.reactor_id));
+            }
+            Some(answer)
+        }
+        crate::reaction::Decision::Wait => {
+            state.reactions.waiting = Some(window);
+            None
+        }
+    }
+}
+
+/// End what lasted only for the attack against `target_id` (Parry's AC).
+fn end_triggering_attack(state: &mut EncounterState, target_id: &str) {
+    let ends = |d: &Duration, source: &Option<String>| matches!(d, Duration::TriggeringAttack) && source.as_deref() == Some(target_id);
+    state.active_modifiers.retain(|m| !ends(&m.remaining, &m.source));
+    for c in &mut state.combatants {
+        c.conditions.retain(|x| !ends(&x.duration, &x.source));
+    }
 }
 
 /// One melee attack: an action whose only effect is an Attack with no range.
@@ -1511,7 +1662,7 @@ fn decrement_durations(state: &mut EncounterState, events: &mut Vec<EngineEvent>
                 *n = n.saturating_sub(1);
                 *n > 0
             }
-            Duration::Concentration | Duration::Instant | Duration::Permanent | Duration::UntilSave { .. } => true,
+            Duration::Concentration | Duration::Instant | Duration::Permanent | Duration::UntilSave { .. } | Duration::TriggeringAttack => true,
         };
         if !keep {
             events.push(event("modifier_expire", "a timed modifier expired".into(), "engine", "engine"));
@@ -1539,7 +1690,7 @@ fn decrement_durations(state: &mut EncounterState, events: &mut Vec<EngineEvent>
                     *n = n.saturating_sub(1);
                     *n > 0
                 }
-                Duration::Concentration | Duration::Instant | Duration::Permanent | Duration::UntilSave { .. } => true,
+                Duration::Concentration | Duration::Instant | Duration::Permanent | Duration::UntilSave { .. } | Duration::TriggeringAttack => true,
             };
             if !keep {
                 expired.push(idx);
@@ -2225,6 +2376,7 @@ mod tests {
     use super::*;
     use crate::effect::{Attack, Damage};
     use crate::encounter::{Side, StatBlockSnapshot};
+    use crate::reaction::{ReactionAnswer, ReactionOption, WindowTrigger};
     use crate::rng::RngState;
     use crate::stat_block::{
         AbilityScores, ArmorClass, HitPoints, Senses, Size, SpeedValue,
@@ -2321,6 +2473,7 @@ mod tests {
             log: vec![],
             tamper_hash: String::new(),
             player_dice: Default::default(),
+            reactions: Default::default(),
         };
         state.initiative_order = state.combatants.iter().map(|c| c.id.clone()).collect();
         state.active_turn = state.initiative_order.first().cloned();
@@ -2359,6 +2512,7 @@ mod tests {
             agent_clauses: vec![],
             default_resolution: None,
             usage: Some(Usage::Recharge { dice: dice.into(), group: None }),
+            trigger: None,
         });
         let mut drake = test_combatant("drake", "drake", 20, "enemy");
         drake.resources.insert("drake:breath".into(), 0);
@@ -2420,6 +2574,7 @@ mod tests {
             agent_clauses: vec![],
             default_resolution: None,
             usage: None,
+            trigger: None,
         });
         let fighter = test_combatant("fighter", "fighter", 20, "ally");
         let goblin = test_combatant("goblin", "goblin", 7, "enemy");
@@ -2465,6 +2620,7 @@ mod tests {
             agent_clauses: vec![],
             default_resolution: None,
             usage: None,
+            trigger: None,
         });
         let mut fighter_block = test_stat_block("fighter", "Fighter", 20, 16);
         fighter_block.class = Some("fighter".into());
@@ -2507,6 +2663,7 @@ mod tests {
             agent_clauses: vec![],
             default_resolution: None,
             usage: None,
+            trigger: None,
         });
         let goblin_block = test_stat_block("goblin", "Goblin", 7, 15);
         let fighter = test_combatant("fighter", "fighter", 20, "ally");
@@ -2552,7 +2709,7 @@ mod tests {
         state.combatants[0].ranges.insert("goblin".into(), RangeBand::Engaged);
         state.combatants[0].engagement.push("goblin".into());
         state.combatants[1].engagement.push("fighter".into());
-        let req = StepRequest::Move { actor_id: "fighter".into(), target_id: Some("goblin".into()), band: RangeBand::Near, feet: 5, opportunity: vec![] };
+        let req = StepRequest::Move { actor_id: "fighter".into(), target_id: Some("goblin".into()), band: RangeBand::Near, feet: 5, opportunity: vec![], declined: vec![] };
         let resp = step(&mut state, req).unwrap();
         assert!(resp.events.iter().any(|e| e.kind == "movement"));
         assert!(resp.events.iter().any(|e| e.kind == "opportunity_attack"));
@@ -2733,6 +2890,7 @@ mod tests {
             agent_clauses: vec![],
             default_resolution: None,
             usage: None,
+            trigger: None,
         });
         attacker_block.actions.push(crate::stat_block::AbilityEntry {
             id: "claw".into(),
@@ -2750,6 +2908,7 @@ mod tests {
             agent_clauses: vec![],
             default_resolution: None,
             usage: None,
+            trigger: None,
         });
         attacker_block.actions.push(crate::stat_block::AbilityEntry {
             id: "bite".into(),
@@ -2767,6 +2926,7 @@ mod tests {
             agent_clauses: vec![],
             default_resolution: None,
             usage: None,
+            trigger: None,
         });
         let target_block = test_stat_block("target", "Target", 50, 10);
         let attacker = test_combatant("attacker", "attacker", 30, "enemy");
@@ -2808,6 +2968,7 @@ mod tests {
             agent_clauses: vec![],
             default_resolution: None,
             usage: None,
+            trigger: None,
         };
         let fog = Cast { spell_id: "fog-cloud".into(), slot_level: None, upcast: false };
         let mut attacker_block = test_stat_block("attacker", "Attacker", 30, 15);
@@ -2874,6 +3035,7 @@ mod tests {
             agent_clauses: vec![],
             default_resolution: None,
             usage: None,
+            trigger: None,
         });
         let attacker = test_combatant("attacker", "attacker", 30, "enemy");
         let target = test_combatant("target", "target", 50, "ally");
@@ -2904,6 +3066,7 @@ mod tests {
             agent_clauses: vec![],
             default_resolution: None,
             usage: None,
+            trigger: None,
         });
         let fighter = test_combatant("fighter", "fighter", 20, "ally");
         let goblin = test_combatant("goblin", "goblin", 7, "enemy");
@@ -2938,6 +3101,7 @@ mod tests {
             agent_clauses: vec![],
             default_resolution: None,
             usage: None,
+            trigger: None,
         });
         let combatants = vec![
             test_combatant("caster", "caster", 20, "ally"),
@@ -2997,6 +3161,7 @@ mod tests {
             agent_clauses: vec![],
             default_resolution: None,
             usage: None,
+            trigger: None,
         });
         let mut fighter_block = test_stat_block("fighter", "Fighter", 100, 5);
         let mut fighter = test_combatant("fighter", "fighter", 100, "ally");
@@ -3141,6 +3306,7 @@ mod tests {
             agent_clauses: vec![],
             default_resolution: None,
             usage,
+            trigger: None,
         }
     }
 
@@ -3725,7 +3891,7 @@ mod tests {
         let mut state = test_encounter(blocks, vec![test_combatant("a", "a", 20, "ally"), test_combatant("b", "b", 20, "enemy")]);
         state.combatants[0].ranges.insert("b".into(), RangeBand::Near);
         state.combatants[1].ranges.insert("a".into(), RangeBand::Near);
-        move_combatant(&mut state, "a", Some("b"), RangeBand::Far, 30, &[]).unwrap();
+        move_combatant(&mut state, "a", Some("b"), RangeBand::Far, 30, &[], &[]).unwrap();
         assert_eq!(state.combatants[1].ranges["a"], RangeBand::Far);
     }
 
@@ -3744,7 +3910,7 @@ mod tests {
     #[test]
     fn untargeted_move_changes_the_band_to_everyone() {
         let mut state = three_way_encounter();
-        let events = move_combatant(&mut state, "a", None, RangeBand::Far, 35, &[]).unwrap();
+        let events = move_combatant(&mut state, "a", None, RangeBand::Far, 35, &[], &[]).unwrap();
         assert_eq!(state.combatants[0].ranges["b"], RangeBand::Far);
         assert_eq!(state.combatants[0].ranges["c"], RangeBand::Far);
         assert_eq!(state.combatants[1].ranges["a"], RangeBand::Far);
@@ -3759,10 +3925,10 @@ mod tests {
     #[test]
     fn untargeted_move_costs_the_largest_single_pair() {
         let mut state = three_way_encounter();
-        let err = move_combatant(&mut state, "a", None, RangeBand::Far, 30, &[]).unwrap_err();
+        let err = move_combatant(&mut state, "a", None, RangeBand::Far, 30, &[], &[]).unwrap_err();
         assert!(err.to_string().contains("35 feet"));
         assert_eq!(state.combatants[0].ranges["b"], RangeBand::Engaged);
-        move_combatant(&mut state, "a", None, RangeBand::Far, 35, &[]).unwrap();
+        move_combatant(&mut state, "a", None, RangeBand::Far, 35, &[], &[]).unwrap();
         assert_eq!(state.combatants[0].action_economy.movement_used_feet, 35);
     }
 
@@ -3770,7 +3936,7 @@ mod tests {
     fn untargeted_move_skips_combatants_that_are_down() {
         let mut state = three_way_encounter();
         state.combatants[1].end_state = EndState::Dead;
-        let events = move_combatant(&mut state, "a", None, RangeBand::Far, 30, &[]).unwrap();
+        let events = move_combatant(&mut state, "a", None, RangeBand::Far, 30, &[], &[]).unwrap();
         assert!(events.iter().all(|e| e.kind != "opportunity_attack"));
         assert_eq!(state.combatants[0].ranges["b"], RangeBand::Far);
         assert_eq!(state.combatants[0].ranges["c"], RangeBand::Far);
@@ -3781,7 +3947,7 @@ mod tests {
     #[test]
     fn untargeted_move_cannot_engage() {
         let mut state = three_way_encounter();
-        assert!(move_combatant(&mut state, "a", None, RangeBand::Engaged, 30, &[]).is_err());
+        assert!(move_combatant(&mut state, "a", None, RangeBand::Engaged, 30, &[], &[]).is_err());
     }
 
     fn weapon(id: &str, modifier: i32, damage: i32, range: Option<(u32, u32)>, usage: Option<Usage>) -> crate::stat_block::AbilityEntry {
@@ -3801,6 +3967,7 @@ mod tests {
             agent_clauses: vec![],
             default_resolution: None,
             usage,
+            trigger: None,
         }
     }
 
@@ -3834,6 +4001,7 @@ mod tests {
             agent_clauses: vec![],
             default_resolution: None,
             usage: None,
+            trigger: None,
         }
     }
 
@@ -3844,7 +4012,7 @@ mod tests {
         assert!(events.iter().any(|e| e.kind == "disengage"), "{events:?}");
         assert!(state.combatants[0].action_economy.action_used);
         assert!(state.combatants[0].action_economy.disengaged);
-        let events = move_combatant(&mut state, "a", None, RangeBand::Far, 35, &[]).unwrap();
+        let events = move_combatant(&mut state, "a", None, RangeBand::Far, 35, &[], &[]).unwrap();
         assert!(events.iter().all(|e| e.kind != "opportunity_attack"), "{events:?}");
         assert_eq!(state.combatants[0].ranges["b"], RangeBand::Far);
     }
@@ -3853,7 +4021,7 @@ mod tests {
     fn disengage_refuses_a_named_reactor_with_the_reason() {
         let mut state = provoking_encounter(0);
         step_events(&mut state, StepRequest::Disengage { actor_id: "a".into() }).unwrap();
-        let err = move_combatant(&mut state, "a", None, RangeBand::Far, 35, &[oa("b", None)]).unwrap_err();
+        let err = move_combatant(&mut state, "a", None, RangeBand::Far, 35, &[oa("b", None)], &[]).unwrap_err();
         assert!(err.to_string().contains("b cannot make an Opportunity Attack: a has disengaged"), "{err}");
         assert!(!state.combatants[1].action_economy.reaction_used);
     }
@@ -3889,9 +4057,9 @@ mod tests {
         let mut state = provoking_encounter(0);
         let snapshot = state.stat_blocks.iter_mut().find(|s| s.id == "a").unwrap();
         snapshot.stat_block.traits.push(no_provoke_trait());
-        let err = move_combatant(&mut state.clone(), "a", None, RangeBand::Far, 35, &[oa("b", None)]).unwrap_err();
+        let err = move_combatant(&mut state.clone(), "a", None, RangeBand::Far, 35, &[oa("b", None)], &[]).unwrap_err();
         assert!(err.to_string().contains("b cannot make an Opportunity Attack: a does not provoke (Flyby)"), "{err}");
-        let events = move_combatant(&mut state, "a", None, RangeBand::Far, 35, &[]).unwrap();
+        let events = move_combatant(&mut state, "a", None, RangeBand::Far, 35, &[], &[]).unwrap();
         assert!(events.iter().all(|e| e.kind != "opportunity_attack"), "{events:?}");
         assert!(!state.combatants[1].action_economy.reaction_used);
     }
@@ -3901,14 +4069,14 @@ mod tests {
         let mut state = provoking_encounter(0);
         let snapshot = state.stat_blocks.iter_mut().find(|s| s.id == "a").unwrap();
         snapshot.stat_block.bonus_actions.push(no_provoke_trait());
-        let err = move_combatant(&mut state, "a", None, RangeBand::Far, 35, &[oa("b", None)]).unwrap_err();
+        let err = move_combatant(&mut state, "a", None, RangeBand::Far, 35, &[oa("b", None)], &[]).unwrap_err();
         assert!(err.to_string().contains("a does not provoke (Flyby)"), "{err}");
     }
 
     #[test]
     fn named_reactor_attacks_before_the_move_and_spends_its_reaction() {
         let mut state = provoking_encounter(0);
-        let events = move_combatant(&mut state, "a", None, RangeBand::Far, 35, &[oa("b", None)]).unwrap();
+        let events = move_combatant(&mut state, "a", None, RangeBand::Far, 35, &[oa("b", None)], &[]).unwrap();
         let kinds: Vec<_> = events.iter().map(|e| e.kind.as_str()).collect();
         let reaction = kinds.iter().position(|k| *k == "reaction").expect("reaction line");
         let movement = kinds.iter().position(|k| *k == "movement").expect("movement line");
@@ -3930,7 +4098,7 @@ mod tests {
         for seed in 1..20 {
             let mut state = state.clone();
             state.rng = RngState::new(seed);
-            let events = move_combatant(&mut state, "a", Some("b"), RangeBand::Near, 5, &[oa("b", None)]).unwrap();
+            let events = move_combatant(&mut state, "a", Some("b"), RangeBand::Near, 5, &[oa("b", None)], &[]).unwrap();
             let attack = events.iter().find(|e| e.kind == "attack").unwrap();
             if attack.message.ends_with("(miss)") {
                 assert!(state.combatants[1].action_economy.reaction_used);
@@ -3943,7 +4111,7 @@ mod tests {
     #[test]
     fn the_reaction_comes_back_on_the_reactors_own_turn() {
         let mut state = provoking_encounter(0);
-        move_combatant(&mut state, "a", Some("b"), RangeBand::Near, 5, &[oa("b", None)]).unwrap();
+        move_combatant(&mut state, "a", Some("b"), RangeBand::Near, 5, &[oa("b", None)], &[]).unwrap();
         step(&mut state, StepRequest::end_turn()).unwrap();
         assert_eq!(state.active_turn.as_deref(), Some("b"));
         assert!(!state.combatants[1].action_economy.reaction_used);
@@ -3952,7 +4120,7 @@ mod tests {
     #[test]
     fn a_downed_mover_stops_and_later_reactors_keep_their_reaction() {
         let mut state = provoking_encounter(50);
-        let events = move_combatant(&mut state, "a", None, RangeBand::Far, 35, &[oa("b", None), oa("c", None)]).unwrap();
+        let events = move_combatant(&mut state, "a", None, RangeBand::Far, 35, &[oa("b", None), oa("c", None)], &[]).unwrap();
         assert_ne!(state.combatants[0].end_state, EndState::Active);
         assert_eq!(events.last().unwrap().kind, "move_stopped");
         assert!(events.iter().all(|e| e.kind != "movement" && e.kind != "opportunity_attack"));
@@ -3967,7 +4135,7 @@ mod tests {
         let base = provoking_encounter(0);
         let refused = |state: &mut EncounterState, target: Option<&str>, band: RangeBand, named: &[OpportunityAttack], why: &str| {
             let before = serde_json::to_value(&*state).unwrap();
-            let err = move_combatant(state, "a", target, band, 35, named).unwrap_err();
+            let err = move_combatant(state, "a", target, band, 35, named, &[]).unwrap_err();
             assert!(matches!(err, EngineError::Illegal(_) | EngineError::Invalid(_)), "{err:?}");
             assert!(err.to_string().contains(why), "{err}");
             assert_eq!(serde_json::to_value(&*state).unwrap(), before);
@@ -3997,7 +4165,7 @@ mod tests {
         let mut state = provoking_encounter(0);
         state.combatants[1].action_economy.reaction_used = true;
         state.combatants[2].conditions.push(ConditionInstance { condition: Condition::Blinded, duration: Duration::Rounds(1), source: None, ends_on_damage: false });
-        let events = move_combatant(&mut state, "a", None, RangeBand::Far, 35, &[]).unwrap();
+        let events = move_combatant(&mut state, "a", None, RangeBand::Far, 35, &[], &[]).unwrap();
         assert!(events.iter().all(|e| e.kind != "opportunity_attack"), "{events:?}");
         let assumption = events.iter().find(|e| e.kind == "assumption").expect("sight assumption");
         assert_eq!(assumption.message, "ASSUMPTION c is blinded and cannot see a, so it makes no Opportunity Attack on a");
@@ -4026,6 +4194,7 @@ mod tests {
                 agent_clauses: vec![],
                 default_resolution: None,
                 usage: None,
+                trigger: None,
             },
             weapon("bite", 4, 2, None, None),
             weapon("spit", 4, 2, Some((30, 60)), None),
@@ -4045,10 +4214,10 @@ mod tests {
         let snapshot = state.stat_blocks.iter_mut().find(|s| s.id == "b").unwrap();
         snapshot.stat_block.actions.push(weapon("gore", 100, 0, None, Some(Usage::PerDay { uses: 1 })));
         state.combatants[1].resources.insert("b:gore".into(), 1);
-        let err = move_combatant(&mut state.clone(), "a", Some("b"), RangeBand::Near, 5, &[oa("b", Some("gore"))]).unwrap_err();
+        let err = move_combatant(&mut state.clone(), "a", Some("b"), RangeBand::Near, 5, &[oa("b", Some("gore"))], &[]).unwrap_err();
         assert!(err.to_string().contains("no uses remaining"), "{err}");
         state.combatants[1].resources.remove("b:gore");
-        move_combatant(&mut state, "a", Some("b"), RangeBand::Near, 5, &[oa("b", Some("gore"))]).unwrap();
+        move_combatant(&mut state, "a", Some("b"), RangeBand::Near, 5, &[oa("b", Some("gore"))], &[]).unwrap();
         assert_eq!(state.combatants[1].resources["b:gore"], 1);
     }
 
@@ -4059,7 +4228,7 @@ mod tests {
         snapshot.stat_block.actions.push(weapon("gore", 100, 0, None, Some(Usage::PerDay { uses: 1 })));
         state.combatants[2].resources.insert("c:gore".into(), 1);
         let before = serde_json::to_value(&state).unwrap();
-        let err = move_combatant(&mut state, "a", None, RangeBand::Far, 35, &[oa("b", None), oa("c", Some("gore"))]).unwrap_err();
+        let err = move_combatant(&mut state, "a", None, RangeBand::Far, 35, &[oa("b", None), oa("c", Some("gore"))], &[]).unwrap_err();
         assert!(err.to_string().contains("no uses remaining"), "{err}");
         assert_eq!(serde_json::to_value(&state).unwrap(), before);
     }
@@ -4361,5 +4530,280 @@ mod tests {
             let (event, after) = concentration_save(crate::effect::Lighting::Unspecified, seed);
             assert_eq!((event.roll, after), (Some(a), probe.state()));
         }
+    }
+
+    fn party_block(id: &str) -> StatBlock {
+        let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join(format!("../data/party/standard/{id}.json"));
+        serde_json::from_str(&std::fs::read_to_string(path).unwrap()).unwrap()
+    }
+
+    const CASTER: &str = "standard-caster-05";
+
+    /// `attacker` (a fixture) on its turn beside `defender`, with reaction windows on.
+    fn windowed(attacker: StatBlock, defender: StatBlock, defender_side: &str, seed: u64) -> EncounterState {
+        let (a, d) = (attacker.id.clone(), defender.id.clone());
+        let (a_hp, d_hp) = (attacker.hit_points.average, defender.hit_points.average);
+        let mut state = test_encounter(
+            vec![attacker, defender],
+            vec![test_combatant(&a, &a, a_hp, "enemy"), test_combatant(&d, &d, d_hp, defender_side)],
+        );
+        state.settings.reaction_windows = true;
+        state.rng = RngState::new(seed);
+        state
+    }
+
+    fn answering(state: &EncounterState, answers: Vec<ReactionAnswer>) -> EncounterState {
+        let mut state = state.clone();
+        state.reactions.decider = crate::reaction::ReactionDecider::Queued(answers.into());
+        state
+    }
+
+    fn attack_roll(events: &[EngineEvent]) -> (u32, i32) {
+        let e = events.iter().find(|e| e.kind == "attack").expect("attack");
+        (e.roll.unwrap(), e.total.unwrap())
+    }
+
+    /// The first seed whose ogre greatclub on the caster rolls a d20 that `keep` accepts.
+    fn ogre_on_caster(keep: impl Fn(u32, i32) -> bool) -> EncounterState {
+        for seed in 1..2000 {
+            let state = windowed(fixture_block("ogre"), party_block(CASTER), "ally", seed);
+            let mut probe = state.clone();
+            probe.settings.reaction_windows = false;
+            let (roll, total) = attack_roll(&act(&mut probe, "ogre", "greatclub", &[CASTER]).unwrap());
+            if keep(roll, total) {
+                return state;
+            }
+        }
+        panic!("no seed");
+    }
+
+    fn shieldable() -> EncounterState {
+        ogre_on_caster(|roll, total| roll != 20 && (12..17).contains(&total))
+    }
+
+    #[test]
+    fn a_hit_the_caster_can_shield_waits_on_a_window_naming_shield() {
+        let mut state = answering(&shieldable(), vec![]);
+        let events = act(&mut state, "ogre", "greatclub", &[CASTER]).unwrap();
+        let window = state.reactions.waiting.clone().expect("window");
+        assert_eq!(window.reactor_id, CASTER);
+        assert_eq!(window.options, vec![ReactionOption { id: "shield".into(), name: "Shield".into() }]);
+        let (_, total) = attack_roll(&events);
+        assert_eq!(window.trigger, WindowTrigger::Hit { attacker_id: "ogre".into(), total, ac: 12, critical: false });
+    }
+
+    #[test]
+    fn taking_shield_turns_the_same_hit_into_a_miss_and_spends_the_reaction_and_slot() {
+        let base = shieldable();
+        let mut taken = answering(&base, vec![ReactionAnswer::Take("shield".into())]);
+        let events = act(&mut taken, "ogre", "greatclub", &[CASTER]).unwrap();
+        let kinds: Vec<&str> = events.iter().map(|e| e.kind.as_str()).collect();
+        let reaction = kinds.iter().position(|k| *k == "reaction").expect("reaction");
+        assert_eq!(events[reaction].message, format!("REACTION {CASTER}: Shield (hit by ogre)"));
+        let recheck = events.iter().find(|e| e.kind == "attack_rechecked").expect("recheck");
+        assert!(recheck.message.ends_with("vs AC 17 (miss) after Shield"), "{}", recheck.message);
+        assert!(events.iter().all(|e| e.kind != "damage"), "{kinds:?}");
+        let caster = &taken.combatants[1];
+        assert!(caster.action_economy.reaction_used);
+        assert_eq!(caster.resources[&format!("{CASTER}:slot:1")], 1);
+        assert_eq!(caster.hp, caster.max_hp);
+
+        let mut declined = answering(&base, vec![ReactionAnswer::Pass]);
+        act(&mut declined, "ogre", "greatclub", &[CASTER]).unwrap();
+        let mut before = base.clone();
+        before.settings.reaction_windows = false;
+        act(&mut before, "ogre", "greatclub", &[CASTER]).unwrap();
+        assert!(declined.combatants[1].hp < declined.combatants[1].max_hp);
+        assert_eq!(declined.combatants[1].hp, before.combatants[1].hp);
+        assert_eq!(declined.rng, before.rng);
+        assert!(!declined.combatants[1].action_economy.reaction_used);
+    }
+
+    #[test]
+    fn a_natural_20_still_hits_after_shield() {
+        let mut state = answering(&ogre_on_caster(|roll, _| roll == 20), vec![ReactionAnswer::Take("shield".into())]);
+        let events = act(&mut state, "ogre", "greatclub", &[CASTER]).unwrap();
+        assert!(events.iter().any(|e| e.kind == "reaction"));
+        let recheck = events.iter().find(|e| e.kind == "attack_rechecked").unwrap();
+        assert!(recheck.message.contains("(hit) after Shield"), "{}", recheck.message);
+        assert!(events.iter().any(|e| e.kind == "damage"));
+    }
+
+    #[test]
+    fn a_caster_that_cannot_react_or_cast_gets_no_window() {
+        let base = shieldable();
+        let setups: [fn(&mut EncounterState); 4] = [
+            |s| s.combatants[1].action_economy.reaction_used = true,
+            |s| {
+                s.combatants[1].resources.insert(format!("{CASTER}:slot:1"), 4);
+            },
+            |s| s.combatants[1].conditions.push(ConditionInstance { condition: Condition::Incapacitated, duration: Duration::Permanent, source: None, ends_on_damage: false }),
+            |s| s.active_modifiers.push(ActiveModifier { target: ModifierTarget::Reactions, change: ModifierChange::None, remaining: Duration::Rounds(1), source: Some(CASTER.into()) }),
+        ];
+        for setup in setups {
+            let mut state = answering(&base, vec![]);
+            setup(&mut state);
+            act(&mut state, "ogre", "greatclub", &[CASTER]).unwrap();
+            assert!(state.reactions.waiting.is_none());
+        }
+    }
+
+    fn knight_state(seed: u64) -> EncounterState {
+        windowed(fixture_block("ogre"), fixture_block("knight"), "ally", seed)
+    }
+
+    #[test]
+    fn parry_opens_on_a_melee_hit_and_not_on_a_ranged_one() {
+        for seed in 1..200 {
+            let mut melee = answering(&knight_state(seed), vec![]);
+            let events = act(&mut melee, "ogre", "greatclub", &["knight"]).unwrap();
+            let hit = events.iter().any(|e| e.kind == "attack" && e.message.contains("(hit)"));
+            assert_eq!(melee.reactions.waiting.as_ref().map(|w| w.options[0].id.as_str()), hit.then_some("parry"));
+            let mut ranged = answering(&knight_state(seed), vec![]);
+            act(&mut ranged, "ogre", "javelin", &["knight"]).unwrap();
+            assert!(ranged.reactions.waiting.is_none());
+        }
+    }
+
+    #[test]
+    fn parry_raises_ac_against_the_triggering_attack_only() {
+        let mut ogre = fixture_block("ogre");
+        ogre.actions.push(ability("pummel", vec![fx(serde_json::json!({"multiattack": {"steps": [{"action": {"action_id": "fist", "count": 2}}]}}))], None));
+        ogre.actions.push(smash(100, "1d4", 0));
+        ogre.actions.last_mut().unwrap().id = "fist".into();
+        let mut state = answering(&windowed(ogre, fixture_block("knight"), "ally", 1), vec![ReactionAnswer::Take("parry".into())]);
+        let events = act(&mut state, "ogre", "pummel", &["knight"]).unwrap();
+        let attacks: Vec<&str> = events.iter().filter(|e| e.kind.starts_with("attack")).map(|e| e.message.as_str()).collect();
+        assert_eq!(attacks.len(), 3, "{attacks:?}");
+        assert!(attacks[1].contains("vs AC 20 (hit) after Parry"), "{attacks:?}");
+        assert!(attacks[2].contains("vs AC 18 ("), "{attacks:?}");
+        assert!(state.active_modifiers.is_empty(), "{:?}", state.active_modifiers);
+    }
+
+    /// `a` moves away from `b` and `c`, initiative a, b, c, with windows on.
+    fn windowed_move(claw_damage: i32) -> EncounterState {
+        let mut state = provoking_encounter(claw_damage);
+        state.settings.reaction_windows = true;
+        answering(&state, vec![])
+    }
+
+    fn move_away(state: &mut EncounterState, opportunity: &[OpportunityAttack], declined: &[&str]) -> Vec<EngineEvent> {
+        let declined: Vec<String> = declined.iter().map(|d| d.to_string()).collect();
+        move_combatant(state, "a", None, RangeBand::Far, 35, opportunity, &declined).unwrap()
+    }
+
+    #[test]
+    fn riposte_shows_its_agent_clause_after_the_recheck() {
+        for seed in 1..400 {
+            let mut state = answering(&windowed(fixture_block("ogre"), fixture_block("pirate-captain"), "ally", seed), vec![ReactionAnswer::Take("riposte".into())]);
+            let events = act(&mut state, "ogre", "greatclub", &["pirate-captain"]).unwrap();
+            let Some(recheck) = events.iter().position(|e| e.kind == "attack_rechecked") else { continue };
+            let clause = events.iter().position(|e| e.kind == "agent_clause").expect("clause");
+            assert_eq!(clause, recheck + 1);
+            assert!(events[clause].message.starts_with("pirate-captain Riposte, agent clause: On a miss"), "{}", events[clause].message);
+            return;
+        }
+        panic!("no seed hit");
+    }
+
+    #[test]
+    fn opportunity_windows_open_in_initiative_order_before_any_attack() {
+        let base = windowed_move(1);
+        let mut first = base.clone();
+        assert!(move_away(&mut first, &[], &[]).is_empty());
+        assert_eq!(first.reactions.waiting.as_ref().unwrap().reactor_id, "b");
+        assert_eq!(first.reactions.waiting.as_ref().unwrap().trigger, WindowTrigger::Opportunity { mover_id: "a".into() });
+        let mut second = base.clone();
+        assert!(move_away(&mut second, &[oa("b", Some("claw"))], &[]).is_empty(), "b's attack waits for c's window");
+        assert_eq!(second.reactions.waiting.as_ref().unwrap().reactor_id, "c");
+        assert_eq!(second.combatants[0].hp, base.combatants[0].hp);
+    }
+
+    #[test]
+    fn a_reactor_named_on_the_move_gets_no_window() {
+        let mut state = windowed_move(1);
+        move_away(&mut state, &[oa("c", None)], &[]);
+        assert_eq!(state.reactions.waiting.as_ref().unwrap().reactor_id, "b");
+    }
+
+    #[test]
+    fn taking_one_window_and_declining_the_other_makes_one_attack() {
+        let mut state = windowed_move(1);
+        let events = move_away(&mut state, &[oa("b", Some("claw"))], &["c"]);
+        assert!(state.reactions.waiting.is_none());
+        assert_eq!(events.iter().filter(|e| e.kind == "attack").count(), 1);
+        assert!(state.combatants[1].action_economy.reaction_used);
+        assert!(!state.combatants[2].action_economy.reaction_used);
+        assert!(events.iter().all(|e| e.actor_id.as_deref() != Some("c")), "a declined reactor leaves no notice: {events:?}");
+        assert_eq!(state.combatants[0].ranges["b"], RangeBand::Far);
+    }
+
+    #[test]
+    fn a_mover_downed_by_a_window_attack_stops() {
+        let mut state = windowed_move(50);
+        let events = move_away(&mut state, &[oa("b", Some("claw")), oa("c", Some("claw"))], &[]);
+        assert_eq!(events.last().unwrap().kind, "move_stopped");
+        assert!(!state.combatants[2].action_economy.reaction_used);
+        assert_eq!(state.combatants[0].ranges["b"], RangeBand::Engaged);
+    }
+
+    #[test]
+    fn passing_every_window_moves_like_before_with_the_notices() {
+        let mut passing = provoking_encounter(1);
+        passing.settings.reaction_windows = true;
+        let mut before = provoking_encounter(1);
+        let passed = move_away(&mut passing, &[], &[]);
+        let old = move_away(&mut before, &[], &[]);
+        assert_eq!(serde_json::to_value(&passed).unwrap(), serde_json::to_value(&old).unwrap());
+        assert_eq!(passed.iter().filter(|e| e.kind == "opportunity_attack").count(), 2);
+        assert_eq!(passing.game_hash(), { before.settings.reaction_windows = true; before.game_hash() });
+    }
+
+    #[test]
+    fn a_window_attack_that_hits_the_moving_caster_opens_shield_inside_the_move() {
+        for seed in 1..400 {
+            let mut state = windowed(fixture_block("ogre"), party_block(CASTER), "ally", seed);
+            state.active_turn = Some(CASTER.into());
+            set_band(&mut state, 1, CASTER, "ogre", RangeBand::Engaged).unwrap();
+            let state = answering(&state, vec![]);
+            let mut run = state.clone();
+            let mover = |s: &mut EncounterState, oas: &[OpportunityAttack]| move_combatant(s, CASTER, None, RangeBand::Near, 5, oas, &[]).unwrap();
+            assert!(mover(&mut run, &[]).is_empty());
+            assert_eq!(run.reactions.waiting.as_ref().unwrap().reactor_id, "ogre");
+            let mut taken = state.clone();
+            let events = mover(&mut taken, &[oa("ogre", Some("greatclub"))]);
+            if !events.iter().any(|e| e.kind == "attack" && e.message.contains("(hit)")) {
+                continue;
+            }
+            let window = taken.reactions.waiting.expect("shield window");
+            assert_eq!((window.reactor_id.as_str(), window.options[0].id.as_str()), (CASTER, "shield"));
+            let mut shielded = answering(&state, vec![ReactionAnswer::Take("shield".into())]);
+            let events = mover(&mut shielded, &[oa("ogre", Some("greatclub"))]);
+            let kinds: Vec<&str> = events.iter().map(|e| e.kind.as_str()).collect();
+            assert!(kinds.windows(2).any(|w| w == ["attack", "reaction"]), "{kinds:?}");
+            assert!(kinds.contains(&"movement"), "{kinds:?}");
+            return;
+        }
+        panic!("no seed hit");
+    }
+
+    #[test]
+    fn windows_stay_shut_when_the_encounter_does_not_open_them() {
+        let mut state = answering(&shieldable(), vec![]);
+        state.settings.reaction_windows = false;
+        act(&mut state, "ogre", "greatclub", &[CASTER]).unwrap();
+        assert!(state.reactions.waiting.is_none());
+        let mut moving = provoking_encounter(1);
+        moving.reactions.decider = crate::reaction::ReactionDecider::Queued(Default::default());
+        assert!(!move_away(&mut moving, &[], &[]).is_empty());
+        assert!(moving.reactions.waiting.is_none());
+    }
+
+    #[test]
+    fn an_old_stored_move_without_declined_still_loads() {
+        let old = serde_json::json!({"move": {"actor_id": "a", "target_id": null, "band": "far", "feet": 35}});
+        let request: StepRequest = serde_json::from_value(old.clone()).unwrap();
+        assert!(matches!(&request, StepRequest::Move { declined, .. } if declined.is_empty()));
+        assert_eq!(serde_json::to_value(&request).unwrap(), old);
     }
 }

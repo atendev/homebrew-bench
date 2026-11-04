@@ -121,11 +121,26 @@
   "proficiency_bonus": 2,
   "reactions": [
     {
-      "default_resolution": "skipped",
       "desc": "Trigger: The bandit is hit by a melee attack roll while holding a weapon. Response: The bandit adds 2 to its AC against that attack, possibly causing it to miss.",
+      "effects": [
+        {
+          "timed_modifier": {
+            "change": {
+              "add": 2
+            },
+            "duration": "triggering_attack",
+            "target": "armor_class"
+          }
+        }
+      ],
       "id": "parry",
-      "kind": "unmodeled",
-      "name": "Parry"
+      "kind": "modeled",
+      "name": "Parry",
+      "trigger": {
+        "hit_by_attack_roll": {
+          "attack": "melee"
+        }
+      }
     }
   ],
   "saving_throws": {

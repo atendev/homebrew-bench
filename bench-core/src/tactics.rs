@@ -1163,6 +1163,7 @@ mod tests {
             agent_clauses: vec![],
             default_resolution: None,
             usage: None,
+            trigger: None,
         }
     }
 
@@ -1219,6 +1220,7 @@ mod tests {
             log: vec![],
             tamper_hash: String::new(),
             player_dice: Default::default(),
+            reactions: Default::default(),
         }
     }
 

@@ -391,7 +391,8 @@ None.
 - `bandit-captain` `actions.multiattack`: classified modeled
 - `bandit-captain` `actions.pistol`: classified modeled
 - `bandit-captain` `actions.scimitar`: classified modeled
-- `bandit-captain` `reactions.parry`: classified unmodeled (default skipped)
+- `bandit-captain` `reactions.parry`: Parry pattern: hit trigger and AC modifier from the prose; holding a weapon is assumed
+- `bandit-captain` `reactions.parry`: classified modeled
 - `barbed-devil` `actions.claws`: classified partly_modeled
 - `barbed-devil` `actions.hurl-flame`: classified partly_modeled
 - `barbed-devil` `actions.multiattack`: classified modeled
@@ -637,7 +638,8 @@ None.
 - `erinyes` `actions.multiattack`: classified modeled
 - `erinyes` `actions.multiattack.effects`: correction applied: Upstream makes Entangling Rope a fixed Multiattack step, but prose says the erinyes can use it, so the use is optional. [erinyes actions.multiattack.desc: "The erinyes makes three Withering Sword attacks and can use Entangling Rope."]
 - `erinyes` `actions.withering-sword`: classified modeled
-- `erinyes` `reactions.parry`: classified unmodeled (default skipped)
+- `erinyes` `reactions.parry`: Parry pattern: hit trigger and AC modifier from the prose; holding a weapon is assumed
+- `erinyes` `reactions.parry`: classified modeled
 - `erinyes` `traits.diabolical-restoration`: classified unmodeled (default skipped)
 - `erinyes` `traits.magic-resistance`: classified unmodeled (default skipped)
 - `erinyes` `traits.magic-rope`: classified unmodeled (default skipped)
@@ -788,7 +790,8 @@ None.
 - `gladiator` `actions.multiattack`: classified modeled
 - `gladiator` `actions.shield-bash`: classified partly_modeled
 - `gladiator` `actions.spear`: classified modeled
-- `gladiator` `reactions.parry`: classified unmodeled (default skipped)
+- `gladiator` `reactions.parry`: Parry pattern: hit trigger and AC modifier from the prose; holding a weapon is assumed
+- `gladiator` `reactions.parry`: classified modeled
 - `gnoll-warrior` `actions.bone-bow`: classified modeled
 - `gnoll-warrior` `actions.rend`: classified modeled
 - `gnoll-warrior` `bonus_actions.rampage`: classified unmodeled (default skipped)
@@ -943,7 +946,8 @@ None.
 - `knight` `actions.greatsword`: classified modeled
 - `knight` `actions.heavy-crossbow`: classified modeled
 - `knight` `actions.multiattack`: classified modeled
-- `knight` `reactions.parry`: classified unmodeled (default skipped)
+- `knight` `reactions.parry`: Parry pattern: hit trigger and AC modifier from the prose; holding a weapon is assumed
+- `knight` `reactions.parry`: classified modeled
 - `kobold-warrior` `actions.dagger`: classified modeled
 - `kobold-warrior` `traits.pack-tactics`: classified unmodeled (default skipped)
 - `kobold-warrior` `traits.sunlight-sensitivity`: classified modeled
@@ -1017,7 +1021,8 @@ None.
 - `marilith` `actions.multiattack`: classified modeled
 - `marilith` `actions.pact-blade`: classified modeled
 - `marilith` `bonus_actions.teleport`: classified unmodeled (default skipped)
-- `marilith` `reactions.parry`: classified unmodeled (default skipped)
+- `marilith` `reactions.parry`: Parry pattern: hit trigger and AC modifier from the prose; holding a weapon is assumed
+- `marilith` `reactions.parry`: classified modeled
 - `marilith` `traits.demonic-restoration`: classified unmodeled (default skipped)
 - `marilith` `traits.magic-resistance`: classified unmodeled (default skipped)
 - `marilith` `traits.reactive`: classified unmodeled (default skipped)
@@ -1092,7 +1097,8 @@ None.
 - `nightmare` `traits.confer-fire-resistance`: classified unmodeled (default skipped)
 - `nightmare` `traits.illumination`: classified unmodeled (default skipped)
 - `noble` `actions.rapier`: classified modeled
-- `noble` `reactions.parry`: classified unmodeled (default skipped)
+- `noble` `reactions.parry`: Parry pattern: hit trigger and AC modifier from the prose; holding a weapon is assumed
+- `noble` `reactions.parry`: classified modeled
 - `ochre-jelly` `actions.pseudopod`: classified modeled
 - `ochre-jelly` `reactions.split`: classified unmodeled (default skipped)
 - `ochre-jelly` `traits.amorphous`: classified unmodeled (default skipped)
@@ -1137,7 +1143,8 @@ None.
 - `pirate-captain` `actions.multiattack`: classified modeled
 - `pirate-captain` `actions.pistol`: classified modeled
 - `pirate-captain` `actions.rapier`: classified partly_modeled
-- `pirate-captain` `reactions.riposte`: classified unmodeled (default skipped)
+- `pirate-captain` `reactions.riposte`: Parry pattern: hit trigger and AC modifier from the prose; holding a weapon is assumed
+- `pirate-captain` `reactions.riposte`: classified partly_modeled
 - `pit-fiend` `actions.bite`: classified partly_modeled
 - `pit-fiend` `actions.devilish-claw`: classified modeled
 - `pit-fiend` `actions.fiery-mace`: classified modeled
@@ -1555,7 +1562,8 @@ None.
 - `warrior-veteran` `actions.greatsword`: classified modeled
 - `warrior-veteran` `actions.heavy-crossbow`: classified modeled
 - `warrior-veteran` `actions.multiattack`: classified modeled
-- `warrior-veteran` `reactions.parry`: classified unmodeled (default skipped)
+- `warrior-veteran` `reactions.parry`: Parry pattern: hit trigger and AC modifier from the prose; holding a weapon is assumed
+- `warrior-veteran` `reactions.parry`: classified modeled
 - `water-elemental` `actions.multiattack`: classified modeled
 - `water-elemental` `actions.slam`: classified partly_modeled
 - `water-elemental` `actions.whelm`: classified partly_modeled

@@ -582,6 +582,7 @@ fn fight(spec: &BatchSpec, constants: &PolicyConstants, level: u8, index: u64, w
         individual_initiative: true,
         pc_dice: PcDice::Engine,
         lighting: spec.lighting,
+        reaction_windows: false,
     })
     .map_err(|e| BatchError::Invalid(e.to_string()))?;
     state.log.clear();
@@ -660,7 +661,7 @@ fn take_turn(state: &mut EncounterState, actor: &str, constants: &PolicyConstant
                     let fallback = tactics::fallback(state, actor, constants);
                     log.line(format!("  {}", fallback.log_line()));
                     for m in &fallback.movement {
-                        let request = StepRequest::Move { actor_id: actor.into(), target_id: Some(m.target_id.clone()), band: m.band, feet: m.feet, opportunity: vec![] };
+                        let request = StepRequest::Move { actor_id: actor.into(), target_id: Some(m.target_id.clone()), band: m.band, feet: m.feet, opportunity: vec![], declined: vec![] };
                         if let Ok(events) = engine::step_events(state, request) {
                             log.events(state, &events, damage);
                         }
@@ -679,7 +680,7 @@ fn execute(state: &mut EncounterState, plan: &tactics::Plan) -> Result<Vec<Engin
         let left = m.feet;
         events.extend(engine::step_events(
             state,
-            StepRequest::Move { actor_id: plan.actor_id.clone(), target_id: Some(m.target_id.clone()), band: m.band, feet: left, opportunity: vec![] },
+            StepRequest::Move { actor_id: plan.actor_id.clone(), target_id: Some(m.target_id.clone()), band: m.band, feet: left, opportunity: vec![], declined: vec![] },
         )?);
     }
     state.player_dice.picks = plan.picks.iter().cloned().collect();
@@ -1363,6 +1364,7 @@ mod tests {
             agent_clauses: vec![],
             default_resolution: None,
             usage: None,
+            trigger: None,
         });
         let report = run(&spec(monster, vec![1], 1)).unwrap();
         let expected = "Spell `acid-arrow` at level 4: The later damage increases by 1d4 for each spell slot level above 2 is not applied; results may understate this monster.";
@@ -1397,6 +1399,7 @@ mod tests {
             agent_clauses: vec![],
             default_resolution: Some(DefaultResolution::Skipped),
             usage: None,
+            trigger: None,
         });
         let report = run(&spec(monster, vec![1], 1)).unwrap();
         assert!(report.summary.warnings.iter().any(|w| w.contains("Odd Aura")));
@@ -1438,6 +1441,7 @@ mod tests {
             individual_initiative: true,
             pc_dice: PcDice::Engine,
             lighting: Lighting::Unspecified,
+            reaction_windows: false,
         })
         .unwrap();
         let ogre = state.combatants.iter().find(|c| c.side_id != PARTY_SIDE).unwrap().id.clone();

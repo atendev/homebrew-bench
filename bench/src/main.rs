@@ -185,9 +185,13 @@ enum Commands {
     Respond {
         /// Die faces or choices the prompt asks for.
         values: Vec<u32>,
-        /// Decline the prompt; for dice prompts the engine rolls the rest.
+        /// Decline the prompt; for dice prompts the engine rolls the rest, and a
+        /// reaction prompt passes its window.
         #[arg(long)]
         decline: bool,
+        /// Take the reaction a reaction prompt offers. Name its id when more than one is offered.
+        #[arg(long, value_name = "ID", num_args = 0..=1, default_missing_value = "")]
+        take: Option<String>,
         #[command(flatten)]
         at: At,
     },
@@ -556,6 +560,7 @@ fn run(command: Commands) -> Result<String, CodedError> {
                     DiceMode::Ask => PcDice::Ask,
                 },
                 lighting: lighting.into(),
+                reaction_windows: true,
             };
             let (state, outcome) = live::start(spec).map_err(|e| coded(e, false))?;
             let (state_path, log_path) = store::files_for(&dir, &id);
@@ -591,7 +596,7 @@ fn run(command: Commands) -> Result<String, CodedError> {
         Commands::Move { actor, band, target, feet, opportunity, at } => {
             step(&at, Command::Move { actor, target, band: band.into(), feet, opportunity })
         }
-        Commands::Respond { values, decline, at } => step(&at, Command::Respond { values, decline }),
+        Commands::Respond { values, decline, take, at } => step(&at, Command::Respond { values, decline, take }),
         Commands::EndTurn { legendary, at } => step(&at, Command::EndTurn { legendary }),
         Commands::End { reason, at } => step(&at, Command::End { reason }),
         Commands::Override { path, value, clear: _, standing, why, at } => {

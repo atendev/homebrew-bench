@@ -19,6 +19,7 @@ pub mod log;
 pub mod override_path;
 pub mod party;
 pub mod paths;
+pub mod reaction;
 pub mod rng;
 pub mod schema;
 pub mod spell;
