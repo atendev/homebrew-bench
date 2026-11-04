@@ -4,7 +4,7 @@ title: Build v3 scoring for buffs, forced movement and teleports
 type: task
 mode: AFK
 status: open
-blocked_by: [046, 058, 059, 060, 061, 062, 063, 065, 066, 068]
+blocked_by: [046, 058, 059, 060, 061, 062, 063, 065, 066, 068, 069]
 claimed: false
 ---
 
@@ -39,10 +39,11 @@ Baseline: regenerate `data/baseline/curve.json` once, with lighting `unspecified
 - [Build modifier bearers and Speed modifiers](065-build-modifier-bearers-and-speed-modifiers.md) moves the engine version and makes Speed modifiers count.
 - [Build Haste extra action and lethargy](066-build-haste-extra-action-and-lethargy.md) moves the engine version.
 - [Build attack-roll condition sources](068-build-attack-roll-condition-sources.md) moves the engine version.
+- [Build saving-throw condition sources](069-build-saving-throw-condition-sources.md) moves the engine version.
 
 After the regeneration, clean up the stale-curve allowances so the tests again require a fresh curve:
 - Remove all four accepted reasons (engine, fixture set, party, policy) from `stale_beyond_the_engine` in `bench-core/tests/calibration.rs` and from `batch_compares_against_the_embedded_curve_outside_the_repo` in `bench/tests/cli.rs`.
-- Remove the `#[ignore]` on `a_fixture_regenerates_to_its_committed_row`, whichever ticket added it (059, 061, 063, 065, 066 or 068).
+- Remove the `#[ignore]` on `a_fixture_regenerates_to_its_committed_row`, whichever ticket added it (059, 061, 063, 065, 066, 068 or 069).
 
 Report how the dragon cells moved between the old curve and the new one in the Resolution. [Do dragons still read above their CR on the v3 curve](064-do-dragons-still-read-above-cr-on-the-v3-curve.md) reads them next.
 
