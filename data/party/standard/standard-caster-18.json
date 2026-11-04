@@ -220,8 +220,7 @@
     },
     {
       "agent_clauses": [
-        "Target gains an extra action each turn that can only be used for Attack (one attack), Dash, Disengage, Hide, or Utilize.",
-        "When the spell ends, the target is Incapacitated and has Speed 0 until the end of its next turn."
+        "The extra action can also Dash, Hide or Utilize."
       ],
       "desc": "Level 3 spell. Cast Haste.",
       "effects": [

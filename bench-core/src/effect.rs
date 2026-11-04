@@ -257,6 +257,12 @@ pub enum Duration {
     /// Ends once the attack that opened the reaction window has resolved (Parry).
     /// Only an entry with a hit trigger may use it.
     TriggeringAttack,
+    /// Lasts until the end of the bearer's next turn; a turn under way when it is applied
+    /// does not count (Haste's lethargy). The engine turns it into `until_end_of_turn` when
+    /// that next turn starts.
+    UntilEndOfNextTurn,
+    /// Ends when the bearer's current turn ends.
+    UntilEndOfTurn,
 }
 
 /// Timed modifier applied to a combatant.
@@ -274,6 +280,10 @@ pub struct TimedModifier {
     /// The modifier ends when its bearer takes damage, as Hypnotic Pattern's Speed 0 does.
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub ends_on_damage: bool,
+    /// Effects that land on the bearer when this modifier ends, with the modifier's source as
+    /// the actor (Haste's lethargy). They don't fire when the encounter ends.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub on_end: Vec<Effect>,
 }
 
 /// The creature a timed modifier lands on.
@@ -306,6 +316,32 @@ pub enum ModifierTarget {
     AbilityChecks { ability: Option<Ability> },
     DamageRolls,
     Reactions,
+    /// One extra action on each of the bearer's turns, limited to `only`; an empty list allows
+    /// any action. Its change is `none`.
+    ExtraAction {
+        #[serde(default)]
+        only: Vec<ExtraActionUse>,
+    },
+}
+
+/// What an extra action may be spent on.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, schemars::JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum ExtraActionUse {
+    /// An action whose effects are exactly one single-target attack.
+    OneAttack,
+    /// The Disengage action.
+    Disengage,
+}
+
+impl ExtraActionUse {
+    /// The snake_case spelling used in state files, refusals and the digest.
+    pub fn as_str(self) -> &'static str {
+        match self {
+            ExtraActionUse::OneAttack => "one_attack",
+            ExtraActionUse::Disengage => "disengage",
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, schemars::JsonSchema)]

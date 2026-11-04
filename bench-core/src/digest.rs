@@ -118,6 +118,11 @@ fn build(state: &EncounterState, public: bool) -> Value {
     if !public {
         digest["legendary"] = serde_json::to_value(engine::legendary_holders(state)).unwrap_or_default();
     }
+    let shown = state.active_turn.as_deref().filter(|id| !public || state.is_party(id));
+    if let Some(uses) = shown.and_then(|id| engine::extra_action_uses(state, id)) {
+        let uses: Vec<&str> = if uses.is_empty() { vec!["any"] } else { uses.iter().map(|u| u.as_str()).collect() };
+        digest["extra_action"] = Value::from(uses);
+    }
     digest
 }
 

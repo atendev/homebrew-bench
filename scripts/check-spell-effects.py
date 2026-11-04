@@ -116,6 +116,8 @@ def render_effect_fact(effect: dict) -> list[str]:
         if isinstance(change, dict):
             change = next(iter(change.items()))
         facts.append(f"modifier: {target} {change}")
+        for on_end in mod.get("on_end", []):
+            facts.extend(render_effect_fact(on_end))
     if "teleport" in effect:
         facts.append(f"teleport up to {effect['teleport']['range']} feet")
     if "area" in effect:

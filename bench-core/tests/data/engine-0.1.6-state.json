@@ -1,0 +1,1603 @@
+{
+  "id": "haste-0-1-6",
+  "engine_version": "0.1.6",
+  "origin_directory": "/tmp/tmp.lk2boOnDy5",
+  "stat_blocks": [
+    {
+      "id": "standard-caster-05",
+      "stat_block": {
+        "id": "standard-caster-05",
+        "name": "Standard Caster (Level 5)",
+        "source": "homebrew-bench standard party",
+        "schema_version": "1",
+        "size": "medium",
+        "type": "humanoid",
+        "alignment": "unaligned",
+        "armor_class": [
+          {
+            "value": 12,
+            "source": "robes"
+          }
+        ],
+        "hit_points": {
+          "average": 32,
+          "dice": "5d6+10"
+        },
+        "speeds": {
+          "walk": {
+            "feet": 30
+          }
+        },
+        "ability_scores": {
+          "strength": 8,
+          "dexterity": 14,
+          "constitution": 14,
+          "intelligence": 18,
+          "wisdom": 12,
+          "charisma": 10
+        },
+        "saving_throws": {
+          "int": 7,
+          "wis": 4
+        },
+        "skills": {
+          "arcana": 7
+        },
+        "initiative": 2,
+        "proficiency_bonus": 3,
+        "senses": {
+          "passive_perception": 11
+        },
+        "languages": [
+          "Common"
+        ],
+        "actions": [
+          {
+            "id": "dagger",
+            "name": "Dagger",
+            "desc": "Melee weapon attack, +5 to hit.",
+            "kind": "modeled",
+            "effects": [
+              {
+                "attack": {
+                  "modifier": 5,
+                  "reach": 5,
+                  "range": null,
+                  "target_count": 1,
+                  "damage": [
+                    {
+                      "dice": "1d4",
+                      "type": "piercing",
+                      "modifier": 2,
+                      "magical": false
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "id": "fire-bolt",
+            "name": "Fire Bolt",
+            "desc": "Cantrip. Cast Fire Bolt.",
+            "kind": "modeled",
+            "effects": [
+              {
+                "cast": {
+                  "spell_id": "fire-bolt",
+                  "slot_level": null,
+                  "upcast": false
+                }
+              }
+            ],
+            "usage": "at_will"
+          },
+          {
+            "id": "magic-missile",
+            "name": "Magic Missile",
+            "desc": "Level 1 spell. Cast Magic Missile.",
+            "kind": "partly_modeled",
+            "effects": [
+              {
+                "cast": {
+                  "spell_id": "magic-missile",
+                  "slot_level": 1,
+                  "upcast": false
+                }
+              }
+            ],
+            "agent_clauses": [
+              "Each dart hits a visible target of the caster's choice; the engine treats them as auto-hit damage instances."
+            ]
+          },
+          {
+            "id": "burning-hands",
+            "name": "Burning Hands",
+            "desc": "Level 1 spell. Cast Burning Hands.",
+            "kind": "modeled",
+            "effects": [
+              {
+                "cast": {
+                  "spell_id": "burning-hands",
+                  "slot_level": 1,
+                  "upcast": false
+                }
+              }
+            ]
+          },
+          {
+            "id": "sleep",
+            "name": "Sleep",
+            "desc": "Level 1 spell. Cast Sleep.",
+            "kind": "partly_modeled",
+            "effects": [
+              {
+                "cast": {
+                  "spell_id": "sleep",
+                  "slot_level": 1,
+                  "upcast": false
+                }
+              }
+            ],
+            "agent_clauses": [
+              "Creatures that do not sleep or are immune to Exhaustion automatically succeed on saves.",
+              "The spell ends on a target if it takes damage or a creature within 5 feet uses an action to shake it awake."
+            ]
+          },
+          {
+            "id": "scorching-ray",
+            "name": "Scorching Ray",
+            "desc": "Level 2 spell. Cast Scorching Ray.",
+            "kind": "partly_modeled",
+            "effects": [
+              {
+                "cast": {
+                  "spell_id": "scorching-ray",
+                  "slot_level": 2,
+                  "upcast": false
+                }
+              }
+            ],
+            "agent_clauses": [
+              "Distribute rays among targets as desired."
+            ]
+          },
+          {
+            "id": "shatter",
+            "name": "Shatter",
+            "desc": "Level 2 spell. Cast Shatter.",
+            "kind": "modeled",
+            "effects": [
+              {
+                "cast": {
+                  "spell_id": "shatter",
+                  "slot_level": 2,
+                  "upcast": false
+                }
+              }
+            ]
+          },
+          {
+            "id": "hold-person",
+            "name": "Hold Person",
+            "desc": "Level 2 spell. Cast Hold Person.",
+            "kind": "partly_modeled",
+            "effects": [
+              {
+                "cast": {
+                  "spell_id": "hold-person",
+                  "slot_level": 2,
+                  "upcast": false
+                }
+              }
+            ],
+            "agent_clauses": [
+              "Only Humanoids can be targeted.",
+              "Target repeats the save at the end of each of its turns, ending the spell on a success."
+            ]
+          },
+          {
+            "id": "invisibility",
+            "name": "Invisibility",
+            "desc": "Level 2 spell. Cast Invisibility.",
+            "kind": "partly_modeled",
+            "effects": [
+              {
+                "cast": {
+                  "spell_id": "invisibility",
+                  "slot_level": 2,
+                  "upcast": false
+                }
+              }
+            ],
+            "agent_clauses": [
+              "The spell ends early immediately after the target makes an attack roll, deals damage, or casts a spell."
+            ]
+          },
+          {
+            "id": "lightning-bolt",
+            "name": "Lightning Bolt",
+            "desc": "Level 3 spell. Cast Lightning Bolt.",
+            "kind": "modeled",
+            "effects": [
+              {
+                "cast": {
+                  "spell_id": "lightning-bolt",
+                  "slot_level": 3,
+                  "upcast": false
+                }
+              }
+            ]
+          },
+          {
+            "id": "fireball",
+            "name": "Fireball",
+            "desc": "Level 3 spell. Cast Fireball.",
+            "kind": "modeled",
+            "effects": [
+              {
+                "cast": {
+                  "spell_id": "fireball",
+                  "slot_level": 3,
+                  "upcast": false
+                }
+              }
+            ]
+          },
+          {
+            "id": "hypnotic-pattern",
+            "name": "Hypnotic Pattern",
+            "desc": "Level 3 spell. Cast Hypnotic Pattern.",
+            "kind": "partly_modeled",
+            "effects": [
+              {
+                "cast": {
+                  "spell_id": "hypnotic-pattern",
+                  "slot_level": 3,
+                  "upcast": false
+                }
+              }
+            ],
+            "agent_clauses": [
+              "Only creatures that can see the pattern are affected.",
+              "The spell ends on an affected creature if it takes damage or a creature uses an action to shake it awake."
+            ]
+          },
+          {
+            "id": "haste",
+            "name": "Haste",
+            "desc": "Level 3 spell. Cast Haste.",
+            "kind": "partly_modeled",
+            "effects": [
+              {
+                "cast": {
+                  "spell_id": "haste",
+                  "slot_level": 3,
+                  "upcast": false
+                }
+              }
+            ],
+            "agent_clauses": [
+              "Target gains an extra action each turn that can only be used for Attack (one attack), Dash, Disengage, Hide, or Utilize.",
+              "When the spell ends, the target is Incapacitated and has Speed 0 until the end of its next turn."
+            ]
+          }
+        ],
+        "reactions": [
+          {
+            "id": "shield",
+            "name": "Shield",
+            "desc": "Level 1 spell. Cast Shield.",
+            "kind": "partly_modeled",
+            "effects": [
+              {
+                "cast": {
+                  "spell_id": "shield",
+                  "slot_level": 1,
+                  "upcast": false
+                }
+              }
+            ],
+            "agent_clauses": [
+              "No damage from Magic Missile while the modifier lasts."
+            ],
+            "trigger": {
+              "hit_by_attack_roll": {
+                "attack": "any"
+              }
+            }
+          }
+        ],
+        "legendary_uses_per_round": 0,
+        "class": "Caster",
+        "level": 5,
+        "spell_slots": [
+          4,
+          3,
+          2,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "dying": true,
+        "death_saves": {
+          "successes": 0,
+          "failures": 0
+        },
+        "gear": [
+          "robes",
+          "dagger",
+          "arcane focus",
+          "spellbook"
+        ],
+        "spellcasting": {
+          "ability": "int",
+          "save_dc": 15,
+          "attack_bonus": 7
+        },
+        "notes": [
+          "Approximates a robed arcane caster (wizard). A calibration role, not class fidelity.",
+          "No magic items; gear exists only as numbers in this stat block."
+        ]
+      },
+      "hash": "5b13cbdada4ef22982bf6d4f6906c504"
+    },
+    {
+      "id": "standard-striker-03",
+      "stat_block": {
+        "id": "standard-striker-03",
+        "name": "Standard Striker (Level 3)",
+        "source": "homebrew-bench standard party",
+        "schema_version": "1",
+        "size": "medium",
+        "type": "humanoid",
+        "alignment": "unaligned",
+        "armor_class": [
+          {
+            "value": 15,
+            "source": "studded leather"
+          }
+        ],
+        "hit_points": {
+          "average": 28,
+          "dice": "3d10+6"
+        },
+        "speeds": {
+          "walk": {
+            "feet": 30
+          }
+        },
+        "ability_scores": {
+          "strength": 10,
+          "dexterity": 16,
+          "constitution": 14,
+          "intelligence": 10,
+          "wisdom": 14,
+          "charisma": 8
+        },
+        "saving_throws": {
+          "int": 2,
+          "dex": 5
+        },
+        "skills": {
+          "perception": 4,
+          "stealth": 5
+        },
+        "initiative": 3,
+        "proficiency_bonus": 2,
+        "senses": {
+          "passive_perception": 14
+        },
+        "languages": [
+          "Common"
+        ],
+        "actions": [
+          {
+            "id": "longbow",
+            "name": "Longbow",
+            "desc": "Ranged weapon attack, +7 to hit.",
+            "kind": "modeled",
+            "effects": [
+              {
+                "attack": {
+                  "modifier": 7,
+                  "reach": null,
+                  "range": [
+                    150,
+                    600
+                  ],
+                  "target_count": 1,
+                  "damage": [
+                    {
+                      "dice": "1d8",
+                      "type": "piercing",
+                      "modifier": 3,
+                      "magical": false
+                    },
+                    {
+                      "dice": "2d6",
+                      "type": "piercing",
+                      "modifier": 0,
+                      "magical": false
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "id": "shortsword",
+            "name": "Shortsword",
+            "desc": "Melee weapon attack, +5 to hit.",
+            "kind": "modeled",
+            "effects": [
+              {
+                "attack": {
+                  "modifier": 5,
+                  "reach": 5,
+                  "range": null,
+                  "target_count": 1,
+                  "damage": [
+                    {
+                      "dice": "1d6",
+                      "type": "piercing",
+                      "modifier": 3,
+                      "magical": false
+                    },
+                    {
+                      "dice": "2d6",
+                      "type": "piercing",
+                      "modifier": 0,
+                      "magical": false
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        ],
+        "legendary_uses_per_round": 0,
+        "class": "Striker",
+        "level": 3,
+        "dying": true,
+        "death_saves": {
+          "successes": 0,
+          "failures": 0
+        },
+        "gear": [
+          "studded leather",
+          "longbow",
+          "shortsword"
+        ],
+        "notes": [
+          "Approximates a ranged skirmisher with precision damage (rogue or ranger). A calibration role, not class fidelity. One attack per action: the precision dice stand in for a once-per-turn bonus and apply to every hit, so there is no extra-attack progression.",
+          "No magic items; gear exists only as numbers in this stat block."
+        ]
+      },
+      "hash": "f275a28bf66ce7bbde867feb1b35b08d"
+    },
+    {
+      "id": "ogre",
+      "stat_block": {
+        "id": "ogre",
+        "name": "Ogre",
+        "source": "srd-5.2.1",
+        "schema_version": "1",
+        "size": "large",
+        "type": "giant",
+        "alignment": "chaotic evil",
+        "armor_class": [
+          {
+            "value": 11
+          }
+        ],
+        "hit_points": {
+          "average": 68,
+          "dice": "8d10+24"
+        },
+        "speeds": {
+          "walk": {
+            "feet": 40
+          }
+        },
+        "ability_scores": {
+          "strength": 19,
+          "dexterity": 8,
+          "constitution": 16,
+          "intelligence": 5,
+          "wisdom": 7,
+          "charisma": 7
+        },
+        "initiative": -1,
+        "proficiency_bonus": 2,
+        "senses": {
+          "darkvision": 60,
+          "passive_perception": 8
+        },
+        "languages": [
+          "Common",
+          "Giant"
+        ],
+        "challenge_rating": 2.0,
+        "xp": 450,
+        "actions": [
+          {
+            "id": "greatclub",
+            "name": "Greatclub",
+            "desc": "Melee Attack Roll: +6, reach 5 ft. Hit: 13 (2d8 + 4) Bludgeoning damage.",
+            "kind": "modeled",
+            "effects": [
+              {
+                "attack": {
+                  "modifier": 6,
+                  "reach": 5,
+                  "range": null,
+                  "target_count": 1,
+                  "damage": [
+                    {
+                      "dice": "2d8",
+                      "type": "bludgeoning",
+                      "modifier": 4,
+                      "magical": false
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "id": "javelin",
+            "name": "Javelin",
+            "desc": "Melee or Ranged Attack Roll: +6, reach 5 ft. or range 30/120 ft. Hit: 11 (2d6 + 4) Piercing damage.",
+            "kind": "modeled",
+            "effects": [
+              {
+                "attack": {
+                  "modifier": 6,
+                  "reach": 5,
+                  "range": [
+                    30,
+                    120
+                  ],
+                  "target_count": 1,
+                  "damage": [
+                    {
+                      "dice": "2d6",
+                      "type": "piercing",
+                      "modifier": 4,
+                      "magical": false
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        ],
+        "legendary_uses_per_round": 0,
+        "dying": false,
+        "death_saves": {
+          "successes": 0,
+          "failures": 0
+        }
+      },
+      "hash": "513810699640a98027e260207dfa30fd"
+    }
+  ],
+  "sides": [
+    {
+      "id": "party",
+      "name": "Party"
+    },
+    {
+      "id": "monsters",
+      "name": "Monsters"
+    }
+  ],
+  "combatants": [
+    {
+      "id": "standard-caster-05",
+      "stat_block_id": "standard-caster-05",
+      "name": "Standard Caster (Level 5)",
+      "side_id": "party",
+      "hp": 32,
+      "temp_hp": 0,
+      "max_hp": 32,
+      "conditions": [],
+      "concentration": "haste",
+      "resources": {
+        "standard-caster-05:slot:3": 1
+      },
+      "action_economy": {
+        "action_used": true,
+        "bonus_action_used": false,
+        "reaction_used": false,
+        "movement_used_feet": 0
+      },
+      "engagement": [],
+      "ranges": {
+        "ogre": "near"
+      },
+      "end_state": "active",
+      "death_saves": {
+        "successes": 0,
+        "failures": 0
+      }
+    },
+    {
+      "id": "standard-striker-03",
+      "stat_block_id": "standard-striker-03",
+      "name": "Standard Striker (Level 3)",
+      "side_id": "party",
+      "hp": 28,
+      "temp_hp": 0,
+      "max_hp": 28,
+      "conditions": [],
+      "concentration": null,
+      "resources": {},
+      "action_economy": {
+        "action_used": true,
+        "bonus_action_used": false,
+        "reaction_used": false,
+        "movement_used_feet": 0
+      },
+      "engagement": [],
+      "ranges": {
+        "ogre": "near"
+      },
+      "end_state": "active",
+      "death_saves": {
+        "successes": 0,
+        "failures": 0
+      }
+    },
+    {
+      "id": "ogre",
+      "stat_block_id": "ogre",
+      "name": "Ogre",
+      "side_id": "monsters",
+      "hp": 68,
+      "temp_hp": 0,
+      "max_hp": 68,
+      "conditions": [],
+      "concentration": null,
+      "resources": {},
+      "action_economy": {
+        "action_used": false,
+        "bonus_action_used": false,
+        "reaction_used": false,
+        "movement_used_feet": 0
+      },
+      "engagement": [],
+      "ranges": {
+        "standard-striker-03": "near",
+        "standard-caster-05": "near"
+      },
+      "end_state": "active",
+      "death_saves": {
+        "successes": 0,
+        "failures": 0
+      }
+    }
+  ],
+  "round": 2,
+  "initiative_order": [
+    "standard-caster-05",
+    "standard-striker-03",
+    "ogre"
+  ],
+  "active_turn": "standard-caster-05",
+  "active_modifiers": [
+    {
+      "target": "speed",
+      "change": "double",
+      "remaining": "concentration",
+      "source": "standard-caster-05",
+      "bearer": "standard-striker-03",
+      "source_ability": "haste"
+    },
+    {
+      "target": "armor_class",
+      "change": {
+        "add": 2
+      },
+      "remaining": "concentration",
+      "source": "standard-caster-05",
+      "bearer": "standard-striker-03",
+      "source_ability": "haste"
+    },
+    {
+      "target": {
+        "saving_throws": {
+          "ability": "dex"
+        }
+      },
+      "change": "advantage",
+      "remaining": "concentration",
+      "source": "standard-caster-05",
+      "bearer": "standard-striker-03",
+      "source_ability": "haste"
+    }
+  ],
+  "command_history": [
+    {
+      "name": "end-turn",
+      "args": {
+        "command": "end_turn"
+      },
+      "state_hash": "e41af2ad4e7eda0ec799936be24ffbfb"
+    },
+    {
+      "name": "disengage",
+      "args": {
+        "actor": "standard-striker-03",
+        "command": "disengage"
+      },
+      "state_hash": "35eb3ac159edee4d4c5648f721413297"
+    },
+    {
+      "name": "end-turn",
+      "args": {
+        "command": "end_turn"
+      },
+      "state_hash": "66f3f0a5da414d02ac80b7e427159199"
+    },
+    {
+      "name": "end-turn",
+      "args": {
+        "command": "end_turn"
+      },
+      "state_hash": "6aaed2b7d7e8052d1af7e97c09afd564"
+    },
+    {
+      "name": "action",
+      "args": {
+        "action": "haste",
+        "actor": "standard-caster-05",
+        "command": "action",
+        "targets": [
+          "standard-striker-03"
+        ]
+      },
+      "state_hash": "8c133073284292512719ccc696006b4c"
+    }
+  ],
+  "rng": {
+    "algorithm": "chacha8",
+    "initial_seed": 7,
+    "cursor": 3
+  },
+  "initiative_rolls": {
+    "ogre": 10,
+    "standard-caster-05": 22,
+    "standard-striker-03": 20
+  },
+  "settings": {
+    "pc_dice": "engine",
+    "reaction_windows": true
+  },
+  "initial_snapshot": {
+    "id": "haste-0-1-6",
+    "engine_version": "0.1.6",
+    "origin_directory": "/tmp/tmp.lk2boOnDy5",
+    "stat_blocks": [
+      {
+        "id": "standard-caster-05",
+        "stat_block": {
+          "id": "standard-caster-05",
+          "name": "Standard Caster (Level 5)",
+          "source": "homebrew-bench standard party",
+          "schema_version": "1",
+          "size": "medium",
+          "type": "humanoid",
+          "alignment": "unaligned",
+          "armor_class": [
+            {
+              "value": 12,
+              "source": "robes"
+            }
+          ],
+          "hit_points": {
+            "average": 32,
+            "dice": "5d6+10"
+          },
+          "speeds": {
+            "walk": {
+              "feet": 30
+            }
+          },
+          "ability_scores": {
+            "strength": 8,
+            "dexterity": 14,
+            "constitution": 14,
+            "intelligence": 18,
+            "wisdom": 12,
+            "charisma": 10
+          },
+          "saving_throws": {
+            "wis": 4,
+            "int": 7
+          },
+          "skills": {
+            "arcana": 7
+          },
+          "initiative": 2,
+          "proficiency_bonus": 3,
+          "senses": {
+            "passive_perception": 11
+          },
+          "languages": [
+            "Common"
+          ],
+          "actions": [
+            {
+              "id": "dagger",
+              "name": "Dagger",
+              "desc": "Melee weapon attack, +5 to hit.",
+              "kind": "modeled",
+              "effects": [
+                {
+                  "attack": {
+                    "modifier": 5,
+                    "reach": 5,
+                    "range": null,
+                    "target_count": 1,
+                    "damage": [
+                      {
+                        "dice": "1d4",
+                        "type": "piercing",
+                        "modifier": 2,
+                        "magical": false
+                      }
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "id": "fire-bolt",
+              "name": "Fire Bolt",
+              "desc": "Cantrip. Cast Fire Bolt.",
+              "kind": "modeled",
+              "effects": [
+                {
+                  "cast": {
+                    "spell_id": "fire-bolt",
+                    "slot_level": null,
+                    "upcast": false
+                  }
+                }
+              ],
+              "usage": "at_will"
+            },
+            {
+              "id": "magic-missile",
+              "name": "Magic Missile",
+              "desc": "Level 1 spell. Cast Magic Missile.",
+              "kind": "partly_modeled",
+              "effects": [
+                {
+                  "cast": {
+                    "spell_id": "magic-missile",
+                    "slot_level": 1,
+                    "upcast": false
+                  }
+                }
+              ],
+              "agent_clauses": [
+                "Each dart hits a visible target of the caster's choice; the engine treats them as auto-hit damage instances."
+              ]
+            },
+            {
+              "id": "burning-hands",
+              "name": "Burning Hands",
+              "desc": "Level 1 spell. Cast Burning Hands.",
+              "kind": "modeled",
+              "effects": [
+                {
+                  "cast": {
+                    "spell_id": "burning-hands",
+                    "slot_level": 1,
+                    "upcast": false
+                  }
+                }
+              ]
+            },
+            {
+              "id": "sleep",
+              "name": "Sleep",
+              "desc": "Level 1 spell. Cast Sleep.",
+              "kind": "partly_modeled",
+              "effects": [
+                {
+                  "cast": {
+                    "spell_id": "sleep",
+                    "slot_level": 1,
+                    "upcast": false
+                  }
+                }
+              ],
+              "agent_clauses": [
+                "Creatures that do not sleep or are immune to Exhaustion automatically succeed on saves.",
+                "The spell ends on a target if it takes damage or a creature within 5 feet uses an action to shake it awake."
+              ]
+            },
+            {
+              "id": "scorching-ray",
+              "name": "Scorching Ray",
+              "desc": "Level 2 spell. Cast Scorching Ray.",
+              "kind": "partly_modeled",
+              "effects": [
+                {
+                  "cast": {
+                    "spell_id": "scorching-ray",
+                    "slot_level": 2,
+                    "upcast": false
+                  }
+                }
+              ],
+              "agent_clauses": [
+                "Distribute rays among targets as desired."
+              ]
+            },
+            {
+              "id": "shatter",
+              "name": "Shatter",
+              "desc": "Level 2 spell. Cast Shatter.",
+              "kind": "modeled",
+              "effects": [
+                {
+                  "cast": {
+                    "spell_id": "shatter",
+                    "slot_level": 2,
+                    "upcast": false
+                  }
+                }
+              ]
+            },
+            {
+              "id": "hold-person",
+              "name": "Hold Person",
+              "desc": "Level 2 spell. Cast Hold Person.",
+              "kind": "partly_modeled",
+              "effects": [
+                {
+                  "cast": {
+                    "spell_id": "hold-person",
+                    "slot_level": 2,
+                    "upcast": false
+                  }
+                }
+              ],
+              "agent_clauses": [
+                "Only Humanoids can be targeted.",
+                "Target repeats the save at the end of each of its turns, ending the spell on a success."
+              ]
+            },
+            {
+              "id": "invisibility",
+              "name": "Invisibility",
+              "desc": "Level 2 spell. Cast Invisibility.",
+              "kind": "partly_modeled",
+              "effects": [
+                {
+                  "cast": {
+                    "spell_id": "invisibility",
+                    "slot_level": 2,
+                    "upcast": false
+                  }
+                }
+              ],
+              "agent_clauses": [
+                "The spell ends early immediately after the target makes an attack roll, deals damage, or casts a spell."
+              ]
+            },
+            {
+              "id": "lightning-bolt",
+              "name": "Lightning Bolt",
+              "desc": "Level 3 spell. Cast Lightning Bolt.",
+              "kind": "modeled",
+              "effects": [
+                {
+                  "cast": {
+                    "spell_id": "lightning-bolt",
+                    "slot_level": 3,
+                    "upcast": false
+                  }
+                }
+              ]
+            },
+            {
+              "id": "fireball",
+              "name": "Fireball",
+              "desc": "Level 3 spell. Cast Fireball.",
+              "kind": "modeled",
+              "effects": [
+                {
+                  "cast": {
+                    "spell_id": "fireball",
+                    "slot_level": 3,
+                    "upcast": false
+                  }
+                }
+              ]
+            },
+            {
+              "id": "hypnotic-pattern",
+              "name": "Hypnotic Pattern",
+              "desc": "Level 3 spell. Cast Hypnotic Pattern.",
+              "kind": "partly_modeled",
+              "effects": [
+                {
+                  "cast": {
+                    "spell_id": "hypnotic-pattern",
+                    "slot_level": 3,
+                    "upcast": false
+                  }
+                }
+              ],
+              "agent_clauses": [
+                "Only creatures that can see the pattern are affected.",
+                "The spell ends on an affected creature if it takes damage or a creature uses an action to shake it awake."
+              ]
+            },
+            {
+              "id": "haste",
+              "name": "Haste",
+              "desc": "Level 3 spell. Cast Haste.",
+              "kind": "partly_modeled",
+              "effects": [
+                {
+                  "cast": {
+                    "spell_id": "haste",
+                    "slot_level": 3,
+                    "upcast": false
+                  }
+                }
+              ],
+              "agent_clauses": [
+                "Target gains an extra action each turn that can only be used for Attack (one attack), Dash, Disengage, Hide, or Utilize.",
+                "When the spell ends, the target is Incapacitated and has Speed 0 until the end of its next turn."
+              ]
+            }
+          ],
+          "reactions": [
+            {
+              "id": "shield",
+              "name": "Shield",
+              "desc": "Level 1 spell. Cast Shield.",
+              "kind": "partly_modeled",
+              "effects": [
+                {
+                  "cast": {
+                    "spell_id": "shield",
+                    "slot_level": 1,
+                    "upcast": false
+                  }
+                }
+              ],
+              "agent_clauses": [
+                "No damage from Magic Missile while the modifier lasts."
+              ],
+              "trigger": {
+                "hit_by_attack_roll": {
+                  "attack": "any"
+                }
+              }
+            }
+          ],
+          "legendary_uses_per_round": 0,
+          "class": "Caster",
+          "level": 5,
+          "spell_slots": [
+            4,
+            3,
+            2,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "dying": true,
+          "death_saves": {
+            "successes": 0,
+            "failures": 0
+          },
+          "gear": [
+            "robes",
+            "dagger",
+            "arcane focus",
+            "spellbook"
+          ],
+          "spellcasting": {
+            "ability": "int",
+            "save_dc": 15,
+            "attack_bonus": 7
+          },
+          "notes": [
+            "Approximates a robed arcane caster (wizard). A calibration role, not class fidelity.",
+            "No magic items; gear exists only as numbers in this stat block."
+          ]
+        },
+        "hash": "5b13cbdada4ef22982bf6d4f6906c504"
+      },
+      {
+        "id": "standard-striker-03",
+        "stat_block": {
+          "id": "standard-striker-03",
+          "name": "Standard Striker (Level 3)",
+          "source": "homebrew-bench standard party",
+          "schema_version": "1",
+          "size": "medium",
+          "type": "humanoid",
+          "alignment": "unaligned",
+          "armor_class": [
+            {
+              "value": 15,
+              "source": "studded leather"
+            }
+          ],
+          "hit_points": {
+            "average": 28,
+            "dice": "3d10+6"
+          },
+          "speeds": {
+            "walk": {
+              "feet": 30
+            }
+          },
+          "ability_scores": {
+            "strength": 10,
+            "dexterity": 16,
+            "constitution": 14,
+            "intelligence": 10,
+            "wisdom": 14,
+            "charisma": 8
+          },
+          "saving_throws": {
+            "dex": 5,
+            "int": 2
+          },
+          "skills": {
+            "stealth": 5,
+            "perception": 4
+          },
+          "initiative": 3,
+          "proficiency_bonus": 2,
+          "senses": {
+            "passive_perception": 14
+          },
+          "languages": [
+            "Common"
+          ],
+          "actions": [
+            {
+              "id": "longbow",
+              "name": "Longbow",
+              "desc": "Ranged weapon attack, +7 to hit.",
+              "kind": "modeled",
+              "effects": [
+                {
+                  "attack": {
+                    "modifier": 7,
+                    "reach": null,
+                    "range": [
+                      150,
+                      600
+                    ],
+                    "target_count": 1,
+                    "damage": [
+                      {
+                        "dice": "1d8",
+                        "type": "piercing",
+                        "modifier": 3,
+                        "magical": false
+                      },
+                      {
+                        "dice": "2d6",
+                        "type": "piercing",
+                        "modifier": 0,
+                        "magical": false
+                      }
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "id": "shortsword",
+              "name": "Shortsword",
+              "desc": "Melee weapon attack, +5 to hit.",
+              "kind": "modeled",
+              "effects": [
+                {
+                  "attack": {
+                    "modifier": 5,
+                    "reach": 5,
+                    "range": null,
+                    "target_count": 1,
+                    "damage": [
+                      {
+                        "dice": "1d6",
+                        "type": "piercing",
+                        "modifier": 3,
+                        "magical": false
+                      },
+                      {
+                        "dice": "2d6",
+                        "type": "piercing",
+                        "modifier": 0,
+                        "magical": false
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          ],
+          "legendary_uses_per_round": 0,
+          "class": "Striker",
+          "level": 3,
+          "dying": true,
+          "death_saves": {
+            "successes": 0,
+            "failures": 0
+          },
+          "gear": [
+            "studded leather",
+            "longbow",
+            "shortsword"
+          ],
+          "notes": [
+            "Approximates a ranged skirmisher with precision damage (rogue or ranger). A calibration role, not class fidelity. One attack per action: the precision dice stand in for a once-per-turn bonus and apply to every hit, so there is no extra-attack progression.",
+            "No magic items; gear exists only as numbers in this stat block."
+          ]
+        },
+        "hash": "f275a28bf66ce7bbde867feb1b35b08d"
+      },
+      {
+        "id": "ogre",
+        "stat_block": {
+          "id": "ogre",
+          "name": "Ogre",
+          "source": "srd-5.2.1",
+          "schema_version": "1",
+          "size": "large",
+          "type": "giant",
+          "alignment": "chaotic evil",
+          "armor_class": [
+            {
+              "value": 11
+            }
+          ],
+          "hit_points": {
+            "average": 68,
+            "dice": "8d10+24"
+          },
+          "speeds": {
+            "walk": {
+              "feet": 40
+            }
+          },
+          "ability_scores": {
+            "strength": 19,
+            "dexterity": 8,
+            "constitution": 16,
+            "intelligence": 5,
+            "wisdom": 7,
+            "charisma": 7
+          },
+          "initiative": -1,
+          "proficiency_bonus": 2,
+          "senses": {
+            "darkvision": 60,
+            "passive_perception": 8
+          },
+          "languages": [
+            "Common",
+            "Giant"
+          ],
+          "challenge_rating": 2.0,
+          "xp": 450,
+          "actions": [
+            {
+              "id": "greatclub",
+              "name": "Greatclub",
+              "desc": "Melee Attack Roll: +6, reach 5 ft. Hit: 13 (2d8 + 4) Bludgeoning damage.",
+              "kind": "modeled",
+              "effects": [
+                {
+                  "attack": {
+                    "modifier": 6,
+                    "reach": 5,
+                    "range": null,
+                    "target_count": 1,
+                    "damage": [
+                      {
+                        "dice": "2d8",
+                        "type": "bludgeoning",
+                        "modifier": 4,
+                        "magical": false
+                      }
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "id": "javelin",
+              "name": "Javelin",
+              "desc": "Melee or Ranged Attack Roll: +6, reach 5 ft. or range 30/120 ft. Hit: 11 (2d6 + 4) Piercing damage.",
+              "kind": "modeled",
+              "effects": [
+                {
+                  "attack": {
+                    "modifier": 6,
+                    "reach": 5,
+                    "range": [
+                      30,
+                      120
+                    ],
+                    "target_count": 1,
+                    "damage": [
+                      {
+                        "dice": "2d6",
+                        "type": "piercing",
+                        "modifier": 4,
+                        "magical": false
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          ],
+          "legendary_uses_per_round": 0,
+          "dying": false,
+          "death_saves": {
+            "successes": 0,
+            "failures": 0
+          }
+        },
+        "hash": "513810699640a98027e260207dfa30fd"
+      }
+    ],
+    "sides": [
+      {
+        "id": "party",
+        "name": "Party"
+      },
+      {
+        "id": "monsters",
+        "name": "Monsters"
+      }
+    ],
+    "combatants": [
+      {
+        "id": "standard-caster-05",
+        "stat_block_id": "standard-caster-05",
+        "name": "Standard Caster (Level 5)",
+        "side_id": "party",
+        "hp": 32,
+        "temp_hp": 0,
+        "max_hp": 32,
+        "conditions": [],
+        "concentration": null,
+        "resources": {},
+        "action_economy": {
+          "action_used": false,
+          "bonus_action_used": false,
+          "reaction_used": false,
+          "movement_used_feet": 0
+        },
+        "engagement": [],
+        "ranges": {
+          "ogre": "near"
+        },
+        "end_state": "active",
+        "death_saves": {
+          "successes": 0,
+          "failures": 0
+        }
+      },
+      {
+        "id": "standard-striker-03",
+        "stat_block_id": "standard-striker-03",
+        "name": "Standard Striker (Level 3)",
+        "side_id": "party",
+        "hp": 28,
+        "temp_hp": 0,
+        "max_hp": 28,
+        "conditions": [],
+        "concentration": null,
+        "resources": {},
+        "action_economy": {
+          "action_used": false,
+          "bonus_action_used": false,
+          "reaction_used": false,
+          "movement_used_feet": 0
+        },
+        "engagement": [],
+        "ranges": {
+          "ogre": "near"
+        },
+        "end_state": "active",
+        "death_saves": {
+          "successes": 0,
+          "failures": 0
+        }
+      },
+      {
+        "id": "ogre",
+        "stat_block_id": "ogre",
+        "name": "Ogre",
+        "side_id": "monsters",
+        "hp": 68,
+        "temp_hp": 0,
+        "max_hp": 68,
+        "conditions": [],
+        "concentration": null,
+        "resources": {},
+        "action_economy": {
+          "action_used": false,
+          "bonus_action_used": false,
+          "reaction_used": false,
+          "movement_used_feet": 0
+        },
+        "engagement": [],
+        "ranges": {
+          "standard-caster-05": "near",
+          "standard-striker-03": "near"
+        },
+        "end_state": "active",
+        "death_saves": {
+          "successes": 0,
+          "failures": 0
+        }
+      }
+    ],
+    "round": 1,
+    "initiative_order": [
+      "standard-caster-05",
+      "standard-striker-03",
+      "ogre"
+    ],
+    "active_turn": "standard-caster-05",
+    "rng": {
+      "algorithm": "chacha8",
+      "initial_seed": 7,
+      "cursor": 3
+    },
+    "initiative_rolls": {
+      "standard-striker-03": 20,
+      "ogre": 10,
+      "standard-caster-05": 22
+    },
+    "settings": {
+      "pc_dice": "engine",
+      "reaction_windows": true
+    },
+    "tamper_hash": ""
+  },
+  "log": [
+    {
+      "index": 0,
+      "command": "start",
+      "round": 0,
+      "lines": [
+        {
+          "text": "START encounter haste-0-1-6 (seed 7, pc dice engine, lighting unspecified, engine 0.1.6)",
+          "public": {
+            "kind": "replaced",
+            "text": "START encounter haste-0-1-6 (pc dice engine, lighting unspecified, engine 0.1.6)"
+          }
+        },
+        {
+          "text": "standard-caster-05 (Standard Caster (Level 5)) on party, near, 32/32 HP"
+        },
+        {
+          "text": "standard-striker-03 (Standard Striker (Level 3)) on party, near, 28/28 HP"
+        },
+        {
+          "text": "ogre (Ogre) on monsters, near"
+        },
+        {
+          "text": "standard-caster-05 rolled 22"
+        },
+        {
+          "text": "standard-striker-03 rolled 20"
+        },
+        {
+          "text": "ogre rolled 10"
+        }
+      ],
+      "state_hash": "8199b1ea4d11659cf20432e311a05699"
+    },
+    {
+      "index": 1,
+      "command": "end-turn",
+      "round": 1,
+      "turn": "standard-caster-05",
+      "lines": [
+        {
+          "text": "standard-caster-05 ends its turn"
+        },
+        {
+          "text": "standard-striker-03 starts its turn"
+        }
+      ],
+      "state_hash": "e41af2ad4e7eda0ec799936be24ffbfb"
+    },
+    {
+      "index": 2,
+      "command": "disengage",
+      "round": 1,
+      "turn": "standard-striker-03",
+      "lines": [
+        {
+          "text": "standard-striker-03 takes the Disengage action"
+        }
+      ],
+      "state_hash": "35eb3ac159edee4d4c5648f721413297"
+    },
+    {
+      "index": 3,
+      "command": "end-turn",
+      "round": 1,
+      "turn": "standard-striker-03",
+      "lines": [
+        {
+          "text": "standard-striker-03 ends its turn"
+        },
+        {
+          "text": "ogre starts its turn"
+        }
+      ],
+      "state_hash": "66f3f0a5da414d02ac80b7e427159199"
+    },
+    {
+      "index": 4,
+      "command": "end-turn",
+      "round": 1,
+      "turn": "ogre",
+      "lines": [
+        {
+          "text": "ogre ends its turn"
+        },
+        {
+          "text": "standard-caster-05 starts its turn"
+        }
+      ],
+      "state_hash": "6aaed2b7d7e8052d1af7e97c09afd564"
+    },
+    {
+      "index": 5,
+      "command": "action",
+      "round": 2,
+      "turn": "standard-caster-05",
+      "lines": [
+        {
+          "text": "standard-caster-05 casts haste"
+        },
+        {
+          "text": "standard-caster-05 begins concentrating on haste"
+        },
+        {
+          "text": "standard-striker-03 gains haste from standard-caster-05"
+        },
+        {
+          "text": "standard-striker-03 gains haste from standard-caster-05"
+        },
+        {
+          "text": "standard-striker-03 gains haste from standard-caster-05"
+        }
+      ],
+      "state_hash": "8c133073284292512719ccc696006b4c"
+    }
+  ],
+  "tamper_hash": "5082995d7eee20be4659ed2043ad5325"
+}
