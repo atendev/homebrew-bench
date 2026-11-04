@@ -4,7 +4,7 @@ title: Build v3 scoring for buffs, forced movement and teleports
 type: task
 mode: AFK
 status: open
-blocked_by: [046, 058, 059, 060, 061, 062, 063, 065, 066, 067]
+blocked_by: [046, 058, 059, 060, 061, 062, 063, 065, 066, 068]
 claimed: false
 ---
 
@@ -25,6 +25,7 @@ Scoring:
 - Teleports score the Opportunity Attacks they avoid by calling 063's penalty function: eligible engaged reactors the policy would attack with, each at its `opportunity_value`. This replaces ticket 045's "sum of `best_single_attack` over engaged foes that still have their reaction", because 046 decided the mover prices only the attacks the policy really takes. The penalty and the reserve return 0 at or past `MAX_THREAT_NESTING` (063 builds that guard), because the teleport score calls the penalty, which reaches `threat()` and `ability_value` and can come back to a teleport. Keep the guard, and add a test: a stat block whose actions include a teleport and a Multiattack that uses it, engaged with a reactor that has Parry, gets a plan without overflowing the stack, as the Dryad test does for control.
 - `TempHp` and `RollModifier` share the zero-value arm and stay at zero.
 - Fix `disposition` in `tactics.rs`: it sums and clamps, so an attacker with two Advantage sources and one Disadvantage source scores as Advantage. Use the two-flag rule from ticket 061 (both or neither is straight), with a test that two of one and one of the other score straight.
+- The policy's `disposition` must also read the sources [Align attack-roll condition sources](../closed/067-align-attack-roll-condition-sources-with-2024-rules.md) added (ADR 0017): Prone by engagement, Grappled and Frightened by `source`, Invisible through the sight rule, downed PCs as Unconscious. Call the engine's `disposition` (ticket [068](068-build-attack-roll-condition-sources.md) makes it `pub(crate)`) instead of keeping a second list, reading engagement as the plan leaves it when the plan moves, and test that a ranged plan against a Prone target scores Disadvantage.
 - Check how far standard-party cells shift when caster Haste starts scoring, from a scratch run outside the repo, and record it in the Resolution.
 - The batch report's method sentence: rewrite the "gives buffs and other unscored effects no value" half. 063 already rewrote the reactions half.
 
@@ -37,10 +38,11 @@ Baseline: regenerate `data/baseline/curve.json` once, with lighting `unspecified
 - [Build batch reactions policy](063-build-batch-reactions-policy.md) moves the policy to v3.
 - [Build modifier bearers and Speed modifiers](065-build-modifier-bearers-and-speed-modifiers.md) moves the engine version and makes Speed modifiers count.
 - [Build Haste extra action and lethargy](066-build-haste-extra-action-and-lethargy.md) moves the engine version.
+- [Build attack-roll condition sources](068-build-attack-roll-condition-sources.md) moves the engine version.
 
 After the regeneration, clean up the stale-curve allowances so the tests again require a fresh curve:
 - Remove all four accepted reasons (engine, fixture set, party, policy) from `stale_beyond_the_engine` in `bench-core/tests/calibration.rs` and from `batch_compares_against_the_embedded_curve_outside_the_repo` in `bench/tests/cli.rs`.
-- Remove the `#[ignore]` on `a_fixture_regenerates_to_its_committed_row`, whichever ticket added it (059, 061, 063, 065 or 066).
+- Remove the `#[ignore]` on `a_fixture_regenerates_to_its_committed_row`, whichever ticket added it (059, 061, 063, 065, 066 or 068).
 
 Report how the dragon cells moved between the old curve and the new one in the Resolution. [Do dragons still read above their CR on the v3 curve](064-do-dragons-still-read-above-cr-on-the-v3-curve.md) reads them next.
 
