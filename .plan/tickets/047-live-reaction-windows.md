@@ -18,4 +18,6 @@ Today the skill tells the agent to ask the user about reactions itself (`.agents
 
 Scope added by [Engine-rolled opportunity attacks](../closed/044-engine-rolled-opportunity-attacks.md): an opportunity-attack window is a held `Move` request whose prompt asks which listed reactors attack, and its answer fills the `opportunity` list. The build waits on the opportunity-attack build ticket.
 
+Scope added by [Live legendary actions](../closed/048-live-legendary-actions.md): a legendary window could be a held `EndTurn` request whose prompt lists eligible holders and their ready actions, and its answer fills the `legendary` list. Phase 1 has no prompt, only `digest.legendary`, so decide whether this window opens alongside the reaction windows.
+
 ## Resolution

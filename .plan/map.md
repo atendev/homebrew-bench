@@ -71,6 +71,8 @@ Both modes ship in phase 1. Everything the engine can't model is labeled agent j
 - [Batch policy scores buffs, forced movement and teleports](closed/045-batch-policy-scores-buffs-forced-movement-and-teleports.md): buffs score as self-only incoming-damage reduction over a two-round horizon, forced movement as a fraction of the target's threat in `control`, teleports as the opportunity attacks avoided, all in expected HP. No SRD fixture uses these effects, caster Haste may shift party cells, and the v3 bump and baseline regeneration happen once with the reactions build. Haste's extra action and ally buffs are left to a new ticket.
 - [Build Disengage and no-provoke traits](closed/054-build-disengage-and-no-provoke-traits.md): `bench disengage` sets a flag until the actor's turn ends, Flyby and Agile import as the `no_provoke` effect (Flyby read like Agile), one eligibility function reads both, the schema stays at version 1 by recorded exception, and batch output is unchanged. See `docs/adr/0015-opportunity-attacks-declared-on-the-move.md`.
 
+- [Live legendary actions](closed/048-live-legendary-actions.md): declared on `bench end-turn --legendary <holder>:<action-id>[=<target>,...]` and resolved between the end of one turn and the start of the next, several uses per window in the engine and one in batch, all usage kinds checked, a `digest.legendary` instead of a prompt, and the batch reorder landing with an `ENGINE_VERSION` bump that marks the baseline stale until the v3 build.
+
 ## Not yet specified
 
 - Dragons read a level or more above their CR on the baseline curve from tier 2 up, and the pit fiend and the lich stay hard at high CR (ticket 052). It is not yet clear whether the cause is the SRD's own CR choices, a tactics policy gap such as no reactions or no spreading out against breath weapons, or an engine modeling gap. The batch reactions ticket may answer part of it.
@@ -88,12 +90,12 @@ Both modes ship in phase 1. Everything the engine can't model is labeled agent j
 
 Takeable now, in order:
 
-- Live legendary actions (grilling)
 - Upcast spell scaling (grilling)
 - Encounter lighting setting (grilling)
 - Live reaction windows (grilling)
 - Batch policy takes reactions (grilling)
 - Haste extra action and ally-targeted buffs (grilling)
+- Build live legendary actions (task, AFK)
 
 Blocked:
 
