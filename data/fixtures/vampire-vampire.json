@@ -155,7 +155,8 @@
       "desc": "The vampire casts Command, requiring no spell components and using Charisma as the spellcasting ability (spell save DC 17). The vampire can’t take this action again until the start of its next turn.",
       "id": "beguile",
       "kind": "unmodeled",
-      "name": "Beguile"
+      "name": "Beguile",
+      "usage": "cooldown_until_next_turn"
     },
     {
       "default_resolution": "skipped",

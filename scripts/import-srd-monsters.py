@@ -19,7 +19,10 @@ Outputs (regenerated on every run):
 Blocking entries are classes a (structured field contradicts prose), b (structured field
 missing or not representable in the closed vocabulary) and c (contradicts an SRD ruleset
 table). The script exits 1 while any blocking entry is open. A correction that matches
-nothing upstream aborts the run. Prose is read only to detect mismatches, never to produce data.
+nothing upstream aborts the run. Prose is read only to detect mismatches, never to produce data,
+with two exceptions upstream has no field for: the exact Flyby/Agile sentence becomes no_provoke,
+and "can't take this action again until the start of its next turn" becomes
+cooldown_until_next_turn with a review note. See ADR 0008.
 """
 
 import json
@@ -144,6 +147,7 @@ def dice_text(dice, modifier):
     return f"{dice}{modifier:+d}" if modifier else dice
 
 
+COOLDOWN_RE = re.compile(r"\bThe [a-z]+(?: [a-z]+)* can.t take this action again until the start of its next turn\.")
 NO_PROVOKE = re.compile(r"^The [\w -]+ doesn.t provoke an Opportunity Attack when it (?:flies|moves) out of an enemy.s reach\.$")
 
 class Review:
@@ -279,6 +283,12 @@ class Converter:
                 self.rec("b", f"{base}.usage", f"prose says Recharge {prose.group(1)}-6 but no recharge usage")
             elif int(prose.group(1)) != int(usage["recharge"]["dice"][0]):
                 self.rec("a", f"{base}.usage", f"prose recharge {prose.group(1)} disagrees with structured usage")
+        if COOLDOWN_RE.search(raw.get("desc", "")):
+            if usage is None:
+                usage = "cooldown_until_next_turn"
+                self.rec("d", f"{base}.usage", "set to cooldown_until_next_turn from the prose")
+            else:
+                self.rec("a", f"{base}.usage", "prose says the action waits until the next turn, structured usage differs")
         per_day = PER_DAY_NAME_RE.search(raw["name"])
         if per_day:
             if usage is None or "per_day" not in usage:

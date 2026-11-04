@@ -185,7 +185,8 @@
       ],
       "id": "noxious-miasma",
       "kind": "partly_modeled",
-      "name": "Noxious Miasma"
+      "name": "Noxious Miasma",
+      "usage": "cooldown_until_next_turn"
     },
     {
       "default_resolution": "skipped",

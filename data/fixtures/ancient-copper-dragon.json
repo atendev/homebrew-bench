@@ -193,21 +193,24 @@
       ],
       "id": "giggling-magic",
       "kind": "partly_modeled",
-      "name": "Giggling Magic"
+      "name": "Giggling Magic",
+      "usage": "cooldown_until_next_turn"
     },
     {
       "default_resolution": "skipped",
       "desc": "The dragon uses Spellcasting to cast Mind Spike (level 4 version). The dragon can’t take this action again until the start of its next turn.",
       "id": "mind-jolt",
       "kind": "unmodeled",
-      "name": "Mind Jolt"
+      "name": "Mind Jolt",
+      "usage": "cooldown_until_next_turn"
     },
     {
       "default_resolution": "skipped",
       "desc": "The dragon can’t take this action again until the start of its next turn.",
       "id": "spike-level-5-version",
       "kind": "unmodeled",
-      "name": "Spike (level 5 version)"
+      "name": "Spike (level 5 version)",
+      "usage": "cooldown_until_next_turn"
     },
     {
       "default_resolution": "skipped",

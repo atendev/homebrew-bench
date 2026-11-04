@@ -15,6 +15,7 @@
 ### Changed
 
 - Batch takes legendary actions between the end of one turn and the start of the next. Before, a monster whose turn came next spent from a budget that had already reset, and its recharge and death-save rolls came first. Batch numbers for monsters with legendary actions change. The engine version is now 0.1.1, so `bench baseline status` and batch reports call the baseline curve stale until the next regeneration.
+- 44 SRD legendary actions that say the creature can't take them again until the start of its next turn now import with the `cooldown_until_next_turn` usage, mostly on adult and ancient dragons, the lich, the vampire and the mummy lord. Live mode refuses a second use in one round. Batch spends each at most once a round, so batch numbers can change for the 15 monsters whose cooldown action is modeled: 14 adult and ancient dragons and the lich. `bench baseline status` also reports the embedded fixture set as changed until the next regeneration.
 - The `opportunity_attack` notice now names only creatures that could still react: enemies that can act, can take reactions, have their reaction, and can see the mover. It no longer reports "has no reaction available", and allies never get it. A reactor that can't see the mover gets an `assumption` line instead.
 
 ## v0.1.0 - 2026-11-02

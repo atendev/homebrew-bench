@@ -231,7 +231,8 @@
       "desc": "The tarrasque moves up to its Speed. At the end of this movement, the tarrasque creates an instantaneous shock wave in a 60-foot Emanation originating from itself. Creatures in that area lose Concentration and, if Medium or smaller, have the Prone condition. The tarrasque can’t take this action again until the start of its next turn.",
       "id": "world-shaking-movement",
       "kind": "unmodeled",
-      "name": "World-Shaking Movement"
+      "name": "World-Shaking Movement",
+      "usage": "cooldown_until_next_turn"
     }
   ],
   "legendary_uses_per_round": 3,

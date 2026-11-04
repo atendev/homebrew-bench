@@ -151,9 +151,23 @@
     {
       "monster": "adult-black-dragon",
       "class": "d",
+      "path": "legendary_actions.cloud-of-insects.usage",
+      "status": "open",
+      "summary": "set to cooldown_until_next_turn from the prose"
+    },
+    {
+      "monster": "adult-black-dragon",
+      "class": "d",
       "path": "legendary_actions.frightful-presence",
       "status": "open",
       "summary": "classified unmodeled (default skipped)"
+    },
+    {
+      "monster": "adult-black-dragon",
+      "class": "d",
+      "path": "legendary_actions.frightful-presence.usage",
+      "status": "open",
+      "summary": "set to cooldown_until_next_turn from the prose"
     },
     {
       "monster": "adult-black-dragon",
@@ -228,9 +242,23 @@
     {
       "monster": "adult-blue-dragon",
       "class": "d",
+      "path": "legendary_actions.cloaked-flight.usage",
+      "status": "open",
+      "summary": "set to cooldown_until_next_turn from the prose"
+    },
+    {
+      "monster": "adult-blue-dragon",
+      "class": "d",
       "path": "legendary_actions.sonic-boom",
       "status": "open",
       "summary": "classified unmodeled (default skipped)"
+    },
+    {
+      "monster": "adult-blue-dragon",
+      "class": "d",
+      "path": "legendary_actions.sonic-boom.usage",
+      "status": "open",
+      "summary": "set to cooldown_until_next_turn from the prose"
     },
     {
       "monster": "adult-blue-dragon",
@@ -329,6 +357,13 @@
       "path": "legendary_actions.scorching-sands",
       "status": "open",
       "summary": "classified partly_modeled"
+    },
+    {
+      "monster": "adult-brass-dragon",
+      "class": "d",
+      "path": "legendary_actions.scorching-sands.usage",
+      "status": "open",
+      "summary": "set to cooldown_until_next_turn from the prose"
     },
     {
       "monster": "adult-brass-dragon",
@@ -508,9 +543,23 @@
     {
       "monster": "adult-copper-dragon",
       "class": "d",
+      "path": "legendary_actions.giggling-magic.usage",
+      "status": "open",
+      "summary": "set to cooldown_until_next_turn from the prose"
+    },
+    {
+      "monster": "adult-copper-dragon",
+      "class": "d",
       "path": "legendary_actions.mind-jolt",
       "status": "open",
       "summary": "classified unmodeled (default skipped)"
+    },
+    {
+      "monster": "adult-copper-dragon",
+      "class": "d",
+      "path": "legendary_actions.mind-jolt.usage",
+      "status": "open",
+      "summary": "set to cooldown_until_next_turn from the prose"
     },
     {
       "monster": "adult-copper-dragon",
@@ -599,6 +648,13 @@
     {
       "monster": "adult-gold-dragon",
       "class": "d",
+      "path": "legendary_actions.banish.usage",
+      "status": "open",
+      "summary": "set to cooldown_until_next_turn from the prose"
+    },
+    {
+      "monster": "adult-gold-dragon",
+      "class": "d",
       "path": "legendary_actions.guiding-light",
       "status": "open",
       "summary": "classified unmodeled (default skipped)"
@@ -683,6 +739,13 @@
     {
       "monster": "adult-green-dragon",
       "class": "d",
+      "path": "legendary_actions.noxious-miasma.usage",
+      "status": "open",
+      "summary": "set to cooldown_until_next_turn from the prose"
+    },
+    {
+      "monster": "adult-green-dragon",
+      "class": "d",
       "path": "legendary_actions.pounce",
       "status": "open",
       "summary": "classified unmodeled (default skipped)"
@@ -753,9 +816,23 @@
     {
       "monster": "adult-red-dragon",
       "class": "d",
+      "path": "legendary_actions.commanding-presence.usage",
+      "status": "open",
+      "summary": "set to cooldown_until_next_turn from the prose"
+    },
+    {
+      "monster": "adult-red-dragon",
+      "class": "d",
       "path": "legendary_actions.fiery-rays",
       "status": "open",
       "summary": "classified unmodeled (default skipped)"
+    },
+    {
+      "monster": "adult-red-dragon",
+      "class": "d",
+      "path": "legendary_actions.fiery-rays.usage",
+      "status": "open",
+      "summary": "set to cooldown_until_next_turn from the prose"
     },
     {
       "monster": "adult-red-dragon",
@@ -844,9 +921,23 @@
     {
       "monster": "adult-silver-dragon",
       "class": "d",
+      "path": "legendary_actions.chill.usage",
+      "status": "open",
+      "summary": "set to cooldown_until_next_turn from the prose"
+    },
+    {
+      "monster": "adult-silver-dragon",
+      "class": "d",
       "path": "legendary_actions.cold-gale",
       "status": "open",
       "summary": "classified partly_modeled"
+    },
+    {
+      "monster": "adult-silver-dragon",
+      "class": "d",
+      "path": "legendary_actions.cold-gale.usage",
+      "status": "open",
+      "summary": "set to cooldown_until_next_turn from the prose"
     },
     {
       "monster": "adult-silver-dragon",
@@ -900,6 +991,13 @@
     {
       "monster": "adult-white-dragon",
       "class": "d",
+      "path": "legendary_actions.freezing-burst.usage",
+      "status": "open",
+      "summary": "set to cooldown_until_next_turn from the prose"
+    },
+    {
+      "monster": "adult-white-dragon",
+      "class": "d",
       "path": "legendary_actions.frightful-presence",
       "status": "open",
       "summary": "classified unmodeled (default skipped)"
@@ -910,6 +1008,13 @@
       "path": "legendary_actions.frightful-presence",
       "status": "open",
       "summary": "spellcasting is not modeled; spells are absent from the stat block effects"
+    },
+    {
+      "monster": "adult-white-dragon",
+      "class": "d",
+      "path": "legendary_actions.frightful-presence.usage",
+      "status": "open",
+      "summary": "set to cooldown_until_next_turn from the prose"
     },
     {
       "monster": "adult-white-dragon",
@@ -1026,9 +1131,23 @@
     {
       "monster": "ancient-black-dragon",
       "class": "d",
+      "path": "legendary_actions.cloud-of-insects.usage",
+      "status": "open",
+      "summary": "set to cooldown_until_next_turn from the prose"
+    },
+    {
+      "monster": "ancient-black-dragon",
+      "class": "d",
       "path": "legendary_actions.frightful-presence",
       "status": "open",
       "summary": "classified unmodeled (default skipped)"
+    },
+    {
+      "monster": "ancient-black-dragon",
+      "class": "d",
+      "path": "legendary_actions.frightful-presence.usage",
+      "status": "open",
+      "summary": "set to cooldown_until_next_turn from the prose"
     },
     {
       "monster": "ancient-black-dragon",
@@ -1103,9 +1222,23 @@
     {
       "monster": "ancient-blue-dragon",
       "class": "d",
+      "path": "legendary_actions.cloaked-flight.usage",
+      "status": "open",
+      "summary": "set to cooldown_until_next_turn from the prose"
+    },
+    {
+      "monster": "ancient-blue-dragon",
+      "class": "d",
       "path": "legendary_actions.sonic-boom",
       "status": "open",
       "summary": "classified unmodeled (default skipped)"
+    },
+    {
+      "monster": "ancient-blue-dragon",
+      "class": "d",
+      "path": "legendary_actions.sonic-boom.usage",
+      "status": "open",
+      "summary": "set to cooldown_until_next_turn from the prose"
     },
     {
       "monster": "ancient-blue-dragon",
@@ -1204,6 +1337,13 @@
       "path": "legendary_actions.scorching-sands",
       "status": "open",
       "summary": "classified partly_modeled"
+    },
+    {
+      "monster": "ancient-brass-dragon",
+      "class": "d",
+      "path": "legendary_actions.scorching-sands.usage",
+      "status": "open",
+      "summary": "set to cooldown_until_next_turn from the prose"
     },
     {
       "monster": "ancient-brass-dragon",
@@ -1383,9 +1523,23 @@
     {
       "monster": "ancient-copper-dragon",
       "class": "d",
+      "path": "legendary_actions.giggling-magic.usage",
+      "status": "open",
+      "summary": "set to cooldown_until_next_turn from the prose"
+    },
+    {
+      "monster": "ancient-copper-dragon",
+      "class": "d",
       "path": "legendary_actions.mind-jolt",
       "status": "open",
       "summary": "classified unmodeled (default skipped)"
+    },
+    {
+      "monster": "ancient-copper-dragon",
+      "class": "d",
+      "path": "legendary_actions.mind-jolt.usage",
+      "status": "open",
+      "summary": "set to cooldown_until_next_turn from the prose"
     },
     {
       "monster": "ancient-copper-dragon",
@@ -1400,6 +1554,13 @@
       "path": "legendary_actions.spike-level-5-version",
       "status": "open",
       "summary": "classified unmodeled (default skipped)"
+    },
+    {
+      "monster": "ancient-copper-dragon",
+      "class": "d",
+      "path": "legendary_actions.spike-level-5-version.usage",
+      "status": "open",
+      "summary": "set to cooldown_until_next_turn from the prose"
     },
     {
       "monster": "ancient-copper-dragon",
@@ -1477,6 +1638,13 @@
       "path": "legendary_actions.banish",
       "status": "open",
       "summary": "classified partly_modeled"
+    },
+    {
+      "monster": "ancient-gold-dragon",
+      "class": "d",
+      "path": "legendary_actions.banish.usage",
+      "status": "open",
+      "summary": "set to cooldown_until_next_turn from the prose"
     },
     {
       "monster": "ancient-gold-dragon",
@@ -1565,6 +1733,13 @@
     {
       "monster": "ancient-green-dragon",
       "class": "d",
+      "path": "legendary_actions.noxious-miasma.usage",
+      "status": "open",
+      "summary": "set to cooldown_until_next_turn from the prose"
+    },
+    {
+      "monster": "ancient-green-dragon",
+      "class": "d",
       "path": "legendary_actions.pounce",
       "status": "open",
       "summary": "classified unmodeled (default skipped)"
@@ -1635,9 +1810,23 @@
     {
       "monster": "ancient-red-dragon",
       "class": "d",
+      "path": "legendary_actions.commanding-presence.usage",
+      "status": "open",
+      "summary": "set to cooldown_until_next_turn from the prose"
+    },
+    {
+      "monster": "ancient-red-dragon",
+      "class": "d",
       "path": "legendary_actions.fiery-rays",
       "status": "open",
       "summary": "classified unmodeled (default skipped)"
+    },
+    {
+      "monster": "ancient-red-dragon",
+      "class": "d",
+      "path": "legendary_actions.fiery-rays.usage",
+      "status": "open",
+      "summary": "set to cooldown_until_next_turn from the prose"
     },
     {
       "monster": "ancient-red-dragon",
@@ -1726,9 +1915,23 @@
     {
       "monster": "ancient-silver-dragon",
       "class": "d",
+      "path": "legendary_actions.chill.usage",
+      "status": "open",
+      "summary": "set to cooldown_until_next_turn from the prose"
+    },
+    {
+      "monster": "ancient-silver-dragon",
+      "class": "d",
       "path": "legendary_actions.cold-gale",
       "status": "open",
       "summary": "classified partly_modeled"
+    },
+    {
+      "monster": "ancient-silver-dragon",
+      "class": "d",
+      "path": "legendary_actions.cold-gale.usage",
+      "status": "open",
+      "summary": "set to cooldown_until_next_turn from the prose"
     },
     {
       "monster": "ancient-silver-dragon",
@@ -1782,6 +1985,13 @@
     {
       "monster": "ancient-white-dragon",
       "class": "d",
+      "path": "legendary_actions.freezing-burst.usage",
+      "status": "open",
+      "summary": "set to cooldown_until_next_turn from the prose"
+    },
+    {
+      "monster": "ancient-white-dragon",
+      "class": "d",
       "path": "legendary_actions.frightful-presence",
       "status": "open",
       "summary": "classified unmodeled (default skipped)"
@@ -1792,6 +2002,13 @@
       "path": "legendary_actions.frightful-presence",
       "status": "open",
       "summary": "spellcasting is not modeled; spells are absent from the stat block effects"
+    },
+    {
+      "monster": "ancient-white-dragon",
+      "class": "d",
+      "path": "legendary_actions.frightful-presence.usage",
+      "status": "open",
+      "summary": "set to cooldown_until_next_turn from the prose"
     },
     {
       "monster": "ancient-white-dragon",
@@ -6255,6 +6472,13 @@
     {
       "monster": "kraken",
       "class": "d",
+      "path": "legendary_actions.toxic-ink.usage",
+      "status": "open",
+      "summary": "set to cooldown_until_next_turn from the prose"
+    },
+    {
+      "monster": "kraken",
+      "class": "d",
       "path": "legendary_uses_per_round",
       "status": "open",
       "summary": "set to SRD default 3; upstream omits the count"
@@ -6395,6 +6619,13 @@
     {
       "monster": "lich",
       "class": "d",
+      "path": "legendary_actions.disrupt-life.usage",
+      "status": "open",
+      "summary": "set to cooldown_until_next_turn from the prose"
+    },
+    {
+      "monster": "lich",
+      "class": "d",
       "path": "legendary_actions.frightening-gaze",
       "status": "open",
       "summary": "classified unmodeled (default skipped)"
@@ -6405,6 +6636,13 @@
       "path": "legendary_actions.frightening-gaze",
       "status": "open",
       "summary": "spellcasting is not modeled; spells are absent from the stat block effects"
+    },
+    {
+      "monster": "lich",
+      "class": "d",
+      "path": "legendary_actions.frightening-gaze.usage",
+      "status": "open",
+      "summary": "set to cooldown_until_next_turn from the prose"
     },
     {
       "monster": "lich",
@@ -7004,9 +7242,23 @@
     {
       "monster": "mummy-lord",
       "class": "d",
+      "path": "legendary_actions.dread-command.usage",
+      "status": "open",
+      "summary": "set to cooldown_until_next_turn from the prose"
+    },
+    {
+      "monster": "mummy-lord",
+      "class": "d",
       "path": "legendary_actions.glare",
       "status": "open",
       "summary": "classified unmodeled (default skipped)"
+    },
+    {
+      "monster": "mummy-lord",
+      "class": "d",
+      "path": "legendary_actions.glare.usage",
+      "status": "open",
+      "summary": "set to cooldown_until_next_turn from the prose"
     },
     {
       "monster": "mummy-lord",
@@ -8733,6 +8985,13 @@
     {
       "monster": "solar",
       "class": "d",
+      "path": "legendary_actions.blinding-gaze.usage",
+      "status": "open",
+      "summary": "set to cooldown_until_next_turn from the prose"
+    },
+    {
+      "monster": "solar",
+      "class": "d",
       "path": "legendary_actions.radiant-teleport",
       "status": "open",
       "summary": "classified modeled"
@@ -8852,6 +9111,13 @@
     {
       "monster": "sphinx-of-lore",
       "class": "d",
+      "path": "legendary_actions.weight-of-years.usage",
+      "status": "open",
+      "summary": "set to cooldown_until_next_turn from the prose"
+    },
+    {
+      "monster": "sphinx-of-lore",
+      "class": "d",
       "path": "legendary_uses_per_round",
       "status": "open",
       "summary": "set to SRD default 3; upstream omits the count"
@@ -8939,6 +9205,13 @@
       "path": "legendary_actions.weight-of-years",
       "status": "open",
       "summary": "classified unmodeled (default skipped)"
+    },
+    {
+      "monster": "sphinx-of-valor",
+      "class": "d",
+      "path": "legendary_actions.weight-of-years.usage",
+      "status": "open",
+      "summary": "set to cooldown_until_next_turn from the prose"
     },
     {
       "monster": "sphinx-of-valor",
@@ -9531,6 +9804,13 @@
     {
       "monster": "tarrasque",
       "class": "d",
+      "path": "legendary_actions.world-shaking-movement.usage",
+      "status": "open",
+      "summary": "set to cooldown_until_next_turn from the prose"
+    },
+    {
+      "monster": "tarrasque",
+      "class": "d",
       "path": "legendary_uses_per_round",
       "status": "open",
       "summary": "set to SRD default 3; upstream omits the count"
@@ -9804,6 +10084,13 @@
     {
       "monster": "unicorn",
       "class": "d",
+      "path": "legendary_actions.shimmering-shield.usage",
+      "status": "open",
+      "summary": "set to cooldown_until_next_turn from the prose"
+    },
+    {
+      "monster": "unicorn",
+      "class": "d",
       "path": "legendary_uses_per_round",
       "status": "open",
       "summary": "set to SRD default 3; upstream omits the count"
@@ -9863,6 +10150,13 @@
       "path": "legendary_actions.beguile",
       "status": "open",
       "summary": "spellcasting is not modeled; spells are absent from the stat block effects"
+    },
+    {
+      "monster": "vampire-bat",
+      "class": "d",
+      "path": "legendary_actions.beguile.usage",
+      "status": "open",
+      "summary": "set to cooldown_until_next_turn from the prose"
     },
     {
       "monster": "vampire-bat",
@@ -9996,6 +10290,13 @@
       "path": "legendary_actions.beguile",
       "status": "open",
       "summary": "spellcasting is not modeled; spells are absent from the stat block effects"
+    },
+    {
+      "monster": "vampire-mist",
+      "class": "d",
+      "path": "legendary_actions.beguile.usage",
+      "status": "open",
+      "summary": "set to cooldown_until_next_turn from the prose"
     },
     {
       "monster": "vampire-mist",
@@ -10192,6 +10493,13 @@
       "path": "legendary_actions.beguile",
       "status": "open",
       "summary": "spellcasting is not modeled; spells are absent from the stat block effects"
+    },
+    {
+      "monster": "vampire-vampire",
+      "class": "d",
+      "path": "legendary_actions.beguile.usage",
+      "status": "open",
+      "summary": "set to cooldown_until_next_turn from the prose"
     },
     {
       "monster": "vampire-vampire",

@@ -193,7 +193,8 @@
       ],
       "id": "banish",
       "kind": "partly_modeled",
-      "name": "Banish"
+      "name": "Banish",
+      "usage": "cooldown_until_next_turn"
     },
     {
       "default_resolution": "skipped",

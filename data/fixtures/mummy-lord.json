@@ -183,14 +183,16 @@
       "desc": "The mummy casts Command (level 2 version), using the same spellcasting ability as Spellcasting. The mummy can’t take this action again until the start of its next turn.",
       "id": "dread-command",
       "kind": "unmodeled",
-      "name": "Dread Command"
+      "name": "Dread Command",
+      "usage": "cooldown_until_next_turn"
     },
     {
       "default_resolution": "skipped",
       "desc": "The mummy uses Dreadful Glare. The mummy can’t take this action again until the start of its next turn.",
       "id": "glare",
       "kind": "unmodeled",
-      "name": "Glare"
+      "name": "Glare",
+      "usage": "cooldown_until_next_turn"
     },
     {
       "default_resolution": "skipped",

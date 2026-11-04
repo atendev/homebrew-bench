@@ -207,7 +207,8 @@
       ],
       "id": "scorching-sands",
       "kind": "partly_modeled",
-      "name": "Scorching Sands"
+      "name": "Scorching Sands",
+      "usage": "cooldown_until_next_turn"
     }
   ],
   "legendary_uses_per_round": 3,

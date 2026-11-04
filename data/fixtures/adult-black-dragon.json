@@ -175,14 +175,16 @@
       ],
       "id": "cloud-of-insects",
       "kind": "partly_modeled",
-      "name": "Cloud of Insects"
+      "name": "Cloud of Insects",
+      "usage": "cooldown_until_next_turn"
     },
     {
       "default_resolution": "skipped",
       "desc": "The dragon uses Spellcasting to cast Fear. The dragon can’t take this action again until the start of its next turn.",
       "id": "frightful-presence",
       "kind": "unmodeled",
-      "name": "Frightful Presence"
+      "name": "Frightful Presence",
+      "usage": "cooldown_until_next_turn"
     },
     {
       "default_resolution": "skipped",

@@ -64,7 +64,9 @@ None.
 - `adult-black-dragon` `actions.spellcasting`: classified unmodeled (default skipped)
 - `adult-black-dragon` `actions.spellcasting`: spellcasting is not modeled; spells are absent from the stat block effects
 - `adult-black-dragon` `legendary_actions.cloud-of-insects`: classified partly_modeled
+- `adult-black-dragon` `legendary_actions.cloud-of-insects.usage`: set to cooldown_until_next_turn from the prose
 - `adult-black-dragon` `legendary_actions.frightful-presence`: classified unmodeled (default skipped)
+- `adult-black-dragon` `legendary_actions.frightful-presence.usage`: set to cooldown_until_next_turn from the prose
 - `adult-black-dragon` `legendary_actions.pounce`: classified unmodeled (default skipped)
 - `adult-black-dragon` `legendary_uses_per_round`: set to SRD default 3; upstream omits the count
 - `adult-black-dragon` `traits.amphibious`: classified unmodeled (default skipped)
@@ -75,7 +77,9 @@ None.
 - `adult-blue-dragon` `actions.spellcasting`: classified unmodeled (default skipped)
 - `adult-blue-dragon` `actions.spellcasting`: spellcasting is not modeled; spells are absent from the stat block effects
 - `adult-blue-dragon` `legendary_actions.cloaked-flight`: classified unmodeled (default skipped)
+- `adult-blue-dragon` `legendary_actions.cloaked-flight.usage`: set to cooldown_until_next_turn from the prose
 - `adult-blue-dragon` `legendary_actions.sonic-boom`: classified unmodeled (default skipped)
+- `adult-blue-dragon` `legendary_actions.sonic-boom.usage`: set to cooldown_until_next_turn from the prose
 - `adult-blue-dragon` `legendary_actions.tail-swipe`: classified unmodeled (default skipped)
 - `adult-blue-dragon` `legendary_uses_per_round`: set to SRD default 3; upstream omits the count
 - `adult-blue-dragon` `traits.legendary-resistance`: classified unmodeled (default skipped)
@@ -90,6 +94,7 @@ None.
 - `adult-brass-dragon` `legendary_actions.blazing-light`: classified unmodeled (default skipped)
 - `adult-brass-dragon` `legendary_actions.pounce`: classified unmodeled (default skipped)
 - `adult-brass-dragon` `legendary_actions.scorching-sands`: classified partly_modeled
+- `adult-brass-dragon` `legendary_actions.scorching-sands.usage`: set to cooldown_until_next_turn from the prose
 - `adult-brass-dragon` `legendary_uses_per_round`: set to SRD default 3; upstream omits the count
 - `adult-brass-dragon` `traits.legendary-resistance`: classified unmodeled (default skipped)
 - `adult-bronze-dragon` `actions.lightning-breath`: classified modeled
@@ -115,7 +120,9 @@ None.
 - `adult-copper-dragon` `actions.spellcasting`: classified unmodeled (default skipped)
 - `adult-copper-dragon` `actions.spellcasting`: spellcasting is not modeled; spells are absent from the stat block effects
 - `adult-copper-dragon` `legendary_actions.giggling-magic`: classified partly_modeled
+- `adult-copper-dragon` `legendary_actions.giggling-magic.usage`: set to cooldown_until_next_turn from the prose
 - `adult-copper-dragon` `legendary_actions.mind-jolt`: classified unmodeled (default skipped)
+- `adult-copper-dragon` `legendary_actions.mind-jolt.usage`: set to cooldown_until_next_turn from the prose
 - `adult-copper-dragon` `legendary_actions.pounce`: classified unmodeled (default skipped)
 - `adult-copper-dragon` `legendary_uses_per_round`: set to SRD default 3; upstream omits the count
 - `adult-copper-dragon` `traits.legendary-resistance`: classified unmodeled (default skipped)
@@ -128,6 +135,7 @@ None.
 - `adult-gold-dragon` `actions.weakening-breath`: classified unmodeled (default skipped)
 - `adult-gold-dragon` `actions.weakening-breath.usage`: correction applied: Restore Recharge 5-6 lost when upstream split Breath Weapons (Recharge 5-6) and share recharge group with Fire Breath. [SRD 5.2.1 (Adult Gold Dragon: Breath Weapons (Recharge 5-6))]
 - `adult-gold-dragon` `legendary_actions.banish`: classified partly_modeled
+- `adult-gold-dragon` `legendary_actions.banish.usage`: set to cooldown_until_next_turn from the prose
 - `adult-gold-dragon` `legendary_actions.guiding-light`: classified unmodeled (default skipped)
 - `adult-gold-dragon` `legendary_actions.pounce`: classified unmodeled (default skipped)
 - `adult-gold-dragon` `legendary_uses_per_round`: set to SRD default 3; upstream omits the count
@@ -140,6 +148,7 @@ None.
 - `adult-green-dragon` `actions.spellcasting`: spellcasting is not modeled; spells are absent from the stat block effects
 - `adult-green-dragon` `legendary_actions.mind-invasion`: classified unmodeled (default skipped)
 - `adult-green-dragon` `legendary_actions.noxious-miasma`: classified partly_modeled
+- `adult-green-dragon` `legendary_actions.noxious-miasma.usage`: set to cooldown_until_next_turn from the prose
 - `adult-green-dragon` `legendary_actions.pounce`: classified unmodeled (default skipped)
 - `adult-green-dragon` `legendary_uses_per_round`: set to SRD default 3; upstream omits the count
 - `adult-green-dragon` `traits.amphibious`: classified unmodeled (default skipped)
@@ -150,7 +159,9 @@ None.
 - `adult-red-dragon` `actions.spellcasting`: classified unmodeled (default skipped)
 - `adult-red-dragon` `actions.spellcasting`: spellcasting is not modeled; spells are absent from the stat block effects
 - `adult-red-dragon` `legendary_actions.commanding-presence`: classified unmodeled (default skipped)
+- `adult-red-dragon` `legendary_actions.commanding-presence.usage`: set to cooldown_until_next_turn from the prose
 - `adult-red-dragon` `legendary_actions.fiery-rays`: classified unmodeled (default skipped)
+- `adult-red-dragon` `legendary_actions.fiery-rays.usage`: set to cooldown_until_next_turn from the prose
 - `adult-red-dragon` `legendary_actions.pounce`: classified unmodeled (default skipped)
 - `adult-red-dragon` `legendary_uses_per_round`: set to SRD default 3; upstream omits the count
 - `adult-red-dragon` `traits.legendary-resistance`: classified unmodeled (default skipped)
@@ -163,7 +174,9 @@ None.
 - `adult-silver-dragon` `actions.spellcasting`: classified unmodeled (default skipped)
 - `adult-silver-dragon` `actions.spellcasting`: spellcasting is not modeled; spells are absent from the stat block effects
 - `adult-silver-dragon` `legendary_actions.chill`: classified unmodeled (default skipped)
+- `adult-silver-dragon` `legendary_actions.chill.usage`: set to cooldown_until_next_turn from the prose
 - `adult-silver-dragon` `legendary_actions.cold-gale`: classified partly_modeled
+- `adult-silver-dragon` `legendary_actions.cold-gale.usage`: set to cooldown_until_next_turn from the prose
 - `adult-silver-dragon` `legendary_actions.pounce`: classified unmodeled (default skipped)
 - `adult-silver-dragon` `legendary_uses_per_round`: set to SRD default 3; upstream omits the count
 - `adult-silver-dragon` `traits.legendary-resistance`: classified unmodeled (default skipped)
@@ -171,8 +184,10 @@ None.
 - `adult-white-dragon` `actions.multiattack`: classified modeled
 - `adult-white-dragon` `actions.rend`: classified modeled
 - `adult-white-dragon` `legendary_actions.freezing-burst`: classified partly_modeled
+- `adult-white-dragon` `legendary_actions.freezing-burst.usage`: set to cooldown_until_next_turn from the prose
 - `adult-white-dragon` `legendary_actions.frightful-presence`: classified unmodeled (default skipped)
 - `adult-white-dragon` `legendary_actions.frightful-presence`: spellcasting is not modeled; spells are absent from the stat block effects
+- `adult-white-dragon` `legendary_actions.frightful-presence.usage`: set to cooldown_until_next_turn from the prose
 - `adult-white-dragon` `legendary_actions.pounce`: classified unmodeled (default skipped)
 - `adult-white-dragon` `legendary_uses_per_round`: set to SRD default 3; upstream omits the count
 - `adult-white-dragon` `traits.ice-walk`: classified unmodeled (default skipped)
@@ -189,7 +204,9 @@ None.
 - `ancient-black-dragon` `actions.spellcasting`: classified unmodeled (default skipped)
 - `ancient-black-dragon` `actions.spellcasting`: spellcasting is not modeled; spells are absent from the stat block effects
 - `ancient-black-dragon` `legendary_actions.cloud-of-insects`: classified partly_modeled
+- `ancient-black-dragon` `legendary_actions.cloud-of-insects.usage`: set to cooldown_until_next_turn from the prose
 - `ancient-black-dragon` `legendary_actions.frightful-presence`: classified unmodeled (default skipped)
+- `ancient-black-dragon` `legendary_actions.frightful-presence.usage`: set to cooldown_until_next_turn from the prose
 - `ancient-black-dragon` `legendary_actions.pounce`: classified unmodeled (default skipped)
 - `ancient-black-dragon` `legendary_uses_per_round`: set to SRD default 3; upstream omits the count
 - `ancient-black-dragon` `traits.amphibious`: classified unmodeled (default skipped)
@@ -200,7 +217,9 @@ None.
 - `ancient-blue-dragon` `actions.spellcasting`: classified unmodeled (default skipped)
 - `ancient-blue-dragon` `actions.spellcasting`: spellcasting is not modeled; spells are absent from the stat block effects
 - `ancient-blue-dragon` `legendary_actions.cloaked-flight`: classified unmodeled (default skipped)
+- `ancient-blue-dragon` `legendary_actions.cloaked-flight.usage`: set to cooldown_until_next_turn from the prose
 - `ancient-blue-dragon` `legendary_actions.sonic-boom`: classified unmodeled (default skipped)
+- `ancient-blue-dragon` `legendary_actions.sonic-boom.usage`: set to cooldown_until_next_turn from the prose
 - `ancient-blue-dragon` `legendary_actions.tail-swipe`: classified unmodeled (default skipped)
 - `ancient-blue-dragon` `legendary_uses_per_round`: set to SRD default 3; upstream omits the count
 - `ancient-blue-dragon` `traits.legendary-resistance`: classified unmodeled (default skipped)
@@ -215,6 +234,7 @@ None.
 - `ancient-brass-dragon` `legendary_actions.blazing-light`: classified unmodeled (default skipped)
 - `ancient-brass-dragon` `legendary_actions.pounce`: classified unmodeled (default skipped)
 - `ancient-brass-dragon` `legendary_actions.scorching-sands`: classified partly_modeled
+- `ancient-brass-dragon` `legendary_actions.scorching-sands.usage`: set to cooldown_until_next_turn from the prose
 - `ancient-brass-dragon` `legendary_uses_per_round`: set to SRD default 3; upstream omits the count
 - `ancient-brass-dragon` `traits.legendary-resistance`: classified unmodeled (default skipped)
 - `ancient-bronze-dragon` `actions.lightning-breath`: classified modeled
@@ -240,9 +260,12 @@ None.
 - `ancient-copper-dragon` `actions.spellcasting`: classified unmodeled (default skipped)
 - `ancient-copper-dragon` `actions.spellcasting`: spellcasting is not modeled; spells are absent from the stat block effects
 - `ancient-copper-dragon` `legendary_actions.giggling-magic`: classified partly_modeled
+- `ancient-copper-dragon` `legendary_actions.giggling-magic.usage`: set to cooldown_until_next_turn from the prose
 - `ancient-copper-dragon` `legendary_actions.mind-jolt`: classified unmodeled (default skipped)
+- `ancient-copper-dragon` `legendary_actions.mind-jolt.usage`: set to cooldown_until_next_turn from the prose
 - `ancient-copper-dragon` `legendary_actions.pounce`: classified unmodeled (default skipped)
 - `ancient-copper-dragon` `legendary_actions.spike-level-5-version`: classified unmodeled (default skipped)
+- `ancient-copper-dragon` `legendary_actions.spike-level-5-version.usage`: set to cooldown_until_next_turn from the prose
 - `ancient-copper-dragon` `legendary_uses_per_round`: set to SRD default 3; upstream omits the count
 - `ancient-copper-dragon` `traits.legendary-resistance`: classified unmodeled (default skipped)
 - `ancient-gold-dragon` `actions.fire-breath`: classified modeled
@@ -254,6 +277,7 @@ None.
 - `ancient-gold-dragon` `actions.weakening-breath`: classified unmodeled (default skipped)
 - `ancient-gold-dragon` `actions.weakening-breath.usage`: correction applied: Restore Recharge 5-6 lost when upstream split Breath Weapons (Recharge 5-6) and share recharge group with Fire Breath. [SRD 5.2.1 (Ancient Gold Dragon: Breath Weapons (Recharge 5-6))]
 - `ancient-gold-dragon` `legendary_actions.banish`: classified partly_modeled
+- `ancient-gold-dragon` `legendary_actions.banish.usage`: set to cooldown_until_next_turn from the prose
 - `ancient-gold-dragon` `legendary_actions.guiding-light`: classified unmodeled (default skipped)
 - `ancient-gold-dragon` `legendary_actions.pounce`: classified unmodeled (default skipped)
 - `ancient-gold-dragon` `legendary_uses_per_round`: set to SRD default 3; upstream omits the count
@@ -266,6 +290,7 @@ None.
 - `ancient-green-dragon` `actions.spellcasting`: spellcasting is not modeled; spells are absent from the stat block effects
 - `ancient-green-dragon` `legendary_actions.mind-invasion`: classified unmodeled (default skipped)
 - `ancient-green-dragon` `legendary_actions.noxious-miasma`: classified partly_modeled
+- `ancient-green-dragon` `legendary_actions.noxious-miasma.usage`: set to cooldown_until_next_turn from the prose
 - `ancient-green-dragon` `legendary_actions.pounce`: classified unmodeled (default skipped)
 - `ancient-green-dragon` `legendary_uses_per_round`: set to SRD default 3; upstream omits the count
 - `ancient-green-dragon` `traits.amphibious`: classified unmodeled (default skipped)
@@ -276,7 +301,9 @@ None.
 - `ancient-red-dragon` `actions.spellcasting`: classified unmodeled (default skipped)
 - `ancient-red-dragon` `actions.spellcasting`: spellcasting is not modeled; spells are absent from the stat block effects
 - `ancient-red-dragon` `legendary_actions.commanding-presence`: classified unmodeled (default skipped)
+- `ancient-red-dragon` `legendary_actions.commanding-presence.usage`: set to cooldown_until_next_turn from the prose
 - `ancient-red-dragon` `legendary_actions.fiery-rays`: classified unmodeled (default skipped)
+- `ancient-red-dragon` `legendary_actions.fiery-rays.usage`: set to cooldown_until_next_turn from the prose
 - `ancient-red-dragon` `legendary_actions.pounce`: classified unmodeled (default skipped)
 - `ancient-red-dragon` `legendary_uses_per_round`: set to SRD default 3; upstream omits the count
 - `ancient-red-dragon` `traits.legendary-resistance`: classified unmodeled (default skipped)
@@ -289,7 +316,9 @@ None.
 - `ancient-silver-dragon` `actions.spellcasting`: classified unmodeled (default skipped)
 - `ancient-silver-dragon` `actions.spellcasting`: spellcasting is not modeled; spells are absent from the stat block effects
 - `ancient-silver-dragon` `legendary_actions.chill`: classified unmodeled (default skipped)
+- `ancient-silver-dragon` `legendary_actions.chill.usage`: set to cooldown_until_next_turn from the prose
 - `ancient-silver-dragon` `legendary_actions.cold-gale`: classified partly_modeled
+- `ancient-silver-dragon` `legendary_actions.cold-gale.usage`: set to cooldown_until_next_turn from the prose
 - `ancient-silver-dragon` `legendary_actions.pounce`: classified unmodeled (default skipped)
 - `ancient-silver-dragon` `legendary_uses_per_round`: set to SRD default 3; upstream omits the count
 - `ancient-silver-dragon` `traits.legendary-resistance`: classified unmodeled (default skipped)
@@ -297,8 +326,10 @@ None.
 - `ancient-white-dragon` `actions.multiattack`: classified modeled
 - `ancient-white-dragon` `actions.rend`: classified modeled
 - `ancient-white-dragon` `legendary_actions.freezing-burst`: classified partly_modeled
+- `ancient-white-dragon` `legendary_actions.freezing-burst.usage`: set to cooldown_until_next_turn from the prose
 - `ancient-white-dragon` `legendary_actions.frightful-presence`: classified unmodeled (default skipped)
 - `ancient-white-dragon` `legendary_actions.frightful-presence`: spellcasting is not modeled; spells are absent from the stat block effects
+- `ancient-white-dragon` `legendary_actions.frightful-presence.usage`: set to cooldown_until_next_turn from the prose
 - `ancient-white-dragon` `legendary_actions.pounce`: classified unmodeled (default skipped)
 - `ancient-white-dragon` `legendary_uses_per_round`: set to SRD default 3; upstream omits the count
 - `ancient-white-dragon` `traits.ice-walk`: classified unmodeled (default skipped)
@@ -921,6 +952,7 @@ None.
 - `kraken` `actions.tentacle`: classified partly_modeled
 - `kraken` `legendary_actions.storm-bolt`: classified unmodeled (default skipped)
 - `kraken` `legendary_actions.toxic-ink`: classified unmodeled (default skipped)
+- `kraken` `legendary_actions.toxic-ink.usage`: set to cooldown_until_next_turn from the prose
 - `kraken` `legendary_uses_per_round`: set to SRD default 3; upstream omits the count
 - `kraken` `traits.amphibious`: classified unmodeled (default skipped)
 - `kraken` `traits.legendary-resistance`: classified unmodeled (default skipped)
@@ -941,8 +973,10 @@ None.
 - `lich` `legendary_actions.deathly-teleport`: classified unmodeled (default skipped)
 - `lich` `legendary_actions.deathly-teleport`: damage array without an attack or save; left unmodeled
 - `lich` `legendary_actions.disrupt-life`: classified modeled
+- `lich` `legendary_actions.disrupt-life.usage`: set to cooldown_until_next_turn from the prose
 - `lich` `legendary_actions.frightening-gaze`: classified unmodeled (default skipped)
 - `lich` `legendary_actions.frightening-gaze`: spellcasting is not modeled; spells are absent from the stat block effects
+- `lich` `legendary_actions.frightening-gaze.usage`: set to cooldown_until_next_turn from the prose
 - `lich` `legendary_uses_per_round`: set to SRD default 3; upstream omits the count
 - `lich` `reactions.protective-magic`: classified unmodeled (default skipped)
 - `lich` `reactions.protective-magic`: spellcasting is not modeled; spells are absent from the stat block effects
@@ -1023,7 +1057,9 @@ None.
 - `mummy-lord` `actions.spellcasting`: spellcasting is not modeled; spells are absent from the stat block effects
 - `mummy-lord` `legendary_actions.dread-command`: classified unmodeled (default skipped)
 - `mummy-lord` `legendary_actions.dread-command`: spellcasting is not modeled; spells are absent from the stat block effects
+- `mummy-lord` `legendary_actions.dread-command.usage`: set to cooldown_until_next_turn from the prose
 - `mummy-lord` `legendary_actions.glare`: classified unmodeled (default skipped)
+- `mummy-lord` `legendary_actions.glare.usage`: set to cooldown_until_next_turn from the prose
 - `mummy-lord` `legendary_actions.necrotic-strike`: classified unmodeled (default skipped)
 - `mummy-lord` `legendary_uses_per_round`: set to SRD default 3; upstream omits the count
 - `mummy-lord` `reactions.whirlwind-of-sand`: classified unmodeled (default skipped)
@@ -1265,6 +1301,7 @@ None.
 - `solar` `bonus_actions.divine-aid`: classified unmodeled (default skipped)
 - `solar` `bonus_actions.divine-aid`: spellcasting is not modeled; spells are absent from the stat block effects
 - `solar` `legendary_actions.blinding-gaze`: classified unmodeled (default skipped)
+- `solar` `legendary_actions.blinding-gaze.usage`: set to cooldown_until_next_turn from the prose
 - `solar` `legendary_actions.radiant-teleport`: classified modeled
 - `solar` `legendary_uses_per_round`: set to SRD default 3; upstream omits the count
 - `solar` `traits.divine-awareness`: classified unmodeled (default skipped)
@@ -1282,6 +1319,7 @@ None.
 - `sphinx-of-lore` `actions.spellcasting`: spellcasting is not modeled; spells are absent from the stat block effects
 - `sphinx-of-lore` `legendary_actions.arcane-prowl`: classified unmodeled (default skipped)
 - `sphinx-of-lore` `legendary_actions.weight-of-years`: classified unmodeled (default skipped)
+- `sphinx-of-lore` `legendary_actions.weight-of-years.usage`: set to cooldown_until_next_turn from the prose
 - `sphinx-of-lore` `legendary_uses_per_round`: set to SRD default 3; upstream omits the count
 - `sphinx-of-lore` `traits.inscrutable`: classified unmodeled (default skipped)
 - `sphinx-of-lore` `traits.legendary-resistance`: classified unmodeled (default skipped)
@@ -1295,6 +1333,7 @@ None.
 - `sphinx-of-valor` `actions.third-roar`: classified partly_modeled
 - `sphinx-of-valor` `legendary_actions.arcane-prowl`: classified unmodeled (default skipped)
 - `sphinx-of-valor` `legendary_actions.weight-of-years`: classified unmodeled (default skipped)
+- `sphinx-of-valor` `legendary_actions.weight-of-years.usage`: set to cooldown_until_next_turn from the prose
 - `sphinx-of-valor` `legendary_uses_per_round`: set to SRD default 3; upstream omits the count
 - `sphinx-of-valor` `traits.inscrutable`: classified unmodeled (default skipped)
 - `sphinx-of-valor` `traits.legendary-resistance`: classified unmodeled (default skipped)
@@ -1377,6 +1416,7 @@ None.
 - `tarrasque` `bonus_actions.swallow.damage`: Failure clause states damage only as recurring or conditional later clauses; left unmodeled
 - `tarrasque` `legendary_actions.onslaught`: classified unmodeled (default skipped)
 - `tarrasque` `legendary_actions.world-shaking-movement`: classified unmodeled (default skipped)
+- `tarrasque` `legendary_actions.world-shaking-movement.usage`: set to cooldown_until_next_turn from the prose
 - `tarrasque` `legendary_uses_per_round`: set to SRD default 3; upstream omits the count
 - `tarrasque` `traits.legendary-resistance`: classified unmodeled (default skipped)
 - `tarrasque` `traits.magic-resistance`: classified unmodeled (default skipped)
@@ -1416,6 +1456,7 @@ None.
 - `unicorn` `actions.spellcasting`: spellcasting is not modeled; spells are absent from the stat block effects
 - `unicorn` `legendary_actions.charging-horn`: classified unmodeled (default skipped)
 - `unicorn` `legendary_actions.shimmering-shield`: classified unmodeled (default skipped)
+- `unicorn` `legendary_actions.shimmering-shield.usage`: set to cooldown_until_next_turn from the prose
 - `unicorn` `legendary_uses_per_round`: set to SRD default 3; upstream omits the count
 - `unicorn` `traits.legendary-resistance`: classified unmodeled (default skipped)
 - `unicorn` `traits.magic-resistance`: classified unmodeled (default skipped)
@@ -1425,6 +1466,7 @@ None.
 - `vampire-bat` `bonus_actions.shape-shift`: classified unmodeled (default skipped)
 - `vampire-bat` `legendary_actions.beguile`: classified unmodeled (default skipped)
 - `vampire-bat` `legendary_actions.beguile`: spellcasting is not modeled; spells are absent from the stat block effects
+- `vampire-bat` `legendary_actions.beguile.usage`: set to cooldown_until_next_turn from the prose
 - `vampire-bat` `legendary_actions.deathless-strike`: classified unmodeled (default skipped)
 - `vampire-bat` `legendary_uses_per_round`: set to SRD default 3; upstream omits the count
 - `vampire-bat` `traits.forbiddance`: classified unmodeled (default skipped)
@@ -1444,6 +1486,7 @@ None.
 - `vampire-mist` `bonus_actions.shape-shift`: classified unmodeled (default skipped)
 - `vampire-mist` `legendary_actions.beguile`: classified unmodeled (default skipped)
 - `vampire-mist` `legendary_actions.beguile`: spellcasting is not modeled; spells are absent from the stat block effects
+- `vampire-mist` `legendary_actions.beguile.usage`: set to cooldown_until_next_turn from the prose
 - `vampire-mist` `legendary_actions.deathless-strike`: classified unmodeled (default skipped)
 - `vampire-mist` `legendary_uses_per_round`: set to SRD default 3; upstream omits the count
 - `vampire-mist` `traits.forbiddance`: classified unmodeled (default skipped)
@@ -1472,6 +1515,7 @@ None.
 - `vampire-vampire` `bonus_actions.shape-shift`: classified unmodeled (default skipped)
 - `vampire-vampire` `legendary_actions.beguile`: classified unmodeled (default skipped)
 - `vampire-vampire` `legendary_actions.beguile`: spellcasting is not modeled; spells are absent from the stat block effects
+- `vampire-vampire` `legendary_actions.beguile.usage`: set to cooldown_until_next_turn from the prose
 - `vampire-vampire` `legendary_actions.deathless-strike`: classified unmodeled (default skipped)
 - `vampire-vampire` `legendary_uses_per_round`: set to SRD default 3; upstream omits the count
 - `vampire-vampire` `traits.forbiddance`: classified unmodeled (default skipped)
