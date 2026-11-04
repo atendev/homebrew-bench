@@ -9,7 +9,7 @@ You are the DM for one encounter. The user controls the party and declares each 
    - Who rolls PC dice: `--pc-dice ask` for the user's own dice, `--pc-dice engine` for engine rolls.
    - Starting positions: append `@near` or `@far` to a combatant; everyone starts `near` by default. Nobody starts engaged; use `bench move` on the first turns.
    - Surprise: `--surprised <combatant or side id>`, once per id.
-   - Lighting has no engine setting. Apply sunlight or darkness effects as agent judgment.
+   - Lighting: `--lighting <unspecified|dim_light|bright_light|sunlight>` sets one value for the whole encounter, `unspecified` by default. The engine applies `roll_modifier` effects on traits when the lighting meets them, such as a kobold's Sunlight Sensitivity under `sunlight`, to attack rolls and saving throws, and the event names the trait. Sunlight counts as Bright Light. `unspecified` turns no lighting trait on, so pick a value whenever the scene has one.
 3. **Start it.**
 
    ```
@@ -55,7 +55,8 @@ Each of these is agent judgment. Label it, then record it through `bench roll <d
 - **Reactions.** The engine opens no reaction windows. When a trigger happens, such as a spell being cast, ask the user whether a PC reacts and decide for monsters. A reaction listed on the stat block runs with `bench action <actor> <reaction-id> <target-id>` out of turn.
 - **Opportunity attacks.** The engine rolls them, but you say who takes them, before the move. Check `digest.engagement` for every creature the move leaves. Skip this when the mover took Disengage or has Flyby or Agile: nothing provokes. Otherwise ask the user about each PC, decide for each monster, and pass every reactor on the move with `bench move <actor> <band> --opportunity <reactor>`. The reactor uses its first at-will melee attack. Append `:<attack-id>` to name a different melee attack, such as a limited-use one. The attacks resolve right before the move. If one leaves the mover unable to act, the move stops (a `move_stopped` event) and no movement is spent.
   The engine refuses the whole move when a named reactor can't react: it is on the mover's side, can't act, can't take reactions, has already used its reaction, can't see the mover (the mover is Invisible or the reactor is Blinded), the mover took Disengage this turn or has Flyby or Agile, or the move doesn't leave its reach. The error gives the reason. A provoking move without the flag returns an `opportunity_attack` event for each creature that could still react. If you meant one of them to attack, run `bench undo` and repeat the move with the flag. With `pc_dice = ask`, a PC reactor's dice pause the move on a dice prompt like any PC roll. The reaction comes back at the start of the reactor's own turn.
-- **Lighting, terrain, cover**, and every ruling the ruleset leaves open.
+- **Lighting the engine doesn't hold.** When the light changes mid-fight (dawn, a Daylight spell, the fight moving outdoors), run `bench override settings.lighting <value> --reason "<why>"`; `bench undo` reverts it. Darkness, light sources such as a torch or a fire elemental, and one creature standing in different light from the rest stay your judgment. `digest.lighting` shows the current value, also in the public digest.
+- **Terrain, cover**, and every ruling the ruleset leaves open.
 
 Override paths are dotted over the state, such as `goblin-2.hp 14` or `mia.conditions '["prone"]'`. Use `--clear` to remove a value, `--standing` when the call should hold for the rest of the fight, and `--rule <slug>` when a house rule drove it. Add or remove combatants with `bench add <file or fixture id> --side monsters --band near` and `bench remove <id> --reason "<why>"`.
 

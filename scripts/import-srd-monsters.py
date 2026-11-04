@@ -20,9 +20,10 @@ Blocking entries are classes a (structured field contradicts prose), b (structur
 missing or not representable in the closed vocabulary) and c (contradicts an SRD ruleset
 table). The script exits 1 while any blocking entry is open. A correction that matches
 nothing upstream aborts the run. Prose is read only to detect mismatches, never to produce data,
-with two exceptions upstream has no field for: the exact Flyby/Agile sentence becomes no_provoke,
-and "can't take this action again until the start of its next turn" becomes
-cooldown_until_next_turn with a review note. See ADR 0008.
+with three exceptions upstream has no field for: the exact Flyby/Agile sentence becomes no_provoke,
+"can't take this action again until the start of its next turn" becomes
+cooldown_until_next_turn with a review note, and the three sunlight and Bright Light sentences
+become lighting roll modifiers with a review note. See ADR 0008.
 """
 
 import json
@@ -104,6 +105,25 @@ SPELL_IDS = set(json.loads(SPELL_EFFECTS.read_text()))
 SRD_SPELL_IDS = {spell["index"] for spell in json.loads(UPSTREAM_SPELLS.read_text())}
 
 
+def roll_target(name):
+    return name if name == "attack_rolls" else {name: {"ability": None}}
+
+
+def lighting_modifiers(desc):
+    """Roll modifiers from a trait's exact lighting sentences, and the sentences left over."""
+    effects, rest = [], []
+    for sentence in re.split(r"(?<=\.)\s+", desc.strip()):
+        match = next(((lighting, targets) for regex, lighting, targets in LIGHTING_SENTENCES
+                      if regex.fullmatch(sentence)), None)
+        if match:
+            lighting, targets = match
+            effects += [{"roll_modifier": {"lighting": lighting, "disposition": "disadvantage",
+                                           "target": roll_target(t)}} for t in targets]
+        elif sentence:
+            rest.append(sentence)
+    return effects, rest
+
+
 def singular(word):
     return word[:-1] if word.endswith("s") and not word.endswith("ss") else word
 
@@ -148,6 +168,15 @@ def dice_text(dice, modifier):
 
 
 COOLDOWN_RE = re.compile(r"\bThe [a-z]+(?: [a-z]+)* can.t take this action again until the start of its next turn\.")
+LIGHTING_SENTENCES = [
+    (re.compile(r"While in sunlight, (?:the [a-z]+(?: [a-z]+)*|it) has Disadvantage on "
+                r"(?:ability checks and attack rolls|attack rolls and ability checks)\."),
+     "sunlight", ["attack_rolls", "ability_checks"]),
+    (re.compile(r"While in sunlight, the [a-z]+(?: [a-z]+)* has Disadvantage on D20 Tests\."),
+     "sunlight", ["attack_rolls", "saving_throws", "ability_checks"]),
+    (re.compile(r"While in Bright Light, the [a-z]+(?: [a-z]+)* has Disadvantage on attack rolls\."),
+     "bright_light", ["attack_rolls"]),
+]
 NO_PROVOKE = re.compile(r"^The [\w -]+ doesn.t provoke an Opportunity Attack when it (?:flies|moves) out of an enemy.s reach\.$")
 
 class Review:
@@ -583,11 +612,18 @@ class Converter:
             effects = [effect] if effect else []
         if section == "traits" and NO_PROVOKE.search(desc):
             effects = ["no_provoke"]
+        lit = False
+        if section == "traits":
+            lit_effects, rest = lighting_modifiers(desc)
+            if lit_effects:
+                effects, clauses, lit = lit_effects, rest, True
+                self.rec("d", base, "lighting roll modifier from the prose")
         usage = self.usage(raw, base)
         if usage:
             entry["usage"] = usage
         if effects:
-            entry.pop("default_resolution")
+            if not (lit and clauses):
+                entry.pop("default_resolution")
             entry["effects"] = effects
             entry["kind"] = "partly_modeled" if clauses else "modeled"
             if clauses:

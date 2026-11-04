@@ -32,7 +32,7 @@ Scoring:
 Baseline: regenerate `data/baseline/curve.json` once, with lighting `unspecified`, after all of these have landed, so the policy, engine and fixtures settle first:
 - [Import legendary action cooldowns](../closed/058-import-legendary-action-cooldowns.md) changed the fixture set.
 - [Build upcast spell scaling](059-build-upcast-spell-scaling.md) moves the engine version and regenerates the standard party.
-- [Build encounter lighting](060-build-encounter-lighting.md) changes the fixture set (11 lighting traits) without moving numbers under `unspecified`.
+- [Build encounter lighting](../closed/060-build-encounter-lighting.md) changes the fixture set (11 lighting traits) and moves the engine version to 0.1.4, without moving numbers under `unspecified`.
 - [Fix Advantage and Disadvantage cancellation on attack rolls](061-fix-advantage-disadvantage-cancellation.md) moves the engine version.
 - [Build live reaction windows](062-build-live-reaction-windows.md) moves the engine version and changes the fixture set (Parry) and the party (Shield's trigger).
 - [Build batch reactions policy](063-build-batch-reactions-policy.md) moves the policy to v3.

@@ -1,9 +1,9 @@
 //! Canonical stat block model shared by monsters, SRD fixtures, and the standard party.
 
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Deserializer, Serialize};
 use std::collections::HashMap;
 
-use crate::effect::{Effect, Usage};
+use crate::effect::{Effect, Lighting, Usage};
 
 /// Ability score names.
 #[derive(
@@ -267,15 +267,16 @@ pub struct StatBlock {
     pub xp: Option<u64>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub lair_xp: Option<u64>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    /// Standing traits; the only place a `roll_modifier` may appear, and only as a top-level effect.
+    #[serde(default, skip_serializing_if = "Vec::is_empty", deserialize_with = "trait_entries")]
     pub traits: Vec<AbilityEntry>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty", deserialize_with = "action_entries")]
     pub actions: Vec<AbilityEntry>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty", deserialize_with = "action_entries")]
     pub bonus_actions: Vec<AbilityEntry>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty", deserialize_with = "action_entries")]
     pub reactions: Vec<AbilityEntry>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty", deserialize_with = "action_entries")]
     pub legendary_actions: Vec<AbilityEntry>,
     #[serde(default)]
     pub legendary_uses_per_round: u32,
@@ -303,6 +304,39 @@ pub struct StatBlock {
     pub pasted_source: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub intake_flags: Vec<IntakeFlag>,
+}
+
+fn trait_entries<'de, D: Deserializer<'de>>(deserializer: D) -> Result<Vec<AbilityEntry>, D::Error> {
+    let entries = Vec::<AbilityEntry>::deserialize(deserializer)?;
+    for entry in &entries {
+        for effect in &entry.effects {
+            match effect {
+                Effect::RollModifier(m) if m.lighting == Lighting::Unspecified => {
+                    return Err(serde::de::Error::custom(format!("{}: a roll modifier can't be keyed to unspecified lighting", entry.id)));
+                }
+                Effect::RollModifier(_) => {}
+                nested => refuse_roll_modifier(entry, nested)?,
+            }
+        }
+    }
+    Ok(entries)
+}
+
+fn action_entries<'de, D: Deserializer<'de>>(deserializer: D) -> Result<Vec<AbilityEntry>, D::Error> {
+    let entries = Vec::<AbilityEntry>::deserialize(deserializer)?;
+    for entry in &entries {
+        for effect in &entry.effects {
+            refuse_roll_modifier(entry, effect)?;
+        }
+    }
+    Ok(entries)
+}
+
+fn refuse_roll_modifier<E: serde::de::Error>(entry: &AbilityEntry, effect: &Effect) -> Result<(), E> {
+    if effect.holds_roll_modifier() {
+        return Err(E::custom(format!("{}: a roll modifier is a trait effect", entry.id)));
+    }
+    Ok(())
 }
 
 impl StatBlock {
@@ -400,5 +434,49 @@ mod tests {
         let parsed: StatBlock = serde_json::from_str(&json).unwrap();
         assert_eq!(parsed.id, block.id);
         assert_eq!(parsed.ability_scores.dexterity, 14);
+    }
+
+    fn kobold_with(edit: impl FnOnce(&mut serde_json::Value)) -> Result<StatBlock, String> {
+        let mut value: serde_json::Value = serde_json::from_str(crate::embedded::fixture_json("kobold-warrior").unwrap()).unwrap();
+        edit(&mut value);
+        serde_json::from_value(value).map_err(|e| e.to_string())
+    }
+
+    fn sunlight() -> serde_json::Value {
+        serde_json::json!({"roll_modifier": {"lighting": "sunlight", "disposition": "disadvantage", "target": "attack_rolls"}})
+    }
+
+    #[test]
+    fn a_roll_modifier_on_a_trait_loads() {
+        let block = kobold_with(|v| v["traits"][1]["effects"] = serde_json::json!([sunlight()])).unwrap();
+        assert!(matches!(block.traits[1].effects[0], Effect::RollModifier(_)));
+    }
+
+    #[test]
+    fn a_roll_modifier_outside_a_trait_is_refused_at_load() {
+        let refused = [
+            kobold_with(|v| v["actions"][0]["effects"] = serde_json::json!([sunlight()])),
+            kobold_with(|v| v["actions"][0]["effects"][0]["attack"]["on_hit"] = serde_json::json!([sunlight()])),
+            kobold_with(|v| v["traits"][1]["effects"] = serde_json::json!([{"area": {"area": {"sphere": {"radius": 10}}, "origin": "target_point", "effect": sunlight(), "target_count": null}}])),
+            kobold_with(|v| v["bonus_actions"] = serde_json::json!([{"id": "glare", "name": "Glare", "effects": [sunlight()]}])),
+            kobold_with(|v| v["legendary_actions"] = serde_json::json!([{"id": "glare", "name": "Glare", "effects": [sunlight()]}])),
+        ];
+        for result in refused {
+            let err = result.expect_err("refused");
+            assert!(err.contains("a roll modifier is a trait effect"), "{err}");
+        }
+    }
+
+    #[test]
+    fn a_roll_modifier_keyed_to_unspecified_is_refused_at_load() {
+        for key in ["unspecified", "normal"] {
+            let err = kobold_with(|v| {
+                let mut m = sunlight();
+                m["roll_modifier"]["lighting"] = key.into();
+                v["traits"][1]["effects"] = serde_json::json!([m]);
+            })
+            .expect_err("refused");
+            assert!(err.contains("can't be keyed to unspecified lighting"), "{err}");
+        }
     }
 }

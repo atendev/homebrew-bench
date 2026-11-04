@@ -14,6 +14,7 @@ Convert the pasted text into one stat block JSON file.
   - `partly_modeled` when effects cover part of it. Put each sentence the effects cannot express in `agent_clauses`, verbatim.
   - `inert` when it has no combat effect, such as a language trait.
   - `unmodeled` when no effect fits. Keep the text in `desc` and leave `effects` empty.
+- Encode a "While in sunlight" or "While in Bright Light" trait as `roll_modifier` effects on that trait, one per roll kind it names: `{"roll_modifier": {"lighting": "sunlight", "disposition": "disadvantage", "target": "attack_rolls"}}`, with `{"saving_throws": {"ability": null}}` or `{"ability_checks": {"ability": null}}` as the target for saves and checks. A `roll_modifier` is a trait effect only; in an action, inside an attack or area, or keyed to `unspecified` it fails validation. A "while in Dim Light" trait is keyed to `dim_light`. "While in Dim Light or Darkness" is keyed to `dim_light` too, with the Darkness part in `agent_clauses`, because the engine has no darkness value. Any other sentence in the trait goes in `agent_clauses`.
 - Add an `intake_flags` entry (`path` plus `note`) for every ambiguous or non-standard phrase, and for every number that disagrees with the rest of the block: a to-hit that does not match the ability modifier plus proficiency bonus, average damage that does not match its dice, a save DC off 8 + modifier + proficiency bonus, a recharge with no die range.
 - Save the file where the user wants it. Unless they say otherwise, use `./.bench/monsters/<id>.json`; this is a convention of this skill, and `bench` reads only the path you pass it. Check the file with `bench schema validate <file>` until it passes.
 
@@ -50,6 +51,8 @@ bench batch <file> --assumptions <file> --seed <n>
 ```
 
 Defaults are levels `1-20` and 100 fights per level. Narrow with `--levels 5` or `--levels 3-8` when the user cares about a range. Below 100 fights the report warns of thin data. To test against the user's own party instead of the standard party, put one stat block per member per level (each with `level` set) in `./.bench/parties/<name>/` or `~/.bench/parties/<name>/` and pass `--party <name>`. Always pass `--seed`, or quote the seed the output echoes, so the user can rerun the batch exactly.
+
+Every fight runs with lighting `unspecified` unless you pass `--lighting <dim_light|bright_light|sunlight>`, and `unspecified` turns no lighting trait on. When the monster has a sunlight or Bright Light trait, run a second batch with `--lighting sunlight` or `--lighting bright_light` and the same seed, and report both. A Dim Light trait is off by default; tell the user to run `--lighting dim_light` to see it. The report's Lighting row and each lighting trait's finding ("Applies in sunlight; on in this run.") say which light the numbers assume.
 
 If the batch errors with unresolved ids, return to step 2 for those ids.
 

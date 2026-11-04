@@ -163,3 +163,48 @@ fn fixture_and_party_casts_upcast_exactly_above_the_spell_level() {
     assert!(checked > 100, "only {checked} casts checked");
     assert!(faults.is_empty(), "{}", faults.join("\n"));
 }
+
+fn lighting_trait(fixture: &str) -> serde_json::Value {
+    let path = Path::new(env!("CARGO_MANIFEST_DIR")).join("../data/fixtures").join(format!("{fixture}.json"));
+    let block: serde_json::Value = serde_json::from_str(&std::fs::read_to_string(&path).expect("readable fixture")).expect("fixture is JSON");
+    block["traits"]
+        .as_array()
+        .expect("traits array")
+        .iter()
+        .find(|t| t["effects"].as_array().is_some_and(|e| e.iter().any(|e| e.get("roll_modifier").is_some())))
+        .unwrap_or_else(|| panic!("{fixture} has no lighting trait"))
+        .clone()
+}
+
+fn modifiers(lighting: &str, targets: &[&str]) -> serde_json::Value {
+    targets
+        .iter()
+        .map(|t| {
+            let target = if *t == "attack_rolls" { serde_json::json!(t) } else { serde_json::json!({ *t: {"ability": null} }) };
+            serde_json::json!({"roll_modifier": {"disposition": "disadvantage", "lighting": lighting, "target": target}})
+        })
+        .collect()
+}
+
+#[test]
+fn the_eleven_lighting_traits_import_as_roll_modifiers() {
+    let checks_and_attacks = modifiers("sunlight", &["attack_rolls", "ability_checks"]);
+    for fixture in ["kobold-warrior", "drider", "specter", "wight", "wraith"] {
+        let t = lighting_trait(fixture);
+        assert_eq!((t["kind"].as_str(), &t["effects"]), (Some("modeled"), &checks_and_attacks), "{fixture}");
+        assert!(t.get("default_resolution").is_none(), "{fixture}");
+    }
+    let shadow = lighting_trait("shadow");
+    assert_eq!(shadow["effects"], modifiers("sunlight", &["attack_rolls", "saving_throws", "ability_checks"]));
+    assert_eq!(shadow["kind"], "modeled");
+    let cloaker = lighting_trait("cloaker");
+    assert_eq!(cloaker["effects"], modifiers("bright_light", &["attack_rolls"]));
+    assert_eq!(cloaker["kind"], "modeled");
+    for fixture in ["vampire-spawn", "vampire-vampire", "vampire-bat", "vampire-mist"] {
+        let t = lighting_trait(fixture);
+        assert_eq!(t["effects"], checks_and_attacks, "{fixture}");
+        assert_eq!(t["kind"], "partly_modeled", "{fixture}");
+        assert_eq!(t["default_resolution"], "skipped", "{fixture}");
+        assert_eq!(t["agent_clauses"], serde_json::json!(["The vampire takes 20 Radiant damage if it starts its turn in sunlight."]), "{fixture}");
+    }
+}

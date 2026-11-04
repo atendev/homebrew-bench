@@ -102,14 +102,44 @@ pub enum Area {
     Cylinder { radius: u32, height: u32 },
 }
 
-/// Lighting setting for roll modifiers.
+/// The encounter's lighting, and the lighting a roll modifier needs.
+/// `unspecified` (formerly `normal`) means no lighting was stated and turns on no roll modifier.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum Lighting {
     #[default]
-    Normal,
-    Sunlight,
+    #[serde(alias = "normal")]
+    Unspecified,
+    DimLight,
     BrightLight,
+    Sunlight,
+}
+
+impl Lighting {
+    /// Whether an encounter lit like `self` meets a roll modifier keyed to `required`.
+    /// Sunlight is Bright Light; `unspecified` meets nothing.
+    pub fn meets(self, required: Lighting) -> bool {
+        match (self, required) {
+            (Lighting::Sunlight, Lighting::BrightLight) => true,
+            (Lighting::Unspecified, _) => false,
+            _ => self == required,
+        }
+    }
+
+    /// Whether no lighting was stated.
+    pub fn is_unspecified(&self) -> bool {
+        *self == Lighting::Unspecified
+    }
+
+    /// The snake_case spelling used by flags, state files and override paths.
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Lighting::Unspecified => "unspecified",
+            Lighting::DimLight => "dim_light",
+            Lighting::BrightLight => "bright_light",
+            Lighting::Sunlight => "sunlight",
+        }
+    }
 }
 
 /// Advantage/neutral/disadvantage state.
@@ -243,7 +273,8 @@ pub enum ModifierChange {
     None,
 }
 
-/// Roll modifier tied to the encounter lighting setting.
+/// Roll modifier on a trait, applied to the bearer's matching rolls while the encounter's
+/// lighting meets `lighting`.
 #[derive(Debug, Clone, Serialize, Deserialize, schemars::JsonSchema)]
 pub struct RollModifier {
     pub lighting: Lighting,
@@ -391,6 +422,19 @@ pub enum Effect {
     NoProvoke,
 }
 
+impl Effect {
+    /// Whether this effect is a roll modifier or holds one in an `on_hit`, `on_failure` or area.
+    pub fn holds_roll_modifier(&self) -> bool {
+        match self {
+            Effect::RollModifier(_) => true,
+            Effect::Attack(a) => a.on_hit.iter().any(Effect::holds_roll_modifier),
+            Effect::SavingThrow(s) => s.on_failure.iter().any(Effect::holds_roll_modifier),
+            Effect::Area(a) => a.effect.holds_roll_modifier(),
+            _ => false,
+        }
+    }
+}
+
 /// Resource map for usage tracking on a combatant.
 pub type Resources = HashMap<String, i32>;
 
@@ -420,5 +464,24 @@ mod tests {
         assert!(matches!(ok, Usage::Recharge { dice, .. } if dice == "3-6"));
         let default: Usage = serde_json::from_str(r#"{"recharge":{}}"#).unwrap();
         assert!(matches!(default, Usage::Recharge { dice, .. } if dice == "5-6"));
+    }
+
+    #[test]
+    fn lighting_meets_its_own_key_and_sunlight_meets_bright_light() {
+        use Lighting::*;
+        let all = [Unspecified, DimLight, BrightLight, Sunlight];
+        let met = [(DimLight, DimLight), (BrightLight, BrightLight), (Sunlight, BrightLight), (Sunlight, Sunlight)];
+        for setting in all {
+            for required in all {
+                assert_eq!(setting.meets(required), met.contains(&(setting, required)), "{setting:?} meets {required:?}");
+            }
+        }
+    }
+
+    #[test]
+    fn normal_lighting_loads_as_unspecified() {
+        assert_eq!(serde_json::from_str::<Lighting>(r#""normal""#).unwrap(), Lighting::Unspecified);
+        assert_eq!(serde_json::to_string(&Lighting::Unspecified).unwrap(), r#""unspecified""#);
+        assert_eq!(serde_json::from_str::<Lighting>(r#""dim_light""#).unwrap(), Lighting::DimLight);
     }
 }
