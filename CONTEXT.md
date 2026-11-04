@@ -60,6 +60,14 @@ _Avoid_: Overcast, higher-level casting
 A timed change a modeled ability puts on a combatant's stats or rolls, such as halved Speed, no Reactions, or Disadvantage on Strength checks. It ends on a duration or a successful save. Conditions are separate: the ruleset defines them.
 _Avoid_: Buff, debuff, status
 
+**Roll modifier**:
+Advantage or Disadvantage that a trait gives its own creature on one kind of roll while a stated circumstance holds, such as Sunlight Sensitivity in sunlight. It is always on while the circumstance holds, with no duration. Lighting is the only circumstance the engine reads.
+_Avoid_: Modifier (that is timed), passive buff
+
+**Lighting**:
+The light one encounter takes place in, one value for every combatant: unspecified, Dim Light, Bright Light or sunlight. Sunlight is also Bright Light. Unspecified is the default and turns on no lighting trait, so a trait keyed to any light applies only when the user names that light. Darkness is not a lighting value yet; the agent handles it.
+_Avoid_: Normal light, illumination, ambient light
+
 **Agent judgment**:
 A call the engine cannot make, such as an ambiguous or unmodelable ability, made by the agent and clearly labeled as such in reports and in play.
 _Avoid_: Fudge, guess
