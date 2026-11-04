@@ -33,8 +33,8 @@ fn spec(id: &str, levels: Vec<u8>, fights: u32) -> BatchSpec {
 }
 
 /// Ticket 057 moved the legendary window and bumped the engine without
-/// regenerating the curve. The v3 build (ticket 056) regenerates it once and
-/// drops this allowance.
+/// regenerating the curve. Ticket 056 regenerates it once and drops this
+/// allowance.
 fn stale_beyond_the_engine(reasons: Vec<String>) -> Vec<String> {
     reasons.into_iter().filter(|r| !r.starts_with("the engine is ")).collect()
 }
@@ -128,8 +128,8 @@ fn a_batch_with_the_curve_states_a_verdict_and_flags_a_changed_party() {
     let report = batch::run(&s).unwrap();
     let comparison = report.summary.comparison.as_ref().unwrap();
     assert!(!comparison.verdict.is_empty() && comparison.basis.starts_with("Basis: "));
-    let stale: Vec<&String> = report.summary.warnings.iter().filter(|w| w.contains("Stale baseline")).collect();
-    assert!(stale.iter().all(|w| w.contains("the engine is ") && !w.contains("party differs")), "{stale:?}");
+    let stale = stale_beyond_the_engine(comparison.stale.clone());
+    assert!(stale.is_empty(), "{stale:?}");
     assert!(report.html.contains("Claimed-CR verdict") && report.html.contains("Encounter budget at level 2"));
     s.party.get_mut(&2).unwrap().pop();
     let stale = batch::run(&s).unwrap();

@@ -100,4 +100,4 @@ Takeable now, in order:
 
 Blocked:
 
-- Build v3 scoring for buffs, forced movement and teleports (task, AFK), waits on Batch policy takes reactions
+- Build v3 scoring for buffs, forced movement and teleports (task, AFK), waits on Batch policy takes reactions and Import legendary action cooldowns; it regenerates the baseline once
