@@ -59,4 +59,4 @@ Left out:
 - Grapples ending when the grappler is Incapacitated, and Frightened's "can't approach" movement rule. These change when conditions end or where creatures move, not attack rolls.
 - Darkness and Heavily Obscured areas. The Darkness fog item stays, and now has its sense-range question answered by this decision.
 
-Build tickets: [Build attack-roll condition sources](../tickets/068-build-attack-roll-condition-sources.md) and [Build saving-throw condition sources](../tickets/069-build-saving-throw-condition-sources.md). ADR: [0017](../../docs/adr/0017-position-worded-rules-read-through-engagement-and-senses.md).
+Build tickets: [Build attack-roll condition sources](068-build-attack-roll-condition-sources.md) and [Build saving-throw condition sources](../tickets/069-build-saving-throw-condition-sources.md). ADR: [0017](../../docs/adr/0017-position-worded-rules-read-through-engagement-and-senses.md).

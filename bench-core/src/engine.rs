@@ -510,12 +510,18 @@ fn resolve_effect(
                 let total = natural as i32 + attack.modifier + attack_modifier(state, &actor)?;
                 let base_ac = stat_block(state, &target)?.armor_class.first().map(|a| a.value).unwrap_or(10);
                 let ac = base_ac + ac_modifier(state, &target);
-                let critical = natural == 20;
-                let mut hit = critical || (natural != 1 && total >= ac);
+                let natural_20 = natural == 20;
+                let mut hit = natural_20 || (natural != 1 && total >= ac);
+                let automatic = automatic_critical(&actor, &target);
+                let critical = natural_20 || automatic.is_some();
+                let why_critical = match automatic {
+                    Some(why) if hit && !natural_20 => format!(" (critical: {why}, within 5 feet)"),
+                    _ => String::new(),
+                };
                 let marked = state.player_dice.all_entered_since(actor_id);
                 events.push(EngineEvent {
                     kind: "attack".into(),
-                    message: format!("{} attacks {}: {} vs AC {} ({}){note}", actor.name, target.name, total, ac, if hit { "hit" } else { "miss" }),
+                    message: format!("{} attacks {}: {} vs AC {} ({}){why_critical}{note}", actor.name, target.name, total, ac, if hit { "hit" } else { "miss" }),
                     actor_id: Some(actor_id.into()),
                     target_id: Some(target_id.clone()),
                     roll: Some(natural),
@@ -534,7 +540,7 @@ fn resolve_effect(
                             events.extend(resolve_action(state, target_id, &id, &[actor_id.to_string()], None, false)?);
                             *stream = Stream::from_state(state.rng.clone());
                             let ac = base_ac + ac_modifier(state, &state.combatants[target_index]);
-                            hit = critical || (natural != 1 && total >= ac);
+                            hit = natural_20 || (natural != 1 && total >= ac);
                             events.push(EngineEvent {
                                 kind: "attack_rechecked".into(),
                                 message: format!("{} attacks {}: {} vs AC {} ({}) after {name}", actor.name, target.name, total, ac, if hit { "hit" } else { "miss" }),
@@ -1410,8 +1416,8 @@ fn move_combatant(
 /// Why a creature may not make an Opportunity Attack against a mover.
 enum Ineligible {
     Rule(String),
-    /// The rule needs a creature the reactor can see; the engine assumes
-    /// Invisible hides the mover from every reactor and Blinded sees nothing.
+    /// The rule needs a creature the reactor can see; the engine reads sight
+    /// through ADR 0017's one rule, which assumes line of sight otherwise.
     Unseen(String),
 }
 
@@ -1431,7 +1437,6 @@ impl Ineligible {
 fn opportunity_eligibility(state: &EncounterState, reactor: usize, mover: usize) -> Result<(), Ineligible> {
     let r = &state.combatants[reactor];
     let m = &state.combatants[mover];
-    let has = |c: &Combatant, condition: Condition| c.conditions.iter().any(|x| x.condition == condition);
     if r.side_id == m.side_id {
         return Err(Ineligible::Rule(format!("{} is on {}'s side", r.id, m.id)));
     }
@@ -1444,13 +1449,10 @@ fn opportunity_eligibility(state: &EncounterState, reactor: usize, mover: usize)
             return Err(Ineligible::Rule(format!("{} does not provoke ({})", m.id, t.name)));
         }
     }
-    if has(m, Condition::Invisible) {
-        return Err(Ineligible::Unseen(format!("{} cannot see {}, who is invisible", r.id, m.id)));
+    match unseen_reason(state, r, m) {
+        Some(why) => Err(Ineligible::Unseen(why)),
+        None => Ok(()),
     }
-    if has(r, Condition::Blinded) {
-        return Err(Ineligible::Unseen(format!("{} is blinded and cannot see {}", r.id, m.id)));
-    }
-    Ok(())
 }
 
 /// Whether `reactor_id` may make an Opportunity Attack on `mover_id` under the
@@ -2138,7 +2140,12 @@ fn apply_damage(
     events: &mut Vec<EngineEvent>,
 ) -> Result<(), EngineError> {
     let i = index_of(state, target_id)?;
-    if state.combatants[i].end_state == EndState::Unconscious && amount > 0 {
+    let down = matches!(state.combatants[i].end_state, EndState::Unconscious | EndState::Stable);
+    if down && amount > 0 {
+        if state.combatants[i].end_state == EndState::Stable {
+            state.combatants[i].end_state = EndState::Unconscious;
+            events.push(event("destabilize", format!("{target_id} is no longer stable"), source_id.unwrap_or(target_id), target_id));
+        }
         let failures = if critical { 2 } else { 1 };
         state.combatants[i].death_saves.failures += failures;
         events.push(EngineEvent {
@@ -2309,15 +2316,31 @@ fn adjust_damage(state: &EncounterState, target: &Combatant, amount: i32, damage
     else { amount }
 }
 
-/// Roll disposition for an attack roll from every source: the actor's and target's conditions,
-/// Invisible on either side, the actor's timed modifiers, and lighting roll modifiers on its traits.
-fn disposition(state: &EncounterState, actor: &Combatant, target: &Combatant) -> RollDisposition {
+/// Roll disposition for an attack roll from every source (PHB Appendix C, read through ADR 0017):
+/// the actor's and target's conditions, Invisible on either side as sight allows, the actor's timed
+/// modifiers, and lighting roll modifiers on its traits. Ticket 056's policy reads it too.
+pub(crate) fn disposition(state: &EncounterState, actor: &Combatant, target: &Combatant) -> RollDisposition {
+    use RollDisposition::{Advantage, Disadvantage};
     let has = |c: &Combatant, f: fn(Condition) -> bool| c.conditions.iter().any(|i| f(i.condition));
+    let grappled_away = actor
+        .conditions
+        .iter()
+        .any(|i| i.condition == Condition::Grappled && i.source.as_deref() != Some(target.id.as_str()));
+    let frightened = actor.conditions.iter().any(|i| {
+        i.condition == Condition::Frightened
+            && match &i.source {
+                None => true,
+                Some(source) => state.combatants.iter().find(|c| &c.id == source).is_some_and(|c| sees(state, actor, c)),
+            }
+    });
     let conditions = [
-        (has(actor, |c| matches!(c, Condition::Blinded | Condition::Frightened | Condition::Poisoned | Condition::Prone)), RollDisposition::Disadvantage),
-        (has(target, |c| matches!(c, Condition::Paralyzed | Condition::Prone | Condition::Restrained | Condition::Stunned | Condition::Unconscious)), RollDisposition::Advantage),
-        (has(target, |c| matches!(c, Condition::Invisible)), RollDisposition::Disadvantage),
-        (has(actor, |c| matches!(c, Condition::Invisible)), RollDisposition::Advantage),
+        (has(actor, |c| matches!(c, Condition::Blinded | Condition::Poisoned | Condition::Prone | Condition::Restrained)), Disadvantage),
+        (grappled_away || frightened, Disadvantage),
+        (has(target, |c| matches!(c, Condition::Blinded | Condition::Paralyzed | Condition::Petrified | Condition::Restrained | Condition::Stunned)), Advantage),
+        (counts_as_unconscious(target), Advantage),
+        (counts_as_prone(target), if within_5_feet(actor, target) { Advantage } else { Disadvantage }),
+        (!sees(state, actor, target), Disadvantage),
+        (!sees(state, target, actor), Advantage),
     ];
     combined_disposition(
         conditions
@@ -2326,6 +2349,59 @@ fn disposition(state: &EncounterState, actor: &Combatant, target: &Combatant) ->
             .chain(modifier_dispositions(state, actor, ModifierTarget::AttackRolls))
             .chain(lighting_modifiers(state, actor, Roll::Attack).into_iter().map(|(d, _)| d)),
     )
+}
+
+/// "Within 5 feet" (ADR 0017): either combatant holds the other in its engagement list.
+/// Range bands are not read, because a missing band defaults to engaged.
+fn within_5_feet(a: &Combatant, b: &Combatant) -> bool {
+    a.engagement.contains(&b.id) || b.engagement.contains(&a.id)
+}
+
+/// The one sight rule (ADR 0017): `observer` sees `observed` unless `observed` is Invisible and
+/// `observer` has neither Blindsight nor Truesight, or `observer` is Blinded without Blindsight.
+/// Sense ranges are ignored and Tremorsense doesn't see.
+fn sees(state: &EncounterState, observer: &Combatant, observed: &Combatant) -> bool {
+    unseen_reason(state, observer, observed).is_none()
+}
+
+fn unseen_reason(state: &EncounterState, observer: &Combatant, observed: &Combatant) -> Option<String> {
+    let has = |c: &Combatant, condition: Condition| c.conditions.iter().any(|x| x.condition == condition);
+    let senses = stat_block(state, observer).ok().map(|b| &b.senses);
+    let blindsight = senses.is_some_and(|s| s.blindsight.is_some());
+    let truesight = senses.is_some_and(|s| s.truesight.is_some());
+    if has(observed, Condition::Invisible) && !blindsight && !truesight {
+        return Some(format!("{} cannot see {}, who is invisible", observer.id, observed.id));
+    }
+    if has(observer, Condition::Blinded) && !blindsight {
+        return Some(format!("{} is blinded and cannot see {}", observer.id, observed.id));
+    }
+    None
+}
+
+/// A combatant counts as Unconscious for attacks when it has the condition or is down
+/// (`end_state` Unconscious or Stable). Nothing is stored in `conditions` (ADR 0017).
+pub(crate) fn counts_as_unconscious(c: &Combatant) -> bool {
+    matches!(c.end_state, EndState::Unconscious | EndState::Stable) || c.conditions.iter().any(|i| i.condition == Condition::Unconscious)
+}
+
+/// Prone for attacks: the Prone condition, or anything that counts as Unconscious.
+fn counts_as_prone(c: &Combatant) -> bool {
+    counts_as_unconscious(c) || c.conditions.iter().any(|i| i.condition == Condition::Prone)
+}
+
+/// Why a hit on `target` is a Critical Hit whatever the roll: the target is Paralyzed or counts as
+/// Unconscious and the attacker is within 5 feet of it.
+fn automatic_critical(actor: &Combatant, target: &Combatant) -> Option<&'static str> {
+    if !within_5_feet(actor, target) {
+        return None;
+    }
+    if target.conditions.iter().any(|i| i.condition == Condition::Paralyzed) {
+        Some("paralyzed")
+    } else if counts_as_unconscious(target) {
+        Some("unconscious")
+    } else {
+        None
+    }
 }
 
 fn save_d20(state: &mut EncounterState, stream: &mut Stream, saver_id: &str, ability: Ability) -> Result<(u32, String), EngineError> {
@@ -5565,5 +5641,228 @@ mod tests {
         assert_eq!(state.active_modifiers.len(), 4);
         assert_eq!(with_end.len(), 1);
         assert!(matches!(with_end[0].target, ModifierTarget::ExtraAction { .. }));
+    }
+
+    /// `fighter` (ally) attacks `goblin` (enemy); neither is engaged unless `setup` engages them.
+    fn duel(setup: impl FnOnce(&mut Vec<StatBlock>, &mut Vec<Combatant>)) -> EncounterState {
+        let mut blocks = vec![test_stat_block("fighter", "Fighter", 20, 16), test_stat_block("goblin", "Goblin", 7, 15)];
+        let mut combatants = vec![test_combatant("fighter", "fighter", 20, "ally"), test_combatant("goblin", "goblin", 7, "enemy")];
+        setup(&mut blocks, &mut combatants);
+        test_encounter(blocks, combatants)
+    }
+
+    fn duel_disposition(setup: impl FnOnce(&mut Vec<StatBlock>, &mut Vec<Combatant>)) -> RollDisposition {
+        let state = duel(setup);
+        disposition(&state, &state.combatants[0], &state.combatants[1])
+    }
+
+    fn engage_duel(combatants: &mut [Combatant]) {
+        combatants[0].engagement.push("goblin".into());
+        combatants[1].engagement.push("fighter".into());
+    }
+
+    fn sourced(condition: Condition, source: Option<&str>) -> ConditionInstance {
+        ConditionInstance { condition, duration: Duration::Permanent, source: source.map(Into::into), ends_on_damage: false }
+    }
+
+    #[test]
+    fn blinded_and_petrified_targets_give_advantage() {
+        assert_eq!(duel_disposition(|_, c| c[1].conditions.push(sourced(Condition::Blinded, None))), RollDisposition::Advantage);
+        assert_eq!(duel_disposition(|_, c| c[1].conditions.push(sourced(Condition::Petrified, None))), RollDisposition::Advantage);
+    }
+
+    #[test]
+    fn a_restrained_attacker_has_disadvantage() {
+        assert_eq!(duel_disposition(|_, c| c[0].conditions.push(sourced(Condition::Restrained, None))), RollDisposition::Disadvantage);
+    }
+
+    #[test]
+    fn a_blinded_attacker_with_blindsight_keeps_disadvantage() {
+        let d = duel_disposition(|b, c| {
+            b[0].senses.blindsight = Some(10);
+            c[0].conditions.push(sourced(Condition::Blinded, None));
+        });
+        assert_eq!(d, RollDisposition::Disadvantage);
+    }
+
+    #[test]
+    fn a_prone_target_gives_advantage_only_within_engagement() {
+        let prone = |c: &mut Vec<Combatant>| c[1].conditions.push(sourced(Condition::Prone, None));
+        assert_eq!(duel_disposition(|_, c| { prone(c); engage_duel(c); }), RollDisposition::Advantage);
+        assert_eq!(
+            duel_disposition(|_, c| {
+                prone(c);
+                c[0].ranges.insert("goblin".into(), RangeBand::Near);
+                c[1].ranges.insert("fighter".into(), RangeBand::Near);
+            }),
+            RollDisposition::Disadvantage
+        );
+        assert_eq!(duel_disposition(|_, c| { prone(c); c[1].engagement.push("fighter".into()); }), RollDisposition::Advantage);
+    }
+
+    #[test]
+    fn a_grappled_attacker_rolls_straight_only_against_its_grappler() {
+        assert_eq!(duel_disposition(|_, c| c[0].conditions.push(sourced(Condition::Grappled, Some("goblin")))), RollDisposition::Normal);
+        assert_eq!(duel_disposition(|_, c| c[0].conditions.push(sourced(Condition::Grappled, Some("ogre")))), RollDisposition::Disadvantage);
+        assert_eq!(duel_disposition(|_, c| c[0].conditions.push(sourced(Condition::Grappled, None))), RollDisposition::Disadvantage);
+    }
+
+    #[test]
+    fn a_frightened_attacker_has_disadvantage_while_it_sees_the_source() {
+        let with_ogre = |b: &mut Vec<StatBlock>, c: &mut Vec<Combatant>, source: Option<&str>| {
+            b.push(test_stat_block("ogre", "Ogre", 30, 11));
+            c.push(test_combatant("ogre", "ogre", 30, "enemy"));
+            c[0].conditions.push(sourced(Condition::Frightened, source));
+        };
+        assert_eq!(duel_disposition(|b, c| with_ogre(b, c, Some("ogre"))), RollDisposition::Disadvantage);
+        assert_eq!(
+            duel_disposition(|b, c| {
+                with_ogre(b, c, Some("ogre"));
+                c[2].conditions.push(sourced(Condition::Invisible, None));
+            }),
+            RollDisposition::Normal
+        );
+        assert_eq!(duel_disposition(|b, c| with_ogre(b, c, Some("gone"))), RollDisposition::Normal);
+        assert_eq!(
+            duel_disposition(|b, c| {
+                with_ogre(b, c, Some("ogre"));
+                c[2].end_state = EndState::Dead;
+            }),
+            RollDisposition::Disadvantage
+        );
+        assert_eq!(duel_disposition(|b, c| with_ogre(b, c, None)), RollDisposition::Disadvantage);
+    }
+
+    #[test]
+    fn invisible_counts_only_against_an_observer_without_blindsight_or_truesight() {
+        let attacker_invisible = |c: &mut Vec<Combatant>| c[0].conditions.push(sourced(Condition::Invisible, None));
+        let target_invisible = |c: &mut Vec<Combatant>| c[1].conditions.push(sourced(Condition::Invisible, None));
+        assert_eq!(duel_disposition(|_, c| attacker_invisible(c)), RollDisposition::Advantage);
+        assert_eq!(duel_disposition(|b, c| { b[1].senses.truesight = Some(120); attacker_invisible(c); }), RollDisposition::Normal);
+        assert_eq!(duel_disposition(|b, c| { b[1].senses.blindsight = Some(10); attacker_invisible(c); }), RollDisposition::Normal);
+        assert_eq!(duel_disposition(|b, c| { b[1].senses.tremorsense = Some(60); attacker_invisible(c); }), RollDisposition::Advantage);
+        assert_eq!(duel_disposition(|_, c| target_invisible(c)), RollDisposition::Disadvantage);
+        assert_eq!(duel_disposition(|b, c| { b[0].senses.blindsight = Some(10); target_invisible(c); }), RollDisposition::Normal);
+        assert_eq!(duel_disposition(|b, c| { b[0].senses.tremorsense = Some(60); target_invisible(c); }), RollDisposition::Disadvantage);
+    }
+
+    #[test]
+    fn a_downed_target_counts_as_unconscious_and_prone() {
+        for down in [EndState::Unconscious, EndState::Stable] {
+            assert_eq!(duel_disposition(|_, c| { c[1].end_state = down; engage_duel(c); }), RollDisposition::Advantage, "{down:?}");
+            assert_eq!(
+                duel_disposition(|_, c| {
+                    c[1].end_state = down;
+                    c[0].ranges.insert("goblin".into(), RangeBand::Far);
+                    c[1].ranges.insert("fighter".into(), RangeBand::Far);
+                }),
+                RollDisposition::Normal,
+                "{down:?}"
+            );
+            let state = duel(|_, c| c[1].end_state = down);
+            assert!(state.combatants[1].conditions.is_empty(), "nothing is pushed into conditions");
+        }
+    }
+
+    /// A one-damage bite (1d1) the goblin rolls against the fighter, on the first seed whose
+    /// natural d20 satisfies `natural`. Returns the state after it, the attack event and every event.
+    fn bite_on(state: &EncounterState, natural: impl Fn(u32) -> bool) -> (EncounterState, EngineEvent, Vec<EngineEvent>) {
+        for seed in 1..5000 {
+            let mut trial = state.clone();
+            trial.rng = RngState::new(seed);
+            let resp = step(&mut trial, StepRequest::Action { actor_id: "goblin".into(), action_id: "bite".into(), target_ids: vec!["fighter".into()], slot_level: None, extra: false }).unwrap();
+            let attack = resp.events.iter().find(|e| e.kind == "attack").expect("attack event").clone();
+            if natural(attack.roll.unwrap()) {
+                return (trial, attack, resp.events);
+            }
+        }
+        panic!("no seed rolled the wanted natural d20");
+    }
+
+    fn one_damage_bite(setup: impl FnOnce(&mut StatBlock, &mut Combatant)) -> EncounterState {
+        attack_state(vec![gated("1d1", 0, DamageType::Piercing, None, false)], vec![], setup)
+    }
+
+    fn disengage_bite(state: &mut EncounterState, band: RangeBand) {
+        state.combatants[0].engagement.clear();
+        state.combatants[1].engagement.clear();
+        state.combatants[0].ranges.insert("goblin".into(), band);
+        state.combatants[1].ranges.insert("fighter".into(), band);
+    }
+
+    fn fighter_of(state: &EncounterState) -> &Combatant {
+        state.combatants.iter().find(|c| c.id == "fighter").unwrap()
+    }
+
+    #[test]
+    fn an_engaged_hit_on_a_paralyzed_target_is_critical() {
+        let paralyzed = one_damage_bite(|_, f| f.conditions.push(sourced(Condition::Paralyzed, None)));
+        let (after, attack, _) = bite_on(&paralyzed, |n| n == 2);
+        assert!(attack.message.contains("(hit) (critical: paralyzed, within 5 feet)"), "{}", attack.message);
+        assert_eq!(fighter_of(&after).hp, 98, "a critical rolls the damage dice twice");
+
+        let mut near = paralyzed.clone();
+        disengage_bite(&mut near, RangeBand::Near);
+        let (after, attack, _) = bite_on(&near, |n| n == 2);
+        assert!(attack.message.ends_with("(hit)"), "{}", attack.message);
+        assert_eq!(fighter_of(&after).hp, 99);
+    }
+
+    #[test]
+    fn an_engaged_hit_on_a_downed_pc_is_critical_with_two_failures() {
+        let downed = one_damage_bite(|_, f| {
+            f.hp = 0;
+            f.end_state = EndState::Unconscious;
+        });
+        let (after, attack, _) = bite_on(&downed, |n| n > 1 && n < 20);
+        assert!(attack.message.contains("(critical: unconscious, within 5 feet)"), "{}", attack.message);
+        assert_eq!(fighter_of(&after).death_saves.failures, 2);
+
+        let mut far = downed.clone();
+        disengage_bite(&mut far, RangeBand::Far);
+        let (after, attack, _) = bite_on(&far, |n| n > 1 && n < 20);
+        assert!(attack.message.ends_with("(hit)"), "{}", attack.message);
+        assert_eq!(fighter_of(&after).death_saves.failures, 1);
+    }
+
+    #[test]
+    fn damage_to_a_stable_pc_makes_it_dying_with_a_failure() {
+        let stable = one_damage_bite(|_, f| {
+            f.hp = 0;
+            f.end_state = EndState::Stable;
+        });
+        let mut far = stable.clone();
+        disengage_bite(&mut far, RangeBand::Far);
+        let (after, _, events) = bite_on(&far, |n| n > 1 && n < 20);
+        let fighter = fighter_of(&after);
+        assert_eq!((fighter.end_state, fighter.death_saves.failures, fighter.hp), (EndState::Unconscious, 1, 0));
+        assert!(events.iter().any(|e| e.message == "fighter is no longer stable"), "{events:?}");
+
+        let (after, _, _) = bite_on(&stable, |n| n > 1 && n < 20);
+        assert_eq!((fighter_of(&after).end_state, fighter_of(&after).death_saves.failures), (EndState::Unconscious, 2));
+
+        let mut failing = far.clone();
+        failing.combatants[0].death_saves.failures = 2;
+        let (after, _, _) = bite_on(&failing, |n| n > 1 && n < 20);
+        assert_eq!(fighter_of(&after).end_state, EndState::Dead);
+    }
+
+    #[test]
+    fn opportunity_attacks_use_the_sight_rule() {
+        let mut truesight = provoking_encounter(0);
+        truesight.stat_blocks[1].stat_block.senses.truesight = Some(60);
+        truesight.combatants[0].conditions.push(sourced(Condition::Invisible, None));
+        assert!(opportunity_eligible(&truesight, "b", "a"));
+        assert!(!opportunity_eligible(&truesight, "c", "a"));
+
+        let mut blindsight = provoking_encounter(0);
+        blindsight.stat_blocks[1].stat_block.senses.blindsight = Some(10);
+        blindsight.combatants[1].conditions.push(sourced(Condition::Blinded, None));
+        assert!(opportunity_eligible(&blindsight, "b", "a"));
+
+        let mut blinded = provoking_encounter(0);
+        blinded.combatants[1].conditions.push(sourced(Condition::Blinded, None));
+        let events = move_combatant(&mut blinded, "a", None, RangeBand::Far, 35, &[], &[]).unwrap();
+        assert!(events.iter().any(|e| e.message == "ASSUMPTION b is blinded and cannot see a, so it makes no Opportunity Attack on a"), "{events:?}");
     }
 }

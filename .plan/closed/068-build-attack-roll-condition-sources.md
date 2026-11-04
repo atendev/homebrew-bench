@@ -3,9 +3,9 @@ id: 068
 title: Build attack-roll condition sources
 type: task
 mode: AFK
-status: open
+status: closed
 blocked_by: [067]
-claimed: true
+claimed: false
 ---
 
 ## Question
@@ -64,3 +64,19 @@ Versions and baseline:
 Consult `tdd`, `codebase-design`, `domain-modeling` and `code-review`.
 
 ## Resolution
+
+Built on branch `ticket-068-build-attack-roll-condition-sources` by a delegated builder, test-first.
+
+- Engine (`bench-core/src/engine.rs`). `within_5_feet(a, b)` reads engagement on either side and never `ranges`. `sees(state, observer, observed)` is the ADR 0017 sight rule; it wraps `unseen_reason`, which returns the message (`c cannot see a, who is invisible` or `c is blinded and cannot see a`) so `opportunity_eligibility` keeps `Ineligible::Unseen` and its assumption line. `counts_as_unconscious` (`pub(crate)`, for ticket 069) and `counts_as_prone` read the condition or the downed `end_state` and push nothing into `conditions`. `disposition` is `pub(crate)` and builds its sources as the ticket lists, still through `combined_disposition`, with timed modifiers and lighting unchanged. `tactics.rs` is untouched.
+- Automatic critical hits. `automatic_critical(actor, target)` names `paralyzed` or `unconscious` when the attacker is within 5 feet. A hit then rolls the extra dice and the attack event gains `(critical: <why>, within 5 feet)` unless the natural roll was 20. The hit-window trigger's `critical` carries the combined value; it can only differ from a natural 20 for a target that can't react, so no window sees it. The two d20s are still drawn every time.
+- Stable PCs. `apply_damage` treats `Stable` like `Unconscious`: it sets `Unconscious`, logs `destabilize` `<id> is no longer stable`, and adds one failure, two on a critical. Three failures kill.
+- Tests: 11 new engine tests cover every bullet in Notes (the Blinded attacker with Blindsight keeping Disadvantage too). The critical tests use 1d1 damage and search seeds for the wanted natural d20 (2 for Paralyzed). Existing disposition, `combined_disposition` and Opportunity Attack sight tests pass unchanged. Ticket 063's Blinded-reactor penalty test reactor (`brute`) has no Blindsight, so it holds.
+- Docs. ADR 0015's eligibility sentence points at ADR 0017's sight rule. ADR 0005's `if_target` advice to name the grappler as `source` still reads right and is unchanged. `live-mode.md` gives the new sight reason for a refused reactor and a paragraph after the override examples: engage before a melee attack, name the grappler or frightener in `source` (with an object-form override example, checked against a scratch `bench`), downed PCs count as Unconscious and Prone, "within 5 feet" is engaged, and See Invisibility is agent judgment. `CHANGELOG.md` has the Changed entry.
+- Versions. Workspace and `ENGINE_VERSION` 0.1.8; policy stays v3. No serialized field was added, so no old-state fixture test. `a_fixture_regenerates_to_its_committed_row` still passes (the goblin warrior row is unchanged), so it isn't ignored; the curve wasn't regenerated. `cargo test --workspace` passes; clippy shows only master's two engine.rs errors (`cloned_ref_to_slice_refs` on the on-hit loop, too many args on `apply_damage`). The SRD import exits 0 with 341 of 341 graduated and `check-spell-effects.py` reports 84 entries consistent.
+
+Readings chosen where the ticket was open:
+
+- When a mover is both Invisible and faced by a Blinded reactor without either sense, the Invisible message wins, as before.
+- The automatic-critical reason names Paralyzed before Unconscious when both apply.
+
+Links to this ticket in 056, 069 and closed 067 now point at `closed/`. No follow-up tickets or new fog.
