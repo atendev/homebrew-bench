@@ -3,9 +3,9 @@ id: 071
 title: Build massive damage at 0 Hit Points
 type: task
 mode: AFK
-status: open
+status: closed
 blocked_by: []
-claimed: true
+claimed: false
 ---
 
 ## Question
@@ -25,3 +25,10 @@ PHB ch. 1, "Damage and Healing", Damage at 0 Hit Points (p. 27): "If you take an
 Consult `tdd` and `code-review`.
 
 ## Resolution
+
+The down branch of `apply_damage` now soaks the hit with Temporary Hit Points, then kills a dying or Stable PC whose remaining damage is at or over `max_hp`, logging `<id> dies from massive damage` with no failure counted. A lesser hit keeps the 068 logic: Stable becomes dying, one failure, two on a critical, death at three. `amount` arrives after `adjust_damage`, so resistance and immunity are already applied.
+
+- Decision kept: a hit fully absorbed by Temporary Hit Points still gives a death save failure, as before. Only the massive-damage comparison uses the post-soak number.
+- Tests. `damage_at_or_over_max_hp_kills_a_downed_pc` drives the goblin's 1d1 bite through `step`: dying at max HP 1 dies, max HP 2 takes one failure, Stable at max HP 1 dies, 1 Temporary HP soaks the hit to a failure, and an engaged critical (2 damage) on max HP 2 dies with no failures.
+- Versions. Workspace and `ENGINE_VERSION` 0.1.10; no test pinned 0.1.9. No serialized field added. `a_fixture_regenerates_to_its_committed_row` still passes, so it isn't ignored; the curve wasn't regenerated. `cargo test --workspace` passes; clippy shows only master's two engine.rs errors. The SRD import exits 0 with 341 of 341 graduated.
+- Live-mode reference: no statement about damage to downed PCs, so no edit.
