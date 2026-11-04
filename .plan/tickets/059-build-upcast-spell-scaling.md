@@ -22,12 +22,13 @@ Model and file (`bench-core/src/spell.rs`, `data/spells/effects.json`):
 - Fix the known faulty entries:
   - Magic Missile: dice `1d4` with modifier 1, and one `extra_effects` rule instead of three `extra_dice` rules.
   - Scorching Ray: one `extra_effects` rule instead of three `extra_targets` rules.
-  - Heal: dice `1d1` with modifier 69, and `extra_modifier` 10.
+  - Heal: a flat 70 with no roll and no spellcasting modifier, and `extra_modifier` 10. `bind_effect` adds the caster's modifier to every Heal, and `1d1` would prompt a live player for a d1, so `1d1 + 69` is wrong. Make `Heal.dice` optional (absent means no roll) and add a Heal field, such as `spellcasting_modifier: bool` defaulting to true, that `bind_effect` reads. Heal sets it to false.
+  - Disintegrate, Finger of Death and Regenerate: move the flat part into `modifier` (`10d6` + 40, `7d8` + 30, `4d8` + 15).
   - Acid Arrow and Vitriolic Sphere: drop the rules that point at a missing effect, and move the unmodeled parts into `upcast_clause`.
-  - Bless (no effects): a clause in place of the rule.
+  - Bless, Wall of Fire and Wall of Ice (no effects): a clause in place of each rule.
   - Ice Knife: the cold burst is unmodeled, so its 1d6 becomes a clause and not a rule on the piercing attack.
   - Ice Storm: `damage_type: bludgeoning`.
-  - Arcane Hand and Wall of Ice: a clause for the part not modeled.
+  - Arcane Hand: a clause for the Grasping Hand part.
   - Shatter: add the missing `extra_dice 1d8` rule.
 - Check every other rule against the SRD text while doing this.
 
@@ -58,20 +59,22 @@ Tests (`tdd`):
 
 - In `spell.rs`: each rule's `effect_index` exists, the variant fits that effect, `extra_dice` die sizes match their target, and every dice string in the file parses with `roll_dice`'s grammar.
 - Over fixtures and the standard party: `upcast` is true exactly when `slot_level` is above the spell's `level`, and no cast has a slot level below its spell's level.
-- Engine: Fireball at level 5 rolls 10d6. Magic Missile at level 3 makes five darts. Scorching Ray at level 3 makes four rays. Cure Wounds at level 2 heals 4d8 plus the modifier. Heal at level 7 heals 80. An `extra_targets` rule on a test entry's Attack raises its `target_count` at a higher level. Hold Monster at level 6 still resolves against every target passed. A slot level below the spell's level is refused. A cantrip's damage still scales with caster level, and a leveled spell with no slot level does not. An `upcast_clause` event appears only on an upcast.
+- Engine: Fireball at level 5 rolls 10d6. Magic Missile at level 3 makes five darts. Scorching Ray at level 3 makes four rays. Cure Wounds at level 2 heals 4d8 plus the modifier. Heal at level 7 heals exactly 80: no spellcasting modifier, no dice drawn, and no player-dice prompt in ask mode. Disintegrate deals `10d6` + 40. An `extra_targets` rule on a test entry's Attack raises its `target_count` at a higher level. Hold Monster at level 6 still resolves against every target passed. A slot level below the spell's level is refused. A cantrip's damage still scales with caster level, and a leveled spell with no slot level does not. An `upcast_clause` event appears only on an upcast.
 - Live: `--slot` spends the named slot and scales the spell. Each refusal gives its reason. A history without `--slot` replays.
 - Batch: the clause warning appears for a homebrew stat block that upcasts Acid Arrow.
 
 Docs:
 
 - Amend ADR 0014: cast level, `level`, the four rule variants, `upcast_clause`, and the retired variants. A new ADR is not needed.
+- Amend ADR 0005: the multiattack bullet says `resolve_cast` ignores `slot_level` and `upcast` "until spell scaling lands". Replace that with the cast-level rule, and mention the optional Heal dice and the flag that turns off the spellcasting modifier.
 - Document `--slot` in `.agents/skills/homebrew-bench/references/live-mode.md`. The skill test checks it against `bench help --json`. Say in the live and batch references what an `upcast_clause` line means for the agent.
-- Add a `CHANGELOG.md` entry. It must say that the 14 dragon fixtures that cast "level N version" spells now cast them at that level, and that Magic Missile and Heal now resolve.
+- Add a `CHANGELOG.md` entry. It must say that the 14 dragon fixtures that cast "level N version" spells now cast them at that level, and that Magic Missile, Heal, Disintegrate, Finger of Death and Regenerate now resolve.
 
 Versions and baseline:
 
-- Bump the workspace version, and with it `ENGINE_VERSION`, to 0.1.2. Do not regenerate `data/baseline/curve.json`. The batch numbers for these dragons change, and caster cells may change if Magic Missile or Heal was being picked. Before the fix, check whether those casts errored or were never chosen, and record which in the Resolution.
-- The stale-curve allowances in `bench-core/tests/calibration.rs` and the CLI test already accept any "the engine is ..." reason, so they should pass unchanged. Ticket [056](056-build-v3-scoring-for-buffs-forced-movement-and-teleports.md) waits on this ticket and regenerates the curve once after it lands.
+- Bump the workspace version, and with it `ENGINE_VERSION`, to 0.1.2. Do not regenerate `data/baseline/curve.json`. The batch numbers for these dragons change. Caster and healer cells may change if Magic Missile, Heal, Disintegrate, Finger of Death or Regenerate was being picked. Before the fix, check for each of the five whether its casts errored or were never chosen, and record which in the Resolution.
+- Regenerate the standard party with `scripts/generate-party.py`. The generator copies `agent_clauses` from the effects file, so moving upcast text out of them (Magic Missile, Scorching Ray, Wall of Fire, Wall of Ice) changes 20 party files, and `committed_blocks_match_generator_output` in `party.rs` fails until they are regenerated. The curve then also reports "the party differs from the `standard` party the curve was computed against".
+- Widen both stale-curve allowances, `stale_beyond_the_engine` in `bench-core/tests/calibration.rs` and the CLI test `batch_compares_against_the_embedded_curve_outside_the_repo`, to accept that party reason as well as the engine and fixture reasons. Ticket [056](056-build-v3-scoring-for-buffs-forced-movement-and-teleports.md) waits on this ticket, regenerates the curve once after it lands, and removes all three allowances.
 
 Consult `tdd`, `codebase-design`, `domain-modeling` and `code-review`.
 
