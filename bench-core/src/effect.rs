@@ -267,6 +267,33 @@ pub struct TimedModifier {
     pub duration: Duration,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub source_ability: Option<String>,
+    /// Who the modifier lands on: each target the effect resolves against (the default) or the
+    /// creature using the ability.
+    #[serde(default, skip_serializing_if = "ModifierBearer::is_target")]
+    pub bearer: ModifierBearer,
+    /// The modifier ends when its bearer takes damage, as Hypnotic Pattern's Speed 0 does.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub ends_on_damage: bool,
+}
+
+/// The creature a timed modifier lands on.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize, schemars::JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum ModifierBearer {
+    /// Each target the effect resolves against; under a save's `on_failure` or an attack's
+    /// `on_hit`, that target.
+    #[default]
+    Target,
+    /// The creature using the ability (Shield, Parry).
+    #[serde(rename = "self")]
+    Actor,
+}
+
+impl ModifierBearer {
+    /// True for the default, `target`.
+    pub fn is_target(&self) -> bool {
+        *self == ModifierBearer::Target
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, schemars::JsonSchema)]

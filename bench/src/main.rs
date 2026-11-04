@@ -924,7 +924,17 @@ fn run_schema(action: SchemaAction) -> Result<String, CodedError> {
         }
         SchemaAction::Validate { path } => {
             read_stat_block(&path)?;
-            serde_json::json!({"valid": true, "path": path})
+            let text = match std::fs::read_to_string(&path) {
+                Ok(text) => Some(text),
+                Err(_) => embedded::stat_block_json(&path).map(str::to_string),
+            };
+            let value: Value = text.and_then(|t| serde_json::from_str(&t).ok()).unwrap_or_default();
+            let warnings = bench_core::stat_block::bearer_warnings(&value);
+            if warnings.is_empty() {
+                serde_json::json!({"valid": true, "path": path})
+            } else {
+                serde_json::json!({"valid": true, "path": path, "warnings": warnings})
+            }
         }
     };
     ok(data)

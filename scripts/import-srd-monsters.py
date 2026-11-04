@@ -620,7 +620,7 @@ class Converter:
         if parry:
             entry["trigger"] = {"hit_by_attack_roll": {"attack": "melee"}}
             effects = [{"timed_modifier": {"target": "armor_class", "change": {"add": int(parry.group(2))},
-                                           "duration": "triggering_attack"}}]
+                                           "duration": "triggering_attack", "bearer": "self"}}]
             clauses = [parry.group(3)] if parry.group(3) else []
             self.rec("d", base, "Parry pattern: hit trigger and AC modifier from the prose; holding a weapon is assumed")
         lit = False

@@ -1161,13 +1161,7 @@ fn remaining_speed(state: &EncounterState, actor: &str) -> Result<u32, LiveError
         .iter()
         .find(|c| c.id == actor)
         .ok_or_else(|| LiveError::NotFound(format!("combatant {actor} not found")))?;
-    let walk = state
-        .stat_blocks
-        .iter()
-        .find(|s| s.id == c.stat_block_id)
-        .and_then(|s| s.stat_block.speeds.get("walk"))
-        .map_or(0, |s| s.feet);
-    Ok(walk.saturating_sub(c.action_economy.movement_used_feet))
+    Ok(crate::engine::walk_speed(state, c).saturating_sub(c.action_economy.movement_used_feet))
 }
 
 fn rule_tag(rule: &Option<String>) -> String {
@@ -2300,5 +2294,40 @@ mod tests {
         }
         let caster = state.combatants.iter().find(|c| c.id == CASTER).unwrap();
         assert!(caster.hp < caster.max_hp, "the ogre's hit stands without a Shield window");
+    }
+
+    #[test]
+    fn an_engine_0_1_5_state_reads_each_modifier_bearer_as_its_source() {
+        let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/data/engine-0.1.5-state.json");
+        let state = crate::store::load(&path, crate::store::VersionCheck::Require).expect("an engine 0.1.5 state loads");
+        crate::store::check(&state, &path).unwrap();
+        assert_eq!(state.engine_version, "0.1.5");
+        let on_disk: Value = serde_json::from_str(&std::fs::read_to_string(&path).unwrap()).unwrap();
+        assert_eq!(serde_json::to_value(&state).unwrap(), on_disk, "re-serializes unchanged");
+        assert_eq!(state.active_modifiers.len(), 3);
+        assert!(state.active_modifiers.iter().all(|m| m.is_legacy() && m.bearer() == Some(CASTER)));
+        assert_eq!(remaining_speed(&state, CASTER).unwrap(), 30, "a legacy Speed modifier stays inert, as on 0.1.5");
+        assert_eq!(remaining_speed(&state, "standard-striker-03").unwrap(), 30);
+    }
+
+    #[test]
+    fn haste_cast_on_an_ally_lets_it_close_from_far() {
+        const STRIKER: &str = "standard-striker-03";
+        let mut spec = reaction_spec(&[(CASTER_FILE, PARTY_SIDE), ("fixtures/ogre.json", "monsters")], 1, PcDice::Engine);
+        spec.entrants.push(Entrant { stat_block: block("party/standard/standard-striker-03.json"), side: PARTY_SIDE.into(), band: RangeBand::Far });
+        let (mut state, _) = start(spec).unwrap();
+        let close = Command::Move { actor: STRIKER.into(), target: Some("ogre".into()), band: RangeBand::Engaged, feet: None, opportunity: vec![] };
+        let mut slow = state.clone();
+        turn_of(&mut slow, STRIKER);
+        assert!(matches!(execute(&mut slow, close.clone()), Err(LiveError::Illegal(m)) if m.contains("requires 35 feet")), "35 feet is beyond a 30-foot Speed");
+        turn_of(&mut state, CASTER);
+        let haste = Command::Action { actor: CASTER.into(), action: "haste".into(), targets: vec![STRIKER.into()], slot: None };
+        assert!(lines(&execute(&mut state, haste).unwrap()).contains(&format!("{STRIKER} gains haste from {CASTER}")));
+        assert_eq!((remaining_speed(&state, CASTER).unwrap(), remaining_speed(&state, STRIKER).unwrap()), (30, 60));
+        turn_of(&mut state, STRIKER);
+        execute(&mut state, close).unwrap();
+        let striker = state.combatants.iter().find(|c| c.id == STRIKER).unwrap();
+        assert!(striker.engagement.contains(&"ogre".to_string()));
+        assert_eq!(remaining_speed(&state, STRIKER).unwrap(), 25);
     }
 }

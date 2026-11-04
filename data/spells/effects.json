@@ -760,37 +760,15 @@
   },
   "fly": {
     "agent_clauses": [
-      "Target gains a Fly Speed equal to its walking speed for the duration."
+      "Target gains a Fly Speed of 60 feet and can hover for the duration."
     ],
     "concentration": true,
-    "effects": [
-      {
-        "timed_modifier": {
-          "change": "double",
-          "duration": {
-            "concentration": null
-          },
-          "source_ability": "fly",
-          "target": {
-            "speed": null
-          }
-        }
-      }
-    ],
+    "effects": [],
     "id": "fly",
     "level": 3,
     "name": "Fly",
-    "scaling": [
-      {
-        "effect_index": 0,
-        "per_slot": {
-          "extra_targets": {
-            "count": 1
-          }
-        }
-      }
-    ],
-    "source": "SRD 5.2.1"
+    "source": "SRD 5.2.1",
+    "upcast_clause": "You can target one additional creature for each spell slot level above 3."
   },
   "foresight": {
     "agent_clauses": [
@@ -1147,6 +1125,7 @@
                     "duration": {
                       "concentration": null
                     },
+                    "ends_on_damage": true,
                     "source_ability": "hypnotic-pattern",
                     "target": {
                       "speed": null
@@ -1928,6 +1907,7 @@
     "effects": [
       {
         "timed_modifier": {
+          "bearer": "self",
           "change": {
             "add": 5
           },
@@ -2004,7 +1984,7 @@
     "agent_clauses": [
       "Affected targets can take only an action or a Bonus Action on their turn, not both, and only one attack if they take the Attack action.",
       "Somatic spells have a 25% chance of failure.",
-      "Target repeats the save at the end of each of its turns, ending the spell on a success."
+      "Each affected target repeats the Wisdom save at the end of each of its turns; on a success the spell ends for that target, so remove each of its Slow modifiers (bearer that target, source_ability slow) with `bench override active_modifiers.<index> --clear --reason \"<why>\"`, rechecking the indexes after each removal."
     ],
     "concentration": true,
     "effects": [

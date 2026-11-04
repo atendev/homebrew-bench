@@ -8,7 +8,7 @@ use std::collections::HashMap;
 use serde::{Deserialize, Serialize};
 
 use crate::effect::{
-    recharge_minimum, Duration, Effect, Lighting, ModifierChange, ModifierTarget, ReactionTrigger, RollDisposition, Usage,
+    recharge_minimum, Duration, Effect, Lighting, ModifierBearer, ModifierChange, ModifierTarget, ReactionTrigger, RollDisposition, Usage,
 };
 use crate::encounter::{
     ActionEconomy, ActiveModifier, Combatant, ConditionInstance, EndState, EncounterState,
@@ -519,13 +519,26 @@ fn resolve_effect(
             }
         }
         Effect::TimedModifier(modifier) => {
-            events.push(event("modifier", format!("{} gains a timed modifier", actor_id), actor_id, actor_id));
-            state.active_modifiers.push(ActiveModifier {
-                target: modifier.target.clone(),
-                change: modifier.change.clone(),
-                remaining: modifier.duration.clone(),
-                source: Some(actor_id.into()),
-            });
+            let on_actor = modifier.bearer == ModifierBearer::Actor || matches!(modifier.duration, Duration::TriggeringAttack);
+            let bearers = if on_actor { vec![actor_id.to_string()] } else { target_ids.to_vec() };
+            if bearers.is_empty() {
+                let ability = modifier.source_ability.as_deref().unwrap_or("this ability");
+                return Err(EngineError::Illegal(format!("{ability} needs a target for its modifier")));
+            }
+            let what = modifier.source_ability.as_deref().unwrap_or("a timed modifier");
+            for bearer in bearers {
+                index_of(state, &bearer)?;
+                events.push(event("modifier", format!("{bearer} gains {what} from {actor_id}"), actor_id, &bearer));
+                state.active_modifiers.push(ActiveModifier {
+                    target: modifier.target.clone(),
+                    change: modifier.change.clone(),
+                    remaining: modifier.duration.clone(),
+                    source: Some(actor_id.into()),
+                    bearer: Some(bearer),
+                    source_ability: modifier.source_ability.clone(),
+                    ends_on_damage: modifier.ends_on_damage,
+                });
+            }
         }
         Effect::ForcedMove(movement) => {
             for target_id in target_ids {
@@ -576,7 +589,7 @@ fn resolve_effect(
         }
         Effect::MoveThenAttack(movement) => {
             let i = index_of(state, actor_id)?;
-            let speed = stat_block(state, &state.combatants[i])?.speeds.get("walk").map(|s| s.feet).unwrap_or(0);
+            let speed = walk_speed(state, &state.combatants[i]);
             if movement.move_feet > speed.saturating_sub(state.combatants[i].action_economy.movement_used_feet) {
                 return Err(EngineError::Illegal("movement is unaffordable".into()));
             }
@@ -1370,7 +1383,7 @@ fn can_react(state: &EncounterState, r: &Combatant) -> Result<(), String> {
     if !can_act(r) {
         return Err(format!("{} cannot act", r.id));
     }
-    if state.active_modifiers.iter().any(|x| x.target == ModifierTarget::Reactions && x.source.as_deref() == Some(r.id.as_str())) {
+    if state.modifiers_on(&r.id).any(|x| x.target == ModifierTarget::Reactions) {
         return Err(format!("{} cannot take reactions", r.id));
     }
     if r.action_economy.reaction_used {
@@ -2000,8 +2013,12 @@ fn apply_damage(
     if amount > 0 {
         let before = state.combatants[i].conditions.len();
         state.combatants[i].conditions.retain(|c| !c.ends_on_damage);
+        let modifiers = state.active_modifiers.len();
+        state.active_modifiers.retain(|m| !(m.ends_on_damage && m.bearer() == Some(target_id)));
         if state.combatants[i].conditions.len() < before {
             events.push(event("condition_expire", format!("{target_id} is roused by the damage"), target_id, target_id));
+        } else if state.active_modifiers.len() < modifiers {
+            events.push(event("modifier_expire", format!("the damage ends a timed modifier on {target_id}"), target_id, target_id));
         }
     }
     let mut remaining = amount.max(0);
@@ -2253,9 +2270,8 @@ fn modifier_dispositions<'a>(
     target: ModifierTarget,
 ) -> impl Iterator<Item = RollDisposition> + 'a {
     state
-        .active_modifiers
-        .iter()
-        .filter(move |m| m.source.as_deref() == Some(combatant.id.as_str()) && m.target == target)
+        .modifiers_on(&combatant.id)
+        .filter(move |m| m.target == target)
         .filter_map(|m| match m.change {
             ModifierChange::Advantage => Some(RollDisposition::Advantage),
             ModifierChange::Disadvantage => Some(RollDisposition::Disadvantage),
@@ -2265,52 +2281,59 @@ fn modifier_dispositions<'a>(
 
 /// Compute extra attack modifier from timed modifiers.
 fn attack_modifier(state: &EncounterState, actor: &Combatant) -> Result<i32, EngineError> {
-    let mut total = 0;
-    for modifier in &state.active_modifiers {
-        if modifier.source.as_deref() == Some(&actor.id) {
-            if modifier.target == ModifierTarget::AttackRolls {
-                if let ModifierChange::Add(n) = modifier.change {
-                    total += n;
-                }
-            }
-        }
-    }
-    Ok(total)
+    Ok(added(state, &actor.id, |t| *t == ModifierTarget::AttackRolls))
 }
 
 /// Compute save modifier from timed modifiers.
 fn save_modifier(state: &EncounterState, target: &Combatant, ability: Ability) -> i32 {
-    let mut total = 0;
-    for modifier in &state.active_modifiers {
-        if modifier.source.as_deref() == Some(&target.id) {
-            let matches = match modifier.target {
-                ModifierTarget::SavingThrows { ability: Some(a) } => a == ability,
-                ModifierTarget::SavingThrows { ability: None } => true,
-                _ => false,
-            };
-            if matches {
-                if let ModifierChange::Add(n) = modifier.change {
-                    total += n;
-                }
-            }
-        }
-    }
-    total
+    added(state, &target.id, |t| match t {
+        ModifierTarget::SavingThrows { ability: Some(a) } => *a == ability,
+        ModifierTarget::SavingThrows { ability: None } => true,
+        _ => false,
+    })
 }
 
 /// Compute AC modifier from timed modifiers.
 fn ac_modifier(state: &EncounterState, target: &Combatant) -> i32 {
-    let mut total = 0;
-    for modifier in &state.active_modifiers {
-        if modifier.source.as_deref() == Some(&target.id) {
-            if modifier.target == ModifierTarget::ArmorClass {
-                if let ModifierChange::Add(n) = modifier.change {
-                    total += n;
-                }
-            }
+    added(state, &target.id, |t| *t == ModifierTarget::ArmorClass)
+}
+
+fn added(state: &EncounterState, bearer: &str, on: impl Fn(&ModifierTarget) -> bool) -> i32 {
+    state
+        .modifiers_on(bearer)
+        .filter(|m| on(&m.target))
+        .map(|m| match m.change {
+            ModifierChange::Add(n) => n,
+            _ => 0,
+        })
+        .sum()
+}
+
+/// Walk speed after the Speed modifiers on the combatant: the lowest `set` wins outright;
+/// otherwise the stat block's walk speed plus every `add`, doubled once per `double` and then
+/// halved once per `halve` (rounding down), never below 0. Grappled and Restrained give 0.
+/// Legacy modifiers (saved before 0.1.6) change no Speed, as before.
+pub(crate) fn walk_speed(state: &EncounterState, c: &Combatant) -> u32 {
+    if c.conditions.iter().any(|x| matches!(x.condition, Condition::Grappled | Condition::Restrained)) {
+        return 0;
+    }
+    let base = state.stat_blocks.iter().find(|s| s.id == c.stat_block_id).and_then(|s| s.stat_block.speeds.get("walk")).map_or(0, |s| s.feet);
+    let speed: Vec<&ModifierChange> = state.modifiers_on(&c.id).filter(|m| m.target == ModifierTarget::Speed && !m.is_legacy()).map(|m| &m.change).collect();
+    if let Some(set) = speed.iter().filter_map(|m| match m { ModifierChange::Set(n) => Some(*n), _ => None }).min() {
+        return set;
+    }
+    let mut feet = i64::from(base) + speed.iter().map(|m| match m { ModifierChange::Add(n) => i64::from(*n), _ => 0 }).sum::<i64>();
+    for change in &speed {
+        if matches!(change, ModifierChange::Double) {
+            feet *= 2;
         }
     }
-    total
+    for change in &speed {
+        if matches!(change, ModifierChange::Halve) {
+            feet = feet.div_euclid(2);
+        }
+    }
+    feet.clamp(0, i64::from(u32::MAX)) as u32
 }
 
 /// True if the combatant is currently concentrating on a spell.
@@ -2756,6 +2779,9 @@ mod tests {
             change: ModifierChange::Add(5),
             remaining: Duration::Rounds(1),
             source: Some("fighter".into()),
+            bearer: None,
+            source_ability: None,
+            ends_on_damage: false,
         });
         let modifier = attack_modifier(&state, &state.combatants[0]).unwrap();
         assert_eq!(modifier, 5);
@@ -2866,12 +2892,18 @@ mod tests {
             change: ModifierChange::Advantage,
             remaining: Duration::Rounds(1),
             source: Some("fighter".into()),
+            bearer: None,
+            source_ability: None,
+            ends_on_damage: false,
         });
         state.active_modifiers.push(ActiveModifier {
             target: ModifierTarget::AttackRolls,
             change: ModifierChange::Advantage,
             remaining: Duration::Rounds(1),
             source: Some("fighter".into()),
+            bearer: None,
+            source_ability: None,
+            ends_on_damage: false,
         });
         assert_eq!(disposition(&state, &state.combatants[0], &state.combatants[1]), RollDisposition::Normal);
     }
@@ -3904,7 +3936,7 @@ mod tests {
         state.combatants[0].concentration = Some("hold-person".into());
         state.combatants[1].conditions.push(ConditionInstance { condition: Condition::Paralyzed, duration: Duration::Concentration, source: Some("a".into()), ends_on_damage: false });
         state.combatants[1].conditions.push(ConditionInstance { condition: Condition::Prone, duration: Duration::Concentration, source: Some("b".into()), ends_on_damage: false });
-        state.active_modifiers.push(ActiveModifier { target: ModifierTarget::ArmorClass, change: ModifierChange::Add(2), remaining: Duration::Concentration, source: Some("a".into()) });
+        state.active_modifiers.push(ActiveModifier { target: ModifierTarget::ArmorClass, change: ModifierChange::Add(2), remaining: Duration::Concentration, source: Some("a".into()), bearer: None, source_ability: None, ends_on_damage: false });
         let mut events = Vec::new();
         break_concentration(&mut state, "a", &mut events).unwrap();
         assert_eq!(state.combatants[1].conditions.len(), 1);
@@ -4179,7 +4211,7 @@ mod tests {
         stunned.combatants[1].conditions.push(ConditionInstance { condition: Condition::Stunned, duration: Duration::Rounds(1), source: None, ends_on_damage: false });
         refused(&mut stunned, None, RangeBand::Far, &[oa("b", None)], "cannot act");
         let mut slowed = base.clone();
-        slowed.active_modifiers.push(ActiveModifier { target: ModifierTarget::Reactions, change: ModifierChange::None, remaining: Duration::Rounds(1), source: Some("b".into()) });
+        slowed.active_modifiers.push(ActiveModifier { target: ModifierTarget::Reactions, change: ModifierChange::None, remaining: Duration::Rounds(1), source: Some("b".into()), bearer: None, source_ability: None, ends_on_damage: false });
         refused(&mut slowed, None, RangeBand::Far, &[oa("b", None)], "cannot take reactions");
         let mut unseen = base.clone();
         unseen.combatants[0].conditions.push(ConditionInstance { condition: Condition::Invisible, duration: Duration::Rounds(1), source: None, ends_on_damage: false });
@@ -4665,7 +4697,7 @@ mod tests {
                 s.combatants[1].resources.insert(format!("{CASTER}:slot:1"), 4);
             },
             |s| s.combatants[1].conditions.push(ConditionInstance { condition: Condition::Incapacitated, duration: Duration::Permanent, source: None, ends_on_damage: false }),
-            |s| s.active_modifiers.push(ActiveModifier { target: ModifierTarget::Reactions, change: ModifierChange::None, remaining: Duration::Rounds(1), source: Some(CASTER.into()) }),
+            |s| s.active_modifiers.push(ActiveModifier { target: ModifierTarget::Reactions, change: ModifierChange::None, remaining: Duration::Rounds(1), source: Some(CASTER.into()), bearer: None, source_ability: None, ends_on_damage: false }),
         ];
         for setup in setups {
             let mut state = answering(&base, vec![]);
@@ -4978,5 +5010,232 @@ mod tests {
         let mut state = stepping_out(party_block(CASTER), reactor);
         let events = step_out(&mut state);
         assert!(reasons(&events)[0].contains("(slam, expected "), "{:?}", reasons(&events));
+    }
+
+    fn borne(bearer: &str, source: &str, ability: Option<&str>, target: ModifierTarget, change: ModifierChange) -> ActiveModifier {
+        ActiveModifier {
+            target,
+            change,
+            remaining: Duration::Concentration,
+            source: Some(source.into()),
+            bearer: Some(bearer.into()),
+            source_ability: ability.map(Into::into),
+            ends_on_damage: false,
+        }
+    }
+
+    fn sure_caster(id: &str, spell: &str) -> StatBlock {
+        let mut block = slotted_caster(spell, Some(3));
+        block.id = id.into();
+        block.spellcasting.as_mut().unwrap().save_dc = 40;
+        block
+    }
+
+    fn caster_and(ally: bool, spell: &str) -> EncounterState {
+        let side = if ally { "ally" } else { "enemy" };
+        test_encounter(
+            vec![sure_caster("mage", spell), test_stat_block("other", "Other", 40, 12)],
+            vec![test_combatant("mage", "mage", 30, "ally"), test_combatant("other", "other", 40, side)],
+        )
+    }
+
+    fn speed_of(state: &EncounterState, id: &str) -> u32 {
+        walk_speed(state, &state.combatants[index_of(state, id).unwrap()])
+    }
+
+    fn ac_of(state: &EncounterState, id: &str) -> i32 {
+        ac_modifier(state, &state.combatants[index_of(state, id).unwrap()])
+    }
+
+    #[test]
+    fn slow_lands_on_the_target_that_fails_and_not_on_the_caster() {
+        let mut state = caster_and(false, "slow");
+        act(&mut state, "mage", "slow", &["other"]).unwrap();
+        let other = &state.combatants[1];
+        assert_eq!(ac_of(&state, "other"), -2);
+        assert_eq!(save_modifier(&state, other, Ability::Dex), -2);
+        assert_eq!(speed_of(&state, "other"), 15);
+        assert_eq!(can_react(&state, other).unwrap_err(), "other cannot take reactions");
+        let mage = &state.combatants[0];
+        assert_eq!((ac_of(&state, "mage"), save_modifier(&state, mage, Ability::Dex), speed_of(&state, "mage")), (0, 0, 30));
+        assert!(can_react(&state, mage).is_ok());
+        assert!(state.active_modifiers.iter().all(|m| m.source.as_deref() == Some("mage") && m.bearer() == Some("other")));
+    }
+
+    #[test]
+    fn haste_on_an_ally_buffs_the_ally_until_the_caster_loses_concentration() {
+        let mut state = caster_and(true, "haste");
+        let events = act(&mut state, "mage", "haste", &["other"]).unwrap();
+        assert!(events.iter().any(|e| e.message == "other gains haste from mage"), "{events:?}");
+        assert_eq!((ac_of(&state, "other"), speed_of(&state, "other")), (2, 60));
+        assert_eq!((ac_of(&state, "mage"), speed_of(&state, "mage")), (0, 30));
+        break_concentration(&mut state, "mage", &mut vec![]).unwrap();
+        assert_eq!((ac_of(&state, "other"), speed_of(&state, "other")), (0, 30));
+        assert!(state.active_modifiers.is_empty());
+    }
+
+    #[test]
+    fn shield_still_lands_on_its_caster() {
+        let mut state = caster_and(false, "shield");
+        act(&mut state, "mage", "shield", &["other"]).unwrap();
+        assert_eq!((ac_of(&state, "mage"), ac_of(&state, "other")), (5, 0));
+        assert_eq!(state.active_modifiers[0].bearer.as_deref(), Some("mage"));
+    }
+
+    #[test]
+    fn a_top_level_target_modifier_with_no_target_is_refused() {
+        let mut state = caster_and(true, "haste");
+        let err = act(&mut state, "mage", "haste", &[]).unwrap_err();
+        assert!(matches!(&err, EngineError::Illegal(m) if m == "haste needs a target for its modifier"), "{err:?}");
+    }
+
+    #[test]
+    fn a_triggering_attack_modifier_lands_on_its_reactor_even_without_a_bearer() {
+        let mut state = caster_and(false, "shield");
+        let parry = fx(serde_json::json!({"timed_modifier": {"target": "armor_class", "change": {"add": 2}, "duration": "triggering_attack"}}));
+        let mut stream = Stream::from_state(state.rng.clone());
+        resolve_effect(&mut state, &mut stream, "mage", parry, &["other".into()], &mut vec![]).unwrap();
+        assert_eq!((ac_of(&state, "mage"), ac_of(&state, "other")), (2, 0));
+    }
+
+    #[test]
+    fn two_hastes_on_one_bearer_apply_once_and_the_other_survives_either_ending() {
+        for ending in ["m1", "m2"] {
+            let mut state = test_encounter(
+                vec![sure_caster("m1", "haste"), sure_caster("m2", "haste"), test_stat_block("other", "Other", 40, 12)],
+                vec![test_combatant("m1", "m1", 30, "ally"), test_combatant("m2", "m2", 30, "ally"), test_combatant("other", "other", 40, "ally")],
+            );
+            act(&mut state, "m1", "haste", &["other"]).unwrap();
+            state.active_turn = Some("m2".into());
+            act(&mut state, "m2", "haste", &["other"]).unwrap();
+            assert_eq!(state.active_modifiers.len(), 6);
+            assert_eq!((ac_of(&state, "other"), speed_of(&state, "other")), (2, 60));
+            break_concentration(&mut state, ending, &mut vec![]).unwrap();
+            assert_eq!(state.active_modifiers.len(), 3);
+            assert_eq!((ac_of(&state, "other"), speed_of(&state, "other")), (2, 60), "after {ending} stops");
+        }
+    }
+
+    #[test]
+    fn only_the_most_potent_of_one_ability_on_a_bearer_applies() {
+        let mut state = caster_and(true, "haste");
+        let ac = |n| borne("other", "mage", Some("ward"), ModifierTarget::ArmorClass, ModifierChange::Add(n));
+        state.active_modifiers = vec![ac(1), ac(3)];
+        assert_eq!(ac_of(&state, "other"), 3);
+        state.active_modifiers = vec![ac(3), ac(1)];
+        assert_eq!(ac_of(&state, "other"), 3);
+        state.active_modifiers.remove(0);
+        assert_eq!(ac_of(&state, "other"), 1);
+        state.active_modifiers = vec![ac(2), ac(2)];
+        assert_eq!(ac_of(&state, "other"), 2);
+        let mut unnamed = ac(2);
+        unnamed.source_ability = None;
+        state.active_modifiers = vec![unnamed.clone(), unnamed];
+        assert_eq!(ac_of(&state, "other"), 4, "modifiers with no source ability always apply");
+        let set = |n| borne("other", "mage", Some("root"), ModifierTarget::Speed, ModifierChange::Set(n));
+        state.active_modifiers = vec![set(10), set(0), set(20)];
+        assert_eq!(speed_of(&state, "other"), 0);
+        state.active_modifiers = vec![set(60), set(40)];
+        assert_eq!(speed_of(&state, "other"), 60, "a set above walk speed is a buff, so the higher is more potent");
+        state.active_modifiers[1].source_ability = Some("stride".into());
+        assert_eq!(speed_of(&state, "other"), 40, "across abilities the lowest set still wins outright");
+    }
+
+    #[test]
+    fn the_most_potent_penalty_is_the_largest() {
+        let mut state = caster_and(false, "slow");
+        let ac = |n| borne("other", "mage", Some("curse"), ModifierTarget::ArmorClass, ModifierChange::Add(n));
+        state.active_modifiers = vec![ac(-3), ac(-1)];
+        assert_eq!(ac_of(&state, "other"), -3);
+        state.active_modifiers = vec![ac(-1), ac(-3)];
+        assert_eq!(ac_of(&state, "other"), -3);
+        state.active_modifiers.pop();
+        assert_eq!(ac_of(&state, "other"), -1);
+    }
+
+    #[test]
+    fn a_legacy_speed_modifier_stays_inert() {
+        let mut state = caster_and(false, "slow");
+        let mut legacy = borne("mage", "mage", Some("slow"), ModifierTarget::Speed, ModifierChange::Halve);
+        legacy.bearer = None;
+        let mut ac = borne("mage", "mage", Some("slow"), ModifierTarget::ArmorClass, ModifierChange::Add(-2));
+        ac.bearer = None;
+        state.active_modifiers = vec![legacy, ac];
+        assert_eq!((speed_of(&state, "mage"), ac_of(&state, "mage")), (30, -2), "as engine 0.1.5 read it");
+    }
+
+    #[test]
+    fn hypnotic_patterns_speed_0_ends_with_its_conditions_on_damage() {
+        let mut state = caster_and(false, "hypnotic-pattern");
+        act(&mut state, "mage", "hypnotic-pattern", &["other"]).unwrap();
+        assert_eq!(speed_of(&state, "other"), 0);
+        assert_eq!(state.combatants[1].conditions.len(), 2);
+        let mut stream = Stream::from_state(state.rng.clone());
+        apply_damage(&mut state, &mut stream, "other", 3, Some("mage"), false, false, &mut vec![]).unwrap();
+        assert!(state.combatants[1].conditions.is_empty());
+        assert!(state.active_modifiers.is_empty());
+        assert_eq!(speed_of(&state, "other"), 30);
+    }
+
+    #[test]
+    fn walk_speed_reads_set_add_double_and_halve() {
+        let mut state = caster_and(true, "haste");
+        let speed = |n: &str, change| borne("other", "mage", Some(n), ModifierTarget::Speed, change);
+        for (changes, feet) in [
+            (vec![speed("a", ModifierChange::Halve)], 15),
+            (vec![speed("a", ModifierChange::Double)], 60),
+            (vec![speed("a", ModifierChange::Halve), speed("b", ModifierChange::Double)], 30),
+            (vec![speed("a", ModifierChange::Double), speed("b", ModifierChange::Set(0))], 0),
+            (vec![speed("a", ModifierChange::Add(-40))], 0),
+            (vec![speed("a", ModifierChange::Add(10)), speed("b", ModifierChange::Double)], 80),
+        ] {
+            state.active_modifiers = changes;
+            assert_eq!(speed_of(&state, "other"), feet, "{:?}", state.active_modifiers);
+        }
+        state.active_modifiers = vec![speed("a", ModifierChange::Double)];
+        state.combatants[1].conditions.push(ConditionInstance { condition: Condition::Grappled, duration: Duration::Permanent, source: None, ends_on_damage: false });
+        assert_eq!(speed_of(&state, "other"), 0);
+    }
+
+    #[test]
+    fn a_hasted_creature_moves_60_feet_before_it_attacks() {
+        let mut runner = test_stat_block("runner", "Runner", 20, 12);
+        runner.actions.push(smash(4, "1d4", 0));
+        runner.actions.push(ability("charge", vec![fx(serde_json::json!({"move_then_attack": {"move_feet": 60, "attack_id": "smash"}}))], None));
+        let mut state = test_encounter(
+            vec![runner, test_stat_block("ogre", "Ogre", 50, 10)],
+            vec![test_combatant("runner", "runner", 20, "ally"), test_combatant("ogre", "ogre", 50, "enemy")],
+        );
+        let err = act(&mut state.clone(), "runner", "charge", &["ogre"]).unwrap_err();
+        assert!(matches!(err, EngineError::Illegal(_)), "{err:?}");
+        state.active_modifiers.push(borne("runner", "ogre", Some("haste"), ModifierTarget::Speed, ModifierChange::Double));
+        act(&mut state, "runner", "charge", &["ogre"]).unwrap();
+        assert_eq!(state.combatants[0].action_economy.movement_used_feet, 60);
+    }
+
+    #[test]
+    fn a_modifier_serializes_without_default_bearer_fields() {
+        let mut legacy = borne("a", "a", None, ModifierTarget::ArmorClass, ModifierChange::Add(2));
+        legacy.bearer = None;
+        let keys: Vec<String> = serde_json::to_value(&legacy).unwrap().as_object().unwrap().keys().cloned().collect();
+        assert_eq!(keys, ["change", "remaining", "source", "target"]);
+        let own = serde_json::to_value(borne("a", "a", None, ModifierTarget::ArmorClass, ModifierChange::Add(2))).unwrap();
+        let keys: Vec<&String> = own.as_object().unwrap().keys().collect();
+        assert_eq!(keys, ["bearer", "change", "remaining", "source", "target"]);
+        let mut other = borne("b", "a", Some("haste"), ModifierTarget::ArmorClass, ModifierChange::Add(2));
+        other.ends_on_damage = true;
+        let value = serde_json::to_value(&other).unwrap();
+        assert_eq!((value["bearer"].as_str(), value["source_ability"].as_str(), value["ends_on_damage"].as_bool()), (Some("b"), Some("haste"), Some(true)));
+        let effect = serde_json::to_value(fx(serde_json::json!({"timed_modifier": {"target": "armor_class", "change": {"add": 2}, "duration": "concentration"}}))).unwrap();
+        let keys: Vec<&String> = effect["timed_modifier"].as_object().unwrap().keys().collect();
+        assert_eq!(keys, ["change", "duration", "target"]);
+    }
+
+    #[test]
+    fn fly_casts_with_no_modeled_effects() {
+        let mut state = caster_and(true, "fly");
+        let events = act(&mut state, "mage", "fly", &["other"]).unwrap();
+        assert!(events.iter().any(|e| e.message == "mage begins concentrating on fly"), "{events:?}");
+        assert!(state.active_modifiers.is_empty());
     }
 }

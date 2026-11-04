@@ -36,7 +36,7 @@ Baseline: regenerate `data/baseline/curve.json` once, with lighting `unspecified
 - [Fix Advantage and Disadvantage cancellation on attack rolls](061-fix-advantage-disadvantage-cancellation.md) moves the engine version.
 - [Build live reaction windows](../closed/062-build-live-reaction-windows.md) moves the engine version and changes the fixture set (Parry) and the party (Shield's trigger).
 - [Build batch reactions policy](../closed/063-build-batch-reactions-policy.md) moves the policy to v3.
-- [Build modifier bearers and Speed modifiers](065-build-modifier-bearers-and-speed-modifiers.md) moves the engine version and makes Speed modifiers count.
+- [Build modifier bearers and Speed modifiers](../closed/065-build-modifier-bearers-and-speed-modifiers.md) moves the engine version and makes Speed modifiers count.
 - [Build Haste extra action and lethargy](066-build-haste-extra-action-and-lethargy.md) moves the engine version.
 - [Build attack-roll condition sources](068-build-attack-roll-condition-sources.md) moves the engine version.
 - [Build saving-throw condition sources](069-build-saving-throw-condition-sources.md) moves the engine version.

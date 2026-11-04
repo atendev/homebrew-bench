@@ -137,6 +137,7 @@
       "effects": [
         {
           "timed_modifier": {
+            "bearer": "self",
             "change": {
               "add": 3
             },

@@ -14,7 +14,7 @@ Build decision 7 of [Haste extra action and ally-targeted buffs](../closed/055-h
 
 ## Notes
 
-Consult `tdd`, `codebase-design`, `domain-modeling` and `code-review`. Read ADR 0004, ADR 0005 and ADR 0015 first. Builds on ticket 065's `bearer`, the stacking accessor and the stored `source_ability`.
+Consult `tdd`, `codebase-design`, `domain-modeling` and `code-review`. Read ADR 0004, ADR 0005 and ADR 0015 first. Builds on ticket 065's `bearer`, the stacking accessor `EncounterState::modifiers_on` and the stored `source_ability`.
 
 Rules (PHB p. 283): the target "gains an additional action on each of its turns. That action can be used to take only the Attack (one attack only), Dash, Disengage, Hide, or Utilize action." When the spell ends, "the target is Incapacitated and has a Speed of 0 until the end of its next turn". Dash has no engine command, and Hide and Utilize are out of combat math, so those three stay an agent clause.
 

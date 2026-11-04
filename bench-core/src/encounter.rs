@@ -55,8 +55,39 @@ pub struct ActiveModifier {
     pub target: crate::effect::ModifierTarget,
     pub change: crate::effect::ModifierChange,
     pub remaining: Duration,
+    /// The combatant whose ability made the modifier; concentration ends what it holds.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub source: Option<String>,
+    /// The combatant the modifier changes. Engine 0.1.6 and later always set it; a modifier
+    /// saved without it is a legacy one, borne by `source` (read it through
+    /// [`ActiveModifier::bearer`]), whose Speed change stays inert as it was before 0.1.6.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub bearer: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub source_ability: Option<String>,
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub ends_on_damage: bool,
+}
+
+impl ActiveModifier {
+    /// The combatant the modifier changes: `bearer`, or else `source`.
+    pub fn bearer(&self) -> Option<&str> {
+        self.bearer.as_deref().or(self.source.as_deref())
+    }
+
+    /// True for a modifier saved before engine 0.1.6, which recorded no bearer.
+    pub fn is_legacy(&self) -> bool {
+        self.bearer.is_none()
+    }
+
+    fn potency(&self, walk: u32) -> i64 {
+        use crate::effect::{ModifierChange, ModifierTarget};
+        match (&self.target, &self.change) {
+            (_, ModifierChange::Add(n)) => i64::from(*n).abs(),
+            (ModifierTarget::Speed, ModifierChange::Set(n)) => (i64::from(*n) - i64::from(walk)).abs(),
+            _ => 0,
+        }
+    }
 }
 
 /// Snapshot of a stat block stored in the encounter file, with a tamper hash.
@@ -316,6 +347,32 @@ impl PlayerDice {
 }
 
 impl EncounterState {
+    /// The modifiers that apply to `bearer`. Among modifiers on one bearer with the same
+    /// `source_ability` and the same `target`, only one applies: the most potent, else the
+    /// most recent (PHB "Combining Spell Effects"). Potency is the size of the change in
+    /// either direction: the largest `add` magnitude, so -3 beats -1 and +3 beats +1, and
+    /// for a `set` on Speed the farthest from the bearer's walk speed, so a 0 beats a 10 on a
+    /// 30-foot walker and a 60 beats a 40. Modifiers with no `source_ability` always apply.
+    pub fn modifiers_on<'a>(&'a self, bearer: &'a str) -> impl Iterator<Item = &'a ActiveModifier> + 'a {
+        let walk = self
+            .combatants
+            .iter()
+            .find(|c| c.id == bearer)
+            .and_then(|c| self.stat_blocks.iter().find(|s| s.id == c.stat_block_id))
+            .and_then(|s| s.stat_block.speeds.get("walk"))
+            .map_or(0, |s| s.feet);
+        let on = move || self.active_modifiers.iter().enumerate().filter(move |(_, m)| m.bearer() == Some(bearer));
+        on().filter(move |(i, m)| {
+            let Some(ability) = m.source_ability.as_deref() else { return true };
+            let winner = on()
+                .filter(|(_, o)| o.source_ability.as_deref() == Some(ability) && o.target == m.target)
+                .max_by_key(|(j, o)| (o.potency(walk), *j))
+                .map(|(j, _)| j);
+            winner == Some(*i)
+        })
+        .map(|(_, m)| m)
+    }
+
     /// Compute the tamper hash for this encounter state. The hash excludes the
     /// existing `tamper_hash` field so the value can be verified after the field
     /// is updated.
