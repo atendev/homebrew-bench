@@ -357,7 +357,7 @@ fn resolve_effect(
                 let target_index = index_of(state, target_id)?;
                 let target = state.combatants[target_index].clone();
                 let actor = state.combatants[index_of(state, actor_id)?].clone();
-                let advantage = disposition(state, &actor, &target, RollDisposition::Normal);
+                let advantage = disposition(state, &actor, &target);
                 let d20a = stream.roll_die(20);
                 let d20a = player_roll(state, actor_id, 20, d20a);
                 let d20b = stream.roll_die(20);
@@ -1724,71 +1724,56 @@ fn adjust_damage(state: &EncounterState, target: &Combatant, amount: i32, damage
     else { amount }
 }
 
-/// Compute roll disposition for an attack roll, accounting for conditions,
-/// timed modifiers, and roll modifiers on the encounter lighting setting.
-fn disposition(
-    state: &EncounterState,
-    actor: &Combatant,
-    target: &Combatant,
-    default: RollDisposition,
-) -> RollDisposition {
-    let mut d = default;
-    // Actor conditions that impose disadvantage on attacks
-    if actor.conditions.iter().any(|c| matches!(c.condition, Condition::Blinded | Condition::Frightened | Condition::Poisoned | Condition::Prone)) {
-        d = worsen(d);
-    }
-    // Target conditions that impose advantage on attacks against it
-    if target.conditions.iter().any(|c| matches!(c.condition, Condition::Paralyzed | Condition::Prone | Condition::Restrained | Condition::Stunned | Condition::Unconscious)) {
-        d = improve(d);
-    }
-    // Target Invisible gives attacker disadvantage
-    if target.conditions.iter().any(|c| matches!(c.condition, Condition::Invisible)) {
-        d = worsen(d);
-    }
-    // Actor Invisible gives advantage
-    if actor.conditions.iter().any(|c| matches!(c.condition, Condition::Invisible)) {
-        d = improve(d);
-    }
-    // Apply timed modifiers and roll modifiers
-    d = apply_modifier_target_disposition(state, actor, ModifierTarget::AttackRolls, d);
-    d
+/// Roll disposition for an attack roll from every source: the actor's and target's conditions,
+/// Invisible on either side, and the actor's timed modifiers.
+fn disposition(state: &EncounterState, actor: &Combatant, target: &Combatant) -> RollDisposition {
+    let has = |c: &Combatant, f: fn(Condition) -> bool| c.conditions.iter().any(|i| f(i.condition));
+    let conditions = [
+        (has(actor, |c| matches!(c, Condition::Blinded | Condition::Frightened | Condition::Poisoned | Condition::Prone)), RollDisposition::Disadvantage),
+        (has(target, |c| matches!(c, Condition::Paralyzed | Condition::Prone | Condition::Restrained | Condition::Stunned | Condition::Unconscious)), RollDisposition::Advantage),
+        (has(target, |c| matches!(c, Condition::Invisible)), RollDisposition::Disadvantage),
+        (has(actor, |c| matches!(c, Condition::Invisible)), RollDisposition::Advantage),
+    ];
+    combined_disposition(
+        conditions
+            .into_iter()
+            .filter_map(|(applies, d)| applies.then_some(d))
+            .chain(modifier_dispositions(state, actor, ModifierTarget::AttackRolls)),
+    )
 }
 
-fn improve(d: RollDisposition) -> RollDisposition {
-    match d {
-        RollDisposition::Disadvantage => RollDisposition::Normal,
-        RollDisposition::Normal => RollDisposition::Advantage,
-        RollDisposition::Advantage => RollDisposition::Advantage,
-    }
-}
-
-fn worsen(d: RollDisposition) -> RollDisposition {
-    match d {
-        RollDisposition::Advantage => RollDisposition::Normal,
-        RollDisposition::Normal => RollDisposition::Disadvantage,
-        RollDisposition::Disadvantage => RollDisposition::Disadvantage,
-    }
-}
-
-fn apply_modifier_target_disposition(
-    state: &EncounterState,
-    combatant: &Combatant,
-    target: ModifierTarget,
-    default: RollDisposition,
-) -> RollDisposition {
-    let mut d = default;
-    for modifier in &state.active_modifiers {
-        if modifier.source.as_deref() == Some(&combatant.id) {
-            if modifier.target == target {
-                match modifier.change {
-                    ModifierChange::Advantage => d = improve(d),
-                    ModifierChange::Disadvantage => d = worsen(d),
-                    _ => {}
-                }
-            }
+/// The PHB rule for Advantage and Disadvantage (glossary "Advantage", p. 359): a roll has at most one
+/// of each however many sources grant them, and having both makes it a straight roll.
+fn combined_disposition(sources: impl IntoIterator<Item = RollDisposition>) -> RollDisposition {
+    let (mut advantage, mut disadvantage) = (false, false);
+    for source in sources {
+        match source {
+            RollDisposition::Advantage => advantage = true,
+            RollDisposition::Disadvantage => disadvantage = true,
+            RollDisposition::Normal => {}
         }
     }
-    d
+    match (advantage, disadvantage) {
+        (true, false) => RollDisposition::Advantage,
+        (false, true) => RollDisposition::Disadvantage,
+        _ => RollDisposition::Normal,
+    }
+}
+
+fn modifier_dispositions<'a>(
+    state: &'a EncounterState,
+    combatant: &'a Combatant,
+    target: ModifierTarget,
+) -> impl Iterator<Item = RollDisposition> + 'a {
+    state
+        .active_modifiers
+        .iter()
+        .filter(move |m| m.source.as_deref() == Some(combatant.id.as_str()) && m.target == target)
+        .filter_map(|m| match m.change {
+            ModifierChange::Advantage => Some(RollDisposition::Advantage),
+            ModifierChange::Disadvantage => Some(RollDisposition::Disadvantage),
+            _ => None,
+        })
 }
 
 /// Compute extra attack modifier from timed modifiers.
@@ -2285,8 +2270,105 @@ mod tests {
             vec![test_stat_block("fighter", "Fighter", 20, 16), test_stat_block("goblin", "Goblin", 7, 15)],
             vec![fighter, goblin],
         );
-        let d = disposition(&state, &state.combatants[0], &state.combatants[1], RollDisposition::Normal);
+        let d = disposition(&state, &state.combatants[0], &state.combatants[1]);
         assert_eq!(d, RollDisposition::Disadvantage);
+    }
+
+    #[test]
+    fn mixed_sources_cancel_to_a_straight_roll() {
+        use RollDisposition::{Advantage as A, Disadvantage as D};
+        assert_eq!(combined_disposition([A, A, D]), RollDisposition::Normal);
+        assert_eq!(combined_disposition([A, D, D]), RollDisposition::Normal);
+        assert_eq!(combined_disposition([A, A, D, D]), RollDisposition::Normal);
+    }
+
+    #[test]
+    fn repeated_sources_of_one_kind_do_not_stack() {
+        use RollDisposition::{Advantage as A, Disadvantage as D, Normal as N};
+        assert_eq!(combined_disposition([A, A]), RollDisposition::Advantage);
+        assert_eq!(combined_disposition([D, N, D]), RollDisposition::Disadvantage);
+        assert_eq!(combined_disposition([]), RollDisposition::Normal);
+    }
+
+    #[test]
+    fn combined_disposition_ignores_source_order() {
+        use RollDisposition::{Advantage as A, Disadvantage as D, Normal as N};
+        fn permutations(items: &[RollDisposition]) -> Vec<Vec<RollDisposition>> {
+            if items.len() <= 1 {
+                return vec![items.to_vec()];
+            }
+            let mut out = Vec::new();
+            for i in 0..items.len() {
+                let mut rest = items.to_vec();
+                let head = rest.remove(i);
+                for mut tail in permutations(&rest) {
+                    tail.insert(0, head);
+                    out.push(tail);
+                }
+            }
+            out
+        }
+        for (sources, expected) in [
+            (vec![D, N, A], N),
+            (vec![A, A, D, N], N),
+            (vec![D, D, A, A], N),
+            (vec![A, N, A], A),
+            (vec![D, N, D], D),
+        ] {
+            for order in permutations(&sources) {
+                assert_eq!(combined_disposition(order.clone()), expected, "order {order:?}");
+            }
+        }
+    }
+
+    fn with_condition(mut combatant: Combatant, condition: Condition) -> Combatant {
+        combatant.conditions.push(ConditionInstance { condition, duration: Duration::Rounds(1), source: None, ends_on_damage: false });
+        combatant
+    }
+
+    #[test]
+    fn invisible_poisoned_attacker_against_paralyzed_target_rolls_straight() {
+        let fighter = with_condition(with_condition(test_combatant("fighter", "fighter", 20, "ally"), Condition::Invisible), Condition::Poisoned);
+        let goblin = with_condition(test_combatant("goblin", "goblin", 7, "enemy"), Condition::Paralyzed);
+        let state = test_encounter(
+            vec![test_stat_block("fighter", "Fighter", 20, 16), test_stat_block("goblin", "Goblin", 7, 15)],
+            vec![fighter, goblin],
+        );
+        assert_eq!(disposition(&state, &state.combatants[0], &state.combatants[1]), RollDisposition::Normal);
+    }
+
+    #[test]
+    fn invisible_attacker_against_paralyzed_target_keeps_advantage() {
+        let fighter = with_condition(test_combatant("fighter", "fighter", 20, "ally"), Condition::Invisible);
+        let goblin = with_condition(test_combatant("goblin", "goblin", 7, "enemy"), Condition::Paralyzed);
+        let state = test_encounter(
+            vec![test_stat_block("fighter", "Fighter", 20, 16), test_stat_block("goblin", "Goblin", 7, 15)],
+            vec![fighter, goblin],
+        );
+        assert_eq!(disposition(&state, &state.combatants[0], &state.combatants[1]), RollDisposition::Advantage);
+    }
+
+    #[test]
+    fn timed_advantage_and_a_disadvantage_condition_roll_straight() {
+        let fighter = with_condition(test_combatant("fighter", "fighter", 20, "ally"), Condition::Blinded);
+        let goblin = test_combatant("goblin", "goblin", 7, "enemy");
+        let mut state = test_encounter(
+            vec![test_stat_block("fighter", "Fighter", 20, 16), test_stat_block("goblin", "Goblin", 7, 15)],
+            vec![fighter, goblin],
+        );
+        state.active_modifiers.push(ActiveModifier {
+            target: ModifierTarget::AttackRolls,
+            change: ModifierChange::Advantage,
+            remaining: Duration::Rounds(1),
+            source: Some("fighter".into()),
+        });
+        state.active_modifiers.push(ActiveModifier {
+            target: ModifierTarget::AttackRolls,
+            change: ModifierChange::Advantage,
+            remaining: Duration::Rounds(1),
+            source: Some("fighter".into()),
+        });
+        assert_eq!(disposition(&state, &state.combatants[0], &state.combatants[1]), RollDisposition::Normal);
     }
 
     #[test]
