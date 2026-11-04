@@ -2305,8 +2305,8 @@ mod tests {
         let on_disk: Value = serde_json::from_str(&std::fs::read_to_string(&path).unwrap()).unwrap();
         assert_eq!(serde_json::to_value(&state).unwrap(), on_disk, "re-serializes unchanged");
         assert_eq!(state.active_modifiers.len(), 3);
-        assert!(state.active_modifiers.iter().all(|m| m.bearer.is_none() && m.bearer() == Some(CASTER)));
-        assert_eq!(remaining_speed(&state, CASTER).unwrap(), 60);
+        assert!(state.active_modifiers.iter().all(|m| m.is_legacy() && m.bearer() == Some(CASTER)));
+        assert_eq!(remaining_speed(&state, CASTER).unwrap(), 30, "a legacy Speed modifier stays inert, as on 0.1.5");
         assert_eq!(remaining_speed(&state, "standard-striker-03").unwrap(), 30);
     }
 
@@ -2319,7 +2319,8 @@ mod tests {
         let close = Command::Move { actor: STRIKER.into(), target: Some("ogre".into()), band: RangeBand::Engaged, feet: None, opportunity: vec![] };
         let mut slow = state.clone();
         turn_of(&mut slow, STRIKER);
-        assert!(matches!(execute(&mut slow, close.clone()), Err(LiveError::Illegal(m)) if m.contains("requires 35 feet")), "35 feet is beyond a 30-foot Speed");        turn_of(&mut state, CASTER);
+        assert!(matches!(execute(&mut slow, close.clone()), Err(LiveError::Illegal(m)) if m.contains("requires 35 feet")), "35 feet is beyond a 30-foot Speed");
+        turn_of(&mut state, CASTER);
         let haste = Command::Action { actor: CASTER.into(), action: "haste".into(), targets: vec![STRIKER.into()], slot: None };
         assert!(lines(&execute(&mut state, haste).unwrap()).contains(&format!("{STRIKER} gains haste from {CASTER}")));
         assert_eq!((remaining_speed(&state, CASTER).unwrap(), remaining_speed(&state, STRIKER).unwrap()), (30, 60));

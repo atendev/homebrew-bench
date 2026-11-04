@@ -542,3 +542,21 @@ fn lighting_is_a_start_flag_and_a_misplaced_roll_modifier_fails_at_load() {
     }
     assert_eq!(bench.ok(&["list"])["encounters"].as_array().unwrap().len(), 1);
 }
+
+#[test]
+fn schema_validate_warns_on_a_self_buff_with_no_bearer() {
+    let bench = Bench::new();
+    let knight = data("fixtures/knight.json");
+    assert!(bench.ok(&["schema", "validate", knight.as_str()]).get("warnings").is_none());
+    let mut block: Value = serde_json::from_str(&std::fs::read_to_string(&knight).unwrap()).unwrap();
+    let parry = &mut block["reactions"][0]["effects"][0]["timed_modifier"];
+    parry.as_object_mut().unwrap().remove("bearer");
+    parry["duration"] = serde_json::json!({"rounds": 1});
+    let path = bench.cwd.join("braced-knight.json");
+    std::fs::write(&path, block.to_string()).unwrap();
+    let data = bench.ok(&["schema", "validate", path.to_str().unwrap()]);
+    assert_eq!(data["valid"], true);
+    let warnings = data["warnings"].as_array().unwrap();
+    assert_eq!(warnings.len(), 1, "{data:#}");
+    assert!(warnings[0].as_str().unwrap().contains("add \"bearer\": \"self\""));
+}

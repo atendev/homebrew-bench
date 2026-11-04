@@ -534,7 +534,7 @@ fn resolve_effect(
                     change: modifier.change.clone(),
                     remaining: modifier.duration.clone(),
                     source: Some(actor_id.into()),
-                    bearer: (bearer != actor_id).then_some(bearer),
+                    bearer: Some(bearer),
                     source_ability: modifier.source_ability.clone(),
                     ends_on_damage: modifier.ends_on_damage,
                 });
@@ -2312,12 +2312,13 @@ fn added(state: &EncounterState, bearer: &str, on: impl Fn(&ModifierTarget) -> b
 /// Walk speed after the Speed modifiers on the combatant: the lowest `set` wins outright;
 /// otherwise the stat block's walk speed plus every `add`, doubled once per `double` and then
 /// halved once per `halve` (rounding down), never below 0. Grappled and Restrained give 0.
+/// Legacy modifiers (saved before 0.1.6) change no Speed, as before.
 pub(crate) fn walk_speed(state: &EncounterState, c: &Combatant) -> u32 {
     if c.conditions.iter().any(|x| matches!(x.condition, Condition::Grappled | Condition::Restrained)) {
         return 0;
     }
     let base = state.stat_blocks.iter().find(|s| s.id == c.stat_block_id).and_then(|s| s.stat_block.speeds.get("walk")).map_or(0, |s| s.feet);
-    let speed: Vec<&ModifierChange> = state.modifiers_on(&c.id).filter(|m| m.target == ModifierTarget::Speed).map(|m| &m.change).collect();
+    let speed: Vec<&ModifierChange> = state.modifiers_on(&c.id).filter(|m| m.target == ModifierTarget::Speed && !m.is_legacy()).map(|m| &m.change).collect();
     if let Some(set) = speed.iter().filter_map(|m| match m { ModifierChange::Set(n) => Some(*n), _ => None }).min() {
         return set;
     }
@@ -5017,7 +5018,7 @@ mod tests {
             change,
             remaining: Duration::Concentration,
             source: Some(source.into()),
-            bearer: (bearer != source).then(|| bearer.into()),
+            bearer: Some(bearer.into()),
             source_ability: ability.map(Into::into),
             ends_on_damage: false,
         }
@@ -5078,7 +5079,7 @@ mod tests {
         let mut state = caster_and(false, "shield");
         act(&mut state, "mage", "shield", &["other"]).unwrap();
         assert_eq!((ac_of(&state, "mage"), ac_of(&state, "other")), (5, 0));
-        assert!(state.active_modifiers[0].bearer.is_none());
+        assert_eq!(state.active_modifiers[0].bearer.as_deref(), Some("mage"));
     }
 
     #[test]
@@ -5134,6 +5135,33 @@ mod tests {
         let set = |n| borne("other", "mage", Some("root"), ModifierTarget::Speed, ModifierChange::Set(n));
         state.active_modifiers = vec![set(10), set(0), set(20)];
         assert_eq!(speed_of(&state, "other"), 0);
+        state.active_modifiers = vec![set(60), set(40)];
+        assert_eq!(speed_of(&state, "other"), 60, "a set above walk speed is a buff, so the higher is more potent");
+        state.active_modifiers[1].source_ability = Some("stride".into());
+        assert_eq!(speed_of(&state, "other"), 40, "across abilities the lowest set still wins outright");
+    }
+
+    #[test]
+    fn the_most_potent_penalty_is_the_largest() {
+        let mut state = caster_and(false, "slow");
+        let ac = |n| borne("other", "mage", Some("curse"), ModifierTarget::ArmorClass, ModifierChange::Add(n));
+        state.active_modifiers = vec![ac(-3), ac(-1)];
+        assert_eq!(ac_of(&state, "other"), -3);
+        state.active_modifiers = vec![ac(-1), ac(-3)];
+        assert_eq!(ac_of(&state, "other"), -3);
+        state.active_modifiers.pop();
+        assert_eq!(ac_of(&state, "other"), -1);
+    }
+
+    #[test]
+    fn a_legacy_speed_modifier_stays_inert() {
+        let mut state = caster_and(false, "slow");
+        let mut legacy = borne("mage", "mage", Some("slow"), ModifierTarget::Speed, ModifierChange::Halve);
+        legacy.bearer = None;
+        let mut ac = borne("mage", "mage", Some("slow"), ModifierTarget::ArmorClass, ModifierChange::Add(-2));
+        ac.bearer = None;
+        state.active_modifiers = vec![legacy, ac];
+        assert_eq!((speed_of(&state, "mage"), ac_of(&state, "mage")), (30, -2), "as engine 0.1.5 read it");
     }
 
     #[test]
@@ -5187,9 +5215,13 @@ mod tests {
 
     #[test]
     fn a_modifier_serializes_without_default_bearer_fields() {
+        let mut legacy = borne("a", "a", None, ModifierTarget::ArmorClass, ModifierChange::Add(2));
+        legacy.bearer = None;
+        let keys: Vec<String> = serde_json::to_value(&legacy).unwrap().as_object().unwrap().keys().cloned().collect();
+        assert_eq!(keys, ["change", "remaining", "source", "target"]);
         let own = serde_json::to_value(borne("a", "a", None, ModifierTarget::ArmorClass, ModifierChange::Add(2))).unwrap();
         let keys: Vec<&String> = own.as_object().unwrap().keys().collect();
-        assert_eq!(keys, ["change", "remaining", "source", "target"]);
+        assert_eq!(keys, ["bearer", "change", "remaining", "source", "target"]);
         let mut other = borne("b", "a", Some("haste"), ModifierTarget::ArmorClass, ModifierChange::Add(2));
         other.ends_on_damage = true;
         let value = serde_json::to_value(&other).unwrap();

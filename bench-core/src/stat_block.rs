@@ -378,9 +378,49 @@ impl StatBlock {
     }
 }
 
+/// Warnings for stat block JSON whose top-level timed modifiers name no `bearer`. Since engine
+/// 0.1.6 such a modifier lands on the ability's target, so a self-buff written before then
+/// (a reaction's AC bonus, "the creature gains...") silently moves to its target. A
+/// `triggering_attack` modifier is exempt: it always lands on its reactor.
+pub fn bearer_warnings(value: &serde_json::Value) -> Vec<String> {
+    let mut out = Vec::new();
+    for section in ["traits", "actions", "bonus_actions", "reactions", "legendary_actions"] {
+        for entry in value.get(section).and_then(|v| v.as_array()).into_iter().flatten() {
+            let id = entry.get("id").and_then(|v| v.as_str()).unwrap_or("?");
+            for effect in entry.get("effects").and_then(|v| v.as_array()).into_iter().flatten() {
+                let Some(modifier) = effect.get("timed_modifier") else { continue };
+                if modifier.get("bearer").is_some() || modifier.get("duration").and_then(|d| d.as_str()) == Some("triggering_attack") {
+                    continue;
+                }
+                out.push(format!(
+                    "{section} {id}: a timed modifier with no \"bearer\" lands on the ability's target; add \"bearer\": \"self\" if it changes the creature itself, or \"bearer\": \"target\" to silence this"
+                ));
+            }
+        }
+    }
+    out
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn a_top_level_modifier_without_a_bearer_warns() {
+        let block = serde_json::json!({
+            "reactions": [
+                {"id": "brace", "effects": [{"timed_modifier": {"target": "armor_class", "change": {"add": 2}, "duration": {"rounds": 1}}}]},
+                {"id": "parry", "effects": [{"timed_modifier": {"target": "armor_class", "change": {"add": 2}, "duration": "triggering_attack"}}]},
+            ],
+            "actions": [
+                {"id": "howl", "effects": [{"timed_modifier": {"target": "speed", "change": "double", "duration": "concentration", "bearer": "self"}}]},
+                {"id": "bite", "effects": [{"attack": {"on_hit": [{"timed_modifier": {"target": "speed", "change": "halve", "duration": {"rounds": 1}}}]}}]},
+            ],
+        });
+        let warnings = bearer_warnings(&block);
+        assert_eq!(warnings.len(), 1, "{warnings:?}");
+        assert!(warnings[0].starts_with("reactions brace: "));
+    }
 
     #[test]
     fn ability_modifier() {
