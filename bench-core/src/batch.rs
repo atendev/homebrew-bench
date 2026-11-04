@@ -16,6 +16,7 @@ use crate::effect::{Effect, Lighting};
 use crate::encounter::{EncounterState, EndState, PcDice, RangeBand, StandingAssumption, PARTY_SIDE};
 use crate::engine::{self, EngineEvent, StepRequest};
 use crate::live::{self, Entrant, StartSpec};
+use crate::reaction::ReactionDecider;
 use crate::rng::derive_fight_seed;
 use crate::stat_block::{AbilityEntry, AbilityKind, DefaultResolution, StatBlock};
 use crate::tactics::{self, PolicyConstants, Section};
@@ -582,9 +583,10 @@ fn fight(spec: &BatchSpec, constants: &PolicyConstants, level: u8, index: u64, w
         individual_initiative: true,
         pc_dice: PcDice::Engine,
         lighting: spec.lighting,
-        reaction_windows: false,
+        reaction_windows: true,
     })
     .map_err(|e| BatchError::Invalid(e.to_string()))?;
+    state.reactions.decider = ReactionDecider::Policy(constants.clone());
     state.log.clear();
     state.initial_snapshot = None;
     state.player_dice.retarget_downed = true;
@@ -1178,7 +1180,7 @@ pub fn render_html(s: &Summary) -> String {
     h.push_str("      </tbody>\n    </table>\n  </section>\n\n");
 
     h.push_str(&format!(
-        "  <section aria-labelledby=\"method\">\n    <h2 id=\"method\">Method and limitations</h2>\n    <p>Every fight is one {name} against the party at one level, played by the deterministic batch tactics policy for both sides with engine-rolled dice. A fight ends when one side is down or at the round cap. When the monster wins, downed PCs count as deaths. Policy v{} gives buffs and other unscored effects no value and takes no reactions, and agent clauses on any stat block are left out. Engine {}.</p>\n  </section>\n\n",
+        "  <section aria-labelledby=\"method\">\n    <h2 id=\"method\">Method and limitations</h2>\n    <p>Every fight is one {name} against the party at one level, played by the deterministic batch tactics policy for both sides with engine-rolled dice. A fight ends when one side is down or at the round cap. When the monster wins, downed PCs count as deaths. Policy v{} gives buffs and other unscored effects no value, takes Shield or Parry only when it turns a hit into a miss and an Opportunity Attack only when it is worth more than the reaction held back, and agent clauses on any stat block are left out. Engine {}.</p>\n  </section>\n\n",
         s.policy.version, esc(&s.engine_version)
     ));
     h.push_str("  <footer>\n    <p>This work includes material from the System Reference Document 5.2.1 (\"SRD 5.2.1\") by Wizards of the Coast LLC, available at <a href=\"https://www.dndbeyond.com/srd\">https://www.dndbeyond.com/srd</a>. The SRD 5.2.1 is licensed under the <a href=\"https://creativecommons.org/licenses/by/4.0/legalcode\">Creative Commons Attribution 4.0 International License</a>. The SRD-derived material is modified here by reformatting and restructuring into a report. The difficulty bands and results above are Homebrew Bench analysis, not SRD tables.</p>\n  </footer>\n</main>\n</body>\n</html>\n");
@@ -1306,6 +1308,18 @@ mod tests {
         assert!(log.contains("STANDING ASSUMPTIONS") && log.contains("DECISION") && log.contains("RESULT"));
         assert_eq!(a.summary.levels.len(), 2);
         assert_eq!(a.summary.samples.len(), 3);
+    }
+
+    #[test]
+    fn batch_fights_decide_reaction_windows_and_log_why() {
+        let s = spec(fixture("knight"), vec![1], 4);
+        let logs: Vec<String> = (0..4).map(|i| replay_fight(&s, fight_index(1, i, 4)).unwrap().log.unwrap()).collect();
+        let again: Vec<String> = (0..4).map(|i| replay_fight(&s, fight_index(1, i, 4)).unwrap().log.unwrap()).collect();
+        assert_eq!(logs, again);
+        let all = logs.join("\n");
+        assert!(all.contains("Policy: homebrew-bench.tactics v3 ("));
+        assert!(all.contains("    knight: Parry (") || all.contains("    knight: holds its reaction ("), "no Parry window was decided");
+        assert!(run(&s).unwrap().html.contains("takes Shield or Parry only when it turns a hit into a miss"));
     }
 
     #[test]

@@ -22,6 +22,9 @@
 
 ### Changed
 
+- The batch tactics policy is now v3 and takes reactions (ADR 0012). Batch encounters open reaction windows, and the policy takes Shield or Parry only when the reaction turns the hit into a miss, and an Opportunity Attack only when the attack is worth more than the reactor's reaction reserve. Each decided window logs a reason line, held reactions included. Batch numbers move: the standard caster now shields hits, and fixtures with Parry survive longer.
+- The step-out penalty a ranged plan pays for leaving melee now counts only the Opportunity Attacks the policy would really take: melee attacks from reactors that pass the engine's eligibility rule (no Disengage, no Flyby or Agile, a reactor that can see and react) and that would spend their reaction on it. Before, it counted ranged attacks too, and the engine never delivered that damage.
+- `bench baseline status` and batch reports call the baseline curve stale (the policy is v3 and the curve used v2) until the next regeneration.
 - Batch numbers are unchanged: batch encounters open no reaction windows, and the policy still takes no reactions. The engine version is now 0.1.5, because a live encounter started on it can replay into reaction prompts an older engine never opened. Live encounters saved by 0.1.4 still load and replay as recorded, with no windows. `bench baseline status` reports the fixture set and the party as changed until the next regeneration.
 - The `Lighting` value `normal` is now `unspecified`. Old homebrew and state files holding `normal` still load, and state files with no lighting load as `unspecified`.
 - A `roll_modifier` outside a trait's top-level effects (in an action, bonus action, reaction or legendary action, or inside an attack, save or area) or keyed to `unspecified` now fails the stat block at load, before any dice are drawn. Before, a `roll_modifier` in an action pushed a concentration modifier and read no lighting.

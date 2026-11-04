@@ -512,8 +512,9 @@ fn batch_compares_against_the_embedded_curve_outside_the_repo() {
     assert!(
         reasons.iter().map(|r| r.as_str().unwrap()).all(|r| r.starts_with("the engine is ")
             || r == "the embedded fixture set changed"
-            || r == "the party differs from the `standard` party the curve was computed against"),
-        "only the engine version, the fixture set and the party may differ until the v3 regeneration: {status:#}"
+            || r == "the party differs from the `standard` party the curve was computed against"
+            || r == "the tactics policy is homebrew-bench.tactics v3 and the curve used homebrew-bench.tactics v2"),
+        "only the engine version, the fixture set, the party and the policy version may differ until the v3 regeneration: {status:#}"
     );
     let html = std::fs::read_to_string(bench.cwd.join("r/report.html")).unwrap();
     assert!(html.contains("Claimed-CR verdict"));
