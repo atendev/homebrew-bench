@@ -88,6 +88,7 @@ Both modes ship in phase 1. Everything the engine can't model is labeled agent j
 - [Build modifier bearers and Speed modifiers](closed/065-build-modifier-bearers-and-speed-modifiers.md): timed modifiers land on their target unless marked `"bearer": "self"` (Shield, Parry, Riposte), and a `triggering_attack` modifier always lands on its reactor so old Parry snapshots stay right. `EncounterState::modifiers_on` applies one spell's modifiers once per bearer (most potent, else most recent), `ends_on_damage` ends Hypnotic Pattern's Speed 0, and `engine::walk_speed` serves the engine, policy and live default move, while declared `--feet` stays trusted for Dash. Fly is an agent clause, the engine is 0.1.6, 0.1.5 states load with each bearer read as its source, and batch numbers are unchanged on goblin, ogre, adult red dragon and knight.
 - [Build Haste extra action and lethargy](closed/066-build-haste-extra-action-and-lethargy.md): an `extra_action` modifier grants one extra action per turn limited to listed uses (`one_attack`, `disengage`, or any), spent with `--extra` on `bench action` and `bench disengage` and shown as `digest.extra_action`; `on_end` effects fire when a modifier instance ends, and `until_end_of_next_turn` skips a turn under way. Haste now carries both, so lethargy lands once per ending Haste. `engine::extra_action_uses` and `extra_action_allows` are the checks ticket 056 reads. The engine is 0.1.7, 0.1.6 states load unchanged, and batch numbers are unchanged on goblin warrior and adult red dragon.
 - [Build attack-roll condition sources](closed/068-build-attack-roll-condition-sources.md): `disposition` (now `pub(crate)` for ticket 056) reads Blinded and Petrified targets, Restrained and Grappled attackers (straight against the grappler in `source`), Prone by engagement, Frightened only while the attacker sees its `source`, and Invisible through ADR 0017's sight rule (`sees`), with downed PCs counted as Unconscious and Prone (`counts_as_unconscious`, which ticket 069 reuses). Engaged hits on Paralyzed or Unconscious targets are critical and say why, damage to a Stable PC gives a failure and makes it dying again, and Opportunity Attacks use the same sight rule. The engine is 0.1.8, the curve stays stale for 056, and the calibration fixture row still matches.
+- [Build saving-throw condition sources](closed/069-build-saving-throw-condition-sources.md): Paralyzed, Petrified, Stunned and Unconscious creatures and downed PCs fail Strength and Dexterity saves without a die or prompt (repeat saves too), a Restrained creature has Disadvantage on Dexterity saves, and timed save modifiers on the saver's bearer reach `save_disposition`, so Haste gives Advantage on Dexterity saves. `automatic_save_failure`, `save_disposition` and `save_modifier` are `pub(crate)` for ticket 056's save scoring. The engine is 0.1.9, the curve stays stale for 056, and the calibration fixture row still matches. The live-mode reference line went to ticket 072 after the shell guard held the edit.
 
 ## Not yet specified
 
@@ -113,11 +114,11 @@ Both modes ship in phase 1. Everything the engine can't model is labeled agent j
 
 Takeable now, in order:
 
-- Build saving-throw condition sources (task, AFK); it also adds timed save modifiers such as Haste's, read through their bearer
 - Batch warns when plans fail or casts are never ready (task, AFK)
 - Build massive damage at 0 Hit Points (task, AFK); found by the 068 audit
+- Document saving-throw condition sources in live mode (task, AFK); the live-mode line ticket 069 couldn't add
 
 Blocked:
 
-- Build v3 scoring for buffs, forced movement and teleports (task, AFK), waits on Build saving-throw condition sources and Build massive damage at 0 Hit Points; it regenerates the baseline once
+- Build v3 scoring for buffs, forced movement and teleports (task, AFK), waits on Build massive damage at 0 Hit Points; it regenerates the baseline once
 - Do dragons still read above their CR on the v3 curve (task, AFK), waits on Build v3 scoring; it takes over the dragon fog item, whose reactions half policy v3 now covers

@@ -2416,7 +2416,7 @@ fn automatic_critical(actor: &Combatant, target: &Combatant) -> Option<&'static 
 
 /// The event message when `saver` fails a save with `ability` without rolling: Paralyzed, Petrified,
 /// Stunned and Unconscious (or downed, as for attacks) fail Strength and Dexterity saves.
-fn automatic_save_failure(saver: &Combatant, ability: Ability) -> Option<String> {
+pub(crate) fn automatic_save_failure(saver: &Combatant, ability: Ability) -> Option<String> {
     let word = match ability {
         Ability::Str => "Strength",
         Ability::Dex => "Dexterity",
@@ -2447,7 +2447,7 @@ fn save_d20(state: &mut EncounterState, stream: &mut Stream, saver_id: &str, abi
     Ok((roll, note))
 }
 
-fn save_disposition(state: &EncounterState, target: &Combatant, ability: Ability) -> RollDisposition {
+pub(crate) fn save_disposition(state: &EncounterState, target: &Combatant, ability: Ability) -> RollDisposition {
     let restrained = ability == Ability::Dex && target.conditions.iter().any(|i| i.condition == Condition::Restrained);
     let sources = lighting_modifiers(state, target, Roll::Save(ability)).into_iter().map(|(d, _)| d);
     combined_disposition(
@@ -2541,7 +2541,7 @@ fn attack_modifier(state: &EncounterState, actor: &Combatant) -> Result<i32, Eng
 }
 
 /// Compute save modifier from timed modifiers.
-fn save_modifier(state: &EncounterState, target: &Combatant, ability: Ability) -> i32 {
+pub(crate) fn save_modifier(state: &EncounterState, target: &Combatant, ability: Ability) -> i32 {
     added(state, &target.id, saves_with(ability))
 }
 

@@ -3,9 +3,9 @@ id: 069
 title: Build saving-throw condition sources
 type: task
 mode: AFK
-status: open
+status: closed
 blocked_by: [060, 065]
-claimed: true
+claimed: false
 ---
 
 ## Question
@@ -49,3 +49,18 @@ Versions and baseline:
 Consult `tdd`, `codebase-design` and `code-review`.
 
 ## Resolution
+
+Built on branch `ticket-069-build-saving-throw-condition-sources` by a delegated builder, test-first.
+
+- Engine (`bench-core/src/engine.rs`). `automatic_save_failure(saver, ability)` returns the event message for a Strength or Dexterity save by a Paralyzed, Petrified, Stunned or counts-as-Unconscious saver (068's `counts_as_unconscious`). `resolve_save` checks it before any die: no d20, no ask-mode prompt, a `save` event `<id> fails the save automatically (<condition>, <Ability>)` with `roll` and `total` empty, then the usual failure effects and damage. `save_disposition` adds Restrained's Dexterity Disadvantage and the saver's timed `advantage`/`disadvantage` save modifiers, read through `modifiers_on` (the bearer) and matched by the new `saves_with(ability)`, which `save_modifier` now shares. `modifier_dispositions` takes a target predicate instead of one `ModifierTarget`. Haste's data already carried the Dexterity save Advantage, so `effects.json` is unchanged.
+- `automatic_save_failure`, `save_disposition` and `save_modifier` are `pub(crate)` for ticket 056, whose notes now say the policy's `p_success` should call them.
+- Tests: 9 new engine tests cover every bullet in Tests (each condition on Strength and Dexterity with the stream unmoved, a Paralyzed Constitution save, downed and Stable PCs, Restrained on Dexterity and Strength, sunlight and timed Advantage cancelling it, ask mode, failure effects after an auto-fail), Haste giving an ally Advantage on Dexterity saves and the caster none, and a Stunned creature's Strength repeat save.
+- Versions. Workspace and `ENGINE_VERSION` 0.1.9; policy stays v3. No serialized field was added, so no old-state fixture test. `a_fixture_regenerates_to_its_committed_row` still passes, so it isn't ignored; the curve wasn't regenerated. `cargo test --workspace` passes; clippy shows only master's two engine.rs errors. The SRD import exits 0 with 341 of 341 graduated and `check-spell-effects.py` reports 84 entries consistent.
+
+Readings chosen where the ticket was open:
+
+- Repeat saves auto-fail too (`repeat_save` event, same message, no die), since the condition rule covers every Strength and Dexterity save. Concentration saves are Constitution and are unaffected.
+- The auto-fail reason names Paralyzed, then Petrified, then Stunned, then Unconscious when several apply.
+- Restrained's Disadvantage isn't named in the save event; only lighting traits are, as before.
+
+Not done: the live-mode reference line. The shell guard held the edit to `.agents/skills/homebrew-bench/references/live-mode.md`, and the builder was told not to work around a hold, so it moved to ticket [072](../tickets/072-document-saving-throw-condition-sources-in-live-mode.md). Links to this ticket in 056 and closed 067 now point at `closed/`. No new fog.
