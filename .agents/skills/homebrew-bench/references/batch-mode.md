@@ -40,7 +40,7 @@ Write the list to an assumptions file, one object per assumption:
 
 Pass it with `--assumptions <file>`. A one-off can use `--assume abilities.<id>=ignored --assume-reason "<why>"` instead. `policy.<constant>` paths tune the batch tactics policy; change them only when the user asks.
 
-The batch tactics policy takes no reactions. Parry (on the knight and six other SRD fixtures), the pirate captain's Riposte and the standard caster's Shield are modeled for live mode and no longer show as skipped findings, but batch fights never use them, so a monster with Parry may read weaker than it plays. Tell the user when the monster has one.
+The batch tactics policy (v3) takes reactions. It takes Shield or Parry only when the reaction turns a hit into a miss, and an Opportunity Attack only when the attack is worth more than the hit reaction it would give up. Each decision prints a reason line in the fight log, such as `knight: Parry (19 vs AC 18+2 turns the hit into a miss)` or `standard-caster-05: holds its reaction (24 vs AC 12+5 still hits)`. Riposte's extra attack stays an agent clause, so batch never makes it, and a monster with Riposte may read a little weaker than it plays. Tell the user when the monster has it.
 
 House rules do not reach batch fights: `bench batch` runs the ruleset and the tactics policy only. Tell the user which active house rules the numbers leave out.
 

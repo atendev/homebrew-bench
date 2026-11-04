@@ -9,15 +9,21 @@
 
 use serde::{Deserialize, Serialize};
 
-use crate::effect::{Area, Effect, MultiattackStep, Usage};
+use crate::effect::{Area, AttackFilter, Effect, ModifierChange, ModifierTarget, MultiattackStep, ReactionTrigger, Usage};
 use crate::encounter::{Combatant, EncounterState, EndState, RangeBand};
 use crate::engine;
+use crate::reaction::{ReactionAnswer, ReactionWindow, WindowTrigger};
 use crate::stat_block::{AbilityEntry, Condition, StatBlock};
 
 /// Stable policy identifier written into logs, reports and fingerprints.
 pub const POLICY_ID: &str = "homebrew-bench.tactics";
 /// Policy version. Bump it whenever scoring changes, so baselines go stale.
-pub const POLICY_VERSION: u32 = 2;
+pub const POLICY_VERSION: u32 = 3;
+
+/// Value of one AC point against one round of incoming attack-roll damage. A
+/// d20 lands in an n-point band 5n% of the time, near 0.1n of the expected
+/// damage (ADR 0012). The reaction reserve prices Shield and Parry with it.
+pub const AC_POINT_VALUE: f64 = 0.1;
 
 /// Score weights. Resource cost is 0.0 because a batch fight is one encounter.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
@@ -231,6 +237,18 @@ pub fn fallback(state: &EncounterState, actor_id: &str, constants: &PolicyConsta
     out
 }
 
+/// Decide one reaction window for batch, on the state as the engine presents
+/// it. Returns the answer and the reason line the engine logs. A hit reaction
+/// is taken only when it turns the hit into a miss; an Opportunity Attack only
+/// when its value beats the reactor's reaction reserve.
+pub fn decide_reaction(state: &EncounterState, window: &ReactionWindow, constants: &PolicyConstants) -> (ReactionAnswer, String) {
+    let ctx = Ctx { state, constants, threat_nesting: std::cell::Cell::new(0) };
+    match &window.trigger {
+        WindowTrigger::Hit { total, ac, critical, .. } => ctx.decide_hit(window, *total, *ac, *critical),
+        WindowTrigger::Opportunity { mover_id } => ctx.decide_opportunity(window, mover_id),
+    }
+}
+
 /// Highest score wins; ties keep stat-block order. A limited-use plan must beat
 /// the best at-will plan, and healing a living ally must beat the best attack
 /// or control plan. Revival is exempt and competes on score alone.
@@ -259,7 +277,8 @@ struct Ctx<'a> {
     threat_nesting: std::cell::Cell<u8>,
 }
 
-/// Open `threat` calls past which a control effect is valued at zero.
+/// Open nesting levels past which a control effect, an Opportunity Attack, the
+/// reaction reserve and the step-out penalty are valued at zero.
 const MAX_THREAT_NESTING: u8 = 2;
 
 #[derive(Debug, Clone, Copy, Default)]
@@ -278,6 +297,24 @@ impl Value {
 
     fn scaled(self, factor: f64) -> Value {
         Value { damage: self.damage * factor, control: self.control * factor, heal: self.heal * factor }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+struct OpportunityPick {
+    attack_id: String,
+    value: f64,
+    drops: bool,
+}
+
+struct OpportunityDecision {
+    pick: Option<OpportunityPick>,
+    reserve: f64,
+}
+
+impl OpportunityDecision {
+    fn taken(&self) -> Option<f64> {
+        self.pick.as_ref().map(|p| p.value).filter(|v| *v > self.reserve)
     }
 }
 
@@ -467,11 +504,7 @@ impl<'a> Ctx<'a> {
                 let cost = 5 * engaged_foes.len() as u32;
                 if self.movement_left(actor) >= cost {
                     let (stepped, stepped_picks) = self.ability_value(actor, block, ability, target, 0, false);
-                    let oa: f64 = engaged_foes
-                        .iter()
-                        .filter(|o| !o.action_economy.reaction_used)
-                        .map(|o| self.best_single_attack(o, actor))
-                        .sum();
+                    let oa = self.step_out_penalty(actor, &engaged_foes);
                     if stepped.damage + stepped.control - oa > value.damage + value.control {
                         value = stepped;
                         picks = stepped_picks;
@@ -701,19 +734,6 @@ impl<'a> Ctx<'a> {
         })
     }
 
-    fn best_single_attack(&self, attacker: &Combatant, target: &Combatant) -> f64 {
-        let Some(block) = self.block(attacker) else { return 0.0 };
-        block
-            .actions
-            .iter()
-            .flat_map(|a| a.effects.iter())
-            .filter_map(|e| match e {
-                Effect::Attack(_) => Some(self.effect_value(attacker, block, e, target, 0, false).0.damage),
-                _ => None,
-            })
-            .fold(0.0, f64::max)
-    }
-
     fn ability_value(&self, actor: &Combatant, block: &StatBlock, ability: &AbilityEntry, target: &Combatant, depth: u8, ranged_in_melee: bool) -> (Value, Vec<Vec<usize>>) {
         let mut total = Value::default();
         let mut picks = Vec::new();
@@ -869,6 +889,219 @@ impl<'a> Ctx<'a> {
         (total, picks)
     }
 
+    fn nested<T: Default>(&self, f: impl FnOnce() -> T) -> T {
+        let open = self.threat_nesting.get();
+        if open >= MAX_THREAT_NESTING {
+            return T::default();
+        }
+        self.threat_nesting.set(open + 1);
+        let value = f();
+        self.threat_nesting.set(open);
+        value
+    }
+
+    fn step_out_penalty(&self, mover: &Combatant, reactors: &[&Combatant]) -> f64 {
+        self.nested(|| {
+            reactors
+                .iter()
+                .filter(|r| engine::opportunity_eligible(self.state, &r.id, &mover.id))
+                .filter_map(|r| self.opportunity_decision(r, mover).taken())
+                .sum()
+        })
+    }
+
+    fn opportunity_decision(&self, reactor: &Combatant, mover: &Combatant) -> OpportunityDecision {
+        let pick = self.opportunity_value(reactor, mover);
+        let reserve = self.reaction_reserve(reactor);
+        OpportunityDecision { pick, reserve }
+    }
+
+    fn opportunity_value(&self, reactor: &Combatant, mover: &Combatant) -> Option<OpportunityPick> {
+        self.nested(|| {
+            let block = self.block(reactor)?;
+            let mut best: Option<(f64, usize, &AbilityEntry)> = None;
+            for attack in engine::opportunity_attack_candidates(block) {
+                let damage = self.ability_value(reactor, block, attack, mover, 0, false).0.damage;
+                let order = block.actions.iter().position(|a| a.id == attack.id).unwrap_or(usize::MAX);
+                let better = best.map_or(true, |(d, o, _)| damage > d + 1e-9 || ((damage - d).abs() <= 1e-9 && order < o));
+                if better {
+                    best = Some((damage, order, attack));
+                }
+            }
+            let (damage, _, attack) = best?;
+            let drops = damage >= hit_points(mover);
+            let value = damage.min(hit_points(mover)) + if drops { self.threat(mover) } else { 0.0 };
+            Some(OpportunityPick { attack_id: attack.id.clone(), value, drops })
+        })
+    }
+
+    fn reaction_reserve(&self, reactor: &Combatant) -> f64 {
+        self.nested(|| {
+            let Some(block) = self.block(reactor) else { return 0.0 };
+            block
+                .reactions
+                .iter()
+                .filter_map(|r| r.trigger.map(|ReactionTrigger::HitByAttackRoll { attack }| (r, attack)))
+                .filter(|(r, _)| engine::ability_ready(self.state, &reactor.id, r))
+                .map(|(r, filter)| {
+                    let n = ac_bonus(block, r);
+                    if n <= 0 {
+                        return 0.0;
+                    }
+                    let (d, h) = self.incoming_attack_rolls(reactor, filter);
+                    (AC_POINT_VALUE * f64::from(n) * d).min(h)
+                })
+                .fold(0.0, f64::max)
+        })
+    }
+
+    fn incoming_attack_rolls(&self, reactor: &Combatant, filter: AttackFilter) -> (f64, f64) {
+        let mut expected = 0.0;
+        let mut largest: f64 = 0.0;
+        for foe in self.opponents(reactor).filter(|o| can_act(o)) {
+            let Some(block) = self.block(foe) else { continue };
+            let best = block
+                .actions
+                .iter()
+                .filter(|a| !a.effects.is_empty() && engine::ability_ready(self.state, &foe.id, a))
+                .map(|a| self.attack_roll_value(foe, block, &a.effects, reactor, filter, 0))
+                .fold((0.0, 0.0), |b, v| if v.0 > b.0 + 1e-9 { v } else { b });
+            expected += best.0;
+            largest = largest.max(best.1);
+        }
+        (expected, largest)
+    }
+
+    fn attack_roll_value(&self, actor: &Combatant, block: &StatBlock, effects: &[Effect], target: &Combatant, filter: AttackFilter, depth: u8) -> (f64, f64) {
+        if depth > 4 {
+            return (0.0, 0.0);
+        }
+        let nested = |id: &str| {
+            block
+                .actions
+                .iter()
+                .find(|a| a.id == id)
+                .map_or((0.0, 0.0), |a| self.attack_roll_value(actor, block, &a.effects, target, filter, depth + 1))
+        };
+        let mut total = (0.0, 0.0f64);
+        let mut add = |v: (f64, f64), count: f64| {
+            total.0 += v.0 * count;
+            total.1 = total.1.max(v.1);
+        };
+        for effect in effects {
+            match effect {
+                Effect::Attack(a) if filter.matches(a) => {
+                    let expected = self.effect_value(actor, block, effect, target, depth, false).0.damage;
+                    add((expected, self.hit_average(actor, a, target)), 1.0);
+                }
+                Effect::UseAction(u) => add(nested(&u.action_id), 1.0),
+                Effect::MoveThenAttack(m) => add(nested(&m.attack_id), 1.0),
+                Effect::Cast(c) => {
+                    if let Some((fx, _)) = engine::bound_cast_effects(block, c) {
+                        add(self.attack_roll_value(actor, block, &fx, target, filter, depth + 1), 1.0);
+                    }
+                }
+                Effect::Multiattack(m) => {
+                    for step in &m.steps {
+                        add(self.multiattack_step_attack_rolls(actor, block, step, target, filter, depth + 1), 1.0);
+                    }
+                }
+                _ => {}
+            }
+        }
+        total
+    }
+
+    fn multiattack_step_attack_rolls(&self, actor: &Combatant, block: &StatBlock, step: &MultiattackStep, target: &Combatant, filter: AttackFilter, depth: u8) -> (f64, f64) {
+        let slot = |action_id: &str, cast: Option<&crate::effect::Cast>| match cast {
+            Some(c) => self.attack_roll_value(actor, block, &[Effect::Cast(c.clone())], target, filter, depth),
+            None => self.attack_roll_value(actor, block, &[Effect::UseAction(crate::effect::UseAction { action_id: action_id.into() })], target, filter, depth),
+        };
+        match step {
+            MultiattackStep::Action { action_id, count, cast } => {
+                let v = slot(action_id, cast.as_ref());
+                (v.0 * f64::from(*count), v.1)
+            }
+            MultiattackStep::Choice { options, pick } => {
+                let mut scored: Vec<(usize, (f64, f64))> = options
+                    .iter()
+                    .enumerate()
+                    .map(|(i, o)| {
+                        let v = slot(&o.action_id, o.cast.as_ref());
+                        (i, (v.0 * f64::from(o.count), v.1))
+                    })
+                    .collect();
+                scored.sort_by(|a, b| b.1 .0.total_cmp(&a.1 .0).then(a.0.cmp(&b.0)));
+                scored.into_iter().take(*pick as usize).fold((0.0, 0.0), |acc, (_, v)| (acc.0 + v.0, acc.1.max(v.1)))
+            }
+            MultiattackStep::Alternatives { sets } => sets
+                .iter()
+                .map(|set| {
+                    set.iter()
+                        .map(|s| self.multiattack_step_attack_rolls(actor, block, s, target, filter, depth + 1))
+                        .fold((0.0, 0.0), |acc, v| (acc.0 + v.0, f64::max(acc.1, v.1)))
+                })
+                .fold((0.0, 0.0), |b, v| if v.0 > b.0 + 1e-9 { v } else { b }),
+        }
+    }
+
+    fn hit_average(&self, actor: &Combatant, attack: &crate::effect::Attack, target: &Combatant) -> f64 {
+        let Some(target_block) = self.block(target) else { return 0.0 };
+        attack
+            .damage
+            .iter()
+            .filter(|d| damage_applies(target, &actor.id, d))
+            .map(|d| adjusted(target_block, d.damage_type, dice_average(&d.dice) + f64::from(d.modifier)))
+            .sum()
+    }
+
+    fn decide_hit(&self, window: &ReactionWindow, total: i32, ac: i32, critical: bool) -> (ReactionAnswer, String) {
+        let reactor = &window.reactor_id;
+        let hold = |why: String| (ReactionAnswer::Pass, format!("{reactor}: holds its reaction ({why})"));
+        let Some(block) = self.combatant(reactor).and_then(|c| self.block(c)) else { return hold("no stat block".into()) };
+        let offered: Vec<(usize, &AbilityEntry, i32)> = window
+            .options
+            .iter()
+            .enumerate()
+            .filter_map(|(i, o)| block.reactions.iter().find(|r| r.id == o.id).map(|r| (i, r, ac_bonus(block, r))))
+            .collect();
+        if critical {
+            return hold(format!("{total} is a critical hit, which no reaction turns into a miss"));
+        }
+        let cheapest = offered
+            .iter()
+            .filter(|(_, _, n)| *n > 0 && total < ac + n)
+            .min_by_key(|(i, r, _)| (u8::from(is_limited(r)), slot_level(r), *i));
+        if let Some((_, r, n)) = cheapest {
+            return (ReactionAnswer::Take(r.id.clone()), format!("{reactor}: {} ({total} vs AC {ac}+{n} turns the hit into a miss)", r.name));
+        }
+        match offered.iter().map(|(_, _, n)| *n).max().filter(|n| *n > 0) {
+            Some(n) => hold(format!("{total} vs AC {ac}+{n} still hits")),
+            None => hold("no reaction offered raises AC".into()),
+        }
+    }
+
+    fn decide_opportunity(&self, window: &ReactionWindow, mover_id: &str) -> (ReactionAnswer, String) {
+        let reactor_id = &window.reactor_id;
+        let hold = |why: String| (ReactionAnswer::Pass, format!("{reactor_id}: holds its reaction against {mover_id} ({why})"));
+        let (Some(reactor), Some(mover)) = (self.combatant(reactor_id), self.combatant(mover_id)) else {
+            return hold("no such combatant".into());
+        };
+        let decision = self.opportunity_decision(reactor, mover);
+        let Some(pick) = decision.pick.as_ref().filter(|p| window.option(&p.attack_id).is_some()) else {
+            return hold("no at-will melee attack".into());
+        };
+        let drops = if pick.drops { ", likely drops it" } else { "" };
+        if decision.taken().is_some() {
+            let line = format!(
+                "{reactor_id}: Opportunity Attack on {mover_id} ({}, expected {:.1} > reserve {:.1}{drops})",
+                pick.attack_id, pick.value, decision.reserve
+            );
+            return (ReactionAnswer::Take(pick.attack_id.clone()), line);
+        }
+        hold(format!("{}, expected {:.1} <= reserve {:.1}{drops}", pick.attack_id, pick.value, decision.reserve))
+    }
+
     /// +1 advantage, -1 disadvantage, 0 straight, from conditions alone.
     fn disposition(&self, actor: &Combatant, target: &Combatant) -> i32 {
         let has = |c: &Combatant, list: &[Condition]| c.conditions.iter().any(|x| list.contains(&x.condition));
@@ -919,6 +1152,40 @@ fn is_consumable(block: &StatBlock, ability: &AbilityEntry) -> bool {
 fn is_limited(ability: &AbilityEntry) -> bool {
     let leveled_cast = ability.effects.iter().any(|e| matches!(e, Effect::Cast(c) if c.slot_level.unwrap_or(0) > 0));
     leveled_cast || !matches!(ability.usage, None | Some(Usage::AtWill))
+}
+
+/// The AC bonus n a hit-trigger reaction gives: its `armor_class` timed
+/// modifiers, read through a cast's bound effects. 0 when it gives none.
+pub(crate) fn ac_bonus(block: &StatBlock, reaction: &AbilityEntry) -> i32 {
+    fn walk(block: &StatBlock, effects: &[Effect], depth: u8) -> i32 {
+        if depth > 4 {
+            return 0;
+        }
+        effects
+            .iter()
+            .map(|e| match e {
+                Effect::TimedModifier(m) if m.target == ModifierTarget::ArmorClass => match m.change {
+                    ModifierChange::Add(n) => n,
+                    _ => 0,
+                },
+                Effect::Cast(c) => engine::bound_cast_effects(block, c).map_or(0, |(fx, _)| walk(block, &fx, depth + 1)),
+                _ => 0,
+            })
+            .sum()
+    }
+    walk(block, &reaction.effects, 0)
+}
+
+fn slot_level(ability: &AbilityEntry) -> u8 {
+    ability
+        .effects
+        .iter()
+        .filter_map(|e| match e {
+            Effect::Cast(c) => c.slot_level,
+            _ => None,
+        })
+        .max()
+        .unwrap_or(0)
 }
 
 fn usage_word(ability: &AbilityEntry) -> Option<String> {
@@ -1454,5 +1721,249 @@ mod tests {
                 assert!(plan.is_some(), "{id} found no plan");
             }
         }
+    }
+
+    fn entry(value: serde_json::Value) -> AbilityEntry {
+        serde_json::from_value(value).unwrap()
+    }
+
+    fn ranged(id: &str, modifier: i32, dice: &str) -> AbilityEntry {
+        entry(serde_json::json!({"id": id, "name": id, "kind": "modeled", "effects": [{"attack": {"modifier": modifier, "range": [80, 320],
+            "target_count": 1, "damage": [{"dice": dice, "type": "piercing"}]}}]}))
+    }
+
+    fn ac_reaction(id: &str, n: i32, filter: &str) -> AbilityEntry {
+        entry(serde_json::json!({"id": id, "name": id, "kind": "modeled", "trigger": {"hit_by_attack_roll": {"attack": filter}},
+            "effects": [{"timed_modifier": {"change": {"add": n}, "duration": "triggering_attack", "target": "armor_class"}}]}))
+    }
+
+    fn engage(state: &mut EncounterState, a: &str, b: &str) {
+        for (x, y) in [(a, b), (b, a)] {
+            let c = state.combatants.iter_mut().find(|c| c.id == x).unwrap();
+            c.engagement.push(y.into());
+            c.ranges.insert(y.into(), RangeBand::Engaged);
+        }
+    }
+
+    fn snapshot<'a>(state: &'a mut EncounterState, id: &str) -> &'a mut StatBlock {
+        &mut state.stat_blocks.iter_mut().find(|s| s.id == id).unwrap().stat_block
+    }
+
+    /// An archer with a bow engaged with a brute that has a claw.
+    fn skirmish() -> EncounterState {
+        let mut archer = block("archer", 20, 12);
+        archer.actions.push(ranged("bow", 5, "2d6"));
+        let mut brute = block("brute", 30, 12);
+        brute.actions.push(melee("claw", 5, "1d8"));
+        let mut state = encounter(vec![archer, brute], vec![fighter("archer", "party", 20), fighter("brute", "monsters", 30)]);
+        engage(&mut state, "archer", "brute");
+        state
+    }
+
+    fn ctx<'a>(state: &'a EncounterState, constants: &'a PolicyConstants) -> Ctx<'a> {
+        Ctx { state, constants, threat_nesting: std::cell::Cell::new(0) }
+    }
+
+    fn penalty(state: &EncounterState) -> f64 {
+        let constants = PolicyConstants::default();
+        let ctx = ctx(state, &constants);
+        ctx.step_out_penalty(ctx.combatant("archer").unwrap(), &[ctx.combatant("brute").unwrap()])
+    }
+
+    fn pick(state: &EncounterState, reactor: &str, mover: &str) -> OpportunityPick {
+        let constants = PolicyConstants::default();
+        let ctx = ctx(state, &constants);
+        ctx.opportunity_value(ctx.combatant(reactor).unwrap(), ctx.combatant(mover).unwrap()).unwrap()
+    }
+
+    fn reserve(state: &EncounterState, reactor: &str) -> f64 {
+        let constants = PolicyConstants::default();
+        let ctx = ctx(state, &constants);
+        ctx.reaction_reserve(ctx.combatant(reactor).unwrap())
+    }
+
+    fn opportunity_window(reactor: &str, mover: &str, options: &[&str]) -> ReactionWindow {
+        ReactionWindow {
+            reactor_id: reactor.into(),
+            trigger: WindowTrigger::Opportunity { mover_id: mover.into() },
+            options: options.iter().map(|id| crate::reaction::ReactionOption { id: id.to_string(), name: id.to_string() }).collect(),
+        }
+    }
+
+    #[test]
+    fn the_step_out_penalty_is_the_value_of_the_attacks_the_decider_takes() {
+        let mut state = skirmish();
+        snapshot(&mut state, "archer").actions = vec![ranged("bow", 5, "4d10")];
+        let value = pick(&state, "brute", "archer").value;
+        assert!(value > 0.0);
+        assert_eq!(penalty(&state), value);
+        let (answer, reason) = decide_reaction(&state, &opportunity_window("brute", "archer", &["claw"]), &PolicyConstants::default());
+        assert_eq!(answer, ReactionAnswer::Take("claw".into()));
+        assert_eq!(reason, format!("brute: Opportunity Attack on archer (claw, expected {value:.1} > reserve 0.0)"));
+        let plan = choose_action(&state, "archer");
+        assert_eq!(plan.movement.len(), 1, "{}", plan.reason);
+        assert!(plan.reason.contains(&format!("despite {value:.1} opportunity damage")), "{}", plan.reason);
+        assert!((plan.survival + value).abs() < 1e-9, "{}", plan.survival);
+    }
+
+    #[test]
+    fn step_outs_that_draw_no_attack_price_zero() {
+        let setups: [fn(&mut EncounterState); 5] = [
+            |s| s.combatants[0].action_economy.disengaged = true,
+            |s| snapshot(s, "archer").traits.push(AbilityEntry { effects: vec![Effect::NoProvoke], ..melee("flyby", 0, "1d1") }),
+            |s| s.combatants[1].conditions.push(crate::encounter::ConditionInstance { condition: Condition::Blinded, duration: crate::effect::Duration::Permanent, source: None, ends_on_damage: false }),
+            |s| snapshot(s, "brute").actions = vec![ranged("sling", 5, "1d4")],
+            |s| {
+                snapshot(s, "brute").actions = vec![melee("claw", 5, "1d4")];
+                snapshot(s, "brute").reactions.push(ac_reaction("parry", 5, "any"));
+                snapshot(s, "archer").actions = vec![ranged("bow", 8, "4d10")];
+            },
+        ];
+        for (i, setup) in setups.into_iter().enumerate() {
+            let mut state = skirmish();
+            setup(&mut state);
+            assert_eq!(penalty(&state), 0.0, "setup {i}");
+        }
+    }
+
+    #[test]
+    fn an_attack_that_drops_the_mover_adds_its_threat() {
+        let mut state = skirmish();
+        state.combatants[0].hp = 1;
+        let constants = PolicyConstants::default();
+        let threat = ctx(&state, &constants).threat(&state.combatants[0]);
+        let p = pick(&state, "brute", "archer");
+        assert!(p.drops && threat > 0.0);
+        assert!((p.value - (1.0 + threat)).abs() < 1e-9, "{} vs 1 + {threat}", p.value);
+    }
+
+    #[test]
+    fn the_opportunity_attack_is_the_best_melee_leaf_with_ties_in_stat_block_order() {
+        let mut state = skirmish();
+        let brute = snapshot(&mut state, "brute");
+        brute.actions.push(melee("bite", 5, "2d10"));
+        brute.actions.push(melee("rake", 5, "2d10"));
+        brute.actions.insert(0, entry(serde_json::json!({"id": "multiattack", "name": "Multiattack", "kind": "modeled",
+            "effects": [{"multiattack": {"steps": [{"action": {"action_id": "rake", "count": 1}}, {"action": {"action_id": "claw", "count": 1}}]}}]})));
+        assert_eq!(pick(&state, "brute", "archer").attack_id, "bite");
+    }
+
+    #[test]
+    fn the_reserve_counts_only_matching_attack_rolls() {
+        let mut state = skirmish();
+        snapshot(&mut state, "brute").reactions.push(ac_reaction("guard", 2, "any"));
+        assert!(reserve(&state, "brute") > 0.0);
+        snapshot(&mut state, "archer").actions = vec![entry(serde_json::json!({
+            "id": "breath", "name": "Breath", "kind": "modeled",
+            "effects": [{"saving_throw": {"ability": "dex", "dc": 15, "half_on_success": true, "no_damage_on_success": false,
+                "repeat_save": null, "two_stage": null, "hp_gate": null, "creature_type_gate": null, "damage": [{"dice": "8d6", "type": "fire"}]}}]}))];
+        assert_eq!(reserve(&state, "brute"), 0.0, "save damage adds nothing");
+        let (answer, _) = decide_reaction(&state, &opportunity_window("brute", "archer", &["claw"]), &PolicyConstants::default());
+        assert_eq!(answer, ReactionAnswer::Take("claw".into()));
+        snapshot(&mut state, "archer").actions = vec![AbilityEntry {
+            effects: vec![Effect::Heal(crate::effect::Heal { dice: Some("2d8".into()), modifier: 3, spellcasting_modifier: false })],
+            ..melee("mend", 0, "1d1")
+        }];
+        assert_eq!(reserve(&state, "brute"), 0.0, "healing adds nothing");
+
+        let mut state = skirmish();
+        snapshot(&mut state, "brute").reactions.push(ac_reaction("parry", 2, "melee"));
+        assert_eq!(reserve(&state, "brute"), 0.0, "Parry ignores the bow");
+        snapshot(&mut state, "archer").actions.push(melee("knife", 5, "1d4"));
+        assert!(reserve(&state, "brute") > 0.0, "Parry counts the knife");
+    }
+
+    #[test]
+    fn a_reserve_never_exceeds_the_largest_single_hit() {
+        let mut state = skirmish();
+        snapshot(&mut state, "brute").reactions.push(ac_reaction("ward", 5, "any"));
+        snapshot(&mut state, "archer").actions = vec![
+            ranged("bow", 20, "1d6"),
+            entry(serde_json::json!({"id": "volley", "name": "Volley", "kind": "modeled",
+                "effects": [{"multiattack": {"steps": [{"action": {"action_id": "bow", "count": 8}}]}}]})),
+        ];
+        assert!((reserve(&state, "brute") - 3.5).abs() < 1e-9, "{}", reserve(&state, "brute"));
+    }
+
+    #[test]
+    fn a_knight_with_parry_attacks_the_level_11_party_above_its_largest_hit() {
+        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).parent().unwrap();
+        let knight: StatBlock = serde_json::from_str(&std::fs::read_to_string(root.join("data/fixtures/knight.json")).unwrap()).unwrap();
+        let mut blocks = vec![knight.clone()];
+        let mut combatants = vec![fighter("knight", "monsters", knight.hit_points.average)];
+        for archetype in crate::party::ARCHETYPES {
+            let id = crate::party::block_id(archetype, 11);
+            let pc: StatBlock = serde_json::from_str(&std::fs::read_to_string(root.join(format!("data/party/standard/{id}.json"))).unwrap()).unwrap();
+            combatants.push(fighter(&id, "party", pc.hit_points.average));
+            blocks.push(pc);
+        }
+        let mut state = encounter(blocks, combatants);
+        let ids: Vec<String> = state.combatants[1..].iter().map(|c| c.id.clone()).collect();
+        for id in &ids {
+            engage(&mut state, "knight", id);
+        }
+        state.combatants.iter_mut().find(|c| c.id == "standard-caster-11").unwrap().hp = 1;
+        let constants = PolicyConstants::default();
+        let ctx = ctx(&state, &constants);
+        let knight = ctx.combatant("knight").unwrap();
+        let (_, largest) = ctx.incoming_attack_rolls(knight, AttackFilter::Melee);
+        let held = ctx.reaction_reserve(knight);
+        assert!(held > 0.0 && held <= largest + 1e-9, "{held} vs {largest}");
+        let mut above = 0;
+        for id in &ids {
+            let decision = ctx.opportunity_decision(knight, ctx.combatant(id).unwrap());
+            let value = decision.pick.as_ref().unwrap().value;
+            assert_eq!(decision.taken().is_some(), value > held, "{id}");
+            if value > largest {
+                assert!(decision.taken().is_some(), "{id}");
+                above += 1;
+            }
+        }
+        assert!(above > 0, "no party member is worth more than the largest hit {largest}");
+    }
+
+    #[test]
+    fn the_penalty_and_reserve_stop_at_the_nesting_limit_and_teleports_return() {
+        let mut state = skirmish();
+        snapshot(&mut state, "brute").reactions.push(ac_reaction("parry", 2, "melee"));
+        snapshot(&mut state, "archer").actions.push(entry(serde_json::json!({"id": "misty-step", "name": "Misty Step", "kind": "modeled",
+            "effects": [{"teleport": {"range": 30, "destination": "unoccupied space you can see"}}]})));
+        assert!(choose(&state, "archer", Section::Action, &PolicyConstants::default()).is_some());
+        snapshot(&mut state, "archer").actions.push(melee("knife", 5, "1d4"));
+        let constants = PolicyConstants::default();
+        let ctx = ctx(&state, &constants);
+        let (archer, brute) = (ctx.combatant("archer").unwrap(), ctx.combatant("brute").unwrap());
+        assert!(ctx.reaction_reserve(brute) > 0.0);
+        ctx.threat_nesting.set(MAX_THREAT_NESTING);
+        assert_eq!(ctx.step_out_penalty(archer, &[brute]), 0.0);
+        assert_eq!(ctx.reaction_reserve(brute), 0.0);
+        assert!(ctx.opportunity_value(brute, archer).is_none());
+    }
+
+    #[test]
+    fn hit_windows_take_the_cheapest_reaction_that_stops_the_hit() {
+        let mut state = skirmish();
+        let brute = snapshot(&mut state, "brute");
+        brute.reactions.push(ac_reaction("ward", 5, "any"));
+        brute.reactions.push(ac_reaction("parry", 2, "any"));
+        brute.reactions[0].usage = Some(Usage::PerDay { uses: 1 });
+        let hit = |total: i32, critical: bool| ReactionWindow {
+            reactor_id: "brute".into(),
+            trigger: WindowTrigger::Hit { attacker_id: "archer".into(), total, ac: 12, critical },
+            options: ["ward", "parry"].iter().map(|id| crate::reaction::ReactionOption { id: id.to_string(), name: id.to_string() }).collect(),
+        };
+        let decide = |w: &ReactionWindow| decide_reaction(&state, w, &PolicyConstants::default());
+        assert_eq!(decide(&hit(13, false)), (ReactionAnswer::Take("parry".into()), "brute: parry (13 vs AC 12+2 turns the hit into a miss)".into()));
+        assert_eq!(decide(&hit(15, false)).0, ReactionAnswer::Take("ward".into()));
+        assert_eq!(decide(&hit(17, false)), (ReactionAnswer::Pass, "brute: holds its reaction (17 vs AC 12+5 still hits)".into()));
+        assert_eq!(decide(&hit(13, true)).0, ReactionAnswer::Pass);
+    }
+
+    #[test]
+    fn the_fingerprint_carries_policy_version_3() {
+        assert_eq!(POLICY_VERSION, 3);
+        let constants = PolicyConstants::default();
+        let v2 = crate::encounter::tamper_hash(&serde_json::json!({ "id": POLICY_ID, "version": 2, "constants": constants }));
+        assert_ne!(fingerprint(&constants), v2);
     }
 }

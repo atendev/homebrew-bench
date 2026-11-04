@@ -2,14 +2,14 @@
 //!
 //! The engine lists the windows a trigger opens and asks the encounter's
 //! [`ReactionDecider`] about each one. Live mode answers from the user's or the
-//! agent's `bench respond`, and batch passes every window until the tactics
-//! policy takes reactions (ticket 063).
+//! agent's `bench respond`, and batch lets the tactics policy (v3) decide.
 
 use std::collections::VecDeque;
 
 use serde::{Deserialize, Serialize};
 
 use crate::encounter::EncounterState;
+use crate::tactics::PolicyConstants;
 
 /// What opened a reaction window.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -67,9 +67,11 @@ pub enum Decision {
 /// state beside the player dice and is never stored.
 #[derive(Debug, Clone, Default)]
 pub enum ReactionDecider {
-    /// Batch: pass every window. Policy v2 takes no reactions.
+    /// Pass every window without a reason.
     #[default]
     PassAll,
+    /// Batch: the tactics policy decides each window with the run's constants.
+    Policy(PolicyConstants),
     /// Live: hit-window answers queued from earlier prompts, in window order.
     /// Opportunity Attack answers live in the held move's `opportunity` and
     /// `declined` lists, so an Opportunity Attack window always waits.
@@ -78,9 +80,13 @@ pub enum ReactionDecider {
 
 impl ReactionDecider {
     /// Decide one window, given the state as the engine presents it there.
-    pub fn decide(&mut self, _state: &EncounterState, window: &ReactionWindow) -> Decision {
+    pub fn decide(&mut self, state: &EncounterState, window: &ReactionWindow) -> Decision {
         match self {
             ReactionDecider::PassAll => Decision::Answer { answer: ReactionAnswer::Pass, reason: None },
+            ReactionDecider::Policy(constants) => {
+                let (answer, reason) = crate::tactics::decide_reaction(state, window, constants);
+                Decision::Answer { answer, reason: Some(reason) }
+            }
             ReactionDecider::Queued(_) if matches!(window.trigger, WindowTrigger::Opportunity { .. }) => Decision::Wait,
             ReactionDecider::Queued(answers) => answers.pop_front().map_or(Decision::Wait, |answer| Decision::Answer { answer, reason: None }),
         }

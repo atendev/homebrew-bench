@@ -1239,11 +1239,14 @@ fn move_combatant(
         .collect::<Result<Vec<_>, EngineError>>()?;
     let mut attacking: Vec<String> = opportunity.iter().map(|oa| oa.reactor_id.clone()).collect();
     let mut reasons = Vec::new();
+    let mut held: Vec<String> = Vec::new();
     if state.settings.reaction_windows {
         let open: Vec<String> = provoked.iter().filter(|id| !attacking.contains(id) && !declined.contains(id)).cloned().collect();
         for window in opportunity_windows(state, i, &open) {
+            let logged = reasons.len();
             match ask(state, window.clone(), &mut reasons) {
                 None => return Ok(vec![]),
+                Some(ReactionAnswer::Pass) if reasons.len() > logged => held.push(window.reactor_id),
                 Some(ReactionAnswer::Pass) => {}
                 Some(ReactionAnswer::Take(id)) => {
                     let reactor_id = window.reactor_id;
@@ -1285,7 +1288,7 @@ fn move_combatant(
     for (other, _) in &others {
         set_band(state, i, actor_id, other, band)?;
     }
-    for reactor_id in provoked.iter().filter(|id| !attacking.contains(id) && !declined.contains(id)) {
+    for reactor_id in provoked.iter().filter(|id| !attacking.contains(id) && !declined.contains(id) && !held.contains(id)) {
         let r = index_of(state, reactor_id)?;
         match opportunity_eligibility(state, r, i) {
             Ok(()) => events.push(event(
@@ -1350,6 +1353,15 @@ fn opportunity_eligibility(state: &EncounterState, reactor: usize, mover: usize)
         return Err(Ineligible::Unseen(format!("{} is blinded and cannot see {}", r.id, m.id)));
     }
     Ok(())
+}
+
+/// Whether `reactor_id` may make an Opportunity Attack on `mover_id` under the
+/// engine's one eligibility rule. The batch policy prices step-outs with it.
+pub(crate) fn opportunity_eligible(state: &EncounterState, reactor_id: &str, mover_id: &str) -> bool {
+    match (index_of(state, reactor_id), index_of(state, mover_id)) {
+        (Ok(r), Ok(m)) => opportunity_eligibility(state, r, m).is_ok(),
+        _ => false,
+    }
 }
 
 /// The checks every reaction shares: the reactor can act, nothing forbids it
@@ -1472,6 +1484,18 @@ fn opportunity_attack_action(
         }
         return Ok(action.clone());
     }
+    opportunity_attack_candidates(block)
+        .into_iter()
+        .next()
+        .cloned()
+        .ok_or_else(|| "it has no at-will melee attack".to_string())
+}
+
+/// Every at-will single melee attack a reactor could make as its Opportunity
+/// Attack, in the order [`opportunity_attack_action`] reads them: each action
+/// in stat-block order, then the leaves of its Multiattack steps (first Choice
+/// option first), skipping steps that cast. The first is the default attack.
+pub(crate) fn opportunity_attack_candidates(block: &StatBlock) -> Vec<&crate::stat_block::AbilityEntry> {
     let at_will = |id: &str| {
         block
             .actions
@@ -1491,6 +1515,7 @@ fn opportunity_attack_action(
             }
         }
     }
+    let mut found: Vec<&crate::stat_block::AbilityEntry> = Vec::new();
     for action in &block.actions {
         let mut ids = vec![action.id.as_str()];
         for effect in &action.effects {
@@ -1498,11 +1523,13 @@ fn opportunity_attack_action(
                 leaves(&multi.steps, &mut ids);
             }
         }
-        if let Some(found) = ids.into_iter().find_map(at_will) {
-            return Ok(found.clone());
+        for attack in ids.into_iter().filter_map(at_will) {
+            if !found.iter().any(|f| f.id == attack.id) {
+                found.push(attack);
+            }
         }
     }
-    Err("it has no at-will melee attack".into())
+    found
 }
 
 fn band_change_cost(current: RangeBand, band: RangeBand) -> u32 {
@@ -4805,5 +4832,151 @@ mod tests {
         let request: StepRequest = serde_json::from_value(old.clone()).unwrap();
         assert!(matches!(&request, StepRequest::Move { declined, .. } if declined.is_empty()));
         assert_eq!(serde_json::to_value(&request).unwrap(), old);
+    }
+
+    fn by_policy(state: &EncounterState) -> EncounterState {
+        let mut state = state.clone();
+        state.reactions.decider = crate::reaction::ReactionDecider::Policy(Default::default());
+        state
+    }
+
+    fn reasons(events: &[EngineEvent]) -> Vec<&str> {
+        events.iter().filter(|e| e.kind == "reaction_reason").map(|e| e.message.as_str()).collect()
+    }
+
+    #[test]
+    fn the_policy_shields_a_hit_inside_the_band_and_misses_it() {
+        let mut state = by_policy(&shieldable());
+        let events = act(&mut state, "ogre", "greatclub", &[CASTER]).unwrap();
+        let (_, total) = attack_roll(&events);
+        assert_eq!(reasons(&events), vec![format!("{CASTER}: Shield ({total} vs AC 12+5 turns the hit into a miss)")]);
+        assert!(events.iter().any(|e| e.kind == "attack_rechecked" && e.message.contains("(miss) after Shield")));
+        let caster = &state.combatants[1];
+        assert!(caster.action_economy.reaction_used);
+        assert_eq!(caster.resources[&format!("{CASTER}:slot:1")], 1);
+        assert_eq!(caster.hp, caster.max_hp);
+    }
+
+    #[test]
+    fn the_policy_holds_shield_on_a_hit_it_cannot_stop_or_a_critical() {
+        let unstoppable = |roll: u32, total: i32| roll != 20 && total >= 17;
+        let critical = |roll: u32, _: i32| roll == 20;
+        for (state, why) in [(ogre_on_caster(unstoppable), "still hits"), (ogre_on_caster(critical), "critical hit")] {
+            let mut state = by_policy(&state);
+            let events = act(&mut state, "ogre", "greatclub", &[CASTER]).unwrap();
+            let lines = reasons(&events);
+            assert!(lines.len() == 1 && lines[0].starts_with(&format!("{CASTER}: holds its reaction (")) && lines[0].contains(why), "{lines:?}");
+            assert!(!state.combatants[1].action_economy.reaction_used);
+            assert!(state.combatants[1].hp < state.combatants[1].max_hp);
+        }
+        let mut spent = by_policy(&shieldable());
+        spent.combatants[1].resources.insert(format!("{CASTER}:slot:1"), 4);
+        let events = act(&mut spent, "ogre", "greatclub", &[CASTER]).unwrap();
+        assert!(reasons(&events).is_empty() && !spent.combatants[1].action_economy.reaction_used);
+        assert!(spent.combatants[1].hp < spent.combatants[1].max_hp);
+    }
+
+    #[test]
+    fn the_policy_parries_melee_hits_inside_its_band_only() {
+        let (mut inside, mut outside) = (false, false);
+        for seed in 1..300 {
+            let mut melee = by_policy(&knight_state(seed));
+            let events = act(&mut melee, "ogre", "greatclub", &["knight"]).unwrap();
+            let lines = reasons(&events);
+            if let Some(attack) = events.iter().find(|e| e.kind == "attack" && e.message.contains("(hit)")) {
+                let (roll, total) = (attack.roll.unwrap(), attack.total.unwrap());
+                if roll != 20 && total < 20 {
+                    assert_eq!(lines, vec![format!("knight: Parry ({total} vs AC 18+2 turns the hit into a miss)")]);
+                    assert!(melee.combatants[1].action_economy.reaction_used);
+                    inside = true;
+                } else {
+                    assert!(lines[0].starts_with("knight: holds its reaction"), "{lines:?}");
+                    assert!(!melee.combatants[1].action_economy.reaction_used);
+                    outside = true;
+                }
+            }
+            let mut ranged = by_policy(&knight_state(seed));
+            let events = act(&mut ranged, "ogre", "javelin", &["knight"]).unwrap();
+            assert!(reasons(&events).is_empty());
+        }
+        assert!(inside && outside);
+    }
+
+    #[test]
+    fn of_two_reactions_that_stop_the_hit_the_one_without_a_slot_wins() {
+        let mut caster = party_block(CASTER);
+        let mut deflect = fixture_block("knight").reactions[0].clone();
+        deflect.id = "deflect".into();
+        deflect.name = "Deflect".into();
+        deflect.trigger = Some(crate::effect::ReactionTrigger::HitByAttackRoll { attack: crate::effect::AttackFilter::Any });
+        caster.reactions.push(deflect);
+        for seed in 1..2000 {
+            let state = windowed(fixture_block("ogre"), caster.clone(), "ally", seed);
+            let mut probe = state.clone();
+            probe.settings.reaction_windows = false;
+            let (roll, total) = attack_roll(&act(&mut probe, "ogre", "greatclub", &[CASTER]).unwrap());
+            if roll == 20 || !(12..14).contains(&total) {
+                continue;
+            }
+            let mut state = by_policy(&state);
+            let events = act(&mut state, "ogre", "greatclub", &[CASTER]).unwrap();
+            assert_eq!(reasons(&events), vec![format!("{CASTER}: Deflect ({total} vs AC 12+2 turns the hit into a miss)")]);
+            assert!(!state.combatants[1].resources.contains_key(&format!("{CASTER}:slot:1")));
+            return;
+        }
+        panic!("no seed");
+    }
+
+    /// `mover` (on its turn) engaged with `reactor`, both from blocks, windows on, the policy deciding.
+    fn stepping_out(mover: StatBlock, reactor: StatBlock) -> EncounterState {
+        let (m, r) = (mover.id.clone(), reactor.id.clone());
+        let mut state = windowed(mover, reactor, "ally", 3);
+        set_band(&mut state, 0, &m, &r, RangeBand::Engaged).unwrap();
+        state.active_turn = Some(m);
+        by_policy(&state)
+    }
+
+    fn step_out(state: &mut EncounterState) -> Vec<EngineEvent> {
+        let mover = state.combatants[0].id.clone();
+        move_combatant(state, &mover, None, RangeBand::Near, 5, &[], &[]).unwrap()
+    }
+
+    #[test]
+    fn a_goblin_with_no_hit_reaction_attacks_a_caster_stepping_out() {
+        let mut state = stepping_out(party_block(CASTER), fixture_block("goblin-warrior"));
+        let events = step_out(&mut state);
+        let lines = reasons(&events);
+        assert_eq!(lines.len(), 1);
+        assert!(lines[0].starts_with(&format!("goblin-warrior: Opportunity Attack on {CASTER} (scimitar, expected ")) && lines[0].ends_with("> reserve 0.0)"), "{lines:?}");
+        assert!(events.iter().any(|e| e.kind == "reaction" && e.message.starts_with("OPPORTUNITY ATTACK goblin-warrior")));
+        assert!(state.combatants[1].action_economy.reaction_used);
+    }
+
+    #[test]
+    fn a_caster_holds_its_reaction_for_shield_until_its_slots_run_out() {
+        let base = stepping_out(fixture_block("ogre"), party_block(CASTER));
+        let mut held = base.clone();
+        let events = step_out(&mut held);
+        let lines = reasons(&events);
+        assert!(lines.len() == 1 && lines[0].starts_with(&format!("{CASTER}: holds its reaction against ogre (dagger, expected ")), "{lines:?}");
+        assert!(events.iter().all(|e| e.kind != "opportunity_attack"), "a held reaction leaves no notice: {events:?}");
+        assert!(!held.combatants[1].action_economy.reaction_used);
+        let mut spent = base.clone();
+        spent.combatants[1].resources.insert(format!("{CASTER}:slot:1"), 4);
+        let events = step_out(&mut spent);
+        assert!(reasons(&events)[0].starts_with(&format!("{CASTER}: Opportunity Attack on ogre (dagger, expected ")), "{:?}", reasons(&events));
+        assert!(spent.combatants[1].action_economy.reaction_used);
+    }
+
+    #[test]
+    fn the_opportunity_attack_is_the_higher_damage_melee_leaf() {
+        let mut reactor = fixture_block("goblin-warrior");
+        reactor.actions.insert(0, smash(4, "1d4", 0));
+        reactor.actions[0].id = "jab".into();
+        reactor.actions.push(smash(4, "2d10", 2));
+        reactor.actions.last_mut().unwrap().id = "slam".into();
+        let mut state = stepping_out(party_block(CASTER), reactor);
+        let events = step_out(&mut state);
+        assert!(reasons(&events)[0].contains("(slam, expected "), "{:?}", reasons(&events));
     }
 }
