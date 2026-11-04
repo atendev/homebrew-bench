@@ -366,6 +366,10 @@ pub fn run(spec: &BatchSpec) -> Result<BatchReport, BatchError> {
     for spell in engine::missing_spells(&spec.monster) {
         warnings.push(format!("Spell `{spell}` is not in the spell effects file; a cast of it does nothing, so results may understate this monster."));
     }
+    for (spell, level, clause) in engine::unapplied_upcasts(&spec.monster) {
+        let clause = clause.trim_end_matches('.');
+        warnings.push(format!("Spell `{spell}` at level {level}: {clause} is not applied; results may understate this monster."));
+    }
     let effective = effective_cr(&cells);
     let fingerprints = baseline::fingerprints_for(&spec.party, &constants);
     let comparison = spec.baseline.as_ref().map(|b| {
@@ -637,7 +641,12 @@ fn execute(state: &mut EncounterState, plan: &tactics::Plan) -> Result<Vec<Engin
         Section::Legendary => engine::use_legendary_action(state, &plan.actor_id, &plan.action_id, &plan.targets),
         _ => engine::step_events(
             state,
-            StepRequest::Action { actor_id: plan.actor_id.clone(), action_id: plan.action_id.clone(), target_ids: plan.targets.clone() },
+            StepRequest::Action {
+                actor_id: plan.actor_id.clone(),
+                action_id: plan.action_id.clone(),
+                target_ids: plan.targets.clone(),
+                slot_level: None,
+            },
         ),
     };
     state.player_dice.picks.clear();
@@ -1286,6 +1295,44 @@ mod tests {
         s.assumptions.push(StandingAssumption { path: format!("abilities.{id}"), value: "ignored".into(), reason: "test".into() });
         let report = run(&s).unwrap();
         assert!(report.summary.findings.iter().any(|f| f.ability_id == id && f.kind == "ignored"));
+    }
+
+    #[test]
+    fn an_upcast_with_an_unapplied_clause_warns() {
+        let mut monster = fixture("ogre");
+        monster.actions.push(AbilityEntry {
+            id: "acid-arrow".into(),
+            name: "Acid Arrow".into(),
+            desc: None,
+            kind: AbilityKind::Modeled,
+            effects: vec![crate::effect::Effect::Cast(crate::effect::Cast {
+                spell_id: "acid-arrow".into(),
+                slot_level: Some(4),
+                upcast: true,
+            })],
+            agent_clauses: vec![],
+            default_resolution: None,
+            usage: None,
+        });
+        let report = run(&spec(monster, vec![1], 1)).unwrap();
+        let expected = "Spell `acid-arrow` at level 4: The later damage increases by 1d4 for each spell slot level above 2 is not applied; results may understate this monster.";
+        assert_eq!(
+            report
+                .summary
+                .warnings
+                .iter()
+                .filter(|w| *w == expected)
+                .count(),
+            1,
+            "{:?}",
+            report.summary.warnings
+        );
+        assert!(run(&spec(fixture("ogre"), vec![1], 1))
+            .unwrap()
+            .summary
+            .warnings
+            .iter()
+            .all(|w| !w.contains("is not applied")));
     }
 
     #[test]

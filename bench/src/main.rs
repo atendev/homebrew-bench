@@ -126,6 +126,9 @@ enum Commands {
         action: String,
         /// Target combatant ids.
         targets: Vec<String>,
+        /// Spell slot level for every leveled spell the action casts, for a stat block with spell slots.
+        #[arg(long)]
+        slot: Option<u8>,
         #[command(flatten)]
         at: At,
     },
@@ -541,7 +544,21 @@ fn run(command: Commands) -> Result<String, CodedError> {
             index.save()?;
             ok(outcome)
         }
-        Commands::Action { actor, action, targets, at } => step(&at, Command::Action { actor, action, targets }),
+        Commands::Action {
+            actor,
+            action,
+            targets,
+            slot,
+            at,
+        } => step(
+            &at,
+            Command::Action {
+                actor,
+                action,
+                targets,
+                slot,
+            },
+        ),
         Commands::Disengage { actor, at } => step(&at, Command::Disengage { actor }),
         Commands::Move { actor, band, target, feet, opportunity, at } => {
             step(&at, Command::Move { actor, target, band: band.into(), feet, opportunity })

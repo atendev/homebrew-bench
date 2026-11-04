@@ -20,7 +20,14 @@ use crate::stat_block::{Ability, Condition, DamageType, DeathSaves, StatBlock};
 #[derive(Debug, Clone, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum StepRequest {
-    Action { actor_id: String, action_id: String, target_ids: Vec<String> },
+    Action {
+        actor_id: String,
+        action_id: String,
+        target_ids: Vec<String>,
+        /// Cast level for every leveled Cast in the action (`bench action --slot`).
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        slot_level: Option<u8>,
+    },
     Move {
         actor_id: String,
         target_id: Option<String>,
@@ -212,8 +219,8 @@ pub fn step_events(state: &mut EncounterState, request: StepRequest) -> Result<V
         return Err(EngineError::Pending("answer the pending prompt first".into()));
     }
     let events = match request {
-        StepRequest::Action { actor_id, action_id, target_ids } => {
-            resolve_action(state, &actor_id, &action_id, &target_ids)?
+        StepRequest::Action { actor_id, action_id, target_ids, slot_level } => {
+            resolve_action(state, &actor_id, &action_id, &target_ids, slot_level)?
         }
         StepRequest::Move { actor_id, target_id, band, feet, opportunity } => {
             move_combatant(state, &actor_id, target_id.as_deref(), band, feet, &opportunity)?
@@ -238,6 +245,7 @@ fn resolve_action(
     actor_id: &str,
     action_id: &str,
     target_ids: &[String],
+    slot_level: Option<u8>,
 ) -> Result<Vec<EngineEvent>, EngineError> {
     let actor_index = index_of(state, actor_id)?;
     if !can_act(&state.combatants[actor_index]) {
@@ -268,12 +276,16 @@ fn resolve_action(
             return Err(EngineError::Illegal(format!("{label} already used")));
         }
     }
+    let effects = match slot_level {
+        Some(level) => with_slot(state, actor_index, &action, level)?,
+        None => action.effects.clone(),
+    };
     if let Some(usage) = &action.usage {
         spend_usage(state, actor_index, action_id, usage)?;
     }
     let mut stream = Stream::from_state(state.rng.clone());
     let mut events = Vec::new();
-    for effect in action.effects {
+    for effect in effects {
         resolve_effect(state, &mut stream, actor_id, effect, target_ids, &mut events)?;
         if state.pending.is_some() {
             break;
@@ -287,6 +299,45 @@ fn resolve_action(
         ActionSection::Reaction => economy.reaction_used = true,
     }
     Ok(events)
+}
+
+/// The action's effects with every leveled Cast set to the chosen slot level. Refused
+/// unless the caster has spell slots, the action casts a leveled spell no higher than
+/// the slot, and a slot of that level is left.
+fn with_slot(
+    state: &EncounterState,
+    actor_index: usize,
+    action: &crate::stat_block::AbilityEntry,
+    level: u8,
+) -> Result<Vec<Effect>, EngineError> {
+    let actor = &state.combatants[actor_index];
+    let block = stat_block(state, actor)?;
+    if block.spell_slots.is_none() {
+        return Err(EngineError::Invalid(format!(
+            "{} has no spell slots to choose from",
+            actor.id
+        )));
+    }
+    let spells = load_spell_effects()?;
+    let mut effects = action.effects.clone();
+    let mut leveled = false;
+    for effect in &mut effects {
+        let Effect::Cast(cast) = effect else { continue };
+        let Some(spell) = spells.get(&cast.spell_id).filter(|s| s.level > 0) else {
+            continue;
+        };
+        cast.slot_level = Some(level);
+        cast_level(spell, cast)?;
+        leveled = true;
+    }
+    if !leveled {
+        return Err(EngineError::Invalid(format!(
+            "{} casts no leveled spell, so a slot level does not apply",
+            action.id
+        )));
+    }
+    spend_slot(actor, block, level)?;
+    Ok(effects)
 }
 
 /// The Disengage action. The flag lasts until the actor's turn ends.
@@ -446,7 +497,11 @@ fn resolve_effect(
             }
         }
         Effect::Heal(heal) => {
-            let amount = roll_dice(state, stream, actor_id, &heal.dice)? as i32 + heal.modifier;
+            let rolled = match &heal.dice {
+                Some(dice) => roll_dice(state, stream, actor_id, dice)? as i32,
+                None => 0,
+            };
+            let amount = rolled + heal.modifier;
             let marked = state.player_dice.all_entered_since(actor_id);
             for target_id in target_ids {
                 let i = index_of(state, target_id)?;
@@ -686,16 +741,23 @@ fn cast_spell(
             return Ok(());
         }
     };
+    let level = cast_level(&spell, cast)?;
+    let effects = scaled_effects(&spell, level)?;
     let i = index_of(state, actor_id)?;
     let ctx = {
         let block = stat_block(state, &state.combatants[i])?;
-        spend_slot(&state.combatants[i], block, cast)?;
-        cast_context(block, cast)
+        spend_slot(&state.combatants[i], block, level)?;
+        cast_context(block, spell.level == 0)
     };
-    if let Some(level) = cast.slot_level.filter(|l| *l > 0) {
-        if stat_block(state, &state.combatants[i])?.spell_slots.is_some() {
-            *state.combatants[i].resources.entry(format!("{actor_id}:slot:{level}")).or_insert(0) += 1;
-        }
+    if level > 0
+        && stat_block(state, &state.combatants[i])?
+            .spell_slots
+            .is_some()
+    {
+        *state.combatants[i]
+            .resources
+            .entry(format!("{actor_id}:slot:{level}"))
+            .or_insert(0) += 1;
     }
     if spell.concentration {
         if state.combatants[i].concentration.is_some() {
@@ -704,10 +766,21 @@ fn cast_spell(
         state.combatants[i].concentration = Some(spell_id.into());
         events.push(event("concentration", format!("{} begins concentrating on {}", actor_id, spell_id), actor_id, actor_id));
     }
-    let cantrip = cast.slot_level.unwrap_or(0) == 0;
-    for effect in spell.effects {
+    if let Some(clause) = spell
+        .upcast_clause
+        .as_deref()
+        .filter(|_| level > spell.level)
+    {
+        events.push(event(
+            "upcast_clause",
+            format!("{actor_id} casts {spell_id} at level {level}; agent clause: {clause}"),
+            actor_id,
+            actor_id,
+        ));
+    }
+    for effect in effects {
         let effect = match &ctx {
-            Some(ctx) => bind_effect(effect, ctx, cantrip),
+            Some(ctx) => bind_effect(effect, ctx, spell.level == 0),
             None => effect,
         };
         resolve_effect(state, stream, actor_id, effect, target_ids, events)?;
@@ -715,9 +788,152 @@ fn cast_spell(
     Ok(())
 }
 
+/// The level a cast resolves at: its slot level, or the spell's own level when it names none.
+fn cast_level(
+    spell: &crate::spell::SpellEffect,
+    cast: &crate::effect::Cast,
+) -> Result<u8, EngineError> {
+    match cast.slot_level {
+        None => Ok(spell.level),
+        Some(_) if spell.level == 0 => Err(EngineError::Invalid(format!(
+            "{} is a cantrip and takes no spell slot",
+            spell.id
+        ))),
+        Some(slot) if slot < spell.level => Err(EngineError::Invalid(format!(
+            "{} is a level {} spell and cannot be cast with a level {slot} slot",
+            spell.id, spell.level
+        ))),
+        Some(slot) => Ok(slot),
+    }
+}
+
+/// Cast level of a cast the effects file may not hold; an unknown spell keeps its slot level.
+fn cast_level_of(cast: &crate::effect::Cast) -> Result<u8, EngineError> {
+    match load_spell_effects()?.get(&cast.spell_id) {
+        Some(spell) => cast_level(spell, cast),
+        None => Ok(cast.slot_level.unwrap_or(0)),
+    }
+}
+
+/// The effects a spell resolves at `cast_level`, with each scaling rule applied once
+/// per level above the spell's own (ADR 0014).
+fn scaled_effects(
+    spell: &crate::spell::SpellEffect,
+    cast_level: u8,
+) -> Result<Vec<Effect>, EngineError> {
+    use crate::spell::Scaling;
+    let steps = u32::from(cast_level.saturating_sub(spell.level));
+    let mut effects = spell.effects.clone();
+    if steps == 0 {
+        return Ok(effects);
+    }
+    let missing = |index: usize| {
+        EngineError::Invalid(format!("{} scaling names missing effect {index}", spell.id))
+    };
+    for rule in &spell.scaling {
+        let effect = effects
+            .get_mut(rule.effect_index)
+            .ok_or_else(|| missing(rule.effect_index))?;
+        match &rule.per_slot {
+            Scaling::ExtraDice { dice, damage_type } => add_dice(effect, dice, *damage_type, steps)
+                .ok_or_else(|| {
+                    EngineError::Invalid(format!(
+                        "{} cannot add {dice} to effect {}",
+                        spell.id, rule.effect_index
+                    ))
+                })?,
+            Scaling::ExtraModifier { amount } => add_modifier(effect, amount * steps as i32),
+            Scaling::ExtraTargets { count } => add_targets(effect, count * steps),
+            Scaling::ExtraEffects { .. } => {}
+        }
+    }
+    for rule in &spell.scaling {
+        if let Scaling::ExtraEffects { count } = rule.per_slot {
+            let copy = effects
+                .get(rule.effect_index)
+                .cloned()
+                .ok_or_else(|| missing(rule.effect_index))?;
+            effects.extend(std::iter::repeat(copy).take((count * steps) as usize));
+        }
+    }
+    Ok(effects)
+}
+
+fn grow_dice(base: &str, extra: &str, times: u32) -> Option<String> {
+    let (count, sides) = crate::effect::parse_dice(base)?;
+    let (more, extra_sides) = crate::effect::parse_dice(extra)?;
+    (sides == extra_sides).then(|| format!("{}d{sides}", count + more * times))
+}
+
+fn add_dice(
+    effect: &mut Effect,
+    dice: &str,
+    damage_type: Option<DamageType>,
+    times: u32,
+) -> Option<()> {
+    let pick = |damage: &mut Vec<crate::effect::Damage>| -> Option<()> {
+        let index = damage
+            .iter()
+            .position(|d| Some(d.damage_type) == damage_type)
+            .unwrap_or(0);
+        let entry = damage.get_mut(index)?;
+        entry.dice = grow_dice(&entry.dice, dice, times)?;
+        Some(())
+    };
+    match effect {
+        Effect::Attack(a) => pick(&mut a.damage),
+        Effect::SavingThrow(s) => pick(&mut s.damage),
+        Effect::Damage(d) => {
+            d.dice = grow_dice(&d.dice, dice, times)?;
+            Some(())
+        }
+        Effect::Heal(h) => {
+            h.dice = Some(match &h.dice {
+                Some(base) => grow_dice(base, dice, times)?,
+                None => grow_dice(dice, dice, times - 1)?,
+            });
+            Some(())
+        }
+        Effect::TempHp(t) => {
+            t.dice = grow_dice(&t.dice, dice, times)?;
+            Some(())
+        }
+        Effect::Area(area) => add_dice(&mut area.effect, dice, damage_type, times),
+        _ => None,
+    }
+}
+
+fn add_modifier(effect: &mut Effect, amount: i32) {
+    match effect {
+        Effect::Heal(h) => h.modifier += amount,
+        Effect::TempHp(t) => t.modifier += amount,
+        Effect::Damage(d) => d.modifier += amount,
+        Effect::Attack(crate::effect::Attack { damage, .. })
+        | Effect::SavingThrow(crate::effect::SavingThrow { damage, .. }) => {
+            if let Some(first) = damage.first_mut() {
+                first.modifier += amount;
+            }
+        }
+        Effect::Area(area) => add_modifier(&mut area.effect, amount),
+        _ => {}
+    }
+}
+
+fn add_targets(effect: &mut Effect, count: u32) {
+    match effect {
+        Effect::Attack(a) => a.target_count += count,
+        Effect::Area(area) => {
+            if let Some(n) = area.target_count.as_mut() {
+                *n += count;
+            }
+        }
+        _ => {}
+    }
+}
+
 /// A PC with spell slots can cast a leveled spell only while a slot of that level is left.
-fn spend_slot(actor: &Combatant, block: &StatBlock, cast: &crate::effect::Cast) -> Result<(), EngineError> {
-    let (Some(slots), Some(level)) = (&block.spell_slots, cast.slot_level.filter(|l| *l > 0)) else {
+fn spend_slot(actor: &Combatant, block: &StatBlock, level: u8) -> Result<(), EngineError> {
+    let Some(slots) = block.spell_slots.as_ref().filter(|_| level > 0) else {
         return Ok(());
     };
     let max = slots.get(usize::from(level) - 1).copied().unwrap_or(0) as i32;
@@ -768,37 +984,74 @@ fn retarget_if_down(state: &EncounterState, actor_id: &str, target_id: &str) -> 
         .map_or_else(|| target_id.to_string(), |c| c.id.clone())
 }
 
-/// Spell ids a stat block casts that the spell effects file does not hold. A cast
-/// of one is logged but does nothing, so a batch names each one.
-pub fn missing_spells(block: &StatBlock) -> Vec<String> {
-    fn walk(value: &serde_json::Value, known: &HashMap<String, crate::spell::SpellEffect>, out: &mut std::collections::BTreeSet<String>) {
+fn casts_in(block: &StatBlock) -> Vec<crate::effect::Cast> {
+    fn walk(value: &serde_json::Value, out: &mut Vec<crate::effect::Cast>) {
         match value {
             serde_json::Value::Object(map) => {
-                if let Some(id) = map.get("spell_id").and_then(serde_json::Value::as_str) {
-                    if !known.contains_key(id) {
-                        out.insert(id.to_string());
+                if map.contains_key("spell_id") {
+                    if let Ok(cast) = serde_json::from_value(value.clone()) {
+                        out.push(cast);
                     }
                 }
-                map.values().for_each(|v| walk(v, known, out));
+                map.values().for_each(|v| walk(v, out));
             }
-            serde_json::Value::Array(items) => items.iter().for_each(|v| walk(v, known, out)),
+            serde_json::Value::Array(items) => items.iter().for_each(|v| walk(v, out)),
             _ => {}
         }
     }
-    let mut out = std::collections::BTreeSet::new();
-    if let (Ok(known), Ok(value)) = (load_spell_effects(), serde_json::to_value(block)) {
-        walk(&value, known, &mut out);
+    let mut out = Vec::new();
+    if let Ok(value) = serde_json::to_value(block) {
+        walk(&value, &mut out);
     }
-    out.into_iter().collect()
+    out
+}
+
+/// Spell ids a stat block casts that the spell effects file does not hold. A cast
+/// of one is logged but does nothing, so a batch names each one.
+pub fn missing_spells(block: &StatBlock) -> Vec<String> {
+    let Ok(known) = load_spell_effects() else {
+        return vec![];
+    };
+    let missing: std::collections::BTreeSet<String> = casts_in(block)
+        .into_iter()
+        .map(|c| c.spell_id)
+        .filter(|id| !known.contains_key(id))
+        .collect();
+    missing.into_iter().collect()
+}
+
+/// Upcasts in a stat block whose spell has an `upcast_clause` the engine does not
+/// apply: spell id, cast level and clause, once each.
+pub fn unapplied_upcasts(block: &StatBlock) -> Vec<(String, u8, String)> {
+    let Ok(known) = load_spell_effects() else {
+        return vec![];
+    };
+    let found: std::collections::BTreeSet<(String, u8, String)> = casts_in(block)
+        .into_iter()
+        .filter_map(|cast| {
+            let spell = known.get(&cast.spell_id)?;
+            let level = cast_level(spell, &cast).ok()?;
+            let clause = spell
+                .upcast_clause
+                .clone()
+                .filter(|_| level > spell.level)?;
+            Some((cast.spell_id, level, clause))
+        })
+        .collect();
+    found.into_iter().collect()
 }
 
 /// Effects of a cast with the caster's numbers bound in, and whether the spell needs concentration.
 pub fn bound_cast_effects(block: &StatBlock, cast: &crate::effect::Cast) -> Option<(Vec<Effect>, bool)> {
     let spell = load_spell_effects().ok()?.get(&cast.spell_id)?;
-    let cantrip = cast.slot_level.unwrap_or(0) == 0;
-    let effects = match cast_context(block, cast) {
-        Some(ctx) => spell.effects.iter().cloned().map(|e| bind_effect(e, &ctx, cantrip)).collect(),
-        None => spell.effects.clone(),
+    let cantrip = spell.level == 0;
+    let effects = scaled_effects(spell, cast_level(spell, cast).ok()?).ok()?;
+    let effects = match cast_context(block, cantrip) {
+        Some(ctx) => effects
+            .into_iter()
+            .map(|e| bind_effect(e, &ctx, cantrip))
+            .collect(),
+        None => effects,
     };
     Some((effects, spell.concentration))
 }
@@ -821,7 +1074,9 @@ pub fn ability_ready(state: &EncounterState, actor_id: &str, ability: &crate::st
     };
     ready
         && ability.effects.iter().all(|e| match e {
-            Effect::Cast(c) => spend_slot(actor, block, c).is_ok(),
+            Effect::Cast(c) => cast_level_of(c)
+                .and_then(|level| spend_slot(actor, block, level))
+                .is_ok(),
             _ => true,
         })
 }
@@ -834,10 +1089,9 @@ struct CastContext {
     dice_multiplier: u32,
 }
 
-fn cast_context(block: &StatBlock, cast: &crate::effect::Cast) -> Option<CastContext> {
+fn cast_context(block: &StatBlock, cantrip: bool) -> Option<CastContext> {
     let sc = block.spellcasting.as_ref()?;
-    let is_cantrip = cast.slot_level.unwrap_or(0) == 0;
-    let dice_multiplier = match (is_cantrip, block.level) {
+    let dice_multiplier = match (cantrip, block.level) {
         (true, Some(l)) => 1 + u32::from(l >= 5) + u32::from(l >= 11) + u32::from(l >= 17),
         _ => 1,
     };
@@ -881,7 +1135,9 @@ fn bind_effect(effect: Effect, ctx: &CastContext, cantrip_damage: bool) -> Effec
             Effect::SavingThrow(st)
         }
         Effect::Heal(mut h) => {
-            h.modifier += ctx.heal_bonus;
+            if h.spellcasting_modifier {
+                h.modifier += ctx.heal_bonus;
+            }
             Effect::Heal(h)
         }
         Effect::Area(mut area) => {
@@ -1871,10 +2127,7 @@ fn player_roll_in(state: &mut EncounterState, owner: &str, sides: u32, drawn: u3
 }
 
 fn roll_dice(state: &mut EncounterState, stream: &mut Stream, owner: &str, expression: &str) -> Result<u32, EngineError> {
-    let (count, sides) = expression.split_once('d').ok_or_else(|| EngineError::Invalid(format!("invalid dice expression {expression}")))?;
-    let count: u32 = count.parse().map_err(|_| EngineError::Invalid(format!("invalid dice expression {expression}")))?;
-    let sides: u32 = sides.parse().map_err(|_| EngineError::Invalid(format!("invalid dice expression {expression}")))?;
-    if count == 0 || sides == 0 { return Err(EngineError::Invalid(format!("invalid dice expression {expression}"))); }
+    let (count, sides) = crate::effect::parse_dice(expression).ok_or_else(|| EngineError::Invalid(format!("invalid dice expression {expression}")))?;
     let mut total = 0;
     for i in 0..count {
         let drawn = stream.roll_die(sides);
@@ -2125,7 +2378,12 @@ mod tests {
         state.combatants[0].engagement.push("goblin".into());
         state.combatants[1].engagement.push("fighter".into());
         state.active_turn = Some("goblin".into());
-        let req = StepRequest::Action { actor_id: "goblin".into(), action_id: "scimitar".into(), target_ids: vec!["fighter".into()] };
+        let req = StepRequest::Action {
+            actor_id: "goblin".into(),
+            action_id: "scimitar".into(),
+            target_ids: vec!["fighter".into()],
+            slot_level: None,
+        };
         let resp = step(&mut state, req).unwrap();
         assert!(!resp.events.is_empty());
         let attack_event = resp.events.iter().find(|e| e.kind == "attack").expect("attack event");
@@ -2167,7 +2425,12 @@ mod tests {
         state.combatants[0].engagement.push("goblin".into());
         state.combatants[1].engagement.push("fighter".into());
         state.active_turn = Some("goblin".into());
-        let req = StepRequest::Action { actor_id: "goblin".into(), action_id: "smash".into(), target_ids: vec!["fighter".into()] };
+        let req = StepRequest::Action {
+            actor_id: "goblin".into(),
+            action_id: "smash".into(),
+            target_ids: vec!["fighter".into()],
+            slot_level: None,
+        };
         step(&mut state, req).unwrap();
         assert_eq!(state.combatants[0].end_state, EndState::Unconscious);
     }
@@ -2201,7 +2464,12 @@ mod tests {
         );
         state.combatants[0].engagement.push("goblin".into());
         state.combatants[1].engagement.push("fighter".into());
-        let req = StepRequest::Action { actor_id: "fighter".into(), action_id: "smash".into(), target_ids: vec!["goblin".into()] };
+        let req = StepRequest::Action {
+            actor_id: "fighter".into(),
+            action_id: "smash".into(),
+            target_ids: vec!["goblin".into()],
+            slot_level: None,
+        };
         step(&mut state, req).unwrap();
         assert_eq!(state.combatants[1].end_state, EndState::Dead);
     }
@@ -2457,7 +2725,12 @@ mod tests {
         state.combatants[0].engagement.push("attacker".into());
         state.combatants[1].engagement.push("target".into());
         state.active_turn = Some("attacker".into());
-        let req = StepRequest::Action { actor_id: "attacker".into(), action_id: "multiattack".into(), target_ids: vec!["target".into()] };
+        let req = StepRequest::Action {
+            actor_id: "attacker".into(),
+            action_id: "multiattack".into(),
+            target_ids: vec!["target".into()],
+            slot_level: None,
+        };
         let resp = step(&mut state, req).unwrap();
         let attack_events: Vec<_> = resp.events.iter().filter(|e| e.kind == "attack").collect();
         assert_eq!(attack_events.len(), 2, "fixed 1 attack plus choice 1 attack");
@@ -2516,7 +2789,12 @@ mod tests {
         state.combatants[0].engagement.push("attacker".into());
         state.combatants[1].engagement.push("target".into());
         state.active_turn = Some("attacker".into());
-        let req = StepRequest::Action { actor_id: "attacker".into(), action_id: "multiattack".into(), target_ids: vec!["target".into()] };
+        let req = StepRequest::Action {
+            actor_id: "attacker".into(),
+            action_id: "multiattack".into(),
+            target_ids: vec!["target".into()],
+            slot_level: None,
+        };
         let resp = step(&mut state, req).unwrap();
         let count = |kind: &str| resp.events.iter().filter(|e| e.kind == kind).count();
         assert_eq!(count("attack"), 2, "first alternative: two claws");
@@ -2548,7 +2826,7 @@ mod tests {
         let target = test_combatant("target", "target", 50, "ally");
         let mut state = test_encounter(vec![test_stat_block("target", "Target", 50, 10), attacker_block], vec![target, attacker]);
         state.active_turn = Some("attacker".into());
-        let req = StepRequest::Action { actor_id: "attacker".into(), action_id: "multiattack".into(), target_ids: vec!["target".into()] };
+        let req = StepRequest::Action { actor_id: "attacker".into(), action_id: "multiattack".into(), target_ids: vec!["target".into()], slot_level: None };
         assert!(matches!(step(&mut state, req), Err(EngineError::NotFound(_))));
     }
 
@@ -2584,7 +2862,12 @@ mod tests {
         state.combatants[0].ranges.insert("goblin".into(), RangeBand::Near);
         state.combatants[1].ranges.insert("fighter".into(), RangeBand::Near);
         state.active_turn = Some("goblin".into());
-        let req = StepRequest::Action { actor_id: "goblin".into(), action_id: "arrow".into(), target_ids: vec!["fighter".into()] };
+        let req = StepRequest::Action {
+            actor_id: "goblin".into(),
+            action_id: "arrow".into(),
+            target_ids: vec!["fighter".into()],
+            slot_level: None,
+        };
         let resp = step(&mut state, req).unwrap();
         assert!(resp.events.iter().any(|e| e.kind == "concentration_save" || e.kind == "concentration"));
     }
@@ -2612,7 +2895,16 @@ mod tests {
         state.settings.pc_dice = PcDice::Ask;
         state.player_dice.faces = vec![4].into();
         let targets = vec!["goblin_a".to_string(), "goblin_b".to_string()];
-        let resp = step(&mut state, StepRequest::Action { actor_id: "caster".into(), action_id: "burst".into(), target_ids: targets }).unwrap();
+        let resp = step(
+            &mut state,
+            StepRequest::Action {
+                actor_id: "caster".into(),
+                action_id: "burst".into(),
+                target_ids: targets,
+                slot_level: None,
+            },
+        )
+        .unwrap();
         let damage: Vec<_> = resp.events.iter().filter(|e| e.kind == "damage").collect();
         assert_eq!(damage.len(), 2);
         assert!(damage.iter().all(|e| e.player_dice && e.damage == Some(4)), "{damage:?}");
@@ -2630,7 +2922,7 @@ mod tests {
             expected.roll_die(6);
         }
         let save_roll = expected.roll_die(20);
-        let resp = step(&mut state, StepRequest::Action { actor_id: "goblin".into(), action_id: "bite".into(), target_ids: vec!["fighter".into()] }).unwrap();
+        let resp = step(&mut state, StepRequest::Action { actor_id: "goblin".into(), action_id: "bite".into(), target_ids: vec!["fighter".into()], slot_level: None }).unwrap();
         let save = resp.events.iter().find(|e| e.kind == "concentration_save").expect("concentration save");
         assert_eq!(save.roll, Some(save_roll));
         assert_eq!(state.rng, expected.state());
@@ -2666,7 +2958,7 @@ mod tests {
 
     /// Hit points the fighter lost to one bite, asserting the attack was a plain (non-critical) hit.
     fn bite_damage(state: &mut EncounterState) -> i32 {
-        let resp = step(state, StepRequest::Action { actor_id: "goblin".into(), action_id: "bite".into(), target_ids: vec!["fighter".into()] }).unwrap();
+        let resp = step(state, StepRequest::Action { actor_id: "goblin".into(), action_id: "bite".into(), target_ids: vec!["fighter".into()], slot_level: None }).unwrap();
         let attack = resp.events.iter().find(|e| e.kind == "attack").expect("attack event");
         assert_ne!(attack.roll, Some(20), "seed produced a critical hit; pick another seed");
         assert!(attack.message.ends_with("(hit)"), "{}", attack.message);
@@ -2744,7 +3036,7 @@ mod tests {
         };
         let goblin = state.stat_blocks.iter_mut().find(|s| s.id == "goblin").unwrap();
         goblin.stat_block.actions[0].effects = vec![Effect::SavingThrow(save)];
-        step(&mut state, StepRequest::Action { actor_id: "goblin".into(), action_id: "bite".into(), target_ids: vec!["fighter".into()] }).unwrap();
+        step(&mut state, StepRequest::Action { actor_id: "goblin".into(), action_id: "bite".into(), target_ids: vec!["fighter".into()], slot_level: None }).unwrap();
         100 - state.combatants.iter().find(|c| c.id == "fighter").unwrap().hp
     }
 
@@ -2842,7 +3134,15 @@ mod tests {
 
     fn act(state: &mut EncounterState, actor: &str, action: &str, targets: &[&str]) -> Result<Vec<EngineEvent>, EngineError> {
         let target_ids = targets.iter().map(|t| t.to_string()).collect();
-        step_events(state, StepRequest::Action { actor_id: actor.into(), action_id: action.into(), target_ids })
+        step_events(
+            state,
+            StepRequest::Action {
+                actor_id: actor.into(),
+                action_id: action.into(),
+                target_ids,
+                slot_level: None,
+            },
+        )
     }
 
     #[test]
@@ -2869,6 +3169,207 @@ mod tests {
         }
         let (effects, _) = bound_cast_effects(&caster_block(17), &cast("fireball", Some(3))).unwrap();
         assert!(matches!(&effects[0], Effect::SavingThrow(s) if s.damage[0].dice == "8d6"), "leveled spells do not scale");
+    }
+
+    fn damage_dice(effect: &Effect) -> Vec<(String, i32)> {
+        let list = match effect {
+            Effect::Attack(a) => a.damage.clone(),
+            Effect::SavingThrow(s) => s.damage.clone(),
+            Effect::Damage(d) => vec![d.clone()],
+            Effect::Area(a) => return damage_dice(&a.effect),
+            _ => vec![],
+        };
+        list.into_iter().map(|d| (d.dice, d.modifier)).collect()
+    }
+
+    fn bound(spell: &str, slot: Option<u8>) -> Vec<Effect> {
+        bound_cast_effects(&caster_block(1), &cast(spell, slot))
+            .expect("bound")
+            .0
+    }
+
+    fn slotted_caster(spell: &str, slot: Option<u8>) -> StatBlock {
+        let mut block = caster_block(17);
+        block.spell_slots = Some(vec![4, 3, 3, 3, 3, 2, 2, 1, 1]);
+        block
+            .actions
+            .push(ability(spell, vec![Effect::Cast(cast(spell, slot))], None));
+        block
+    }
+
+    #[test]
+    fn fireball_at_level_5_rolls_10d6() {
+        assert_eq!(
+            damage_dice(&bound("fireball", Some(5))[0]),
+            [("10d6".to_string(), 0)]
+        );
+        assert_eq!(
+            damage_dice(&bound("fireball", Some(3))[0]),
+            [("8d6".to_string(), 0)]
+        );
+    }
+
+    #[test]
+    fn magic_missile_at_level_3_makes_five_darts() {
+        let effects = bound("magic-missile", Some(3));
+        assert_eq!(effects.len(), 5);
+        assert!(
+            effects
+                .iter()
+                .all(|e| damage_dice(e) == [("1d4".to_string(), 1)]),
+            "{effects:?}"
+        );
+    }
+
+    #[test]
+    fn scorching_ray_at_level_3_makes_four_rays() {
+        let effects = bound("scorching-ray", Some(3));
+        assert_eq!(effects.len(), 4);
+        assert!(effects
+            .iter()
+            .all(|e| matches!(e, Effect::Attack(a) if a.target_count == 1)));
+    }
+
+    #[test]
+    fn cure_wounds_at_level_2_heals_4d8_plus_the_modifier() {
+        let effects = bound("cure-wounds", Some(2));
+        assert!(
+            matches!(&effects[0], Effect::Heal(h) if h.dice.as_deref() == Some("4d8") && h.modifier == 3),
+            "{effects:?}"
+        );
+    }
+
+    #[test]
+    fn disintegrate_deals_10d6_plus_40() {
+        assert_eq!(
+            damage_dice(&bound("disintegrate", None)[0]),
+            [("10d6".to_string(), 40)]
+        );
+        assert_eq!(
+            damage_dice(&bound("disintegrate", Some(7))[0]),
+            [("13d6".to_string(), 40)]
+        );
+    }
+
+    #[test]
+    fn heal_at_level_7_heals_exactly_80_without_dice() {
+        let mut ally = test_combatant("pc", "pc", 200, "ally");
+        ally.hp = 1;
+        let mut state = test_encounter(
+            vec![slotted_caster("heal", Some(7)), pc_block("pc", 200)],
+            vec![test_combatant("mage", "mage", 30, "ally"), ally],
+        );
+        state.settings.pc_dice = PcDice::Ask;
+        let cursor = state.rng.cursor;
+        let events = act(&mut state, "mage", "heal", &["pc"]).unwrap();
+        assert!(state.pending.is_none(), "{events:?}");
+        assert_eq!(state.rng.cursor, cursor, "no dice drawn");
+        assert_eq!(state.combatants[1].hp, 81);
+        assert_eq!(state.combatants[0].resources["mage:slot:7"], 1);
+    }
+
+    #[test]
+    fn an_extra_targets_rule_raises_an_attack_target_count() {
+        let spell: crate::spell::SpellEffect = serde_json::from_value(serde_json::json!({
+            "id": "test-bolts", "name": "Test Bolts", "source": "test", "level": 2, "concentration": false,
+            "effects": [{"attack": {"modifier": 0, "target_count": 1, "damage": [{"dice": "1d6", "type": "fire"}]}}],
+            "scaling": [{"effect_index": 0, "per_slot": {"extra_targets": {"count": 1}}}],
+        }))
+        .unwrap();
+        let effects = scaled_effects(&spell, 4).unwrap();
+        assert!(
+            matches!(&effects[0], Effect::Attack(a) if a.target_count == 3),
+            "{effects:?}"
+        );
+        assert!(
+            matches!(&scaled_effects(&spell, 2).unwrap()[0], Effect::Attack(a) if a.target_count == 1)
+        );
+    }
+
+    #[test]
+    fn hold_monster_at_level_6_resolves_against_every_target() {
+        let mut blocks = vec![slotted_caster("hold-monster", Some(6))];
+        let mut combatants = vec![test_combatant("mage", "mage", 30, "ally")];
+        for id in ["a", "b", "c"] {
+            blocks.push(test_stat_block(id, id, 20, 10));
+            combatants.push(test_combatant(id, id, 20, "enemy"));
+        }
+        let mut state = test_encounter(blocks, combatants);
+        let events = act(&mut state, "mage", "hold-monster", &["a", "b", "c"]).unwrap();
+        let saves: Vec<_> = events
+            .iter()
+            .filter(|e| e.kind == "save")
+            .filter_map(|e| e.target_id.clone())
+            .collect();
+        assert_eq!(saves, ["a", "b", "c"]);
+    }
+
+    #[test]
+    fn a_slot_below_the_spell_level_or_on_a_cantrip_is_refused() {
+        let mut state = test_encounter(
+            vec![
+                slotted_caster("fireball", Some(2)),
+                test_stat_block("ogre", "Ogre", 50, 10),
+            ],
+            vec![
+                test_combatant("mage", "mage", 30, "ally"),
+                test_combatant("ogre", "ogre", 50, "enemy"),
+            ],
+        );
+        let err = act(&mut state, "mage", "fireball", &["ogre"]).unwrap_err();
+        assert!(
+            matches!(&err, EngineError::Invalid(m) if m.contains("level 3") && m.contains("level 2")),
+            "{err:?}"
+        );
+        assert!(!state.combatants[0].resources.contains_key("mage:slot:2"));
+        let mut state = test_encounter(
+            vec![
+                slotted_caster("fire-bolt", Some(1)),
+                test_stat_block("ogre", "Ogre", 50, 10),
+            ],
+            vec![
+                test_combatant("mage", "mage", 30, "ally"),
+                test_combatant("ogre", "ogre", 50, "enemy"),
+            ],
+        );
+        let err = act(&mut state, "mage", "fire-bolt", &["ogre"]).unwrap_err();
+        assert!(
+            matches!(&err, EngineError::Invalid(m) if m.contains("cantrip")),
+            "{err:?}"
+        );
+    }
+
+    #[test]
+    fn a_leveled_spell_with_no_slot_level_does_not_scale_with_caster_level() {
+        let (effects, _) = bound_cast_effects(&caster_block(17), &cast("fireball", None)).unwrap();
+        assert_eq!(damage_dice(&effects[0]), [("8d6".to_string(), 0)]);
+        let (effects, _) = bound_cast_effects(&caster_block(17), &cast("fire-bolt", None)).unwrap();
+        assert_eq!(damage_dice(&effects[0]), [("4d10".to_string(), 0)]);
+    }
+
+    #[test]
+    fn an_upcast_clause_event_appears_only_on_an_upcast() {
+        let clause_lines = |slot: Option<u8>| {
+            let mut state = test_encounter(
+                vec![
+                    slotted_caster("acid-arrow", slot),
+                    test_stat_block("ogre", "Ogre", 500, 10),
+                ],
+                vec![
+                    test_combatant("mage", "mage", 30, "ally"),
+                    test_combatant("ogre", "ogre", 500, "enemy"),
+                ],
+            );
+            let events = act(&mut state, "mage", "acid-arrow", &["ogre"]).unwrap();
+            events
+                .into_iter()
+                .filter(|e| e.kind == "upcast_clause")
+                .map(|e| e.message)
+                .collect::<Vec<_>>()
+        };
+        assert_eq!(clause_lines(Some(4)), ["mage casts acid-arrow at level 4; agent clause: The later damage increases by 1d4 for each spell slot level above 2."]);
+        assert!(clause_lines(Some(2)).is_empty());
+        assert!(clause_lines(None).is_empty());
     }
 
     #[test]

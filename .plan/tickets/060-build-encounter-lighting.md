@@ -80,7 +80,7 @@ Versions and baseline:
 - No `ENGINE_VERSION` bump and no curve regeneration. The fixture set fingerprint changes; `stale_beyond_the_engine` in `bench-core/tests/calibration.rs` and the CLI test `batch_compares_against_the_embedded_curve_outside_the_repo` already accept that reason.
 - Ticket [056](056-build-v3-scoring-for-buffs-forced-movement-and-teleports.md) waits on this ticket so its one regeneration covers the new fixtures.
 - Ticket [061](061-fix-advantage-disadvantage-cancellation.md) also edits `disposition` in `engine.rs`. Either order works; see the engine section.
-- Ticket [059](059-build-upcast-spell-scaling.md) touches `engine.rs` (casting), `bench/src/main.rs`, `live-mode.md`, `batch-mode.md`, ADR 0005 and `CHANGELOG.md`. The two can land in either order. Whichever lands second rebases onto the first, and if 059 has moved the version to 0.1.2, this entry stays under Unreleased.
+- Ticket [059](059-build-upcast-spell-scaling.md) touches `engine.rs` (casting), `bench/src/main.rs`, `live-mode.md`, `batch-mode.md`, ADR 0005 and `CHANGELOG.md`. The two can land in either order. Whichever lands second rebases onto the first, and since 059 has moved the version to 0.1.3, this entry stays under Unreleased.
 
 Consult `tdd`, `codebase-design`, `domain-modeling` and `code-review`.
 

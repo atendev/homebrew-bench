@@ -32,6 +32,9 @@ pub enum Command {
         action: String,
         #[serde(default)]
         targets: Vec<String>,
+        /// Spell slot level for every leveled Cast in the action.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        slot: Option<u8>,
     },
     Move {
         actor: String,
@@ -559,9 +562,19 @@ fn write_entry(
 
 fn apply(state: &mut EncounterState, cmd: &Command) -> Result<Applied, LiveError> {
     match cmd {
-        Command::Action { actor, action, targets } => run_engine(
+        Command::Action {
+            actor,
+            action,
+            targets,
+            slot,
+        } => run_engine(
             state,
-            StepRequest::Action { actor_id: actor.clone(), action_id: action.clone(), target_ids: targets.clone() },
+            StepRequest::Action {
+                actor_id: actor.clone(),
+                action_id: action.clone(),
+                target_ids: targets.clone(),
+                slot_level: *slot,
+            },
             vec![],
             false,
         ),
@@ -1110,11 +1123,110 @@ mod tests {
         } else {
             ("shortbow", "standard-striker-03")
         };
-        Command::Action { actor, action: action.into(), targets: vec![target.into()] }
+        Command::Action {
+            actor,
+            action: action.into(),
+            targets: vec![target.into()],
+            slot: None,
+        }
     }
 
     fn lines(outcome: &Outcome) -> Vec<String> {
         outcome.events.iter().map(|e| e.line.clone()).collect()
+    }
+
+    fn caster_spec() -> StartSpec {
+        let mut spec = spec(PcDice::Engine);
+        spec.entrants.insert(
+            0,
+            Entrant {
+                stat_block: block("party/standard/standard-caster-05.json"),
+                side: PARTY_SIDE.into(),
+                band: RangeBand::Near,
+            },
+        );
+        spec
+    }
+
+    fn turn_of(state: &mut EncounterState, id: &str) {
+        while state.active_turn.as_deref() != Some(id) {
+            execute(state, Command::end_turn()).unwrap();
+        }
+    }
+
+    fn cast_at(actor: &str, action: &str, slot: Option<u8>) -> Command {
+        Command::Action {
+            actor: actor.into(),
+            action: action.into(),
+            targets: vec!["goblin-warrior".into()],
+            slot,
+        }
+    }
+
+    const CASTER: &str = "standard-caster-05";
+
+    #[test]
+    fn slot_spends_the_named_slot_and_scales_the_spell() {
+        let (mut state, _) = start(caster_spec()).unwrap();
+        execute(
+            &mut state,
+            Command::Override {
+                path: "goblin-warrior.hp".into(),
+                value: Some(Value::from(500)),
+                reason: "test".into(),
+                rule: None,
+                standing: false,
+            },
+        )
+        .unwrap();
+        turn_of(&mut state, CASTER);
+        let outcome = execute(&mut state, cast_at(CASTER, "magic-missile", Some(3))).unwrap();
+        let darts = outcome
+            .events
+            .iter()
+            .filter(|e| e.event.kind == "damage")
+            .count();
+        assert_eq!(darts, 5, "{:?}", lines(&outcome));
+        let caster = state.combatants.iter().find(|c| c.id == CASTER).unwrap();
+        assert_eq!(caster.resources.get(&format!("{CASTER}:slot:3")), Some(&1));
+        assert_eq!(caster.resources.get(&format!("{CASTER}:slot:1")), None);
+        assert!(replay(&state).matches);
+    }
+
+    #[test]
+    fn slot_refusals_give_their_reason() {
+        let (mut state, _) = start(caster_spec()).unwrap();
+        turn_of(&mut state, CASTER);
+        let refused =
+            |state: &mut EncounterState, cmd: Command| execute(state, cmd).unwrap_err().to_string();
+        assert!(refused(&mut state, cast_at(CASTER, "fire-bolt", Some(1)))
+            .contains("casts no leveled spell"));
+        assert!(refused(&mut state, cast_at(CASTER, "fireball", Some(2))).contains("level 3 spell"));
+        assert!(
+            refused(&mut state, cast_at(CASTER, "magic-missile", Some(4)))
+                .contains("no level 4 spell slot left")
+        );
+        turn_of(&mut state, "standard-striker-03");
+        assert!(refused(
+            &mut state,
+            cast_at("standard-striker-03", "longbow", Some(1))
+        )
+        .contains("has no spell slots"));
+    }
+
+    #[test]
+    fn a_history_without_a_slot_replays() {
+        let (mut state, _) = start(caster_spec()).unwrap();
+        turn_of(&mut state, CASTER);
+        execute(&mut state, cast_at(CASTER, "magic-missile", None)).unwrap();
+        let record = state.command_history.last().unwrap();
+        assert!(
+            record.args.to_string().contains("magic-missile")
+                && !record.args.to_string().contains("slot"),
+            "{}",
+            record.args
+        );
+        assert!(replay(&state).matches);
     }
 
     #[test]

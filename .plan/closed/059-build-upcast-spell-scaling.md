@@ -3,7 +3,7 @@ id: 059
 title: Build upcast spell scaling
 type: task
 mode: AFK
-status: open
+status: closed
 blocked_by: [050]
 claimed: false
 ---
@@ -81,3 +81,22 @@ Versions and baseline:
 Consult `tdd`, `codebase-design`, `domain-modeling` and `code-review`.
 
 ## Resolution
+
+Built on branch `ticket-059-build-upcast-spell-scaling`.
+
+- Model. `SpellEffect` has a required `level` and an optional `upcast_clause`. `Scaling` is `ExtraDice { dice, damage_type? }`, `ExtraModifier { amount }`, `ExtraTargets { count }` and `ExtraEffects { count }`; `IncreaseDuration` and `AddDamageType` are gone. `Heal.dice` is optional and `Heal.spellcasting_modifier` defaults to true. `effect::parse_dice` is the one `NdM` grammar; `roll_dice` and the spell tests use it.
+- Effects file. All 84 entries carry `level` from the SRD. The listed faults are fixed. Checking every rule against the SRD also found Prayer of Healing and Regenerate adding the spellcasting modifier, which the SRD text doesn't give, so both set it to false. Every "Upcast:" note and every higher-slot sentence in `agent_clauses` moved to a rule or an `upcast_clause`. That covers Aid, Bless, Dominate Monster and Person, Etherealness, Globe of Invulnerability, Mass Suggestion, Magic Missile, Scorching Ray, Wall of Fire and Wall of Ice. Hold Person's note went because its rule records it. Command keeps its clause, since it tells the agent to pass the extra targets. Vitriolic Sphere has no clause: only its initial damage scales, and its rule covers that.
+- Engine. `cast_level` and `scaled_effects` in `engine.rs`. `cast_spell` (the `resolve_cast` of the ticket) and `bound_cast_effects` both call them before `bind_effect`. Copies from `extra_effects` are appended after the other rules apply, so they carry the scaled numbers. `spend_slot`, the slot counter and `ability_ready` use the cast level. A cantrip is `level == 0`. A dice-size mismatch at run time is `EngineError::Invalid`.
+- Live. `StepRequest::Action` has an optional `slot_level`, set from `Command::Action { slot }` and `bench action --slot`. Both fields are skipped when empty, so old histories deserialize and replay.
+- Batch. `engine::unapplied_upcasts` feeds the warning. `missing_spells` and it share one cast walker. `POLICY_VERSION` stays 2.
+- The generator now sets `upcast` when the party's tier is above the spell's level. That affects 12 Dominate Person and Dominate Monster casts, which the new fixture-and-party test caught. With the clause moves, 38 party files changed, not 20. Both stale-curve allowances accept the party reason.
+- The workspace is 0.1.3. `a_fixture_regenerates_to_its_committed_row` still passes (the goblin-warrior row has no casts), so it is not ignored. `cargo test --workspace` passes. Clippy shows the four warnings already on master. The import exits 0 with 341 of 341 graduated. `check-spell-effects.py` passes.
+- Before the fix, in 800 sampled master fights (seed 11, six monsters, levels 1 to 20): batch's Heal casts errored (`invalid dice expression 70`, plan recomputed). Magic Missile, Disintegrate and Finger of Death were never chosen, because `dice_average` scored their dice strings 0. No standard party member casts Regenerate.
+
+Readings chosen where the ticket was open:
+
+- `--slot` sets only the action's top-level Casts. Party spell actions hold one Cast each, and multiattack casts are monster-only, where the MM forbids upcasting.
+- `--slot` refusals are `EngineError::Invalid`, except "no slot left", which stays `Illegal` like an ordinary spent slot.
+- The batch warning comes once per distinct spell and cast level, so a cast that appears in both a Spellcasting action and a multiattack option is named once. The clause loses its final period so the sentence reads.
+- `extra_targets` and `extra_effects` fit any effect in the Rust rule test. `extra_modifier` must reach Heal, TempHp or a damage entry.
+

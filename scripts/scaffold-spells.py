@@ -145,6 +145,23 @@ def damage_type(srd_type: str) -> str:
     return DAMAGE_TYPE_MAP.get(srd_type.lower(), srd_type.lower())
 
 
+def split_dice(expr: str) -> tuple[str | None, int]:
+    """Split "10d6+40" into its dice and flat part; a bare number has no dice."""
+    expr = expr.replace(" ", "")
+    m = re.fullmatch(r"(\d+d\d+)?(?:\+?(\d+))?", expr)
+    if not m:
+        return expr, 0
+    return m.group(1), int(m.group(2) or 0)
+
+
+def damage_entry(expr: str, dtype: str) -> dict:
+    dice, modifier = split_dice(expr)
+    entry = {"dice": dice, "type": dtype}
+    if modifier:
+        entry["modifier"] = modifier
+    return entry
+
+
 def parse_dice_from_desc(desc: str, damage_type_hint: str | None) -> dict | None:
     """Best-effort extraction of a damage expression from prose."""
     # Look for "XdY [type] damage"
@@ -155,14 +172,12 @@ def parse_dice_from_desc(desc: str, damage_type_hint: str | None) -> dict | None
         )
         m = rx.search(desc)
         if m:
-            dice = m.group(1).replace(" ", "")
-            return {"dice": dice, "type": damage_type(damage_type_hint)}
+            return damage_entry(m.group(1), damage_type(damage_type_hint))
     # Generic: take first "XdY ... damage" with a known type.
     for m in re.finditer(r"(\d+d\d+(?:\s*\+\s*\d+)?)\s+([A-Za-z]+)\s+damage", desc, re.IGNORECASE):
         t = damage_type(m.group(2))
         if t in DAMAGE_TYPE_MAP:
-            dice = m.group(1).replace(" ", "")
-            return {"dice": dice, "type": t}
+            return damage_entry(m.group(1), t)
     return None
 
 
@@ -253,28 +268,42 @@ def infer_origin(desc: str) -> str:
     return "target_point"
 
 
-def parse_upcast(higher: str, base_level: int) -> list[dict]:
-    """Return a list of scaling rules inferred from the higher_level text."""
-    rules = []
+HIGHER_SLOT = "Using a Higher-Level Spell Slot."
+
+
+def higher_level_text(spell: dict) -> str:
+    """What a higher slot does, from `higher_level` or the description's
+    "Using a Higher-Level Spell Slot." paragraph. "Cantrip Upgrade." is not
+    higher-slot text."""
+    parts = [spell.get("higher_level", "")]
+    desc = spell.get("description", "")
+    if HIGHER_SLOT in desc:
+        parts.append(desc.split(HIGHER_SLOT, 1)[1].split("\n", 1)[0])
+    return " ".join(p.strip() for p in parts if p.strip())
+
+
+def parse_upcast(higher: str) -> tuple[list[dict], str | None]:
+    """Scaling rules for the four patterns the engine applies, and an
+    `upcast_clause` holding the text when anything is left over."""
     text = higher.lower()
-
-    # Extra dice per slot.
-    m = re.search(r"increases by (\d+d\d+)", text)
-    if m:
-        rules.append({"per_slot": {"extra_dice": m.group(1)}})
-
-    # Extra targets per slot.
-    m = re.search(r"(?:one more|one additional|target one additional)[^,.]*(?:target|creature|ray|dart|bolt)", text)
-    if m:
-        rules.append({"per_slot": {"extra_targets": 1}})
-
-    # Extra duration per slot.
-    m = re.search(r"concentration can last longer[^.]*(?:hour|minute|day)", text)
-    if m:
-        # Too variable; leave as note.
-        pass
-
-    return rules
+    rules = []
+    increases = re.findall(r"increases by (\d+d\d+|\d+)\b", text)
+    if increases:
+        amount = increases[0]
+        if "d" in amount:
+            rule = {"dice": amount}
+            m = re.search(r"(\w+) damage[^.]*?increases by " + re.escape(amount), text)
+            if m and m.group(1) in DAMAGE_TYPE_MAP:
+                rule["damage_type"] = m.group(1)
+            rules.append({"per_slot": {"extra_dice": rule}})
+        else:
+            rules.append({"per_slot": {"extra_modifier": {"amount": int(amount)}}})
+    elif re.search(r"one (?:more|additional) (?:dart|ray|beam)", text):
+        rules.append({"per_slot": {"extra_effects": {"count": 1}}})
+    elif re.search(r"one additional (?:\w+ )?(?:target|creature|bolt|humanoid)", text):
+        rules.append({"per_slot": {"extra_targets": {"count": 1}}})
+    clause = None if rules and len(increases) <= 1 else higher
+    return rules, clause
 
 
 def load_spells() -> dict[str, dict]:
@@ -320,7 +349,7 @@ def scaffold(spell: dict) -> dict:
     name = spell["name"]
     level = spell["level"]
     desc = spell.get("description", "")
-    higher = spell.get("higher_level", "")
+    higher = higher_level_text(spell)
     concentration = spell.get("concentration", False)
 
     dur = normalize_duration(spell.get("duration", ""), concentration)
@@ -364,7 +393,7 @@ def scaffold(spell: dict) -> dict:
             }})
             agent_clauses.append("Webs are Difficult Terrain and Lightly Obscured; fire destroys a 5-foot Cube and deals 2d4 Fire damage to creatures starting their turn in it.")
         else:
-            dmg = {"dice": base_dice, "type": damage_type(srd_damage_type), "magical": True}
+            dmg = {**damage_entry(base_dice, damage_type(srd_damage_type)), "magical": True}
 
             if attack_type:
                 # Spell attack roll.
@@ -459,16 +488,17 @@ def scaffold(spell: dict) -> dict:
         dice_m = re.search(r"(\d+d\d+(?:\s*\+\s*\d+)?)", heal_expr)
         mod_m = re.search(r"(?:plus|\+)\s*your\s*spellcasting\s*ability\s*modifier", heal_expr, re.IGNORECASE)
         if dice_m:
-            heal = {"dice": dice_m.group(1).replace(" ", "")}
-            if mod_m:
-                heal["modifier"] = 0
+            dice, modifier = split_dice(dice_m.group(1))
+            heal = {"dice": dice, "modifier": modifier}
+            if not mod_m:
+                heal["spellcasting_modifier"] = False
             effects.append({"heal": heal})
         elif re.search(r"all (?:its|their) Hit Points", desc, re.IGNORECASE):
             agent_clauses.append("Restores all Hit Points; no closed effect for full heal.")
         else:
             num_m = re.search(r"(\d+)", heal_expr)
             if num_m:
-                effects.append({"heal": {"dice": num_m.group(1), "modifier": 0}})
+                effects.append({"heal": {"modifier": int(num_m.group(1)), "spellcasting_modifier": False}})
 
     # Special: mass heal divides 700 HP among targets and removes conditions.
     if idx == "mass-heal":
@@ -560,33 +590,30 @@ def scaffold(spell: dict) -> dict:
     # Magic Missile: auto-hitting force darts. Represent as three damage instances;
     # hand-finishing may convert to a multi-target effect when the vocabulary supports it.
     if idx == "magic-missile":
-        effects = [{"damage": {"dice": "1d4+1", "type": "force", "magical": True}} for _ in range(3)]
-        scaling = [{"effect_index": i, "per_slot": {"extra_dice": "1d4+1"}} for i in range(3)]
+        effects = [{"damage": {"dice": "1d4", "modifier": 1, "type": "force", "magical": True}} for _ in range(3)]
         agent_clauses.append("Each dart hits a visible target of the caster's choice; the engine treats them as auto-hit damage instances.")
 
     # Scorching Ray: three attack rolls.
     if idx == "scorching-ray":
         effects = [{"attack": {"modifier": 0, "target_count": 1, "range": [120, 120], "damage": [{"dice": "2d6", "type": "fire", "magical": True}]}} for _ in range(3)]
-        scaling = [{"effect_index": i, "per_slot": {"extra_targets": 1}} for i in range(3)]
-        agent_clauses.append("One additional ray per slot above 2; distribute rays among targets as desired.")
+        agent_clauses.append("Distribute rays among targets as desired.")
 
     # Acid Arrow: delayed secondary damage.
     if idx == "acid-arrow":
         delayed = [{"delay": {"rounds": 1}, "effect": {"damage": {"dice": "2d4", "type": "acid", "magical": True}}}]
 
-    # Scaling rules from higher_level text.
-    if higher and not scaling:
-        scaling.extend(parse_upcast(higher, level))
+    upcast_clause = None
 
     # Bless: flat 1d4 to attack rolls and saving throws; vocabulary has no die bonus, so leave as agent_clause.
     if idx == "bless":
         effects = []
         agent_clauses.append("Targets add 1d4 to attack rolls and saving throws before the spell ends.")
-        scaling = [{"effect_index": 0, "per_slot": {"extra_targets": 1}}]
 
-    # Notes for things the scaffold did not handle.
-    if higher and not scaling:
-        notes.append(f"Upcast: {higher}")
+    # Higher-slot text: rules on the first effect, the rest as an upcast_clause.
+    if higher:
+        scaling, upcast_clause = parse_upcast(higher)
+        if not effects:
+            scaling, upcast_clause = [], higher
 
     if concentration and dur["kind"] != "instant":
         # Ensure any timed modifier/condition duration reflects concentration if it was unknown.
@@ -606,12 +633,15 @@ def scaffold(spell: dict) -> dict:
         "id": idx,
         "name": name,
         "source": SOURCE,
+        "level": level,
         "concentration": concentration,
         "effects": effects,
     }
     if scaling:
         # Attach effect_index=0 by default; hand-finishers must correct multi-effect spells.
         entry["scaling"] = [{"effect_index": 0, **rule} for rule in scaling]
+    if upcast_clause:
+        entry["upcast_clause"] = upcast_clause
     if delayed:
         entry["delayed"] = delayed
     if agent_clauses:

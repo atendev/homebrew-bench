@@ -12,13 +12,23 @@ pub struct ScalingRule {
     pub per_slot: Scaling,
 }
 
+/// What one slot level above the spell's own level adds to its effect.
 #[derive(Debug, Clone, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum Scaling {
-    ExtraDice { dice: String },
+    /// Adds dice of the same size to the damage entry of `damage_type` (else the
+    /// first one), or to Heal or TempHp dice. Looks inside an Area.
+    ExtraDice {
+        dice: String,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        damage_type: Option<DamageType>,
+    },
+    /// Adds a flat amount to Heal, TempHp or the first damage entry.
+    ExtraModifier { amount: i32 },
+    /// Raises `target_count` on an Attack or Area; other effects already take every target passed.
     ExtraTargets { count: u32 },
-    IncreaseDuration { rounds: u32 },
-    AddDamageType { damage_type: DamageType, dice: String },
+    /// Appends copies of the effect, as for darts and rays.
+    ExtraEffects { count: u32 },
 }
 
 /// A delayed effect triggered after some duration or condition.
@@ -34,12 +44,17 @@ pub struct SpellEffect {
     pub id: String,
     pub name: String,
     pub source: String,
+    /// The spell's own level; 0 is a cantrip.
+    pub level: u8,
     pub concentration: bool,
     pub effects: Vec<Effect>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub scaling: Vec<ScalingRule>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub delayed: Vec<DelayedEffect>,
+    /// What a higher slot does that the engine does not apply, for the agent.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub upcast_clause: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub notes: Option<String>,
 }
@@ -49,8 +64,7 @@ mod tests {
     use super::*;
     use std::path::PathBuf;
 
-    #[test]
-    fn effects_file_validates_against_schema() {
+    fn effects_file() -> serde_json::Value {
         let root = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
             .parent()
             .expect("workspace root")
@@ -58,8 +72,120 @@ mod tests {
         let path = root.join("data/spells/effects.json");
         let text = std::fs::read_to_string(&path)
             .unwrap_or_else(|e| panic!("failed to read {}: {e}", path.display()));
-        let value: serde_json::Value = serde_json::from_str(&text)
-            .unwrap_or_else(|e| panic!("effects.json is not valid json: {e}"));
+        serde_json::from_str(&text)
+            .unwrap_or_else(|e| panic!("effects.json is not valid json: {e}"))
+    }
+
+    fn entries() -> Vec<SpellEffect> {
+        let value = effects_file();
+        value
+            .as_object()
+            .expect("object")
+            .values()
+            .map(|v| serde_json::from_value(v.clone()).expect("valid entry"))
+            .collect()
+    }
+
+    fn die_size(dice: &str) -> u32 {
+        crate::effect::parse_dice(dice)
+            .unwrap_or_else(|| panic!("{dice} does not parse"))
+            .1
+    }
+
+    fn sizes(effect: &Effect) -> Vec<(Option<DamageType>, u32)> {
+        match effect {
+            Effect::Attack(a) => a
+                .damage
+                .iter()
+                .map(|d| (Some(d.damage_type), die_size(&d.dice)))
+                .collect(),
+            Effect::SavingThrow(s) => s
+                .damage
+                .iter()
+                .map(|d| (Some(d.damage_type), die_size(&d.dice)))
+                .collect(),
+            Effect::Damage(d) => vec![(Some(d.damage_type), die_size(&d.dice))],
+            Effect::Heal(h) => h.dice.iter().map(|d| (None, die_size(d))).collect(),
+            Effect::TempHp(t) => vec![(None, die_size(&t.dice))],
+            Effect::Area(a) => sizes(&a.effect),
+            _ => vec![],
+        }
+    }
+
+    fn every_dice(value: &serde_json::Value, out: &mut Vec<String>) {
+        match value {
+            serde_json::Value::Object(map) => {
+                if let Some(dice) = map.get("dice").and_then(serde_json::Value::as_str) {
+                    out.push(dice.to_string());
+                }
+                map.values().for_each(|v| every_dice(v, out));
+            }
+            serde_json::Value::Array(items) => items.iter().for_each(|v| every_dice(v, out)),
+            _ => {}
+        }
+    }
+
+    #[test]
+    fn every_dice_string_in_the_file_parses() {
+        let mut dice = Vec::new();
+        every_dice(&effects_file(), &mut dice);
+        let bad: Vec<_> = dice
+            .iter()
+            .filter(|d| crate::effect::parse_dice(d).is_none())
+            .collect();
+        assert!(bad.is_empty(), "unparseable dice: {bad:?}");
+    }
+
+    #[test]
+    fn every_scaling_rule_fits_the_effect_it_names() {
+        let mut faults = Vec::new();
+        for spell in entries() {
+            for rule in &spell.scaling {
+                let Some(effect) = spell.effects.get(rule.effect_index) else {
+                    faults.push(format!(
+                        "{}: effect_index {} is missing",
+                        spell.id, rule.effect_index
+                    ));
+                    continue;
+                };
+                let inner = match effect {
+                    Effect::Area(a) => a.effect.as_ref(),
+                    other => other,
+                };
+                let fits = match &rule.per_slot {
+                    Scaling::ExtraDice { dice, damage_type } => {
+                        let size = die_size(dice);
+                        let targets = sizes(effect);
+                        let target = targets
+                            .iter()
+                            .find(|(t, _)| damage_type.is_some() && t == damage_type)
+                            .or(targets.first());
+                        target.is_some_and(|(_, s)| *s == size)
+                    }
+                    Scaling::ExtraModifier { .. } => matches!(
+                        inner,
+                        Effect::Heal(_)
+                            | Effect::TempHp(_)
+                            | Effect::Damage(_)
+                            | Effect::Attack(_)
+                            | Effect::SavingThrow(_)
+                    ),
+                    Scaling::ExtraTargets { .. } | Scaling::ExtraEffects { .. } => true,
+                };
+                if !fits {
+                    faults.push(format!(
+                        "{}: {:?} does not fit effect {}",
+                        spell.id, rule.per_slot, rule.effect_index
+                    ));
+                }
+            }
+        }
+        assert!(faults.is_empty(), "{}", faults.join("\n"));
+    }
+
+    #[test]
+    fn effects_file_validates_against_schema() {
+        let value = effects_file();
         let map = value.as_object().expect("effects.json must be an object");
         let mut failures = Vec::new();
         for (key, entry_value) in map {

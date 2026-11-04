@@ -51,6 +51,15 @@ pub enum Usage {
     CooldownUntilNextTurn,
 }
 
+/// Count and die size of an `NdM` dice expression, the only form the engine rolls.
+pub fn parse_dice(expr: &str) -> Option<(u32, u32)> {
+    let (count, sides) = expr.split_once('d')?;
+    match (count.parse::<u32>(), sides.parse::<u32>()) {
+        (Ok(count), Ok(sides)) if count > 0 && sides > 0 => Some((count, sides)),
+        _ => None,
+    }
+}
+
 fn default_recharge_dice() -> String {
     "5-6".into()
 }
@@ -252,9 +261,22 @@ pub struct ForcedMove {
 /// Heal or temporary HP.
 #[derive(Debug, Clone, Serialize, Deserialize, schemars::JsonSchema)]
 pub struct Heal {
-    pub dice: String,
+    /// Dice rolled; absent for flat healing such as the Heal spell's 70.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub dice: Option<String>,
     #[serde(default)]
     pub modifier: i32,
+    /// Whether a cast adds the caster's spellcasting ability modifier.
+    #[serde(default = "yes", skip_serializing_if = "is_true")]
+    pub spellcasting_modifier: bool,
+}
+
+fn yes() -> bool {
+    true
+}
+
+fn is_true(value: &bool) -> bool {
+    *value
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, schemars::JsonSchema)]

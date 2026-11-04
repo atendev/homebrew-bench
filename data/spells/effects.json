@@ -38,6 +38,7 @@
       }
     ],
     "id": "acid-arrow",
+    "level": 2,
     "name": "Acid Arrow",
     "scaling": [
       {
@@ -47,29 +48,22 @@
             "dice": "1d4"
           }
         }
-      },
-      {
-        "effect_index": 1,
-        "per_slot": {
-          "extra_dice": {
-            "dice": "1d4"
-          }
-        }
       }
     ],
-    "source": "SRD 5.2.1"
+    "source": "SRD 5.2.1",
+    "upcast_clause": "The later damage increases by 1d4 for each spell slot level above 2."
   },
   "aid": {
     "agent_clauses": [
-      "Up to three targets' Hit Point maximums and current Hit Points increase by 5.",
-      "Increase by 5 per spell slot level above 2."
+      "Up to three targets' Hit Point maximums and current Hit Points increase by 5."
     ],
     "concentration": false,
     "effects": [],
     "id": "aid",
+    "level": 2,
     "name": "Aid",
-    "notes": "Upcast: Each target's Hit Points increase by 5 for each spell slot level above 2.",
-    "source": "SRD 5.2.1"
+    "source": "SRD 5.2.1",
+    "upcast_clause": "Each target's Hit Points increase by 5 for each spell slot level above 2."
   },
   "arcane-hand": {
     "agent_clauses": [
@@ -94,6 +88,7 @@
       }
     ],
     "id": "arcane-hand",
+    "level": 5,
     "name": "Arcane Hand",
     "scaling": [
       {
@@ -105,7 +100,8 @@
         }
       }
     ],
-    "source": "SRD 5.2.1"
+    "source": "SRD 5.2.1",
+    "upcast_clause": "The damage of the Grasping Hand increases by 2d6 for each spell slot level above 5."
   },
   "aura-of-life": {
     "agent_clauses": [
@@ -115,6 +111,7 @@
     "concentration": true,
     "effects": [],
     "id": "aura-of-life",
+    "level": 4,
     "name": "Aura of Life",
     "source": "SRD 5.2.1"
   },
@@ -126,6 +123,7 @@
     "concentration": true,
     "effects": [],
     "id": "beacon-of-hope",
+    "level": 3,
     "name": "Beacon of Hope",
     "source": "SRD 5.2.1"
   },
@@ -153,30 +151,22 @@
       }
     ],
     "id": "befuddlement",
+    "level": 8,
     "name": "Befuddlement",
-    "source": "SRD 5.2.1",
-    "notes": "The curse preventing spellcasting and the Magic action is not represented mechanically; resolve via agent clauses."
+    "notes": "The curse preventing spellcasting and the Magic action is not represented mechanically; resolve via agent clauses.",
+    "source": "SRD 5.2.1"
   },
   "bless": {
     "agent_clauses": [
-      "Up to three targets add 1d4 to attack rolls and saving throws before the spell ends.",
-      "One additional target per spell slot level above 1."
+      "Up to three targets add 1d4 to attack rolls and saving throws before the spell ends."
     ],
     "concentration": true,
     "effects": [],
     "id": "bless",
+    "level": 1,
     "name": "Bless",
-    "scaling": [
-      {
-        "effect_index": 0,
-        "per_slot": {
-          "extra_targets": {
-            "count": 1
-          }
-        }
-      }
-    ],
-    "source": "SRD 5.2.1"
+    "source": "SRD 5.2.1",
+    "upcast_clause": "You can target one additional creature for each spell slot level above 1."
   },
   "burning-hands": {
     "concentration": false,
@@ -198,6 +188,7 @@
       }
     ],
     "id": "burning-hands",
+    "level": 1,
     "name": "Burning Hands",
     "scaling": [
       {
@@ -234,6 +225,7 @@
       }
     ],
     "id": "chain-lightning",
+    "level": 6,
     "name": "Chain Lightning",
     "scaling": [
       {
@@ -276,6 +268,7 @@
       }
     ],
     "id": "charm-monster",
+    "level": 4,
     "name": "Charm Monster",
     "scaling": [
       {
@@ -319,6 +312,7 @@
       }
     ],
     "id": "charm-person",
+    "level": 1,
     "name": "Charm Person",
     "scaling": [
       {
@@ -361,6 +355,7 @@
       }
     ],
     "id": "command",
+    "level": 1,
     "name": "Command",
     "scaling": [
       {
@@ -404,6 +399,7 @@
       }
     ],
     "id": "cone-of-cold",
+    "level": 5,
     "name": "Cone of Cold",
     "scaling": [
       {
@@ -425,6 +421,7 @@
     "concentration": false,
     "effects": [],
     "id": "counterspell",
+    "level": 3,
     "name": "Counterspell",
     "source": "SRD 5.2.1"
   },
@@ -439,6 +436,7 @@
       }
     ],
     "id": "cure-wounds",
+    "level": 1,
     "name": "Cure Wounds",
     "scaling": [
       {
@@ -461,6 +459,7 @@
     "concentration": true,
     "effects": [],
     "id": "darkness",
+    "level": 2,
     "name": "Darkness",
     "source": "SRD 5.2.1"
   },
@@ -472,6 +471,7 @@
     "concentration": false,
     "effects": [],
     "id": "death-ward",
+    "level": 4,
     "name": "Death Ward",
     "source": "SRD 5.2.1"
   },
@@ -486,8 +486,9 @@
           "ability": "dex",
           "damage": [
             {
-              "dice": "10d6+40",
+              "dice": "10d6",
               "magical": true,
+              "modifier": 40,
               "type": "force"
             }
           ],
@@ -498,6 +499,7 @@
       }
     ],
     "id": "disintegrate",
+    "level": 6,
     "name": "Disintegrate",
     "scaling": [
       {
@@ -514,8 +516,7 @@
   "dominate-monster": {
     "agent_clauses": [
       "Target has Advantage on the save if the caster or its allies are fighting it.",
-      "The target repeats the save whenever it takes damage, ending the spell on a success.",
-      "Concentration lasts up to 8 hours with a level 9 slot."
+      "The target repeats the save whenever it takes damage, ending the spell on a success."
     ],
     "concentration": true,
     "effects": [
@@ -541,9 +542,10 @@
       }
     ],
     "id": "dominate-monster",
+    "level": 8,
     "name": "Dominate Monster",
-    "notes": "Upcast: Your Concentration can last longer with a level 9 spell slot (up to 8 hours).",
-    "source": "SRD 5.2.1"
+    "source": "SRD 5.2.1",
+    "upcast_clause": "Your Concentration can last longer with a level 9 spell slot (up to 8 hours)."
   },
   "dominate-person": {
     "agent_clauses": [
@@ -575,21 +577,22 @@
       }
     ],
     "id": "dominate-person",
+    "level": 5,
     "name": "Dominate Person",
-    "notes": "Upcast: Your Concentration can last longer with a spell slot of level 6 (up to 10 minutes), 7 (up to 1 hour), or 8+ (up to 8 hours).",
-    "source": "SRD 5.2.1"
+    "source": "SRD 5.2.1",
+    "upcast_clause": "Your Concentration can last longer with a spell slot of level 6 (up to 10 minutes), 7 (up to 1 hour), or 8+ (up to 8 hours)."
   },
   "etherealness": {
     "agent_clauses": [
-      "Target enters the Border Ethereal for the duration and cannot interact with creatures on the Material Plane.",
-      "One additional willing creature per spell slot level above 7, within 10 feet."
+      "Target enters the Border Ethereal for the duration and cannot interact with creatures on the Material Plane."
     ],
     "concentration": false,
     "effects": [],
     "id": "etherealness",
+    "level": 7,
     "name": "Etherealness",
-    "notes": "Upcast: You can target up to three willing creatures (including yourself) for each spell slot level above 7. The creatures must be within 10 feet of you when you cast the spell.",
-    "source": "SRD 5.2.1"
+    "source": "SRD 5.2.1",
+    "upcast_clause": "You can target up to three willing creatures (including yourself) for each spell slot level above 7. The creatures must be within 10 feet of you when you cast the spell."
   },
   "faerie-fire": {
     "agent_clauses": [
@@ -620,6 +623,7 @@
       }
     ],
     "id": "faerie-fire",
+    "level": 1,
     "name": "Faerie Fire",
     "source": "SRD 5.2.1"
   },
@@ -662,6 +666,7 @@
       }
     ],
     "id": "fear",
+    "level": 3,
     "name": "Fear",
     "source": "SRD 5.2.1"
   },
@@ -676,8 +681,9 @@
           "ability": "con",
           "damage": [
             {
-              "dice": "7d8+30",
+              "dice": "7d8",
               "magical": true,
+              "modifier": 30,
               "type": "necrotic"
             }
           ],
@@ -688,6 +694,7 @@
       }
     ],
     "id": "finger-of-death",
+    "level": 7,
     "name": "Finger of Death",
     "source": "SRD 5.2.1"
   },
@@ -713,6 +720,7 @@
       }
     ],
     "id": "fire-bolt",
+    "level": 0,
     "name": "Fire Bolt",
     "source": "SRD 5.2.1"
   },
@@ -736,6 +744,7 @@
       }
     ],
     "id": "fireball",
+    "level": 3,
     "name": "Fireball",
     "scaling": [
       {
@@ -769,6 +778,7 @@
       }
     ],
     "id": "fly",
+    "level": 3,
     "name": "Fly",
     "scaling": [
       {
@@ -790,20 +800,21 @@
     "concentration": false,
     "effects": [],
     "id": "foresight",
+    "level": 9,
     "name": "Foresight",
     "source": "SRD 5.2.1"
   },
   "globe-of-invulnerability": {
     "agent_clauses": [
-      "Spells of level 5 or lower cast from outside the 10-foot Emanation cannot affect creatures inside it.",
-      "Blocks spells of 1 level higher per spell slot level above 6."
+      "Spells of level 5 or lower cast from outside the 10-foot Emanation cannot affect creatures inside it."
     ],
     "concentration": true,
     "effects": [],
     "id": "globe-of-invulnerability",
+    "level": 6,
     "name": "Globe of Invulnerability",
-    "notes": "Upcast: The barrier blocks spells of 1 level higher for each spell slot level above 6.",
-    "source": "SRD 5.2.1"
+    "source": "SRD 5.2.1",
+    "upcast_clause": "The barrier blocks spells of 1 level higher for each spell slot level above 6."
   },
   "goodberry": {
     "agent_clauses": [
@@ -812,6 +823,7 @@
     "concentration": false,
     "effects": [],
     "id": "goodberry",
+    "level": 1,
     "name": "Goodberry",
     "source": "SRD 5.2.1"
   },
@@ -832,6 +844,7 @@
       }
     ],
     "id": "greater-invisibility",
+    "level": 4,
     "name": "Greater Invisibility",
     "source": "SRD 5.2.1"
   },
@@ -842,6 +855,7 @@
     "concentration": false,
     "effects": [],
     "id": "greater-restoration",
+    "level": 5,
     "name": "Greater Restoration",
     "source": "SRD 5.2.1"
   },
@@ -870,6 +884,7 @@
       }
     ],
     "id": "guiding-bolt",
+    "level": 1,
     "name": "Guiding Bolt",
     "scaling": [
       {
@@ -932,6 +947,7 @@
       }
     ],
     "id": "haste",
+    "level": 3,
     "name": "Haste",
     "source": "SRD 5.2.1"
   },
@@ -940,14 +956,24 @@
     "effects": [
       {
         "heal": {
-          "dice": "70",
-          "modifier": 0
+          "modifier": 70,
+          "spellcasting_modifier": false
         }
       }
     ],
     "id": "heal",
+    "level": 6,
     "name": "Heal",
-    "notes": "Upcast: The healing increases by 10 for each spell slot level above 6.",
+    "scaling": [
+      {
+        "effect_index": 0,
+        "per_slot": {
+          "extra_modifier": {
+            "amount": 10
+          }
+        }
+      }
+    ],
     "source": "SRD 5.2.1"
   },
   "healing-word": {
@@ -961,6 +987,7 @@
       }
     ],
     "id": "healing-word",
+    "level": 1,
     "name": "Healing Word",
     "scaling": [
       {
@@ -981,6 +1008,7 @@
     "concentration": false,
     "effects": [],
     "id": "heroes-feast",
+    "level": 6,
     "name": "Heroes' Feast",
     "source": "SRD 5.2.1"
   },
@@ -1012,6 +1040,7 @@
       }
     ],
     "id": "hold-monster",
+    "level": 5,
     "name": "Hold Monster",
     "scaling": [
       {
@@ -1054,8 +1083,8 @@
       }
     ],
     "id": "hold-person",
+    "level": 2,
     "name": "Hold Person",
-    "notes": "Upcast: You can target one additional Humanoid for each spell slot level above 2.",
     "scaling": [
       {
         "effect_index": 0,
@@ -1132,6 +1161,7 @@
       }
     ],
     "id": "hypnotic-pattern",
+    "level": 3,
     "name": "Hypnotic Pattern",
     "source": "SRD 5.2.1"
   },
@@ -1192,18 +1222,10 @@
       }
     ],
     "id": "ice-knife",
+    "level": 1,
     "name": "Ice Knife",
-    "scaling": [
-      {
-        "effect_index": 0,
-        "per_slot": {
-          "extra_dice": {
-            "dice": "1d6"
-          }
-        }
-      }
-    ],
-    "source": "SRD 5.2.1"
+    "source": "SRD 5.2.1",
+    "upcast_clause": "The Cold damage increases by 1d6 for each spell slot level above 1."
   },
   "ice-storm": {
     "agent_clauses": [
@@ -1244,12 +1266,14 @@
       }
     ],
     "id": "ice-storm",
+    "level": 4,
     "name": "Ice Storm",
     "scaling": [
       {
         "effect_index": 0,
         "per_slot": {
           "extra_dice": {
+            "damage_type": "bludgeoning",
             "dice": "1d10"
           }
         }
@@ -1274,6 +1298,7 @@
       }
     ],
     "id": "invisibility",
+    "level": 2,
     "name": "Invisibility",
     "scaling": [
       {
@@ -1294,6 +1319,7 @@
     "concentration": false,
     "effects": [],
     "id": "lesser-restoration",
+    "level": 2,
     "name": "Lesser Restoration",
     "source": "SRD 5.2.1"
   },
@@ -1317,6 +1343,7 @@
       }
     ],
     "id": "lightning-bolt",
+    "level": 3,
     "name": "Lightning Bolt",
     "scaling": [
       {
@@ -1332,57 +1359,44 @@
   },
   "magic-missile": {
     "agent_clauses": [
-      "Each dart hits a visible target of the caster's choice; the engine treats them as auto-hit damage instances.",
-      "One additional dart per spell slot level above 1."
+      "Each dart hits a visible target of the caster's choice; the engine treats them as auto-hit damage instances."
     ],
     "concentration": false,
     "effects": [
       {
         "damage": {
-          "dice": "1d4+1",
+          "dice": "1d4",
           "magical": true,
+          "modifier": 1,
           "type": "force"
         }
       },
       {
         "damage": {
-          "dice": "1d4+1",
+          "dice": "1d4",
           "magical": true,
+          "modifier": 1,
           "type": "force"
         }
       },
       {
         "damage": {
-          "dice": "1d4+1",
+          "dice": "1d4",
           "magical": true,
+          "modifier": 1,
           "type": "force"
         }
       }
     ],
     "id": "magic-missile",
+    "level": 1,
     "name": "Magic Missile",
     "scaling": [
       {
         "effect_index": 0,
         "per_slot": {
-          "extra_dice": {
-            "dice": "1d4+1"
-          }
-        }
-      },
-      {
-        "effect_index": 1,
-        "per_slot": {
-          "extra_dice": {
-            "dice": "1d4+1"
-          }
-        }
-      },
-      {
-        "effect_index": 2,
-        "per_slot": {
-          "extra_dice": {
-            "dice": "1d4+1"
+          "extra_effects": {
+            "count": 1
           }
         }
       }
@@ -1403,6 +1417,7 @@
       }
     ],
     "id": "mass-cure-wounds",
+    "level": 5,
     "name": "Mass Cure Wounds",
     "scaling": [
       {
@@ -1424,6 +1439,7 @@
     "concentration": false,
     "effects": [],
     "id": "mass-heal",
+    "level": 9,
     "name": "Mass Heal",
     "source": "SRD 5.2.1"
   },
@@ -1441,6 +1457,7 @@
       }
     ],
     "id": "mass-healing-word",
+    "level": 3,
     "name": "Mass Healing Word",
     "scaling": [
       {
@@ -1456,15 +1473,15 @@
   },
   "mass-suggestion": {
     "agent_clauses": [
-      "On a failed Wisdom save, up to twelve targets follow a reasonable course of activity for the duration.",
-      "Duration increases with higher-level slots: 7 (10 days), 8 (30 days), 9 (366 days)."
+      "On a failed Wisdom save, up to twelve targets follow a reasonable course of activity for the duration."
     ],
     "concentration": false,
     "effects": [],
     "id": "mass-suggestion",
+    "level": 6,
     "name": "Mass Suggestion",
-    "notes": "Upcast: The duration is longer with a spell slot of level 7 (10 days), 8 (30 days), or 9 (366 days).",
-    "source": "SRD 5.2.1"
+    "source": "SRD 5.2.1",
+    "upcast_clause": "The duration is longer with a spell slot of level 7 (10 days), 8 (30 days), or 9 (366 days)."
   },
   "meteor-swarm": {
     "agent_clauses": [
@@ -1504,6 +1521,7 @@
       }
     ],
     "id": "meteor-swarm",
+    "level": 9,
     "name": "Meteor Swarm",
     "source": "SRD 5.2.1"
   },
@@ -1514,6 +1532,7 @@
     "concentration": false,
     "effects": [],
     "id": "mind-blank",
+    "level": 8,
     "name": "Mind Blank",
     "source": "SRD 5.2.1"
   },
@@ -1540,6 +1559,7 @@
       }
     ],
     "id": "mind-spike",
+    "level": 2,
     "name": "Mind Spike",
     "scaling": [
       {
@@ -1561,6 +1581,7 @@
     "concentration": false,
     "effects": [],
     "id": "mirror-image",
+    "level": 2,
     "name": "Mirror Image",
     "source": "SRD 5.2.1"
   },
@@ -1575,6 +1596,7 @@
       }
     ],
     "id": "misty-step",
+    "level": 2,
     "name": "Misty Step",
     "source": "SRD 5.2.1"
   },
@@ -1586,6 +1608,7 @@
     "concentration": true,
     "effects": [],
     "id": "polymorph",
+    "level": 4,
     "name": "Polymorph",
     "source": "SRD 5.2.1"
   },
@@ -1597,6 +1620,7 @@
     "concentration": false,
     "effects": [],
     "id": "power-word-heal",
+    "level": 9,
     "name": "Power Word Heal",
     "source": "SRD 5.2.1"
   },
@@ -1607,6 +1631,7 @@
     "concentration": false,
     "effects": [],
     "id": "power-word-kill",
+    "level": 9,
     "name": "Power Word Kill",
     "source": "SRD 5.2.1"
   },
@@ -1618,6 +1643,7 @@
     "concentration": false,
     "effects": [],
     "id": "power-word-stun",
+    "level": 8,
     "name": "Power Word Stun",
     "source": "SRD 5.2.1"
   },
@@ -1631,11 +1657,13 @@
       {
         "heal": {
           "dice": "2d8",
-          "modifier": 0
+          "modifier": 0,
+          "spellcasting_modifier": false
         }
       }
     ],
     "id": "prayer-of-healing",
+    "level": 2,
     "name": "Prayer of Healing",
     "scaling": [
       {
@@ -1683,6 +1711,7 @@
       }
     ],
     "id": "prismatic-spray",
+    "level": 7,
     "name": "Prismatic Spray",
     "source": "SRD 5.2.1"
   },
@@ -1694,6 +1723,7 @@
     "concentration": false,
     "effects": [],
     "id": "protection-from-evil-and-good",
+    "level": 1,
     "name": "Protection from Evil and Good",
     "source": "SRD 5.2.1"
   },
@@ -1704,6 +1734,7 @@
     "concentration": false,
     "effects": [],
     "id": "raise-dead",
+    "level": 5,
     "name": "Raise Dead",
     "source": "SRD 5.2.1"
   },
@@ -1715,11 +1746,14 @@
     "effects": [
       {
         "heal": {
-          "dice": "4d8+15"
+          "dice": "4d8",
+          "modifier": 15,
+          "spellcasting_modifier": false
         }
       }
     ],
     "id": "regenerate",
+    "level": 7,
     "name": "Regenerate",
     "source": "SRD 5.2.1"
   },
@@ -1730,6 +1764,7 @@
     "concentration": false,
     "effects": [],
     "id": "remove-curse",
+    "level": 3,
     "name": "Remove Curse",
     "source": "SRD 5.2.1"
   },
@@ -1740,6 +1775,7 @@
     "concentration": true,
     "effects": [],
     "id": "resistance",
+    "level": 0,
     "name": "Resistance",
     "source": "SRD 5.2.1"
   },
@@ -1750,6 +1786,7 @@
     "concentration": false,
     "effects": [],
     "id": "resurrection",
+    "level": 7,
     "name": "Resurrection",
     "source": "SRD 5.2.1"
   },
@@ -1760,6 +1797,7 @@
     "concentration": false,
     "effects": [],
     "id": "revivify",
+    "level": 3,
     "name": "Revivify",
     "source": "SRD 5.2.1"
   },
@@ -1771,12 +1809,13 @@
     "concentration": false,
     "effects": [],
     "id": "sanctuary",
+    "level": 1,
     "name": "Sanctuary",
     "source": "SRD 5.2.1"
   },
   "scorching-ray": {
     "agent_clauses": [
-      "One additional ray per slot above 2; distribute rays among targets as desired."
+      "Distribute rays among targets as desired."
     ],
     "concentration": false,
     "effects": [
@@ -1833,28 +1872,13 @@
       }
     ],
     "id": "scorching-ray",
+    "level": 2,
     "name": "Scorching Ray",
     "scaling": [
       {
         "effect_index": 0,
         "per_slot": {
-          "extra_targets": {
-            "count": 1
-          }
-        }
-      },
-      {
-        "effect_index": 1,
-        "per_slot": {
-          "extra_targets": {
-            "count": 1
-          }
-        }
-      },
-      {
-        "effect_index": 2,
-        "per_slot": {
-          "extra_targets": {
+          "extra_effects": {
             "count": 1
           }
         }
@@ -1882,7 +1906,18 @@
       }
     ],
     "id": "shatter",
+    "level": 2,
     "name": "Shatter",
+    "scaling": [
+      {
+        "effect_index": 0,
+        "per_slot": {
+          "extra_dice": {
+            "dice": "1d8"
+          }
+        }
+      }
+    ],
     "source": "SRD 5.2.1"
   },
   "shield": {
@@ -1907,6 +1942,7 @@
       }
     ],
     "id": "shield",
+    "level": 1,
     "name": "Shield",
     "source": "SRD 5.2.1"
   },
@@ -1960,6 +1996,7 @@
       }
     ],
     "id": "sleep",
+    "level": 1,
     "name": "Sleep",
     "source": "SRD 5.2.1"
   },
@@ -2048,6 +2085,7 @@
       }
     ],
     "id": "slow",
+    "level": 3,
     "name": "Slow",
     "source": "SRD 5.2.1"
   },
@@ -2058,6 +2096,7 @@
     "concentration": false,
     "effects": [],
     "id": "spare-the-dying",
+    "level": 0,
     "name": "Spare the Dying",
     "source": "SRD 5.2.1"
   },
@@ -2084,6 +2123,7 @@
       }
     ],
     "id": "spiritual-weapon",
+    "level": 2,
     "name": "Spiritual Weapon",
     "scaling": [
       {
@@ -2141,6 +2181,7 @@
       }
     ],
     "id": "sunburst",
+    "level": 8,
     "name": "Sunburst",
     "source": "SRD 5.2.1"
   },
@@ -2151,6 +2192,7 @@
     "concentration": true,
     "effects": [],
     "id": "telekinesis",
+    "level": 5,
     "name": "Telekinesis",
     "source": "SRD 5.2.1"
   },
@@ -2162,6 +2204,7 @@
     "concentration": false,
     "effects": [],
     "id": "teleport",
+    "level": 7,
     "name": "Teleport",
     "source": "SRD 5.2.1"
   },
@@ -2172,6 +2215,7 @@
     "concentration": false,
     "effects": [],
     "id": "true-resurrection",
+    "level": 9,
     "name": "True Resurrection",
     "source": "SRD 5.2.1"
   },
@@ -2222,6 +2266,7 @@
       }
     ],
     "id": "vitriolic-sphere",
+    "level": 4,
     "name": "Vitriolic Sphere",
     "scaling": [
       {
@@ -2231,14 +2276,6 @@
             "dice": "2d4"
           }
         }
-      },
-      {
-        "effect_index": 1,
-        "per_slot": {
-          "extra_dice": {
-            "dice": "1d4"
-          }
-        }
       }
     ],
     "source": "SRD 5.2.1"
@@ -2246,46 +2283,28 @@
   "wall-of-fire": {
     "agent_clauses": [
       "Creates a wall of fire up to 60 feet long, 20 feet high, and 1 foot thick, or a 20-foot-radius ring.",
-      "Creatures within the wall or passing through take 5d8 Fire damage (or 8d8 on a failed Dexterity save if passing through).",
-      "Damage increases by 1d8 per spell slot level above 4."
+      "Creatures within the wall or passing through take 5d8 Fire damage (or 8d8 on a failed Dexterity save if passing through)."
     ],
     "concentration": true,
     "effects": [],
     "id": "wall-of-fire",
+    "level": 4,
     "name": "Wall of Fire",
-    "scaling": [
-      {
-        "effect_index": 0,
-        "per_slot": {
-          "extra_dice": {
-            "dice": "1d8"
-          }
-        }
-      }
-    ],
-    "source": "SRD 5.2.1"
+    "source": "SRD 5.2.1",
+    "upcast_clause": "The damage increases by 1d8 for each spell slot level above 4."
   },
   "wall-of-ice": {
     "agent_clauses": [
       "Creates a wall of ice; creatures within its area take 10d6 Cold damage on a failed Dexterity save.",
-      "Passing through a sheet of frigid air deals 5d6 Cold damage.",
-      "Damage when the wall appears increases by 2d6 per slot level above 6; passing damage increases by 1d6."
+      "Passing through a sheet of frigid air deals 5d6 Cold damage."
     ],
     "concentration": true,
     "effects": [],
     "id": "wall-of-ice",
+    "level": 6,
     "name": "Wall of Ice",
-    "scaling": [
-      {
-        "effect_index": 0,
-        "per_slot": {
-          "extra_dice": {
-            "dice": "2d6"
-          }
-        }
-      }
-    ],
-    "source": "SRD 5.2.1"
+    "source": "SRD 5.2.1",
+    "upcast_clause": "The damage the wall deals when it appears increases by 2d6 and the damage from passing through the sheet of frigid air increases by 1d6 for each spell slot level above 6."
   },
   "web": {
     "agent_clauses": [
@@ -2327,6 +2346,7 @@
       }
     ],
     "id": "web",
+    "level": 2,
     "name": "Web",
     "source": "SRD 5.2.1"
   }

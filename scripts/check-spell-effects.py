@@ -40,6 +40,26 @@ def gather_text(spell: dict) -> str:
     return "\n".join(parts).lower()
 
 
+HIGHER_SLOT = "Using a Higher-Level Spell Slot."
+
+COUNT_WORDS = {1: "one", 2: "two", 3: "three", 4: "four", 5: "five"}
+
+
+def higher_level_text(spell: dict) -> str:
+    """The SRD text for what a higher slot does, from `higher_level` or the
+    description's "Using a Higher-Level Spell Slot." paragraph. A "Cantrip
+    Upgrade." paragraph is not higher-slot text."""
+    parts = [spell.get("higher_level", "")]
+    desc = spell.get("description", "")
+    if HIGHER_SLOT in desc:
+        parts.append(desc.split(HIGHER_SLOT, 1)[1].split("\n", 1)[0])
+    return " ".join(p.strip() for p in parts if p.strip())
+
+
+def with_modifier(dice: str, modifier: int) -> str:
+    return f"{dice}+{modifier}" if modifier else dice
+
+
 def dice_in_text(dice: str) -> set[str]:
     """Return the dice expressions we expect to find in the SRD text."""
     exprs = set()
@@ -67,22 +87,25 @@ def render_effect_fact(effect: dict) -> list[str]:
     if "attack" in effect:
         atk = effect["attack"]
         for dmg in atk.get("damage", []):
-            facts.append(f"attack deals {dmg['dice']} {dmg.get('type', 'damage')}")
+            facts.append(f"attack deals {with_modifier(dmg['dice'], dmg.get('modifier', 0))} {dmg.get('type', 'damage')}")
     if "saving_throw" in effect:
         save = effect["saving_throw"]
         facts.append(f"{save['ability']} save")
         if save.get("half_on_success"):
             facts.append("half damage on success")
         for dmg in save.get("damage", []):
-            facts.append(f"save deals {dmg['dice']} {dmg.get('type', 'damage')}")
+            facts.append(f"save deals {with_modifier(dmg['dice'], dmg.get('modifier', 0))} {dmg.get('type', 'damage')}")
         for on_fail in save.get("on_failure", []):
             facts.extend(render_effect_fact(on_fail))
     if "damage" in effect:
         dmg = effect["damage"]
-        facts.append(f"auto-hit damage {dmg['dice']} {dmg.get('type', 'damage')}")
+        facts.append(f"auto-hit damage {with_modifier(dmg['dice'], dmg.get('modifier', 0))} {dmg.get('type', 'damage')}")
     if "heal" in effect:
         heal = effect["heal"]
-        facts.append(f"heals {heal['dice']} hit points")
+        if "dice" in heal:
+            facts.append(f"heals {with_modifier(heal['dice'], heal.get('modifier', 0))} hit points")
+        else:
+            facts.append(f"heals {heal.get('modifier', 0)} hit points")
     if "condition" in effect:
         cond = effect["condition"]
         facts.append(f"applies {cond['condition']}")
@@ -103,6 +126,28 @@ def render_effect_fact(effect: dict) -> list[str]:
     return facts
 
 
+def check_upcast(entry: dict, spell: dict) -> list[str]:
+    """Mismatches between the entry's level and scaling and the SRD's higher-slot text."""
+    mismatches = []
+    if entry.get("level") != spell["level"]:
+        mismatches.append(f"level {entry.get('level')} does not match SRD level {spell['level']}")
+    higher = higher_level_text(spell).lower()
+    rules = entry.get("scaling", [])
+    if higher and not rules and not entry.get("upcast_clause"):
+        mismatches.append("SRD has higher-level text but the entry has no scaling rule and no upcast_clause")
+    for rule in rules:
+        (kind, value), = rule["per_slot"].items()
+        if kind == "extra_dice":
+            wanted = [value["dice"]]
+        elif kind == "extra_modifier":
+            wanted = [str(value["amount"])]
+        else:
+            wanted = [str(value["count"]), COUNT_WORDS.get(value["count"], "")]
+        if not any(w and re.search(rf"\b{re.escape(w)}\b", higher) for w in wanted):
+            mismatches.append(f"{kind} {value} not found in the SRD higher-level text")
+    return mismatches
+
+
 def check_spell(idx: str, entry: dict, spell: dict) -> list[str]:
     """Return a list of mismatch notes for one spell."""
     text = gather_text(spell)
@@ -113,12 +158,7 @@ def check_spell(idx: str, entry: dict, spell: dict) -> list[str]:
     for delayed in entry.get("delayed", []):
         facts.append(f"delayed {delayed['delay']}")
         facts.extend(render_effect_fact(delayed["effect"]))
-    for scaling in entry.get("scaling", []):
-        per = scaling.get("per_slot", {})
-        if "extra_dice" in per:
-            facts.append(f"upcast +{per['extra_dice']['dice']}")
-        if "extra_targets" in per:
-            facts.append(f"upcast +{per['extra_targets']['count']} targets")
+    mismatches.extend(check_upcast(entry, spell))
 
     # Check that concrete facts appear in SRD text.
     for fact in facts:
@@ -162,7 +202,7 @@ def check_spell(idx: str, entry: dict, spell: dict) -> list[str]:
             if not shape_ok:
                 mismatches.append(f"area shape {shape} not found in SRD text ({fact})")
         # Healing.
-        m = re.search(r"heals\s+(\d+d\d+|\d+)", fact)
+        m = re.search(r"heals\s+(\d+d\d+(?:\+\d+)?|\d+)", fact)
         if m:
             dice = m.group(1)
             if not text_contains_dice(text, dice) and dice not in text:
