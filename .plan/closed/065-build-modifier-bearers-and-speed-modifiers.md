@@ -3,9 +3,9 @@ id: 065
 title: Build modifier bearers and Speed modifiers
 type: task
 mode: AFK
-status: open
+status: closed
 blocked_by: [055]
-claimed: true
+claimed: false
 ---
 
 ## Question
@@ -67,3 +67,24 @@ Docs:
 Overlaps: 061 rewrites `apply_modifier_target_disposition` into the two-flag helper, and 059 and 062 edit `effects.json` and casting. Whichever lands second rebases. Hand-off to 056: it reads `bearer` and `source_ability` on `ActiveModifier` for the buff plan's bearer choice and its "already active" check.
 
 ## Resolution
+
+Built on branch `ticket-065-build-modifier-bearers-and-speed-modifiers`.
+
+- Model. `TimedModifier` gains `bearer` (`ModifierBearer::Target`, the default, or `Actor`, written `"self"`) and `ends_on_damage`, both skipped at their defaults. `ActiveModifier` gains `bearer` (set only when it differs from `source`), `source_ability` and `ends_on_damage`, none serialized at default. `ActiveModifier::bearer()` returns `bearer` or else `source`. `EncounterState::modifiers_on(bearer)` is the one accessor: it holds the stacking rule (same `source_ability` and same `target` on one bearer: the most potent applies, else the latest in `active_modifiers`; no `source_ability` always applies). Schema stays version 1; ADR 0005 records the exception. The JSON schemas are generated at run time, not committed.
+- Engine. The `TimedModifier` arm lands `self` modifiers on the actor and `target` modifiers on each target id, refuses "<ability> needs a target for its modifier" when there is none, and logs "<bearer> gains <ability> from <source>". `attack_modifier`, `save_modifier`, `ac_modifier` (through one `added` helper), `modifier_dispositions` (ticket 061 replaced `apply_modifier_target_disposition` with it) and the Reactions check in `can_react` (shared by `opportunity_eligibility`) read `modifiers_on`. `break_concentration` and `end_triggering_attack` still key on `source`. Damage removes the bearer's `ends_on_damage` modifiers beside its conditions. `engine::walk_speed` (crate-visible) replaces the three copies in the move-then-attack arm, `tactics::movement_left` and `live::remaining_speed`.
+- Data. Shield `"bearer": "self"`, Hypnotic Pattern's Speed 0 `"ends_on_damage": true`, Fly has no effects, the agent clause "Target gains a Fly Speed of 60 feet and can hover for the duration." and the SRD's higher-level sentence as its `upcast_clause` (059 had landed). Haste, Slow and Hypnotic Pattern stay `target`. Only three spells had top-level modifiers (Fly, Haste, Shield), and only Shield's SRD range is Self. `scaffold-spells.py` writes `bearer: self` on top-level modifiers of Self-range spells. `check-spell-effects.py` now fails a top-level modifier whose `self` bearer doesn't match a Self range, an unknown bearer, or a non-boolean `ends_on_damage`. The importer writes `"bearer": "self"` on Parry and Riposte, which changes the 8 fixtures that carry them. The import exits 0 with 341 of 341 graduated.
+- Live. Casting a spell on an ally or on the caster was already allowed. `haste_cast_on_an_ally_lets_it_close_from_far` casts Haste on the striker through `bench action`, and the striker closes 35 feet from far, which it can't do unhasted.
+- Old states. `bench-core/tests/data/engine-0.1.5-state.json` was written by master's 0.1.5 binary from a scratch directory: the caster cast Haste on the striker, so its three modifiers sit on the caster. It loads through `store::load`, passes `store::check`, re-serializes byte for byte, and reads each bearer as the caster (Speed 60 for the caster, 30 for the striker). Replay of such a state under 0.1.6 would put Haste on the striker; the version gate already sends that to `bench replay`.
+- Versions. The workspace and `ENGINE_VERSION` are 0.1.6; the policy stays v3. `a_fixture_regenerates_to_its_committed_row` still passes (goblin row unchanged), so it isn't ignored. `cargo test --workspace` passes, and clippy shows only master's warnings minus the two collapsible `if`s this build removed.
+- Batch numbers. Scratch release builds of master and this branch, `bench batch <id> --levels <L> --fights 40 --seed 7` from a temporary directory (goblin with `--assume` for scimitar and shortbow): goblin warrior, ogre and adult red dragon at levels 1, 5 and 11 give identical `levels` and `samples` in all 9 cells. Knight at levels 1 and 5 (Parry now `self`) is identical too.
+
+Readings chosen where the ticket was open:
+
+- A `triggering_attack` modifier lands on the actor whatever its `bearer`. That duration exists only for the reactor's own hit reaction, and a hit reaction resolves with the attacker as its target, so a Parry in a stat block snapshot saved before `bearer` existed (or a homebrew Parry without it) would otherwise move its AC onto the attacker. Recorded in ADR 0005.
+- `move_combatant` does not read walk speed and still trusts the declared `feet`: existing behavior and tests move 35 feet at Speed 30, because Dash is agent judgment. Only the default `--feet` (live) and the move-then-attack arm read `walk_speed`. The live-mode reference now says to pass `--feet` for a Dash or a fly speed.
+- `walk_speed` applies every `double` before every `halve`, so odd speeds round once at the end. Grappled and Restrained give 0 in all three callers now; before only the policy read them, so live's default move distance for a grappled creature is now 0.
+- A modifier ended by damage with no condition ending alongside logs "the damage ends a timed modifier on <id>"; when conditions end too, the existing "is roused by the damage" line covers both.
+- Potency across mixed changes in one group (an `add` beside a `double` from the same ability on the same stat) compares `add` values against 0. No data has such a group.
+- A spell's `agent_clauses` are not on `SpellEffect`, so no cast logs them, Bless included. Fly's cast logs the cast and its concentration, like Bless. Logging spell clauses was not added.
+
+No follow-up tickets.
