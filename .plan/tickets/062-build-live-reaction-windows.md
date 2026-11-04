@@ -25,7 +25,8 @@ Schema (`bench-core/src/effect.rs`, `stat_block.rs`):
 Engine (`bench-core/src/engine.rs`):
 - Write one function that lists the windows a trigger opens. It is used by the Opportunity Attack path in `move_combatant` and by the hit path in `resolve_effect` (around the `hit` check). Opportunity Attack windows reuse `opportunity_eligibility` for every reactor not already in the move's `opportunity` list or its new `declined` list. Factor the shared "can react" checks (can act, no "no Reactions" modifier, reaction unspent) out of it. A hit window goes to the creature hit. It needs those same checks plus a reaction whose trigger filter matches the attack (melee means `range: None`) and whose usage and slot are available. A critical hit still opens it.
 - `StepRequest::Move` gains `declined: Vec<String>`, with serde default and skip-if-empty, so old stored moves still load.
-- Put a reaction decider on the state, the way `player_dice` sits on it. At each window the engine asks it for take (with an id) or pass.
+- Put a reaction decider on the state, the way `player_dice` sits on it, as `#[serde(skip)]` and `#[schemars(skip)]` so it is never stored and stays out of `game_hash`. At each window the engine asks it for take (with an id) or pass.
+- Gate every window on a stored encounter setting, `settings.reaction_windows`, with a serde default of `false`. `bench start` sets it to `true`. Batch encounters leave it `false`. When it is `false`, the engine opens no window and behaves as before this build: an unnamed Opportunity Attack reactor gets only the `opportunity_attack` notice, and a hit applies its damage with no reaction. This matters because `undo` and `replay` refold the whole command history through `apply`, which ignores pending prompts. Without the gate, a stored move that left reach without `--opportunity` would stop at a window, the next command in the history would clear that prompt (`run_engine`), and the move would be lost without any error.
   - Live: answers queued from the prompt. With no answer queued, the decider signals a window, the step stops there, and the trial copy is thrown away.
   - Batch: passes every window. Ticket 046 replaces this with the tactics policy, so keep it one small, swappable piece.
   - A taken Opportunity Attack window adds to `opportunity`, a passed one to `declined`. All Opportunity Attack windows for a move are asked before any attack resolves, in initiative order.
@@ -37,7 +38,11 @@ Live (`bench-core/src/live.rs`, `bench/src/main.rs`, `digest.rs`, `log.rs`):
 - `PendingPrompt` with `kind: "reaction"`.
   - `actor_id` is the reactor.
   - The message names the reactor, the trigger and the options, for example `goblin-warrior: Opportunity Attack on standard-striker-03 (scimitar)?` or `standard-caster-05: hit by ogre (attack 17 vs AC 13), take shield?`.
-  - Metadata holds the request, the faces so far, the hit-window answers so far, and the options.
+  - Metadata holds the request, the faces so far, `engine_fills_rest`, the hit-window answers so far, and the options.
+  - The prompt id is `reaction-{cursor}-{answers so far}`. Dice prompt ids (`dice-{cursor}-{n}`) can repeat when a request reruns, so they are not unique enough for reactions.
+- Store `engine_fills_rest` in the metadata of both prompt kinds. Then a dice prompt the user declined, followed by a reaction window in the same command, reruns with the flag still `true` and doesn't ask for those dice again. Today `respond --decline` passes the flag only to the next `run_engine` call (around `live.rs` line 730), and nothing saves it.
+- In `respond` (around `live.rs` line 693), handle `kind == "reaction"` before the branch that sends every non-dice prompt to the engine's `Respond` step. A reaction answer reruns the held request, the same way a dice answer does.
+- `Command::Respond` gains `take: Option<String>` with a serde default, so the stored history from before this build still loads.
 - `bench respond --take [<id>]` and `bench respond --decline` answer it. `--take` without an id works only when one option is offered. A bad id lists the options. Dice faces on a reaction prompt are refused, and `--take` on a dice prompt is refused.
 - Log lines:
   - `PROMPT <message>` when the window opens.
@@ -67,6 +72,8 @@ Tests (write them first):
 - Engine, nested windows: a goblin's Opportunity Attack hits the moving caster, which opens Shield's window inside the held move.
 - Engine, end-turn: a legendary attack declared with `--legendary` that hits the caster holds the whole end-turn on Shield's window. After the answer, durations tick down once.
 - Ask mode: a PC attack's dice prompt and a monster's Parry window in the same `bench action` both resolve, in order, with the user's faces kept.
+- Old encounters: on a state saved before this build (no `reaction_windows` in its settings) that holds a move leaving reach without `--opportunity` and a hit on a Shield caster, `undo` and `replay` reproduce the recorded state hashes, and no window opens.
+- Ask mode with a declined dice prompt: decline a PC's attack dice with `respond --decline`. The attack hits a knight and Parry's window opens. Answer it, and check that the engine fills the declined dice without asking again.
 - Undo and replay: `undo` after `respond --take` brings the prompt back. `replay` rebuilds the same state hash across take, decline and nested windows. An old stored move without `declined` and an old dice prompt still load.
 - Batch: a fixed-seed batch on the knight, the pirate captain and the standard party at levels 1, 5 and 11 gives the same numbers as `master`. Check this from a scratch run before committing and record it in the Resolution. If a number moves, stop and find out why.
 - Load: a `trigger` on an action is refused, a `triggering_attack` duration without a trigger is refused, and every fixture and party stat block loads.
