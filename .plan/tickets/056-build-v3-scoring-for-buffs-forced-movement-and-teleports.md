@@ -4,18 +4,40 @@ title: Build v3 scoring for buffs, forced movement and teleports
 type: task
 mode: AFK
 status: open
-blocked_by: [046, 058, 059, 060, 061, 062]
+blocked_by: [046, 058, 059, 060, 061, 062, 063]
 claimed: false
 ---
 
 ## Question
 
-Implement the scoring decided in [Batch policy scores buffs, forced movement and teleports](../closed/045-batch-policy-scores-buffs-forced-movement-and-teleports.md) in `bench-core/src/tactics.rs`: replace the zero-value arm for `TimedModifier`, `ForcedMove` and `Teleport` with the three formulas, add the `buff_horizon` constant, amend ADR 0012, and add tests per formula.
+Implement the scoring decided in [Batch policy scores buffs, forced movement and teleports](../closed/045-batch-policy-scores-buffs-forced-movement-and-teleports.md) in `bench-core/src/tactics.rs`: replace the zero-value arm for `TimedModifier`, `ForcedMove` and `Teleport` with the three formulas, add the `buff_horizon` constant, amend ADR 0012, and add tests per formula. Then regenerate the baseline curve once for policy v3.
 
 ## Notes
 
-The scoring ships in policy v3 together with the reactions change, so this waits for the reactions decision and its build. This ticket regenerates `data/baseline/curve.json`, once, after the reactions build, [Import legendary action cooldowns](../closed/058-import-legendary-action-cooldowns.md), [Build upcast spell scaling](059-build-upcast-spell-scaling.md) and [Build encounter lighting](060-build-encounter-lighting.md) and [Fix Advantage and Disadvantage cancellation on attack rolls](061-fix-advantage-disadvantage-cancellation.md) have landed, so the policy, engine and fixtures all settle first. Check how far standard-party cells shift when caster Haste starts scoring, from a scratch run outside the repo. `TempHp` and `RollModifier` share the zero-value arm and stay at zero. Policy v3 also fixes `disposition` in `tactics.rs`: it sums and clamps, so an attacker with two Advantage sources and one Disadvantage source scores as Advantage. Use the two-flag rule from ticket 061 (both or neither is straight), with a test that two of one and one of the other score straight. Consult `tdd`, `codebase-design`, `domain-modeling`.
+Consult `tdd`, `codebase-design`, `domain-modeling`.
 
-Ticket 057 left the curve stale on engine 0.1.1, ticket 058 changes the fixture set, tickets 059 and 061 each move the engine version, and 059 regenerates the standard party, which adds a "the party differs" reason. Ticket 060 changes the fixture set again (11 lighting traits) without moving batch numbers under the default `unspecified` lighting, and the curve is generated with lighting `unspecified`. Ticket [062](062-build-live-reaction-windows.md) moves the engine version, changes the fixture set (Parry) and the party (Shield's trigger) without moving batch numbers. Until this ticket regenerates the curve, two tests accept those three stale reasons: `stale_beyond_the_engine` in `bench-core/tests/calibration.rs` and the CLI test `batch_compares_against_the_embedded_curve_outside_the_repo`. After the regeneration, remove all three allowances (engine, fixture set and party) from both tests so they again require a fresh curve.
+Policy v3 has two halves. [Build batch reactions policy](063-build-batch-reactions-policy.md) lands first: it moves `POLICY_VERSION` to 3, and batch starts taking Opportunity Attacks, Shield and Parry ([Batch policy takes reactions](../closed/046-batch-policy-takes-reactions.md)). This ticket adds the scoring half under the same v3. Don't bump `POLICY_VERSION` again; neither half ships a release alone.
+
+Scoring:
+- Buffs use 063's named constant for one AC point (0.1) instead of a second literal.
+- Teleports score the Opportunity Attacks they avoid by calling 063's penalty function: eligible engaged reactors the policy would attack with, each at its `opportunity_value`. This replaces ticket 045's "sum of `best_single_attack` over engaged foes that still have their reaction", because 046 decided the mover prices only the attacks the policy really takes. The penalty and the reserve return 0 at or past `MAX_THREAT_NESTING` (063 builds that guard), because the teleport score calls the penalty, which reaches `threat()` and `ability_value` and can come back to a teleport. Keep the guard, and add a test: a stat block whose actions include a teleport and a Multiattack that uses it, engaged with a reactor that has Parry, gets a plan without overflowing the stack, as the Dryad test does for control.
+- `TempHp` and `RollModifier` share the zero-value arm and stay at zero.
+- Fix `disposition` in `tactics.rs`: it sums and clamps, so an attacker with two Advantage sources and one Disadvantage source scores as Advantage. Use the two-flag rule from ticket 061 (both or neither is straight), with a test that two of one and one of the other score straight.
+- Check how far standard-party cells shift when caster Haste starts scoring, from a scratch run outside the repo, and record it in the Resolution.
+- The batch report's method sentence: rewrite the "gives buffs and other unscored effects no value" half. 063 already rewrote the reactions half.
+
+Baseline: regenerate `data/baseline/curve.json` once, with lighting `unspecified`, after all of these have landed, so the policy, engine and fixtures settle first:
+- [Import legendary action cooldowns](../closed/058-import-legendary-action-cooldowns.md) changed the fixture set.
+- [Build upcast spell scaling](059-build-upcast-spell-scaling.md) moves the engine version and regenerates the standard party.
+- [Build encounter lighting](060-build-encounter-lighting.md) changes the fixture set (11 lighting traits) without moving numbers under `unspecified`.
+- [Fix Advantage and Disadvantage cancellation on attack rolls](061-fix-advantage-disadvantage-cancellation.md) moves the engine version.
+- [Build live reaction windows](062-build-live-reaction-windows.md) moves the engine version and changes the fixture set (Parry) and the party (Shield's trigger).
+- [Build batch reactions policy](063-build-batch-reactions-policy.md) moves the policy to v3.
+
+After the regeneration, clean up the stale-curve allowances so the tests again require a fresh curve:
+- Remove all four accepted reasons (engine, fixture set, party, policy) from `stale_beyond_the_engine` in `bench-core/tests/calibration.rs` and from `batch_compares_against_the_embedded_curve_outside_the_repo` in `bench/tests/cli.rs`.
+- Remove the `#[ignore]` on `a_fixture_regenerates_to_its_committed_row`, whichever ticket added it (059, 061 or 063).
+
+Report how the dragon cells moved between the old curve and the new one in the Resolution. [Do dragons still read above their CR on the v3 curve](064-do-dragons-still-read-above-cr-on-the-v3-curve.md) reads them next.
 
 ## Resolution

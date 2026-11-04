@@ -85,7 +85,7 @@ The built-in party of four stat blocks, one per role (defender, striker, healer,
 _Avoid_: Default party, test party
 
 **Batch tactics policy**:
-The deterministic, versioned decision policy that chooses targets, movement, actions, resources, area targets, healing and consumables for both sides in batch mode. Its decisions and assumptions are logged, and its inputs are part of baseline fingerprints.
+The deterministic, versioned decision policy that chooses targets, movement, actions, resources, area targets, healing, consumables and reactions for both sides in batch mode. Its decisions and assumptions are logged, and its inputs are part of baseline fingerprints.
 _Avoid_: AI strategy, simulator behavior
 
 **Ruleset**:
@@ -143,6 +143,10 @@ _Avoid_: Interrupt
 **Reaction trigger**:
 The event named on a reaction that lets the engine open a reaction window for it. Two triggers open windows: a creature leaving the reactor's reach, which offers the Opportunity Attack every creature has, and being hit by an attack roll, which offers reactions such as Shield and Parry. A reaction with any other trigger is agent judgment.
 _Avoid_: Reaction condition, hook
+
+**Reaction reserve**:
+What a combatant gives up when it spends its reaction on an Opportunity Attack: the chance to turn a later hit into a miss with Shield or Parry before its next turn. The batch tactics policy makes an Opportunity Attack only when the attack is worth more than the reserve. A combatant with no reaction for hits has no reserve.
+_Avoid_: Held reaction, readied reaction (Ready is a different action)
 
 **Legendary window**:
 The gap between the end of one creature's turn and the start of the next, when other creatures with legendary actions may take them. The creature whose turn just ended takes none. Each use costs one from the holder's budget for the round, which refills when the holder's own turn starts.

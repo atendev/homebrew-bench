@@ -109,6 +109,6 @@ Overlaps:
 - `live-mode.md`, `batch-mode.md`, `CHANGELOG.md` and ADR 0005 are also touched by 059 and 060.
 - The importer is also touched by 060 (11 lighting traits), and the party regeneration by 059.
 - Any order works. Whichever lands second rebases.
-- The build for ticket 046 (batch takes reactions) waits on this one, since it replaces the batch decider.
+- [Build batch reactions policy](063-build-batch-reactions-policy.md), the build for ticket 046, waits on this one, since it replaces the batch decider and turns windows on for batch.
 
 ## Resolution
