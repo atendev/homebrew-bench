@@ -26,4 +26,4 @@ Decided with a drafted proposal from a subagent, approved by the user. All value
 4. **Policy v3 and baseline.** No SRD fixture uses these effect kinds on an action (0 of 341), so monsters do not change. The standard party casts Haste at caster levels 5 to 20 and would start scoring it, so party cells may shift and the effect must be measured, not assumed. The scoring change ships in policy v3 together with the reactions change, and the baseline is regenerated once, in the reactions build.
 5. The values are code constants, not `policy.*` overrides. They are recorded in ADR 0012 (amended by the build ticket).
 
-Left out on purpose: Haste's extra action and ally-targeted buffs, which are a separate engine question (see [Haste extra action and ally-targeted buffs](../tickets/055-haste-extra-action-and-ally-targeted-buffs.md)).
+Left out on purpose: Haste's extra action and ally-targeted buffs, which are a separate engine question (see [Haste extra action and ally-targeted buffs](055-haste-extra-action-and-ally-targeted-buffs.md)).

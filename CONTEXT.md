@@ -57,8 +57,12 @@ A cast whose cast level is above the spell's own level. Scaling rules in the spe
 _Avoid_: Overcast, higher-level casting
 
 **Modifier**:
-A timed change a modeled ability puts on a combatant's stats or rolls, such as halved Speed, no Reactions, or Disadvantage on Strength checks. It ends on a duration or a successful save. Conditions are separate: the ruleset defines them.
+A timed change a modeled ability puts on a combatant's stats or rolls, such as halved Speed, no Reactions, or Disadvantage on Strength checks. It ends on a duration, a successful save, the end of its source's concentration, or, for some, when its bearer takes damage. The same spell's modifier doesn't stack on one bearer: a new casting replaces the old one. Conditions are separate: the ruleset defines them.
 _Avoid_: Buff, debuff, status
+
+**Bearer**:
+The combatant a modifier is on, whose stats or rolls it changes. A modifier lands on the target of the ability that made it unless the ability marks it as the user's own, as Shield does. The **source** is the combatant whose ability made it; when the source's concentration ends, the modifier ends. Haste cast on an ally has the ally as bearer and the caster as source.
+_Avoid_: Owner, holder (a legendary action holder is a different thing), recipient
 
 **Roll modifier**:
 Advantage or Disadvantage that a trait gives its own creature on one kind of roll while a stated circumstance holds, such as Sunlight Sensitivity in sunlight. It is always on while the circumstance holds, with no duration. Lighting is the only circumstance the engine reads.
