@@ -168,10 +168,29 @@
       "name": "Spider Climb"
     },
     {
-      "default_resolution": "skipped",
       "desc": "While in sunlight, the drider has Disadvantage on ability checks and attack rolls.",
+      "effects": [
+        {
+          "roll_modifier": {
+            "disposition": "disadvantage",
+            "lighting": "sunlight",
+            "target": "attack_rolls"
+          }
+        },
+        {
+          "roll_modifier": {
+            "disposition": "disadvantage",
+            "lighting": "sunlight",
+            "target": {
+              "ability_checks": {
+                "ability": null
+              }
+            }
+          }
+        }
+      ],
       "id": "sunlight-sensitivity",
-      "kind": "unmodeled",
+      "kind": "modeled",
       "name": "Sunlight Sensitivity"
     },
     {

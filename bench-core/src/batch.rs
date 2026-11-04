@@ -11,6 +11,7 @@ use std::path::Path;
 use serde::{Deserialize, Serialize};
 
 use crate::baseline::{self, Baseline, Comparison};
+use crate::effect::{Effect, Lighting};
 
 use crate::encounter::{EncounterState, EndState, PcDice, RangeBand, StandingAssumption, PARTY_SIDE};
 use crate::engine::{self, EngineEvent, StepRequest};
@@ -37,6 +38,8 @@ pub struct BatchSpec {
     pub max_rounds: u32,
     pub master_seed: u64,
     pub assumptions: Vec<StandingAssumption>,
+    /// Every fight's encounter lighting, from `--lighting`.
+    pub lighting: Lighting,
     /// The curve to compare against; `None` compares against party level only.
     pub baseline: Option<Baseline>,
     /// The arguments the batch was named by, so each sample's replay command reruns it.
@@ -195,7 +198,7 @@ pub struct Cell {
 pub struct Finding {
     pub ability_id: String,
     pub name: String,
-    /// `agent_clause`, `skipped`, `neutral`, `base_form`, `ignored`, `assumed` or `inert`.
+    /// `agent_clause`, `skipped`, `neutral`, `base_form`, `ignored`, `assumed`, `inert` or `lighting`.
     pub kind: String,
     pub note: String,
 }
@@ -222,6 +225,7 @@ pub struct Summary {
     pub master_seed: u64,
     pub fights_per_level: u32,
     pub max_rounds: u32,
+    pub lighting: Lighting,
     pub levels: Vec<Cell>,
     pub effective_cr: String,
     pub representative_level: Option<u8>,
@@ -305,12 +309,18 @@ pub fn unresolved(monster: &StatBlock, resolutions: &BTreeMap<String, String>) -
         .collect()
 }
 
-fn findings(monster: &StatBlock, resolutions: &BTreeMap<String, String>) -> Vec<Finding> {
+fn findings(monster: &StatBlock, resolutions: &BTreeMap<String, String>, lighting: Lighting) -> Vec<Finding> {
     let mut out = Vec::new();
     for a in all_abilities(monster) {
         let (kind, note) = if let Some(value) = resolutions.get(&a.id) {
             let kind = if value == "ignored" { "ignored" } else { "assumed" };
             (kind, format!("Resolved by standing assumption: {value}."))
+        } else if let Some(line) = lighting_line(a, lighting) {
+            let kind = if a.default_resolution == Some(DefaultResolution::Skipped) { "skipped" } else { "lighting" };
+            match a.agent_clauses.is_empty() {
+                true => (kind, line),
+                false => (kind, format!("{line} Agent judgment left out: {}", a.agent_clauses.join(" "))),
+            }
         } else if let Some(resolution) = a.default_resolution {
             match resolution {
                 DefaultResolution::Skipped => ("skipped", "Not modeled in phase 1; results may understate or overstate the monster.".into()),
@@ -329,6 +339,33 @@ fn findings(monster: &StatBlock, resolutions: &BTreeMap<String, String>) -> Vec<
         out.push(Finding { ability_id: a.id.clone(), name: a.name.clone(), kind: kind.into(), note });
     }
     out
+}
+
+fn lighting_line(ability: &AbilityEntry, lighting: Lighting) -> Option<String> {
+    let required = ability.effects.iter().find_map(|e| match e {
+        Effect::RollModifier(m) => Some(m.lighting),
+        _ => None,
+    })?;
+    let on = if lighting.meets(required) { "on" } else { "off" };
+    Some(format!("Applies in {}; {on} in this run.", light_words(required)))
+}
+
+fn light_words(lighting: Lighting) -> &'static str {
+    match lighting {
+        Lighting::Unspecified => "unspecified light",
+        Lighting::DimLight => "Dim Light",
+        Lighting::BrightLight => "Bright Light",
+        Lighting::Sunlight => "sunlight",
+    }
+}
+
+fn lighting_row(lighting: Lighting) -> &'static str {
+    match lighting {
+        Lighting::Unspecified => "unspecified, lighting traits off",
+        Lighting::DimLight => "dim light",
+        Lighting::BrightLight => "bright light",
+        Lighting::Sunlight => "sunlight (also Bright Light)",
+    }
 }
 
 /// Run the whole batch.
@@ -357,7 +394,7 @@ pub fn run(spec: &BatchSpec) -> Result<BatchReport, BatchError> {
         });
         logs.push((file, replayed.log.unwrap_or_default()));
     }
-    let findings = findings(&spec.monster, &resolutions);
+    let findings = findings(&spec.monster, &resolutions, spec.lighting);
     let mut warnings: Vec<String> = findings
         .iter()
         .filter(|f| f.kind == "skipped")
@@ -373,7 +410,7 @@ pub fn run(spec: &BatchSpec) -> Result<BatchReport, BatchError> {
     let effective = effective_cr(&cells);
     let fingerprints = baseline::fingerprints_for(&spec.party, &constants);
     let comparison = spec.baseline.as_ref().map(|b| {
-        baseline::compare(
+        let mut c = baseline::compare(
             b,
             &baseline::RunReading {
                 claimed_cr: spec.monster.challenge_rating,
@@ -382,7 +419,11 @@ pub fn run(spec: &BatchSpec) -> Result<BatchReport, BatchError> {
                 effective_cr: &effective,
                 fingerprints: &fingerprints,
             },
-        )
+        );
+        if spec.lighting != Lighting::Unspecified {
+            c.basis.push_str(" The baseline curve's fixtures fought with lighting unspecified.");
+        }
+        c
     });
     match &comparison {
         None => warnings.push("No baseline curve was supplied; the claimed-CR comparison uses party level only.".into()),
@@ -409,6 +450,7 @@ pub fn run(spec: &BatchSpec) -> Result<BatchReport, BatchError> {
         master_seed: spec.master_seed,
         fights_per_level: spec.fights,
         max_rounds: spec.max_rounds,
+        lighting: spec.lighting,
         effective_cr: effective,
         levels: cells,
         representative_level,
@@ -499,6 +541,9 @@ pub fn replay_command(spec: &BatchSpec, index: u64) -> String {
     if (1..=20).any(|l| !spec.party.contains_key(&l)) {
         cmd.push_str(&format!(" --levels {}", level_of(index, spec.fights)));
     }
+    if spec.lighting != Lighting::Unspecified {
+        cmd.push_str(&format!(" --lighting {}", spec.lighting.as_str()));
+    }
     let Some(inv) = inv else { return cmd };
     if let Some(file) = &inv.assumptions_file {
         cmd.push_str(&format!(" --assumptions {}", shell_quote(file)));
@@ -536,6 +581,7 @@ fn fight(spec: &BatchSpec, constants: &PolicyConstants, level: u8, index: u64, w
         surprised: vec![],
         individual_initiative: true,
         pc_dice: PcDice::Engine,
+        lighting: spec.lighting,
     })
     .map_err(|e| BatchError::Invalid(e.to_string()))?;
     state.log.clear();
@@ -715,6 +761,7 @@ impl Log {
         self.line(format!("Policy: {} v{} ({})", tactics::POLICY_ID, tactics::POLICY_VERSION, tactics::fingerprint(constants)));
         self.line("STANDING ASSUMPTIONS".into());
         self.line("  standard batch rules: one monster against the party, both sides start near, round cap counts as a stalemate".into());
+        self.line(format!("  lighting = {}", spec.lighting.as_str()));
         if spec.assumptions.is_empty() {
             self.line("  none beyond policy defaults".into());
         }
@@ -1086,6 +1133,7 @@ pub fn render_html(s: &Summary) -> String {
                 "skipped" => "Skipped mechanic",
                 "agent_clause" => "Agent clause",
                 "inert" => "Inert ability",
+                "lighting" => "Lighting trait",
                 "ignored" => "Ignored by assumption",
                 "assumed" => "Resolved by assumption",
                 _ => "Resolved wording",
@@ -1106,9 +1154,10 @@ pub fn render_html(s: &Summary) -> String {
         ("Tactics", format!("{} v{}, fingerprint <code>{}</code>", s.policy.id, s.policy.version, s.policy.fingerprint)),
         ("Encounter", format!("One {name} against the party; both sides start near; abstract engagement and range bands; {}-round cap", s.max_rounds)),
         ("Randomness", format!("Master seed <code>{}</code>; {} derived fight seeds per level", s.master_seed, s.fights_per_level)),
+        ("Lighting", format!("{} (set by <code>--lighting</code>)", lighting_row(s.lighting))),
     ];
     for (k, v) in rows {
-        h.push_str(&format!("        <tr><th scope=\"row\">{k}</th><td>{}</td></tr>\n", if k == "Tactics" || k == "Randomness" { v } else { esc(&v) }));
+        h.push_str(&format!("        <tr><th scope=\"row\">{k}</th><td>{}</td></tr>\n", if matches!(k, "Tactics" | "Randomness" | "Lighting") { v } else { esc(&v) }));
     }
     if s.standing_assumptions.is_empty() {
         h.push_str("        <tr><th scope=\"row\">Overrides</th><td>None.</td></tr>\n");
@@ -1219,6 +1268,7 @@ mod tests {
             max_rounds: DEFAULT_MAX_ROUNDS,
             master_seed: 42,
             assumptions: vec![],
+            lighting: Lighting::Unspecified,
             baseline: None,
             invocation: None,
         }
@@ -1387,6 +1437,7 @@ mod tests {
             surprised: vec![],
             individual_initiative: true,
             pc_dice: PcDice::Engine,
+            lighting: Lighting::Unspecified,
         })
         .unwrap();
         let ogre = state.combatants.iter().find(|c| c.side_id != PARTY_SIDE).unwrap().id.clone();
@@ -1442,5 +1493,60 @@ mod tests {
         assert_eq!(ids.len(), n, "duplicate ids");
         assert!(html.contains("<html lang=\"en\">") && html.contains("<main>") && !html.contains("<script"));
         assert_eq!(html.matches("<caption>").count(), html.matches("<table>").count());
+    }
+
+    fn lit_run(monster: &str, lighting: Lighting) -> BatchReport {
+        let mut s = spec(fixture(monster), vec![1], 1);
+        s.assumptions = baseline::ignoring_unresolved(&s.monster).1;
+        s.lighting = lighting;
+        s.baseline = Some(baseline::embedded().unwrap().unwrap());
+        run(&s).unwrap()
+    }
+
+    fn finding<'a>(report: &'a BatchReport, id: &str) -> &'a Finding {
+        report.summary.findings.iter().find(|f| f.ability_id == id).unwrap()
+    }
+
+    #[test]
+    fn the_default_lighting_is_stated_and_turns_lighting_traits_off() {
+        let report = lit_run("kobold-warrior", Lighting::Unspecified);
+        assert!(report.html.contains("<th scope=\"row\">Lighting</th><td>unspecified, lighting traits off (set by <code>--lighting</code>)</td>"), "{}", report.html);
+        assert!(report.logs.iter().all(|(_, log)| log.contains("STANDING ASSUMPTIONS\n  standard batch rules: one monster against the party, both sides start near, round cap counts as a stalemate\n  lighting = unspecified\n")));
+        assert_eq!(serde_json::to_value(&report.summary).unwrap()["lighting"], "unspecified");
+        assert_eq!(finding(&report, "sunlight-sensitivity").note, "Applies in sunlight; off in this run.");
+        assert_eq!(finding(&report, "sunlight-sensitivity").kind, "lighting");
+        assert!(report.summary.samples.iter().all(|s| !s.replay.contains("--lighting")));
+        assert!(!report.summary.comparison.unwrap().basis.contains("lighting unspecified"));
+    }
+
+    #[test]
+    fn sunlight_is_stated_and_turns_sunlight_traits_on() {
+        let report = lit_run("kobold-warrior", Lighting::Sunlight);
+        assert!(report.html.contains("<td>sunlight (also Bright Light) (set by <code>--lighting</code>)</td>"));
+        assert!(report.logs.iter().all(|(_, log)| log.contains("  lighting = sunlight\n")));
+        assert_eq!(serde_json::to_value(&report.summary).unwrap()["lighting"], "sunlight");
+        assert_eq!(finding(&report, "sunlight-sensitivity").note, "Applies in sunlight; on in this run.");
+        assert!(report.summary.samples.iter().all(|s| s.replay.ends_with(" --lighting sunlight")), "{:?}", report.summary.samples);
+        assert!(report.summary.comparison.unwrap().basis.ends_with(" The baseline curve's fixtures fought with lighting unspecified."));
+    }
+
+    #[test]
+    fn dim_and_bright_light_rows_and_the_cloaker_line() {
+        assert!(lit_run("cloaker", Lighting::DimLight).html.contains("<td>dim light (set by"));
+        let bright = lit_run("cloaker", Lighting::BrightLight);
+        assert!(bright.html.contains("<td>bright light (set by"));
+        assert_eq!(finding(&bright, "light-sensitivity").note, "Applies in Bright Light; on in this run.");
+    }
+
+    #[test]
+    fn a_vampire_spawn_in_sunlight_reports_its_lighting_and_its_clause() {
+        let report = lit_run("vampire-spawn", Lighting::Sunlight);
+        let sunlight = finding(&report, "sunlight");
+        assert_eq!(sunlight.kind, "skipped");
+        assert_eq!(
+            sunlight.note,
+            "Applies in sunlight; on in this run. Agent judgment left out: The vampire takes 20 Radiant damage if it starts its turn in sunlight."
+        );
+        assert!(report.summary.warnings.iter().any(|w| w.starts_with("Skipped mechanic: Sunlight (sunlight)")));
     }
 }

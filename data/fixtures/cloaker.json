@@ -152,10 +152,18 @@
   },
   "traits": [
     {
-      "default_resolution": "skipped",
       "desc": "While in Bright Light, the cloaker has Disadvantage on attack rolls.",
+      "effects": [
+        {
+          "roll_modifier": {
+            "disposition": "disadvantage",
+            "lighting": "bright_light",
+            "target": "attack_rolls"
+          }
+        }
+      ],
       "id": "light-sensitivity",
-      "kind": "unmodeled",
+      "kind": "modeled",
       "name": "Light Sensitivity"
     }
   ],

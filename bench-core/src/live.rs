@@ -21,6 +21,7 @@ use crate::log::{LogEntry, LogLine};
 use crate::override_path;
 use crate::rng::{RngState, Stream};
 use crate::stat_block::StatBlock;
+use crate::effect::Lighting;
 use crate::ENGINE_VERSION;
 
 /// One mutating live command, as stored in the command history.
@@ -211,6 +212,7 @@ pub struct StartSpec {
     pub surprised: Vec<String>,
     pub individual_initiative: bool,
     pub pc_dice: PcDice,
+    pub lighting: Lighting,
 }
 
 /// Result of `bench replay`.
@@ -335,7 +337,7 @@ pub fn start(spec: StartSpec) -> Result<(EncounterState, Outcome), LiveError> {
         pending: None,
         rng: RngState::new(spec.seed),
         initiative_rolls: HashMap::new(),
-        settings: EncounterSettings { pc_dice: spec.pc_dice },
+        settings: EncounterSettings { pc_dice: spec.pc_dice, lighting: spec.lighting },
         ended: None,
         initial_snapshot: None,
         log: vec![],
@@ -347,12 +349,13 @@ pub fn start(spec: StartSpec) -> Result<(EncounterState, Outcome), LiveError> {
         PcDice::Engine => "engine",
         PcDice::Ask => "ask",
     };
+    let lighting = spec.lighting.as_str();
     applied.push(
         "start",
         None,
         LogLine::replaced(
-            format!("START encounter {} (seed {}, pc dice {pc_dice}, engine {ENGINE_VERSION})", spec.id, spec.seed),
-            format!("START encounter {} (pc dice {pc_dice}, engine {ENGINE_VERSION})", spec.id),
+            format!("START encounter {} (seed {}, pc dice {pc_dice}, lighting {lighting}, engine {ENGINE_VERSION})", spec.id, spec.seed),
+            format!("START encounter {} (pc dice {pc_dice}, lighting {lighting}, engine {ENGINE_VERSION})", spec.id),
         ),
     );
     for c in &state.combatants {
@@ -1113,6 +1116,7 @@ mod tests {
             surprised: vec![],
             individual_initiative: true,
             pc_dice,
+            lighting: Lighting::Unspecified,
         }
     }
 
@@ -1822,5 +1826,39 @@ mod tests {
         assert_eq!(serde_json::to_value(&cmd).unwrap(), bare);
         let held: StepRequest = stored_request(&serde_json::json!("end_turn")).unwrap();
         assert!(matches!(held, StepRequest::EndTurn { legendary } if legendary.is_empty()));
+    }
+
+    #[test]
+    fn lighting_is_set_at_start_overridden_undone_and_replayed() {
+        let mut lit = spec(PcDice::Engine);
+        lit.lighting = Lighting::Sunlight;
+        let (mut state, started) = start(lit).unwrap();
+        assert_eq!(state.settings.lighting, Lighting::Sunlight);
+        assert_eq!(started.digest["lighting"], "sunlight");
+        assert_eq!(digest::public_digest(&state)["lighting"], "sunlight");
+        assert!(lines(&started)[0].contains("lighting sunlight"), "{:?}", lines(&started));
+        let overridden = execute(
+            &mut state,
+            Command::Override { path: "settings.lighting".into(), value: Some(Value::from("dim_light")), reason: "dusk".into(), rule: None, standing: false },
+        )
+        .unwrap();
+        assert_eq!(state.settings.lighting, Lighting::DimLight);
+        assert_eq!(overridden.digest["lighting"], "dim_light");
+        assert!(replay(&state).matches);
+        execute(&mut state, Command::Undo).unwrap();
+        assert_eq!(state.settings.lighting, Lighting::Sunlight);
+        assert!(replay(&state).matches);
+    }
+
+    #[test]
+    fn old_state_files_load_with_their_lighting() {
+        let (state, _) = start(spec(PcDice::Engine)).unwrap();
+        let mut value = serde_json::to_value(&state).unwrap();
+        value["settings"].as_object_mut().unwrap().remove("lighting");
+        let old: EncounterState = serde_json::from_value(value.clone()).unwrap();
+        assert_eq!(old.settings.lighting, Lighting::Unspecified);
+        value["settings"]["lighting"] = "normal".into();
+        let renamed: EncounterState = serde_json::from_value(value).unwrap();
+        assert_eq!(renamed.settings.lighting, Lighting::Unspecified);
     }
 }

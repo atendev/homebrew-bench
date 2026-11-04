@@ -250,10 +250,33 @@
       "name": "Stake to the Heart"
     },
     {
+      "agent_clauses": [
+        "The vampire takes 20 Radiant damage if it starts its turn in sunlight."
+      ],
       "default_resolution": "skipped",
       "desc": "The vampire takes 20 Radiant damage if it starts its turn in sunlight. While in sunlight, it has Disadvantage on attack rolls and ability checks.",
+      "effects": [
+        {
+          "roll_modifier": {
+            "disposition": "disadvantage",
+            "lighting": "sunlight",
+            "target": "attack_rolls"
+          }
+        },
+        {
+          "roll_modifier": {
+            "disposition": "disadvantage",
+            "lighting": "sunlight",
+            "target": {
+              "ability_checks": {
+                "ability": null
+              }
+            }
+          }
+        }
+      ],
       "id": "sunlight",
-      "kind": "unmodeled",
+      "kind": "partly_modeled",
       "name": "Sunlight"
     }
   ],

@@ -111,10 +111,40 @@
       "name": "Amorphous"
     },
     {
-      "default_resolution": "skipped",
       "desc": "While in sunlight, the shadow has Disadvantage on D20 Tests.",
+      "effects": [
+        {
+          "roll_modifier": {
+            "disposition": "disadvantage",
+            "lighting": "sunlight",
+            "target": "attack_rolls"
+          }
+        },
+        {
+          "roll_modifier": {
+            "disposition": "disadvantage",
+            "lighting": "sunlight",
+            "target": {
+              "saving_throws": {
+                "ability": null
+              }
+            }
+          }
+        },
+        {
+          "roll_modifier": {
+            "disposition": "disadvantage",
+            "lighting": "sunlight",
+            "target": {
+              "ability_checks": {
+                "ability": null
+              }
+            }
+          }
+        }
+      ],
       "id": "sunlight-weakness",
-      "kind": "unmodeled",
+      "kind": "modeled",
       "name": "Sunlight Weakness"
     }
   ],

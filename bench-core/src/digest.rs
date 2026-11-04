@@ -107,6 +107,7 @@ fn build(state: &EncounterState, public: bool) -> Value {
     let mut digest = serde_json::json!({
         "encounter": state.id,
         "round": state.round,
+        "lighting": state.settings.lighting,
         "active_turn": state.active_turn,
         "initiative_order": state.initiative_order,
         "combatants": combatants,

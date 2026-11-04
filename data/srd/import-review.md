@@ -507,7 +507,8 @@ None.
 - `cloaker` `bonus_actions.moan`: classified unmodeled (default skipped)
 - `cloaker` `bonus_actions.phantasms`: classified unmodeled (default skipped)
 - `cloaker` `bonus_actions.phantasms`: spellcasting is not modeled; spells are absent from the stat block effects
-- `cloaker` `traits.light-sensitivity`: classified unmodeled (default skipped)
+- `cloaker` `traits.light-sensitivity`: classified modeled
+- `cloaker` `traits.light-sensitivity`: lighting roll modifier from the prose
 - `cloud-giant` `actions.multiattack`: classified modeled
 - `cloud-giant` `actions.spellcasting`: classified unmodeled (default skipped)
 - `cloud-giant` `actions.spellcasting`: multiattack casts 'fog-cloud', which data/spells/effects.json lacks; the engine logs it as unmodeled
@@ -592,7 +593,8 @@ None.
 - `drider` `bonus_actions.magic-of-the-spider-queen`: classified unmodeled (default skipped)
 - `drider` `bonus_actions.magic-of-the-spider-queen`: spellcasting is not modeled; spells are absent from the stat block effects
 - `drider` `traits.spider-climb`: classified unmodeled (default skipped)
-- `drider` `traits.sunlight-sensitivity`: classified unmodeled (default skipped)
+- `drider` `traits.sunlight-sensitivity`: classified modeled
+- `drider` `traits.sunlight-sensitivity`: lighting roll modifier from the prose
 - `drider` `traits.web-walker`: classified unmodeled (default skipped)
 - `druid` `actions.multiattack`: classified modeled
 - `druid` `actions.spellcasting`: classified unmodeled (default skipped)
@@ -944,7 +946,8 @@ None.
 - `knight` `reactions.parry`: classified unmodeled (default skipped)
 - `kobold-warrior` `actions.dagger`: classified modeled
 - `kobold-warrior` `traits.pack-tactics`: classified unmodeled (default skipped)
-- `kobold-warrior` `traits.sunlight-sensitivity`: classified unmodeled (default skipped)
+- `kobold-warrior` `traits.sunlight-sensitivity`: classified modeled
+- `kobold-warrior` `traits.sunlight-sensitivity`: lighting roll modifier from the prose
 - `kraken` `actions.fling`: classified partly_modeled
 - `kraken` `actions.lightning-strike`: classified modeled
 - `kraken` `actions.multiattack`: classified modeled
@@ -1271,7 +1274,8 @@ None.
 - `shadow` `actions.draining-swipe`: classified partly_modeled
 - `shadow` `bonus_actions.shadow-stealth`: classified unmodeled (default skipped)
 - `shadow` `traits.amorphous`: classified unmodeled (default skipped)
-- `shadow` `traits.sunlight-weakness`: classified unmodeled (default skipped)
+- `shadow` `traits.sunlight-weakness`: classified modeled
+- `shadow` `traits.sunlight-weakness`: lighting roll modifier from the prose
 - `shambling-mound` `actions.charged-tendril`: classified partly_modeled
 - `shambling-mound` `actions.engulf`: classified unmodeled (default skipped)
 - `shambling-mound` `actions.engulf`: damage array without an attack or save; left unmodeled
@@ -1311,7 +1315,8 @@ None.
 - `specter` `actions.life-drain`: classified partly_modeled
 - `specter` `traits.incorporeal-movement`: classified unmodeled (default skipped)
 - `specter` `traits.incorporeal-movement`: damage array without an attack or save; left unmodeled
-- `specter` `traits.sunlight-sensitivity`: classified unmodeled (default skipped)
+- `specter` `traits.sunlight-sensitivity`: classified modeled
+- `specter` `traits.sunlight-sensitivity`: lighting roll modifier from the prose
 - `sphinx-of-lore` `actions.claw`: classified modeled
 - `sphinx-of-lore` `actions.mind-rending-roar`: classified partly_modeled
 - `sphinx-of-lore` `actions.multiattack`: classified modeled
@@ -1475,7 +1480,8 @@ None.
 - `vampire-bat` `traits.running-water`: classified unmodeled (default skipped)
 - `vampire-bat` `traits.spider-climb`: classified unmodeled (default skipped)
 - `vampire-bat` `traits.stake-to-the-heart`: classified unmodeled (default skipped)
-- `vampire-bat` `traits.sunlight`: classified unmodeled (default skipped)
+- `vampire-bat` `traits.sunlight`: classified partly_modeled (default skipped)
+- `vampire-bat` `traits.sunlight`: lighting roll modifier from the prose
 - `vampire-bat` `traits.vampire-weakness`: classified unmodeled (default skipped)
 - `vampire-familiar` `actions.multiattack`: classified modeled
 - `vampire-familiar` `actions.umbral-dagger`: classified partly_modeled
@@ -1495,7 +1501,8 @@ None.
 - `vampire-mist` `traits.running-water`: classified unmodeled (default skipped)
 - `vampire-mist` `traits.spider-climb`: classified unmodeled (default skipped)
 - `vampire-mist` `traits.stake-to-the-heart`: classified unmodeled (default skipped)
-- `vampire-mist` `traits.sunlight`: classified unmodeled (default skipped)
+- `vampire-mist` `traits.sunlight`: classified partly_modeled (default skipped)
+- `vampire-mist` `traits.sunlight`: lighting roll modifier from the prose
 - `vampire-mist` `traits.vampire-weakness`: classified unmodeled (default skipped)
 - `vampire-spawn` `actions.bite`: classified partly_modeled
 - `vampire-spawn` `actions.claw`: classified partly_modeled
@@ -1505,7 +1512,8 @@ None.
 - `vampire-spawn` `traits.running-water`: classified unmodeled (default skipped)
 - `vampire-spawn` `traits.spider-climb`: classified unmodeled (default skipped)
 - `vampire-spawn` `traits.stake-to-the-heart`: classified unmodeled (default skipped)
-- `vampire-spawn` `traits.sunlight`: classified unmodeled (default skipped)
+- `vampire-spawn` `traits.sunlight`: classified partly_modeled (default skipped)
+- `vampire-spawn` `traits.sunlight`: lighting roll modifier from the prose
 - `vampire-spawn` `traits.vampire-weakness`: classified unmodeled (default skipped)
 - `vampire-vampire` `actions.bite`: classified partly_modeled
 - `vampire-vampire` `actions.grave-strike`: classified partly_modeled
@@ -1524,7 +1532,8 @@ None.
 - `vampire-vampire` `traits.running-water`: classified unmodeled (default skipped)
 - `vampire-vampire` `traits.spider-climb`: classified unmodeled (default skipped)
 - `vampire-vampire` `traits.stake-to-the-heart`: classified unmodeled (default skipped)
-- `vampire-vampire` `traits.sunlight`: classified unmodeled (default skipped)
+- `vampire-vampire` `traits.sunlight`: classified partly_modeled (default skipped)
+- `vampire-vampire` `traits.sunlight`: lighting roll modifier from the prose
 - `vampire-vampire` `traits.vampire-weakness`: classified unmodeled (default skipped)
 - `venomous-snake` `actions.bite`: classified modeled
 - `violet-fungus` `actions.multiattack`: classified modeled
@@ -1630,7 +1639,8 @@ None.
 - `wight` `actions.multiattack`: classified modeled
 - `wight` `actions.necrotic-bow`: classified modeled
 - `wight` `actions.necrotic-sword`: classified modeled
-- `wight` `traits.sunlight-sensitivity`: classified unmodeled (default skipped)
+- `wight` `traits.sunlight-sensitivity`: classified modeled
+- `wight` `traits.sunlight-sensitivity`: lighting roll modifier from the prose
 - `will-o-wisp` `actions.shock`: classified modeled
 - `will-o-wisp` `bonus_actions.consume-life`: classified unmodeled (default skipped)
 - `will-o-wisp` `bonus_actions.vanish`: classified unmodeled (default skipped)
@@ -1648,7 +1658,8 @@ None.
 - `wraith` `actions.life-drain`: classified partly_modeled
 - `wraith` `traits.incorporeal-movement`: classified unmodeled (default skipped)
 - `wraith` `traits.incorporeal-movement`: damage array without an attack or save; left unmodeled
-- `wraith` `traits.sunlight-sensitivity`: classified unmodeled (default skipped)
+- `wraith` `traits.sunlight-sensitivity`: classified modeled
+- `wraith` `traits.sunlight-sensitivity`: lighting roll modifier from the prose
 - `wyvern` `actions.bite`: classified modeled
 - `wyvern` `actions.multiattack`: classified modeled
 - `wyvern` `actions.sting`: classified partly_modeled

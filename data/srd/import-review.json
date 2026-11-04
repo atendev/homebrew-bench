@@ -3296,7 +3296,14 @@
       "class": "d",
       "path": "traits.light-sensitivity",
       "status": "open",
-      "summary": "classified unmodeled (default skipped)"
+      "summary": "classified modeled"
+    },
+    {
+      "monster": "cloaker",
+      "class": "d",
+      "path": "traits.light-sensitivity",
+      "status": "open",
+      "summary": "lighting roll modifier from the prose"
     },
     {
       "monster": "cloud-giant",
@@ -3905,7 +3912,14 @@
       "class": "d",
       "path": "traits.sunlight-sensitivity",
       "status": "open",
-      "summary": "classified unmodeled (default skipped)"
+      "summary": "classified modeled"
+    },
+    {
+      "monster": "drider",
+      "class": "d",
+      "path": "traits.sunlight-sensitivity",
+      "status": "open",
+      "summary": "lighting roll modifier from the prose"
     },
     {
       "monster": "drider",
@@ -6418,7 +6432,14 @@
       "class": "d",
       "path": "traits.sunlight-sensitivity",
       "status": "open",
-      "summary": "classified unmodeled (default skipped)"
+      "summary": "classified modeled"
+    },
+    {
+      "monster": "kobold-warrior",
+      "class": "d",
+      "path": "traits.sunlight-sensitivity",
+      "status": "open",
+      "summary": "lighting roll modifier from the prose"
     },
     {
       "monster": "kraken",
@@ -8777,7 +8798,14 @@
       "class": "d",
       "path": "traits.sunlight-weakness",
       "status": "open",
-      "summary": "classified unmodeled (default skipped)"
+      "summary": "classified modeled"
+    },
+    {
+      "monster": "shadow",
+      "class": "d",
+      "path": "traits.sunlight-weakness",
+      "status": "open",
+      "summary": "lighting roll modifier from the prose"
     },
     {
       "monster": "shambling-mound",
@@ -9057,7 +9085,14 @@
       "class": "d",
       "path": "traits.sunlight-sensitivity",
       "status": "open",
-      "summary": "classified unmodeled (default skipped)"
+      "summary": "classified modeled"
+    },
+    {
+      "monster": "specter",
+      "class": "d",
+      "path": "traits.sunlight-sensitivity",
+      "status": "open",
+      "summary": "lighting roll modifier from the prose"
     },
     {
       "monster": "sphinx-of-lore",
@@ -10219,7 +10254,14 @@
       "class": "d",
       "path": "traits.sunlight",
       "status": "open",
-      "summary": "classified unmodeled (default skipped)"
+      "summary": "classified partly_modeled (default skipped)"
+    },
+    {
+      "monster": "vampire-bat",
+      "class": "d",
+      "path": "traits.sunlight",
+      "status": "open",
+      "summary": "lighting roll modifier from the prose"
     },
     {
       "monster": "vampire-bat",
@@ -10359,7 +10401,14 @@
       "class": "d",
       "path": "traits.sunlight",
       "status": "open",
-      "summary": "classified unmodeled (default skipped)"
+      "summary": "classified partly_modeled (default skipped)"
+    },
+    {
+      "monster": "vampire-mist",
+      "class": "d",
+      "path": "traits.sunlight",
+      "status": "open",
+      "summary": "lighting roll modifier from the prose"
     },
     {
       "monster": "vampire-mist",
@@ -10429,7 +10478,14 @@
       "class": "d",
       "path": "traits.sunlight",
       "status": "open",
-      "summary": "classified unmodeled (default skipped)"
+      "summary": "classified partly_modeled (default skipped)"
+    },
+    {
+      "monster": "vampire-spawn",
+      "class": "d",
+      "path": "traits.sunlight",
+      "status": "open",
+      "summary": "lighting roll modifier from the prose"
     },
     {
       "monster": "vampire-spawn",
@@ -10562,7 +10618,14 @@
       "class": "d",
       "path": "traits.sunlight",
       "status": "open",
-      "summary": "classified unmodeled (default skipped)"
+      "summary": "classified partly_modeled (default skipped)"
+    },
+    {
+      "monster": "vampire-vampire",
+      "class": "d",
+      "path": "traits.sunlight",
+      "status": "open",
+      "summary": "lighting roll modifier from the prose"
     },
     {
       "monster": "vampire-vampire",
@@ -11311,7 +11374,14 @@
       "class": "d",
       "path": "traits.sunlight-sensitivity",
       "status": "open",
-      "summary": "classified unmodeled (default skipped)"
+      "summary": "classified modeled"
+    },
+    {
+      "monster": "wight",
+      "class": "d",
+      "path": "traits.sunlight-sensitivity",
+      "status": "open",
+      "summary": "lighting roll modifier from the prose"
     },
     {
       "monster": "will-o-wisp",
@@ -11437,7 +11507,14 @@
       "class": "d",
       "path": "traits.sunlight-sensitivity",
       "status": "open",
-      "summary": "classified unmodeled (default skipped)"
+      "summary": "classified modeled"
+    },
+    {
+      "monster": "wraith",
+      "class": "d",
+      "path": "traits.sunlight-sensitivity",
+      "status": "open",
+      "summary": "lighting roll modifier from the prose"
     },
     {
       "monster": "wyvern",

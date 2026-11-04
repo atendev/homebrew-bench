@@ -495,3 +495,26 @@ fn batch_compares_against_the_embedded_curve_outside_the_repo() {
     let html = std::fs::read_to_string(bench.cwd.join("r/report.html")).unwrap();
     assert!(html.contains("Claimed-CR verdict"));
 }
+
+#[test]
+fn lighting_is_a_start_flag_and_a_misplaced_roll_modifier_fails_at_load() {
+    let bench = Bench::new();
+    let out = bench.start(&["--lighting", "bright_light"]);
+    assert_eq!(out["digest"]["lighting"], "bright_light");
+    bench.ok(&["override", "settings.lighting", "sunlight", "--reason", "noon"]);
+    assert_eq!(bench.ok(&["state", "--public"])["digest"]["lighting"], "sunlight");
+
+    let mut monster: Value = serde_json::from_str(&std::fs::read_to_string(data("fixtures/kobold-warrior.json")).unwrap()).unwrap();
+    monster["id"] = "glaring-kobold".into();
+    monster["actions"][0]["effects"][0]["attack"]["on_hit"] =
+        serde_json::json!([{"roll_modifier": {"lighting": "sunlight", "disposition": "disadvantage", "target": "attack_rolls"}}]);
+    let path = bench.cwd.join("glaring-kobold.json");
+    std::fs::write(&path, monster.to_string()).unwrap();
+    let path = path.display().to_string();
+    for args in [vec!["start", path.as_str(), "--seed", "1"], vec!["batch", path.as_str(), "--levels", "1", "--fights", "1", "--seed", "1"]] {
+        let (code, json) = bench.run(&args);
+        assert_ne!(code, 0);
+        assert_eq!(json["error"]["details"][0]["message"].as_str().map(|m| m.starts_with("dagger: a roll modifier is a trait effect")), Some(true), "{json:#}");
+    }
+    assert_eq!(bench.ok(&["list"])["encounters"].as_array().unwrap().len(), 1);
+}

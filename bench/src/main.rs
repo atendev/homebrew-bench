@@ -8,6 +8,7 @@ use std::process;
 
 use bench_core::{
     baseline, embedded,
+    effect::Lighting,
     batch::{self, BatchError, BatchSpec},
     config::{Config, OutputTarget},
     encounter::{EncounterState, PcDice, RangeBand, StandingAssumption, PARTY_SIDE},
@@ -77,6 +78,26 @@ enum DiceMode {
 }
 
 #[derive(Clone, Copy, ValueEnum)]
+#[value(rename_all = "snake_case")]
+enum LightingArg {
+    Unspecified,
+    DimLight,
+    BrightLight,
+    Sunlight,
+}
+
+impl From<LightingArg> for Lighting {
+    fn from(arg: LightingArg) -> Self {
+        match arg {
+            LightingArg::Unspecified => Lighting::Unspecified,
+            LightingArg::DimLight => Lighting::DimLight,
+            LightingArg::BrightLight => Lighting::BrightLight,
+            LightingArg::Sunlight => Lighting::Sunlight,
+        }
+    }
+}
+
+#[derive(Clone, Copy, ValueEnum)]
 enum Output {
     Home,
     Workspace,
@@ -110,6 +131,9 @@ enum Commands {
         /// Who rolls PC dice.
         #[arg(long, value_enum, default_value = "engine")]
         pc_dice: DiceMode,
+        /// The whole encounter's lighting; lighting traits are off when unspecified.
+        #[arg(long, value_enum, default_value = "unspecified")]
+        lighting: LightingArg,
         /// Where to write the state file and log; defaults to `config.toml`.
         #[arg(long, value_enum)]
         output: Option<Output>,
@@ -283,6 +307,9 @@ enum Commands {
         /// JSON file holding a list of `{path, value, reason}` standing assumptions.
         #[arg(long)]
         assumptions: Option<String>,
+        /// Every fight's lighting; lighting traits are off when unspecified.
+        #[arg(long, value_enum, default_value = "unspecified")]
+        lighting: LightingArg,
         /// Folder for `report.html` and `logs/`; defaults to `reports/<monster>-seed-<seed>/` under the output directory.
         #[arg(long)]
         out: Option<PathBuf>,
@@ -488,7 +515,7 @@ fn parse_entrant(spec: &str) -> Result<Entrant, CodedError> {
 
 fn run(command: Commands) -> Result<String, CodedError> {
     match command {
-        Commands::Start { combatants, surprised, seed, pc_dice, output, group_initiative, id } => {
+        Commands::Start { combatants, surprised, seed, pc_dice, lighting, output, group_initiative, id } => {
             let entrants = combatants.iter().map(|c| parse_entrant(c)).collect::<Result<Vec<_>, _>>()?;
             let cwd = cwd()?;
             let config = config()?;
@@ -528,6 +555,7 @@ fn run(command: Commands) -> Result<String, CodedError> {
                     DiceMode::Engine => PcDice::Engine,
                     DiceMode::Ask => PcDice::Ask,
                 },
+                lighting: lighting.into(),
             };
             let (state, outcome) = live::start(spec).map_err(|e| coded(e, false))?;
             let (state_path, log_path) = store::files_for(&dir, &id);
@@ -627,8 +655,8 @@ fn run(command: Commands) -> Result<String, CodedError> {
             let removed = prune(&mut index, config.delete_logs)?;
             ok(serde_json::json!({ "removed": removed, "logs_deleted": config.delete_logs }))
         }
-        Commands::Batch { monster, levels, fights, max_rounds, party, seed, fight, assume, assume_reason, assumptions, out, output } => {
-            run_batch(BatchArgs { monster, levels, fights, max_rounds, party, seed, fight, assume, assume_reason, assumptions, out, output })
+        Commands::Batch { monster, levels, fights, max_rounds, party, seed, fight, assume, assume_reason, assumptions, lighting, out, output } => {
+            run_batch(BatchArgs { monster, levels, fights, max_rounds, party, seed, fight, assume, assume_reason, assumptions, lighting, out, output })
         }
         Commands::Fixture { action } => run_fixture(action),
         Commands::Party { action } => run_party(action),
@@ -690,6 +718,7 @@ struct BatchArgs {
     assume: Vec<String>,
     assume_reason: String,
     assumptions: Option<String>,
+    lighting: LightingArg,
     out: Option<PathBuf>,
     output: Option<Output>,
 }
@@ -743,6 +772,7 @@ fn run_batch(args: BatchArgs) -> Result<String, CodedError> {
         max_rounds: args.max_rounds,
         master_seed: args.seed.unwrap_or_else(rand::random),
         assumptions,
+        lighting: args.lighting.into(),
         baseline: match baseline::embedded() {
             Some(Ok(b)) => Some(b),
             Some(Err(e)) => return Err(batch_error(e)),

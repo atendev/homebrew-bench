@@ -14,6 +14,7 @@ use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 
 use crate::encounter::StandingAssumption;
+use crate::effect::Lighting;
 use crate::batch::{self, Band, BatchError, BatchSpec, Cell, Party, Spread};
 use crate::stat_block::StatBlock;
 use crate::tactics::{self, PolicyConstants};
@@ -405,6 +406,7 @@ fn run_fixture(spec: &GenerateSpec, block: &StatBlock) -> Result<Done, BatchErro
         max_rounds: spec.max_rounds,
         master_seed: fixture_seed(spec.base_seed, &block.id),
         assumptions,
+        lighting: Lighting::Unspecified,
         baseline: None,
         invocation: None,
     };

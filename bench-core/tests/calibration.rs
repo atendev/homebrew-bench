@@ -27,6 +27,7 @@ fn spec(id: &str, levels: Vec<u8>, fights: u32) -> BatchSpec {
         max_rounds: batch::DEFAULT_MAX_ROUNDS,
         master_seed: 7,
         assumptions,
+        lighting: bench_core::effect::Lighting::Unspecified,
         baseline: None,
         invocation: None,
     }

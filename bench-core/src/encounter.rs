@@ -157,6 +157,9 @@ pub enum PcDice {
 pub struct EncounterSettings {
     #[serde(default)]
     pub pc_dice: PcDice,
+    /// The whole encounter's lighting, read by roll modifiers on traits.
+    #[serde(default)]
+    pub lighting: crate::effect::Lighting,
 }
 
 /// Record of an encounter ended early through `bench end`.
