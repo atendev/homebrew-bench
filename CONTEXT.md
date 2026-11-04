@@ -37,8 +37,16 @@ One creature taking part in an encounter, created from a stat block and carrying
 _Avoid_: Creature, unit, token
 
 **Engaged**:
-Two combatants are engaged when they are in melee with each other. The engine tracks engagement and a coarse range band instead of positions on a map.
+Two combatants are engaged when they are in melee with each other. The engine tracks engagement and a coarse range band instead of positions on a map. A rule that says "within 5 feet" reads as engaged.
 _Avoid_: Adjacent, in contact
+
+**Sees**:
+One combatant sees another unless the other is Invisible and the first has neither Blindsight nor Truesight, or the first is Blinded and has no Blindsight. Sense ranges don't count, and line of sight is otherwise assumed. Invisible's attack effects, the Frightened condition and Opportunity Attacks all use this.
+_Avoid_: Line of sight, visible to
+
+**Downed**:
+A party member at 0 Hit Points that is dying or stable. For attack rolls it has the Unconscious condition, and so the Prone condition, without either being listed on it.
+_Avoid_: Down, knocked out
 
 **Modeled ability**:
 An ability the engine can run from its structured effects. Every other ability is an **unmodeled ability**: it keeps only its text, and the agent resolves it as agent judgment.
