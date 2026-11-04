@@ -1215,7 +1215,8 @@ fn move_combatant(
         .unwrap_or(0);
     if feet < cost {
         return Err(EngineError::Illegal(format!("movement requires {cost} feet")));
-    }    let provoked: Vec<String> = if band == RangeBand::Engaged {
+    }
+    let provoked: Vec<String> = if band == RangeBand::Engaged {
         vec![]
     } else {
         others
