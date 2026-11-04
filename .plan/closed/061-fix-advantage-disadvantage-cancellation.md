@@ -53,7 +53,7 @@ Consult `tdd`, `codebase-design` and `code-review`.
 
 Built on branch `ticket-061-fix-advantage-disadvantage-cancellation`.
 
-- `combined_disposition` in `bench-core/src/engine.rs` holds the PHB rule: it takes any number of dispositions, sets one Advantage flag and one Disadvantage flag, and returns `Advantage` or `Disadvantage` when only one is set, otherwise `Normal`. Ticket 060 feeds its save sources (and the lighting sources for attacks) into this same function.
+- `combined_disposition` in `bench-core/src/engine.rs` holds the PHB rule: it takes any number of dispositions, sets one Advantage flag and one Disadvantage flag, and returns `Advantage` or `Disadvantage` when only one is set, otherwise `Normal`. Ticket 060 is to feed its save sources (and the lighting sources for attacks) into this same function.
 - `disposition` now collects its sources and passes them to the helper: the actor's conditions, the target's conditions, Invisible on either side, and the actor's timed modifiers through `modifier_dispositions`, which replaces `apply_modifier_target_disposition`. Its unused `default` parameter is gone. `improve` and `worsen` had no other callers and are removed.
 - The condition list did not change. The attack still draws two d20s, so the dice stream does not move.
 - New tests: two Advantages and one Disadvantage, one and two, and two of each roll straight; two of one kind keep that kind; every order of five source lists gives the same result; the Invisible, Poisoned attacker against a Paralyzed target rolls straight (it rolled with Advantage before); two timed Advantages plus Blinded roll straight. The old chain gave Advantage in both of the last two cases. `disposition_blinded_gives_disadvantage` still passes.
