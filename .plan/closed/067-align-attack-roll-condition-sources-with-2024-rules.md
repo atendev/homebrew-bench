@@ -55,8 +55,8 @@ What the code does today: the attack disposition reads the actor's Blinded, Frig
 Left out:
 
 - See Invisibility and homebrew "sees invisible creatures" traits. Nothing in the effect vocabulary says a combatant sees Invisible creatures, so the agent removes the Invisible condition by override when such a creature attacks. Recorded in Not yet specified.
-- Condition effects on saving throws: Paralyzed, Stunned, Petrified and Unconscious auto-fail Strength and Dexterity saves, and Restrained has Disadvantage on Dexterity saves. The engine applies none of them. They move batch numbers too, so after the audit they became build ticket [069](../tickets/069-build-saving-throw-condition-sources.md), which waits on ticket 060's save disposition and lands before 056's regeneration.
+- Condition effects on saving throws: Paralyzed, Stunned, Petrified and Unconscious auto-fail Strength and Dexterity saves, and Restrained has Disadvantage on Dexterity saves. The engine applies none of them. They move batch numbers too, so after the audit they became build ticket [069](069-build-saving-throw-condition-sources.md), which waits on ticket 060's save disposition and lands before 056's regeneration.
 - Grapples ending when the grappler is Incapacitated, and Frightened's "can't approach" movement rule. These change when conditions end or where creatures move, not attack rolls.
 - Darkness and Heavily Obscured areas. The Darkness fog item stays, and now has its sense-range question answered by this decision.
 
-Build tickets: [Build attack-roll condition sources](068-build-attack-roll-condition-sources.md) and [Build saving-throw condition sources](../tickets/069-build-saving-throw-condition-sources.md). ADR: [0017](../../docs/adr/0017-position-worded-rules-read-through-engagement-and-senses.md).
+Build tickets: [Build attack-roll condition sources](068-build-attack-roll-condition-sources.md) and [Build saving-throw condition sources](069-build-saving-throw-condition-sources.md). ADR: [0017](../../docs/adr/0017-position-worded-rules-read-through-engagement-and-senses.md).

@@ -497,7 +497,7 @@ fn resolve_effect(
                 let target = state.combatants[target_index].clone();
                 let actor = state.combatants[index_of(state, actor_id)?].clone();
                 let advantage = disposition(state, &actor, &target);
-                let note = lighting_note(state, &actor, Roll::Attack);
+                let note = disposition_note(advantage, lighting_sources(state, &actor, Roll::Attack));
                 let d20a = stream.roll_die(20);
                 let d20a = player_roll(state, actor_id, 20, d20a);
                 let d20b = stream.roll_die(20);
@@ -721,19 +721,25 @@ fn resolve_save(
     let modifier = block.saving_throws.get(&save.ability).copied()
         .unwrap_or_else(|| block.ability_scores.modifier(save.ability))
         + save_modifier(state, &target, save.ability);
-    let (roll, note) = save_d20(state, stream, target_id, save.ability)?;
-    let success = roll as i32 + modifier >= save.dc;
-    let marked = state.player_dice.all_entered_since(target_id);
-    events.push(EngineEvent {
-        kind: "save".into(),
-        message: format!("{target_id} {} the save{note}", if success { "passes" } else { "fails" }),
-        actor_id: Some(actor_id.into()),
-        target_id: Some(target_id.into()),
-        roll: Some(roll),
-        total: Some(roll as i32 + modifier),
-        damage: None,
-        player_dice: marked,
-    });
+    let success = if let Some(message) = automatic_save_failure(&target, save.ability) {
+        events.push(event("save", message, actor_id, target_id));
+        false
+    } else {
+        let (roll, note) = save_d20(state, stream, target_id, save.ability)?;
+        let success = roll as i32 + modifier >= save.dc;
+        let marked = state.player_dice.all_entered_since(target_id);
+        events.push(EngineEvent {
+            kind: "save".into(),
+            message: format!("{target_id} {} the save{note}", if success { "passes" } else { "fails" }),
+            actor_id: Some(actor_id.into()),
+            target_id: Some(target_id.into()),
+            roll: Some(roll),
+            total: Some(roll as i32 + modifier),
+            damage: None,
+            player_dice: marked,
+        });
+        success
+    };
     if !success {
         for effect in &save.on_failure {
             resolve_effect(state, stream, actor_id, effect.clone(), &[target_id.to_string()], events)?;
@@ -1977,6 +1983,10 @@ fn process_repeat_saves(state: &mut EncounterState, combatant_id: &str, events: 
     let mut stream = Stream::from_state(state.rng.clone());
     for idx in conditions_to_check.into_iter().rev() {
         if let Duration::UntilSave { ability } = state.combatants[i].conditions[idx].duration {
+            if let Some(message) = automatic_save_failure(&state.combatants[i], ability) {
+                events.push(event("repeat_save", message, combatant_id, combatant_id));
+                continue;
+            }
             let block = stat_block(state, &state.combatants[i])?;
             let modifier = block.saving_throws.get(&ability)
                 .copied()
@@ -2404,9 +2414,28 @@ fn automatic_critical(actor: &Combatant, target: &Combatant) -> Option<&'static 
     }
 }
 
+/// The event message when `saver` fails a save with `ability` without rolling: Paralyzed, Petrified,
+/// Stunned and Unconscious (or downed, as for attacks) fail Strength and Dexterity saves.
+pub(crate) fn automatic_save_failure(saver: &Combatant, ability: Ability) -> Option<String> {
+    let word = match ability {
+        Ability::Str => "Strength",
+        Ability::Dex => "Dexterity",
+        _ => return None,
+    };
+    let has = |condition: Condition| saver.conditions.iter().any(|i| i.condition == condition);
+    let why = [(Condition::Paralyzed, "paralyzed"), (Condition::Petrified, "petrified"), (Condition::Stunned, "stunned")]
+        .into_iter()
+        .find(|(c, _)| has(*c))
+        .map(|(_, why)| why)
+        .or(counts_as_unconscious(saver).then_some("unconscious"))?;
+    Some(format!("{} fails the save automatically ({why}, {word})", saver.id))
+}
+
 fn save_d20(state: &mut EncounterState, stream: &mut Stream, saver_id: &str, ability: Ability) -> Result<(u32, String), EngineError> {
     let saver = &state.combatants[index_of(state, saver_id)?];
-    let (advantage, note) = (save_disposition(state, saver, ability), lighting_note(state, saver, Roll::Save(ability)));
+    let sources = save_sources(state, saver, ability);
+    let advantage = combined_disposition(sources.iter().map(|(d, _)| *d));
+    let note = disposition_note(advantage, sources);
     let first = stream.roll_die(20);
     let first = player_roll(state, saver_id, 20, first);
     let roll = match advantage {
@@ -2420,9 +2449,28 @@ fn save_d20(state: &mut EncounterState, stream: &mut Stream, saver_id: &str, abi
     Ok((roll, note))
 }
 
-fn save_disposition(state: &EncounterState, target: &Combatant, ability: Ability) -> RollDisposition {
-    let sources = lighting_modifiers(state, target, Roll::Save(ability)).into_iter().map(|(d, _)| d);
-    combined_disposition(sources)
+pub(crate) fn save_disposition(state: &EncounterState, target: &Combatant, ability: Ability) -> RollDisposition {
+    combined_disposition(save_sources(state, target, ability).into_iter().map(|(d, _)| d))
+}
+
+/// Every Advantage and Disadvantage source on a save, named for the event note: lighting traits,
+/// Restrained on Dexterity, and the saver's timed modifiers. Legacy modifiers (saved before 0.1.6)
+/// give none, as on 0.1.5.
+fn save_sources(state: &EncounterState, target: &Combatant, ability: Ability) -> Vec<(RollDisposition, String)> {
+    let mut sources = lighting_sources(state, target, Roll::Save(ability));
+    if ability == Ability::Dex && target.conditions.iter().any(|i| i.condition == Condition::Restrained) {
+        sources.push((RollDisposition::Disadvantage, "restrained".into()));
+    }
+    let timed = state.modifiers_on(&target.id).filter(|m| !m.is_legacy() && reaches(&m.target, Roll::Save(ability)));
+    sources.extend(timed.filter_map(|m| {
+        let name = m.source_ability.clone().unwrap_or_else(|| "timed modifier".into());
+        match m.change {
+            ModifierChange::Advantage => Some((RollDisposition::Advantage, name)),
+            ModifierChange::Disadvantage => Some((RollDisposition::Disadvantage, name)),
+            _ => None,
+        }
+    }));
+    sources
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -2456,18 +2504,26 @@ fn reaches(target: &ModifierTarget, roll: Roll) -> bool {
     }
 }
 
-fn lighting_note(state: &EncounterState, combatant: &Combatant, roll: Roll) -> String {
+fn lighting_sources(state: &EncounterState, combatant: &Combatant, roll: Roll) -> Vec<(RollDisposition, String)> {
     let light = state.settings.lighting.as_str().replace('_', " ");
-    let mut named: Vec<(RollDisposition, &str)> = vec![];
-    for source in lighting_modifiers(state, combatant, roll) {
-        if source.0 != RollDisposition::Normal && !named.contains(&source) {
-            named.push(source);
+    lighting_modifiers(state, combatant, roll).into_iter().map(|(d, name)| (d, format!("{name}, {light}"))).collect()
+}
+
+/// The event note for a roll made with `combined`: each distinct source that points the same way,
+/// as ` (Advantage: Sun Glow, sunlight)`. A straight roll gets no note, even when sources cancelled.
+fn disposition_note(combined: RollDisposition, sources: Vec<(RollDisposition, String)>) -> String {
+    let word = match combined {
+        RollDisposition::Advantage => "Advantage",
+        RollDisposition::Disadvantage => "Disadvantage",
+        RollDisposition::Normal => return String::new(),
+    };
+    let mut named: Vec<String> = vec![];
+    for (_, name) in sources.into_iter().filter(|(d, _)| *d == combined) {
+        if !named.contains(&name) {
+            named.push(name);
         }
     }
-    named
-        .into_iter()
-        .map(|(d, name)| format!(" ({}: {name}, {light})", if d == RollDisposition::Advantage { "Advantage" } else { "Disadvantage" }))
-        .collect()
+    named.into_iter().map(|name| format!(" ({word}: {name})")).collect()
 }
 
 /// The PHB rule for Advantage and Disadvantage (glossary "Advantage", p. 359): a roll has at most one
@@ -2509,12 +2565,8 @@ fn attack_modifier(state: &EncounterState, actor: &Combatant) -> Result<i32, Eng
 }
 
 /// Compute save modifier from timed modifiers.
-fn save_modifier(state: &EncounterState, target: &Combatant, ability: Ability) -> i32 {
-    added(state, &target.id, |t| match t {
-        ModifierTarget::SavingThrows { ability: Some(a) } => *a == ability,
-        ModifierTarget::SavingThrows { ability: None } => true,
-        _ => false,
-    })
+pub(crate) fn save_modifier(state: &EncounterState, target: &Combatant, ability: Ability) -> i32 {
+    added(state, &target.id, |t| reaches(t, Roll::Save(ability)))
 }
 
 /// Compute AC modifier from timed modifiers.
@@ -5864,5 +5916,181 @@ mod tests {
         blinded.combatants[1].conditions.push(sourced(Condition::Blinded, None));
         let events = move_combatant(&mut blinded, "a", None, RangeBand::Far, 35, &[], &[]).unwrap();
         assert!(events.iter().any(|e| e.message == "ASSUMPTION b is blinded and cannot see a, so it makes no Opportunity Attack on a"), "{events:?}");
+    }
+
+    #[test]
+    fn haste_gives_its_bearer_advantage_on_dexterity_saves_and_the_caster_none() {
+        let mut state = caster_and(true, "haste");
+        act(&mut state, "mage", "haste", &["other"]).unwrap();
+        let disposition_of = |id: &str, ability| save_disposition(&state, &state.combatants[index_of(&state, id).unwrap()], ability);
+        assert_eq!(disposition_of("other", Ability::Dex), RollDisposition::Advantage);
+        assert_eq!(disposition_of("other", Ability::Str), RollDisposition::Normal);
+        assert_eq!(disposition_of("mage", Ability::Dex), RollDisposition::Normal);
+    }
+
+    fn save_on(ability: Ability) -> crate::effect::SavingThrow {
+        crate::effect::SavingThrow { ability, ..dex_save() }
+    }
+
+    fn saver_with(conditions: &[Condition]) -> EncounterState {
+        let mut state = lit(test_stat_block("saver", "Saver", 50, 10), crate::effect::Lighting::Unspecified);
+        state.combatants[0].conditions.extend(conditions.iter().map(|c| sourced(*c, None)));
+        state
+    }
+
+    /// The `saver` makes `save` against the fighter on `seed`: its save event, every event, and the stream after it.
+    fn save_by(state: &mut EncounterState, save: crate::effect::SavingThrow, seed: u64) -> (EngineEvent, Vec<EngineEvent>, RngState) {
+        let mut stream = Stream::from_seed(seed);
+        let mut events = vec![];
+        resolve_save(state, &mut stream, "fighter", "saver", &save, &mut events).unwrap();
+        (events.iter().find(|e| e.kind == "save").unwrap().clone(), events, stream.state())
+    }
+
+    #[test]
+    fn a_restrained_target_has_disadvantage_on_dexterity_saves_only() {
+        for seed in 0..10 {
+            let mut probe = Stream::from_seed(seed);
+            let (a, b) = (probe.roll_die(20), probe.roll_die(20));
+            let (event, _, after) = save_by(&mut saver_with(&[Condition::Restrained]), save_on(Ability::Dex), seed);
+            assert_eq!((event.roll, after), (Some(a.min(b)), probe.state()));
+            let mut probe = Stream::from_seed(seed);
+            let a = probe.roll_die(20);
+            let (event, _, after) = save_by(&mut saver_with(&[Condition::Restrained]), save_on(Ability::Str), seed);
+            assert_eq!((event.roll, after), (Some(a), probe.state()));
+        }
+    }
+
+    #[test]
+    fn an_advantage_source_cancels_restrained_on_a_dexterity_save() {
+        let mut sunlit = saver_with(&[Condition::Restrained]);
+        sunlit.stat_blocks[0].stat_block.traits.push(save_trait("Sun Glow", "advantage"));
+        sunlit.settings.lighting = crate::effect::Lighting::Sunlight;
+        let mut hasted = saver_with(&[Condition::Restrained]);
+        hasted.active_modifiers.push(borne("saver", "fighter", Some("haste"), ModifierTarget::SavingThrows { ability: Some(Ability::Dex) }, ModifierChange::Advantage));
+        for state in [&sunlit, &hasted] {
+            assert_eq!(save_disposition(state, &state.combatants[0], Ability::Dex), RollDisposition::Normal);
+            let mut probe = Stream::from_seed(4);
+            let a = probe.roll_die(20);
+            let (event, _, after) = save_by(&mut state.clone(), save_on(Ability::Dex), 4);
+            assert_eq!((event.roll, after), (Some(a), probe.state()));
+        }
+    }
+
+    #[test]
+    fn incapacitating_conditions_fail_strength_and_dexterity_saves_without_a_die() {
+        let named = [(Condition::Paralyzed, "paralyzed"), (Condition::Petrified, "petrified"), (Condition::Stunned, "stunned"), (Condition::Unconscious, "unconscious")];
+        for (condition, name) in named {
+            for (ability, word) in [(Ability::Str, "Strength"), (Ability::Dex, "Dexterity")] {
+                let (event, _, after) = save_by(&mut saver_with(&[condition]), save_on(ability), 5);
+                assert_eq!(after, Stream::from_seed(5).state(), "{name} {word} draws no die");
+                assert_eq!(event.message, format!("saver fails the save automatically ({name}, {word})"));
+                assert_eq!((event.roll, event.total), (None, None));
+            }
+        }
+    }
+
+    #[test]
+    fn a_paralyzed_target_rolls_a_constitution_save() {
+        let mut probe = Stream::from_seed(5);
+        let a = probe.roll_die(20);
+        let (event, _, after) = save_by(&mut saver_with(&[Condition::Paralyzed]), save_on(Ability::Con), 5);
+        assert_eq!((event.roll, after), (Some(a), probe.state()));
+    }
+
+    #[test]
+    fn a_downed_or_stable_pc_fails_a_dexterity_save_automatically() {
+        for down in [EndState::Unconscious, EndState::Stable] {
+            let mut state = saver_with(&[]);
+            state.combatants[0].hp = 0;
+            state.combatants[0].end_state = down;
+            let (event, _, after) = save_by(&mut state, save_on(Ability::Dex), 5);
+            assert_eq!(after, Stream::from_seed(5).state(), "{down:?}");
+            assert_eq!(event.message, "saver fails the save automatically (unconscious, Dexterity)");
+        }
+    }
+
+    #[test]
+    fn an_automatically_failed_pc_save_prompts_nothing() {
+        let mut state = lit(pc_block("saver", 20), crate::effect::Lighting::Unspecified);
+        state.settings.pc_dice = PcDice::Ask;
+        state.combatants[0].conditions.push(sourced(Condition::Stunned, None));
+        save_by(&mut state, save_on(Ability::Dex), 1);
+        assert_eq!(state.player_dice.next_prompt(), None);
+    }
+
+    #[test]
+    fn an_automatic_failure_applies_the_failed_save_effects() {
+        let save = crate::effect::SavingThrow {
+            dc: 100,
+            damage: vec![gated("1d1", 2, DamageType::Fire, None, false)],
+            on_failure: vec![fx(serde_json::json!({"condition": {"condition": "prone", "duration": "permanent"}}))],
+            ..dex_save()
+        };
+        let mut rolled = saver_with(&[]);
+        let (event, _, _) = save_by(&mut rolled, save.clone(), 5);
+        assert!(event.roll.is_some());
+        let mut automatic = saver_with(&[Condition::Paralyzed]);
+        let (event, _, _) = save_by(&mut automatic, save, 5);
+        assert!(event.roll.is_none());
+        for state in [&rolled, &automatic] {
+            assert_eq!(state.combatants[0].hp, 47);
+            assert!(state.combatants[0].conditions.iter().any(|i| i.condition == Condition::Prone));
+        }
+    }
+
+    #[test]
+    fn a_stunned_creature_fails_its_strength_repeat_save_without_a_die() {
+        let mut state = saver_with(&[Condition::Stunned]);
+        state.combatants[0].conditions.push(ConditionInstance {
+            condition: Condition::Restrained,
+            duration: Duration::UntilSave { ability: Ability::Str },
+            source: None,
+            ends_on_damage: false,
+        });
+        let before = state.rng.clone();
+        let mut events = vec![];
+        process_repeat_saves(&mut state, "saver", &mut events).unwrap();
+        assert_eq!(state.rng, before);
+        assert_eq!(events[0].message, "saver fails the save automatically (stunned, Strength)");
+        assert_eq!(events[0].kind, "repeat_save");
+        assert_eq!(state.combatants[0].conditions.len(), 2);
+    }
+
+    #[test]
+    fn a_legacy_save_modifier_gives_no_advantage_as_on_0_1_5() {
+        let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/data/engine-0.1.5-state.json");
+        let state = crate::store::load(&path, crate::store::VersionCheck::Require).expect("an engine 0.1.5 state loads");
+        assert!(state.active_modifiers.iter().any(|m| m.is_legacy() && matches!(m.change, ModifierChange::Advantage)));
+        let caster = &state.combatants[index_of(&state, CASTER).unwrap()];
+        assert_eq!(save_disposition(&state, caster, Ability::Dex), RollDisposition::Normal);
+    }
+
+    #[test]
+    fn a_save_note_names_every_source_behind_the_roll_and_nothing_when_they_cancel() {
+        let (event, _, _) = save_by(&mut saver_with(&[Condition::Restrained]), save_on(Ability::Dex), 4);
+        assert!(event.message.ends_with("the save (Disadvantage: restrained)"), "{}", event.message);
+
+        let mut hasted = saver_with(&[]);
+        hasted.active_modifiers.push(borne("saver", "fighter", Some("haste"), ModifierTarget::SavingThrows { ability: Some(Ability::Dex) }, ModifierChange::Advantage));
+        let (event, _, _) = save_by(&mut hasted, save_on(Ability::Dex), 4);
+        assert!(event.message.ends_with("the save (Advantage: haste)"), "{}", event.message);
+
+        let mut sunlit = saver_with(&[Condition::Restrained]);
+        sunlit.stat_blocks[0].stat_block.traits.push(save_trait("Sun Glow", "advantage"));
+        sunlit.settings.lighting = crate::effect::Lighting::Sunlight;
+        let (event, _, _) = save_by(&mut sunlit, save_on(Ability::Dex), 4);
+        assert!(event.message.ends_with("the save"), "{}", event.message);
+    }
+
+    #[test]
+    fn an_attack_note_is_empty_when_lighting_is_cancelled() {
+        let mut state = lit(fixture_block("kobold-warrior"), crate::effect::Lighting::Sunlight);
+        state.combatants[1].conditions.push(sourced(Condition::Blinded, None));
+        assert_eq!(disposition(&state, &state.combatants[0], &state.combatants[1]), RollDisposition::Normal);
+        let effect = stat_block(&state, &state.combatants[0]).unwrap().actions[0].effects[0].clone();
+        let mut events = vec![];
+        resolve_effect(&mut state, &mut Stream::from_seed(3), "kobold-warrior", effect, &["fighter".into()], &mut events).unwrap();
+        let attack = events.into_iter().find(|e| e.kind == "attack").unwrap().message;
+        assert!(!attack.contains("Sunlight"), "{attack}");
     }
 }

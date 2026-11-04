@@ -26,6 +26,7 @@ Scoring:
 - `TempHp` and `RollModifier` share the zero-value arm and stay at zero.
 - Fix `disposition` in `tactics.rs`: it sums and clamps, so an attacker with two Advantage sources and one Disadvantage source scores as Advantage. Use the two-flag rule from ticket 061 (both or neither is straight), with a test that two of one and one of the other score straight.
 - The policy's `disposition` must also read the sources [Align attack-roll condition sources](../closed/067-align-attack-roll-condition-sources-with-2024-rules.md) added (ADR 0017): Prone by engagement, Grappled and Frightened by `source`, Invisible through the sight rule, downed PCs as Unconscious. Call the engine's `disposition` (ticket [068](../closed/068-build-attack-roll-condition-sources.md) makes it `pub(crate)`) instead of keeping a second list, reading engagement as the plan leaves it when the plan moves, and test that a ranged plan against a Prone target scores Disadvantage.
+- The policy's saving-throw value (`p_success` in `effect_value`) reads no save sources: it misses the automatic Strength and Dexterity failures, Restrained's Dexterity Disadvantage, lighting and timed save modifiers (Haste). Ticket [069](../closed/069-build-saving-throw-condition-sources.md) makes the engine's `automatic_save_failure`, `save_disposition` and `save_modifier` `pub(crate)`; call them instead of a second list, and test that a Dexterity save against a Paralyzed target scores as a certain failure.
 - Check how far standard-party cells shift when caster Haste starts scoring, from a scratch run outside the repo, and record it in the Resolution.
 - The batch report's method sentence: rewrite the "gives buffs and other unscored effects no value" half. 063 already rewrote the reactions half.
 
@@ -39,7 +40,7 @@ Baseline: regenerate `data/baseline/curve.json` once, with lighting `unspecified
 - [Build modifier bearers and Speed modifiers](../closed/065-build-modifier-bearers-and-speed-modifiers.md) moves the engine version and makes Speed modifiers count.
 - [Build Haste extra action and lethargy](../closed/066-build-haste-extra-action-and-lethargy.md) moves the engine version.
 - [Build attack-roll condition sources](../closed/068-build-attack-roll-condition-sources.md) moves the engine version.
-- [Build saving-throw condition sources](069-build-saving-throw-condition-sources.md) moves the engine version.
+- [Build saving-throw condition sources](../closed/069-build-saving-throw-condition-sources.md) moves the engine version.
 
 After the regeneration, clean up the stale-curve allowances so the tests again require a fresh curve:
 - Remove all four accepted reasons (engine, fixture set, party, policy) from `stale_beyond_the_engine` in `bench-core/tests/calibration.rs` and from `batch_compares_against_the_embedded_curve_outside_the_repo` in `bench/tests/cli.rs`.
