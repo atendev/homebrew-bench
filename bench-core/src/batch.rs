@@ -1323,6 +1323,21 @@ mod tests {
     }
 
     #[test]
+    fn a_monster_takes_a_policy_opportunity_attack_on_a_caster_stepping_out() {
+        let mut rat = fixture("giant-rat");
+        rat.hit_points.average = 200;
+        let s = spec(rat, vec![5], 20);
+        let logs: Vec<String> = (0..20).map(|i| replay_fight(&s, fight_index(5, i, 20)).unwrap().log.unwrap()).collect();
+        let all = logs.join("\n");
+        assert!(all.contains("    giant-rat: Opportunity Attack on standard-caster-05 (bite, expected "), "no Opportunity Attack fired");
+        assert!(all.contains("OPPORTUNITY ATTACK giant-rat on standard-caster-05 (reaction)"));
+        let lines: Vec<&str> = all.lines().collect();
+        for pair in lines.windows(2) {
+            assert!(!(pair[0].contains("holds its reaction against") && pair[1].contains("may use an Opportunity Attack")), "{pair:?}");
+        }
+    }
+
+    #[test]
     fn replay_command_quotes_the_invocation_and_names_the_level_for_partial_parties() {
         let mut s = spec(fixture("ogre"), vec![1], 4);
         assert_eq!(replay_command(&s, 2), "bench batch ogre --seed 42 --fight 2 --fights 4");

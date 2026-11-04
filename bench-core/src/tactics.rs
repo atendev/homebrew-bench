@@ -1792,7 +1792,8 @@ mod tests {
 
     #[test]
     fn the_step_out_penalty_is_the_value_of_the_attacks_the_decider_takes() {
-        let state = skirmish();
+        let mut state = skirmish();
+        snapshot(&mut state, "archer").actions = vec![ranged("bow", 5, "4d10")];
         let value = pick(&state, "brute", "archer").value;
         assert!(value > 0.0);
         assert_eq!(penalty(&state), value);
@@ -1800,9 +1801,9 @@ mod tests {
         assert_eq!(answer, ReactionAnswer::Take("claw".into()));
         assert_eq!(reason, format!("brute: Opportunity Attack on archer (claw, expected {value:.1} > reserve 0.0)"));
         let plan = choose_action(&state, "archer");
-        if !plan.movement.is_empty() {
-            assert!(plan.reason.contains(&format!("despite {value:.1} opportunity damage")), "{}", plan.reason);
-        }
+        assert_eq!(plan.movement.len(), 1, "{}", plan.reason);
+        assert!(plan.reason.contains(&format!("despite {value:.1} opportunity damage")), "{}", plan.reason);
+        assert!((plan.survival + value).abs() < 1e-9, "{}", plan.survival);
     }
 
     #[test]
@@ -1901,20 +1902,24 @@ mod tests {
         for id in &ids {
             engage(&mut state, "knight", id);
         }
+        state.combatants.iter_mut().find(|c| c.id == "standard-caster-11").unwrap().hp = 1;
         let constants = PolicyConstants::default();
         let ctx = ctx(&state, &constants);
         let knight = ctx.combatant("knight").unwrap();
         let (_, largest) = ctx.incoming_attack_rolls(knight, AttackFilter::Melee);
         let held = ctx.reaction_reserve(knight);
         assert!(held > 0.0 && held <= largest + 1e-9, "{held} vs {largest}");
+        let mut above = 0;
         for id in &ids {
             let decision = ctx.opportunity_decision(knight, ctx.combatant(id).unwrap());
             let value = decision.pick.as_ref().unwrap().value;
             assert_eq!(decision.taken().is_some(), value > held, "{id}");
             if value > largest {
                 assert!(decision.taken().is_some(), "{id}");
+                above += 1;
             }
         }
+        assert!(above > 0, "no party member is worth more than the largest hit {largest}");
     }
 
     #[test]

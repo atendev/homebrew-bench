@@ -1239,11 +1239,14 @@ fn move_combatant(
         .collect::<Result<Vec<_>, EngineError>>()?;
     let mut attacking: Vec<String> = opportunity.iter().map(|oa| oa.reactor_id.clone()).collect();
     let mut reasons = Vec::new();
+    let mut held: Vec<String> = Vec::new();
     if state.settings.reaction_windows {
         let open: Vec<String> = provoked.iter().filter(|id| !attacking.contains(id) && !declined.contains(id)).cloned().collect();
         for window in opportunity_windows(state, i, &open) {
+            let logged = reasons.len();
             match ask(state, window.clone(), &mut reasons) {
                 None => return Ok(vec![]),
+                Some(ReactionAnswer::Pass) if reasons.len() > logged => held.push(window.reactor_id),
                 Some(ReactionAnswer::Pass) => {}
                 Some(ReactionAnswer::Take(id)) => {
                     let reactor_id = window.reactor_id;
@@ -1285,7 +1288,7 @@ fn move_combatant(
     for (other, _) in &others {
         set_band(state, i, actor_id, other, band)?;
     }
-    for reactor_id in provoked.iter().filter(|id| !attacking.contains(id) && !declined.contains(id)) {
+    for reactor_id in provoked.iter().filter(|id| !attacking.contains(id) && !declined.contains(id) && !held.contains(id)) {
         let r = index_of(state, reactor_id)?;
         match opportunity_eligibility(state, r, i) {
             Ok(()) => events.push(event(
@@ -4953,8 +4956,10 @@ mod tests {
     fn a_caster_holds_its_reaction_for_shield_until_its_slots_run_out() {
         let base = stepping_out(fixture_block("ogre"), party_block(CASTER));
         let mut held = base.clone();
-        let lines: Vec<String> = reasons(&step_out(&mut held)).into_iter().map(String::from).collect();
+        let events = step_out(&mut held);
+        let lines = reasons(&events);
         assert!(lines.len() == 1 && lines[0].starts_with(&format!("{CASTER}: holds its reaction against ogre (dagger, expected ")), "{lines:?}");
+        assert!(events.iter().all(|e| e.kind != "opportunity_attack"), "a held reaction leaves no notice: {events:?}");
         assert!(!held.combatants[1].action_economy.reaction_used);
         let mut spent = base.clone();
         spent.combatants[1].resources.insert(format!("{CASTER}:slot:1"), 4);
