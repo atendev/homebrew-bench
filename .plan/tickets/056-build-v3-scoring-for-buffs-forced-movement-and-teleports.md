@@ -20,7 +20,7 @@ Policy v3 has two halves. [Build batch reactions policy](063-build-batch-reactio
 
 Scoring:
 - Buffs use 063's named constant for one AC point (0.1) instead of a second literal.
-- Teleports score the Opportunity Attacks they avoid by calling 063's penalty function: eligible engaged reactors the policy would attack with, each at its `opportunity_value`. This replaces ticket 045's "sum of `best_single_attack` over engaged foes that still have their reaction", because 046 decided the mover prices only the attacks the policy really takes.
+- Teleports score the Opportunity Attacks they avoid by calling 063's penalty function: eligible engaged reactors the policy would attack with, each at its `opportunity_value`. This replaces ticket 045's "sum of `best_single_attack` over engaged foes that still have their reaction", because 046 decided the mover prices only the attacks the policy really takes. The penalty and the reserve return 0 at or past `MAX_THREAT_NESTING` (063 builds that guard), because the teleport score calls the penalty, which reaches `threat()` and `ability_value` and can come back to a teleport. Keep the guard, and add a test: a stat block whose actions include a teleport and a Multiattack that uses it, engaged with a reactor that has Parry, gets a plan without overflowing the stack, as the Dryad test does for control.
 - `TempHp` and `RollModifier` share the zero-value arm and stay at zero.
 - Fix `disposition` in `tactics.rs`: it sums and clamps, so an attacker with two Advantage sources and one Disadvantage source scores as Advantage. Use the two-flag rule from ticket 061 (both or neither is straight), with a test that two of one and one of the other score straight.
 - Check how far standard-party cells shift when caster Haste starts scoring, from a scratch run outside the repo, and record it in the Resolution.
@@ -36,7 +36,7 @@ Baseline: regenerate `data/baseline/curve.json` once, with lighting `unspecified
 
 After the regeneration, clean up the stale-curve allowances so the tests again require a fresh curve:
 - Remove all four accepted reasons (engine, fixture set, party, policy) from `stale_beyond_the_engine` in `bench-core/tests/calibration.rs` and from `batch_compares_against_the_embedded_curve_outside_the_repo` in `bench/tests/cli.rs`.
-- Remove the `#[ignore]` that 063 put on `a_fixture_regenerates_to_its_committed_row`.
+- Remove the `#[ignore]` on `a_fixture_regenerates_to_its_committed_row`, whichever ticket added it (059, 061 or 063).
 
 Report how the dragon cells moved between the old curve and the new one in the Resolution. [Do dragons still read above their CR on the v3 curve](064-do-dragons-still-read-above-cr-on-the-v3-curve.md) reads them next.
 

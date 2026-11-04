@@ -43,6 +43,7 @@ Docs:
 Versions and baseline:
 
 - Bump the workspace version, and with it `ENGINE_VERSION`, by one patch from what `master` holds when this lands: 0.1.3 if ticket 059 has already moved it to 0.1.2, otherwise 0.1.2, in which case 059 takes 0.1.3. Batch numbers can change wherever a fight had mixed sources. Don't regenerate `data/baseline/curve.json`. The engine stale reason is already accepted by `stale_beyond_the_engine` in `bench-core/tests/calibration.rs` and by the CLI test `batch_compares_against_the_embedded_curve_outside_the_repo`.
+- `a_fixture_regenerates_to_its_committed_row` in `bench-core/tests/calibration.rs` regenerates goblin-warrior and compares it with the committed curve row. If the row differs and the test is not ignored yet, add `#[ignore = "curve stale until ticket 056 regenerates it"]`. Don't edit the committed row. Ticket 056 removes the ignore.
 - Ticket 056 waits on this ticket so its one regeneration covers the fix.
 - Ticket 059 also edits `engine.rs` (casting) and `CHANGELOG.md`. Neither has to land first; the second rebases.
 

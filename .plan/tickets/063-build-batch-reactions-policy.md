@@ -24,13 +24,16 @@ Policy (`bench-core/src/tactics.rs`):
 - `POLICY_VERSION = 3`.
 - A named constant for the value of one AC point against one round of incoming damage, `0.1`. Ticket 056 reuses it for `TimedModifier` AC buffs, so put it where both can read it.
 - `ac_bonus(block, option)`: the AC bonus n a hit-trigger reaction gives, read from its `timed_modifier` on `armor_class` (through `bound_cast_effects` for a cast such as Shield). Options with no AC bonus have n = 0 and are never taken.
-- `reaction_reserve(reactor)`: `0.1 × n × incoming(reactor)` for the reactor's best ready hit-trigger reaction ("ready" means `ability_ready` and an open slot), else 0.
+- `reaction_reserve(reactor)`: for the reactor's best ready hit-trigger reaction ("ready" means `ability_ready` and an open slot), `min(0.1 × n × D, H)`, else 0. Don't use `incoming()`: it sums `threat()`, which counts save damage and healing.
+  - D is the expected damage from attack rolls the reactor's active opponents deal it: for each opponent, its best ready action counting only `Attack` effects (walking Multiattack steps; saves, areas, heals and non-attack casts add nothing). A reaction whose trigger filter is `melee` counts only attacks with `range: None`; `ranged` only ranged ones.
+  - H is the largest average damage on a hit (dice average plus modifier, after the reactor's resistances) of any one matching attack among those opponents.
 - `opportunity_value(reactor, mover)`: the highest expected damage among the reactor's at-will single melee attacks (the same leaves `opportunity_attack_action` walks, cast steps skipped) against the mover, capped at the mover's hit points, plus `threat(mover)` when the damage would drop it. Return the chosen attack id with it. Ties keep stat-block order.
 - A public decider entry point the batch runner installs:
   - Hit window: among options with total < AC + n and no natural 20, take the one with no usage limit or slot first, then the lowest slot, then stat-block order. Otherwise pass.
   - Opportunity Attack window: take with the chosen attack id when `opportunity_value > reaction_reserve`, strictly. Otherwise pass.
   - The decision reads the state as the engine presents it at that window. No look-ahead.
 - Step-out penalty in `plan_for` (around line 470): replace `best_single_attack` with the sum of `opportunity_value` over engaged opponents that pass the engine's eligibility rule and that the decider would attack with. Keep the reason text. Ticket 056's teleport formula also prices avoided attacks, and it will call the same penalty function, so make it one function that both can call. Delete `best_single_attack` once nothing uses it.
+- Recursion guard: `opportunity_value`, `reaction_reserve` and the penalty function each take a level of `threat_nesting`, the way `threat()` does, and return 0 at or past `MAX_THREAT_NESTING`. Ticket 056's teleport score calls the penalty, which reaches the reserve and `threat()`, then `ability_value`, and could come back to the teleport score.
 - Log a reason line for every decided window, in the shape of plan reasons, such as `goblin-warrior: Opportunity Attack on standard-caster-03 (scimitar, expected 4.2 > reserve 0.0)` or `standard-caster-05: Shield (17 vs AC 13+5 turns the hit into a miss)`. Passed windows log one line too, so a sampled log shows why a reaction was held.
 
 Batch (`bench-core/src/batch.rs`):
@@ -45,6 +48,8 @@ Tests (write them first):
 - Opportunity Attack: a goblin with no hit reaction attacks a caster that steps out. A reactor whose reserve is above its attack value passes, and the same reactor with no slot left attacks. The chosen attack is the higher-damage melee leaf, not the first one.
 - An attack that would drop the mover adds the mover's threat to its value.
 - Penalty: a ranged step-out away from a Disengaged reactor, a no-provoke mover, a Blinded reactor and a reactor that would pass all price 0. A reactor with only a ranged attack prices 0. The penalty equals the summed `opportunity_value` of the reactors the decider would attack with.
+- Reserve: an opponent that deals only save damage (a breath weapon, no attack rolls) leaves a reserve of 0, so the reactor takes the Opportunity Attack. A healer opponent adds nothing. Parry's reserve counts melee attacks only. A reserve never exceeds the largest single matching hit: a Knight with Parry facing the level 11 party takes an Opportunity Attack whenever its attack value is above the largest single party hit.
+- Recursion: a stat block with a teleport action and a ranged attack, engaged with a reactor that has Parry, scores a step-out plan and returns. At `MAX_THREAT_NESTING` the penalty and the reserve are 0.
 - Determinism: the same seed gives the same batch log twice. `fingerprint` includes version 3.
 - Batch: a fixed-seed batch on goblin-warrior, the knight and one adult dragon at levels 1, 5 and 11 against `master`. Numbers are expected to move. Record each shift in the Resolution, and explain any shift you can't trace to a logged reaction.
 
@@ -57,10 +62,10 @@ Docs:
 Version and baseline:
 - `POLICY_VERSION` goes to 3 here and nowhere else. Don't bump `ENGINE_VERSION` for the window fields.
 - Don't regenerate `data/baseline/curve.json`. Add the policy stale reason ("the tactics policy is ... v3 and the curve used ... v2") to the allowances in `stale_beyond_the_engine` (`bench-core/tests/calibration.rs`) and in `batch_compares_against_the_embedded_curve_outside_the_repo` (`bench/tests/cli.rs`).
-- `a_fixture_regenerates_to_its_committed_row` regenerates goblin-warrior and compares it with the committed row. Goblins now make and take Opportunity Attacks and the caster casts Shield, so the row will differ. Mark the test `#[ignore = "curve stale until ticket 056 regenerates it"]`. Don't edit the committed row.
+- `a_fixture_regenerates_to_its_committed_row` regenerates goblin-warrior and compares it with the committed row. Goblins now make and take Opportunity Attacks and the caster casts Shield, so the row will differ. If the row differs and the test is not ignored yet, add `#[ignore = "curve stale until ticket 056 regenerates it"]`. Ticket 059 or 061 may have added it already. Don't edit the committed row.
 - `spellcasting_fixtures_keep_their_difficulty_bands` may shift. If a band moves, find the reaction behind it in the log before widening the expected set, and record it.
 
-Hand-off to 056: 056 reuses the AC point constant for `TimedModifier` and the penalty function for teleports, keeps `POLICY_VERSION = 3`, regenerates the curve once, removes all four stale allowances (engine, fixture set, party, policy) and un-ignores `a_fixture_regenerates_to_its_committed_row`.
+Hand-off to 056: 056 reuses the AC point constant for `TimedModifier` and the penalty function for teleports, keeps `POLICY_VERSION = 3` and the recursion guard, regenerates the curve once, removes all four stale allowances (engine, fixture set, party, policy) and removes the ignore on `a_fixture_regenerates_to_its_committed_row`, whichever ticket added it.
 
 Overlaps: `tactics.rs` is also touched by 056 (scoring) and 061 (`disposition` in the engine; 056 fixes the policy copy). `batch.rs`'s report sentence is shared with 056. Whichever lands second rebases.
 
