@@ -153,6 +153,9 @@ enum Commands {
         /// Spell slot level for every leveled spell the action casts, for a stat block with spell slots.
         #[arg(long)]
         slot: Option<u8>,
+        /// Spend the extra action a modifier grants (Haste) instead of the action; Haste's allows one attack.
+        #[arg(long)]
+        extra: bool,
         #[command(flatten)]
         at: At,
     },
@@ -178,6 +181,9 @@ enum Commands {
     /// Take the Disengage action: the actor's moves this turn provoke no Opportunity Attacks.
     Disengage {
         actor: String,
+        /// Spend the extra action a modifier grants (Haste) instead of the action.
+        #[arg(long)]
+        extra: bool,
         #[command(flatten)]
         at: At,
     },
@@ -582,6 +588,7 @@ fn run(command: Commands) -> Result<String, CodedError> {
             action,
             targets,
             slot,
+            extra,
             at,
         } => step(
             &at,
@@ -590,9 +597,10 @@ fn run(command: Commands) -> Result<String, CodedError> {
                 action,
                 targets,
                 slot,
+                extra,
             },
         ),
-        Commands::Disengage { actor, at } => step(&at, Command::Disengage { actor }),
+        Commands::Disengage { actor, extra, at } => step(&at, Command::Disengage { actor, extra }),
         Commands::Move { actor, band, target, feet, opportunity, at } => {
             step(&at, Command::Move { actor, target, band: band.into(), feet, opportunity })
         }

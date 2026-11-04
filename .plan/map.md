@@ -86,6 +86,7 @@ Both modes ship in phase 1. Everything the engine can't model is labeled agent j
 - [Build live reaction windows](closed/062-build-live-reaction-windows.md): live mode holds a move on a `reaction` prompt per eligible Opportunity Attack reactor and holds any command whose hit lands on a creature with a ready hit-trigger reaction, `bench respond --take [<id>]` or `--decline` answers it and the request reruns, the decider on `state.reactions` passes every window in batch, `settings.reaction_windows` gates it so 0.1.4 encounters refold as recorded, Parry (7) and Riposte import as a melee hit trigger and the party Shield as any, batch numbers are unchanged, ADR 0018 records it, and the workspace is 0.1.5.
 - [Build batch reactions policy](closed/063-build-batch-reactions-policy.md): batch opens reaction windows and the policy (now v3) decides each one: Shield or Parry only when it turns the hit into a miss, an Opportunity Attack only above the reaction reserve (`AC_POINT_VALUE` 0.1), and the step-out penalty counts only those attacks. Each window logs a reason, the engine stays 0.1.5, the curve reads stale on the policy until 056 regenerates it, and wins and losses held on goblin, knight and adult red dragon while DPR fell where Shield and Parry fired.
 - [Build modifier bearers and Speed modifiers](closed/065-build-modifier-bearers-and-speed-modifiers.md): timed modifiers land on their target unless marked `"bearer": "self"` (Shield, Parry, Riposte), and a `triggering_attack` modifier always lands on its reactor so old Parry snapshots stay right. `EncounterState::modifiers_on` applies one spell's modifiers once per bearer (most potent, else most recent), `ends_on_damage` ends Hypnotic Pattern's Speed 0, and `engine::walk_speed` serves the engine, policy and live default move, while declared `--feet` stays trusted for Dash. Fly is an agent clause, the engine is 0.1.6, 0.1.5 states load with each bearer read as its source, and batch numbers are unchanged on goblin, ogre, adult red dragon and knight.
+- [Build Haste extra action and lethargy](closed/066-build-haste-extra-action-and-lethargy.md): an `extra_action` modifier grants one extra action per turn limited to listed uses (`one_attack`, `disengage`, or any), spent with `--extra` on `bench action` and `bench disengage` and shown as `digest.extra_action`; `on_end` effects fire when a modifier instance ends, and `until_end_of_next_turn` skips a turn under way. Haste now carries both, so lethargy lands once per ending Haste. `engine::extra_action_uses` and `extra_action_allows` are the checks ticket 056 reads. The engine is 0.1.7, 0.1.6 states load unchanged, and batch numbers are unchanged on goblin warrior and adult red dragon.
 
 ## Not yet specified
 
@@ -111,12 +112,11 @@ Both modes ship in phase 1. Everything the engine can't model is labeled agent j
 
 Takeable now, in order:
 
-- Build Haste extra action and lethargy (task, AFK)
 - Build attack-roll condition sources (task, AFK)
 - Build saving-throw condition sources (task, AFK); it also adds timed save modifiers such as Haste's, read through their bearer
 - Batch warns when plans fail or casts are never ready (task, AFK)
 
 Blocked:
 
-- Build v3 scoring for buffs, forced movement and teleports (task, AFK), waits on Build Haste extra action and lethargy, Build attack-roll condition sources and Build saving-throw condition sources; it regenerates the baseline once
+- Build v3 scoring for buffs, forced movement and teleports (task, AFK), waits on Build attack-roll condition sources and Build saving-throw condition sources; it regenerates the baseline once
 - Do dragons still read above their CR on the v3 curve (task, AFK), waits on Build v3 scoring; it takes over the dragon fog item, whose reactions half policy v3 now covers

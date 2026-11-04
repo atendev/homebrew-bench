@@ -67,6 +67,9 @@ pub struct ActiveModifier {
     pub source_ability: Option<String>,
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub ends_on_damage: bool,
+    /// Effects that land on the bearer when this instance ends, from its `source`.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub on_end: Vec<crate::effect::Effect>,
 }
 
 impl ActiveModifier {
@@ -148,6 +151,9 @@ pub struct ActionEconomy {
     /// Took the Disengage action this turn; its moves provoke nothing until the turn ends (ADR 0015).
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub disengaged: bool,
+    /// Spent the extra action a modifier grants (Haste) this turn.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub extra_action_used: bool,
 }
 
 /// A standing assumption applied by the agent at intake.
@@ -583,8 +589,10 @@ mod disengage_tests {
         assert!(economy.action_used && !economy.disengaged);
         let unchanged = serde_json::to_value(&economy).unwrap();
         assert!(unchanged.get("disengaged").is_none(), "{unchanged}");
+        assert!(unchanged.get("extra_action_used").is_none(), "{unchanged}");
         assert_eq!(serde_json::from_value::<ActionEconomy>(unchanged).unwrap().movement_used_feet, 10);
-        let set = ActionEconomy { disengaged: true, ..economy };
+        let set = ActionEconomy { disengaged: true, extra_action_used: true, ..economy };
         assert_eq!(serde_json::to_value(&set).unwrap()["disengaged"], true);
+        assert_eq!(serde_json::to_value(&set).unwrap()["extra_action_used"], true);
     }
 }

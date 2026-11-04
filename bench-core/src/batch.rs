@@ -695,6 +695,7 @@ fn execute(state: &mut EncounterState, plan: &tactics::Plan) -> Result<Vec<Engin
                 action_id: plan.action_id.clone(),
                 target_ids: plan.targets.clone(),
                 slot_level: None,
+                extra: false,
             },
         ),
     };

@@ -37,6 +37,9 @@ pub enum Command {
         /// Spell slot level for every leveled Cast in the action.
         #[serde(default, skip_serializing_if = "Option::is_none")]
         slot: Option<u8>,
+        /// Spend the extra action a modifier grants (Haste) instead of the action.
+        #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+        extra: bool,
     },
     Move {
         actor: String,
@@ -60,6 +63,9 @@ pub enum Command {
     },
     Disengage {
         actor: String,
+        /// Spend the extra action a modifier grants (Haste) instead of the action.
+        #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+        extra: bool,
     },
     /// End the active turn. Legendary actions listed here resolve in order
     /// between the end of this turn and the start of the next.
@@ -591,6 +597,7 @@ fn apply(state: &mut EncounterState, cmd: &Command) -> Result<Applied, LiveError
             action,
             targets,
             slot,
+            extra,
         } => run_engine(
             state,
             Held::new(StepRequest::Action {
@@ -598,6 +605,7 @@ fn apply(state: &mut EncounterState, cmd: &Command) -> Result<Applied, LiveError
                 action_id: action.clone(),
                 target_ids: targets.clone(),
                 slot_level: *slot,
+                extra: *extra,
             }),
         ),
         Command::Move { actor, target, band, feet, opportunity } => {
@@ -617,7 +625,7 @@ fn apply(state: &mut EncounterState, cmd: &Command) -> Result<Applied, LiveError
                 }),
             )
         }
-        Command::Disengage { actor } => run_engine(state, Held::new(StepRequest::Disengage { actor_id: actor.clone() })),
+        Command::Disengage { actor, extra } => run_engine(state, Held::new(StepRequest::Disengage { actor_id: actor.clone(), extra: *extra })),
         Command::EndTurn { legendary } => run_engine(state, Held::new(StepRequest::EndTurn { legendary: legendary.clone() })),
         Command::Respond { values, decline, take } => respond(state, values, *decline, take.as_deref()),
         Command::End { reason } => {
@@ -1265,6 +1273,7 @@ mod tests {
             action: action.into(),
             targets: vec![target.into()],
             slot: None,
+            extra: false,
         }
     }
 
@@ -1297,6 +1306,7 @@ mod tests {
             action: action.into(),
             targets: vec!["goblin-warrior".into()],
             slot,
+            extra: false,
         }
     }
 
@@ -1741,7 +1751,7 @@ mod tests {
     fn disengage_stops_provocation_and_undoes_and_replays() {
         let (mut state, _) = start(spec(PcDice::Engine)).unwrap();
         engage_then_turn_of(&mut state, STRIKER);
-        let out = execute(&mut state, Command::Disengage { actor: STRIKER.into() }).unwrap();
+        let out = execute(&mut state, Command::Disengage { actor: STRIKER.into(), extra: false }).unwrap();
         assert!(lines(&out)[0].contains("Disengage"), "{:?}", lines(&out));
         assert!(state.combatants.iter().find(|c| c.id == STRIKER).unwrap().action_economy.disengaged);
         let refused = execute(&mut state, move_away(STRIKER, GOBLIN));
@@ -2037,7 +2047,7 @@ mod tests {
     }
 
     fn swing(actor: &str, action: &str, target: &str) -> Command {
-        Command::Action { actor: actor.into(), action: action.into(), targets: vec![target.into()], slot: None }
+        Command::Action { actor: actor.into(), action: action.into(), targets: vec![target.into()], slot: None, extra: false }
     }
 
     fn window(state: &EncounterState) -> ReactionWindow {
@@ -2311,6 +2321,44 @@ mod tests {
     }
 
     #[test]
+    fn an_engine_0_1_6_state_loads_and_replays_until_its_haste_cast() {
+        let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/data/engine-0.1.6-state.json");
+        let state = crate::store::load(&path, crate::store::VersionCheck::Require).expect("an engine 0.1.6 state loads");
+        crate::store::check(&state, &path).unwrap();
+        assert_eq!(state.engine_version, "0.1.6");
+        let on_disk: Value = serde_json::from_str(&std::fs::read_to_string(&path).unwrap()).unwrap();
+        assert_eq!(serde_json::to_value(&state).unwrap(), on_disk, "re-serializes unchanged");
+        let names: Vec<&str> = state.command_history.iter().map(|r| r.name.as_str()).collect();
+        assert_eq!(names, ["end-turn", "disengage", "end-turn", "end-turn", "action"]);
+        assert!(state.command_history.iter().all(|r| r.args.get("extra").is_none()));
+        assert_eq!(state.active_modifiers.len(), 3, "0.1.6 Haste has no extra action modifier");
+        assert_eq!(crate::engine::extra_action_uses(&state, "standard-striker-03"), None);
+        let report = replay(&state);
+        assert_eq!(report.first_divergence, Some(4), "the history replays until Haste, which now grants an extra action: {report:?}");
+    }
+
+    #[test]
+    fn a_hasted_striker_spends_its_extra_action_with_extra() {
+        const STRIKER: &str = "standard-striker-03";
+        let mut spec = reaction_spec(&[(CASTER_FILE, PARTY_SIDE), ("fixtures/ogre.json", "monsters")], 1, PcDice::Engine);
+        spec.entrants.push(Entrant { stat_block: block("party/standard/standard-striker-03.json"), side: PARTY_SIDE.into(), band: RangeBand::Near });
+        let (mut state, _) = start(spec).unwrap();
+        turn_of(&mut state, CASTER);
+        execute(&mut state, Command::Action { actor: CASTER.into(), action: "haste".into(), targets: vec![STRIKER.into()], slot: None, extra: false }).unwrap();
+        turn_of(&mut state, STRIKER);
+        execute(&mut state, Command::Move { actor: STRIKER.into(), target: Some("ogre".into()), band: RangeBand::Engaged, feet: None, opportunity: vec![] }).unwrap();
+        let out = execute(&mut state, swing(STRIKER, "shortsword", "ogre")).unwrap();
+        assert_eq!(out.digest["extra_action"], serde_json::json!(["one_attack", "disengage"]));
+        let extra = Command::Action { actor: STRIKER.into(), action: "shortsword".into(), targets: vec!["ogre".into()], slot: None, extra: true };
+        let out = execute(&mut state, extra.clone()).unwrap();
+        assert!(lines(&out).contains(&format!("{STRIKER} uses its extra action")), "{:?}", lines(&out));
+        assert!(out.digest.get("extra_action").is_none());
+        assert!(matches!(execute(&mut state, extra), Err(LiveError::Illegal(m)) if m == "extra action already used"));
+        assert_eq!(state.command_history.last().unwrap().args["extra"], true);
+        assert!(replay(&state).matches);
+    }
+
+    #[test]
     fn haste_cast_on_an_ally_lets_it_close_from_far() {
         const STRIKER: &str = "standard-striker-03";
         let mut spec = reaction_spec(&[(CASTER_FILE, PARTY_SIDE), ("fixtures/ogre.json", "monsters")], 1, PcDice::Engine);
@@ -2321,7 +2369,7 @@ mod tests {
         turn_of(&mut slow, STRIKER);
         assert!(matches!(execute(&mut slow, close.clone()), Err(LiveError::Illegal(m)) if m.contains("requires 35 feet")), "35 feet is beyond a 30-foot Speed");
         turn_of(&mut state, CASTER);
-        let haste = Command::Action { actor: CASTER.into(), action: "haste".into(), targets: vec![STRIKER.into()], slot: None };
+        let haste = Command::Action { actor: CASTER.into(), action: "haste".into(), targets: vec![STRIKER.into()], slot: None, extra: false };
         assert!(lines(&execute(&mut state, haste).unwrap()).contains(&format!("{STRIKER} gains haste from {CASTER}")));
         assert_eq!((remaining_speed(&state, CASTER).unwrap(), remaining_speed(&state, STRIKER).unwrap()), (30, 60));
         turn_of(&mut state, STRIKER);

@@ -8,7 +8,7 @@ use std::collections::HashMap;
 use serde::{Deserialize, Serialize};
 
 use crate::effect::{
-    recharge_minimum, Duration, Effect, Lighting, ModifierBearer, ModifierChange, ModifierTarget, ReactionTrigger, RollDisposition, Usage,
+    recharge_minimum, Duration, Effect, ExtraActionUse, Lighting, ModifierBearer, ModifierChange, ModifierTarget, ReactionTrigger, RollDisposition, Usage,
 };
 use crate::encounter::{
     ActionEconomy, ActiveModifier, Combatant, ConditionInstance, EndState, EncounterState,
@@ -28,6 +28,9 @@ pub enum StepRequest {
         /// Cast level for every leveled Cast in the action (`bench action --slot`).
         #[serde(default, skip_serializing_if = "Option::is_none")]
         slot_level: Option<u8>,
+        /// Spend the extra action a modifier grants (Haste) instead of the action.
+        #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+        extra: bool,
     },
     Move {
         actor_id: String,
@@ -42,8 +45,13 @@ pub enum StepRequest {
         #[serde(default, skip_serializing_if = "Vec::is_empty")]
         declined: Vec<String>,
     },
-    /// The Disengage action: spends the action and sets the turn flag.
-    Disengage { actor_id: String },
+    /// The Disengage action: spends the action, or the extra action with `extra`, and sets
+    /// the turn flag.
+    Disengage {
+        actor_id: String,
+        #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+        extra: bool,
+    },
     /// Ends the active turn. The legendary actions listed resolve in order
     /// after the turn ends and before the next one starts.
     EndTurn {
@@ -223,13 +231,13 @@ pub fn step_events(state: &mut EncounterState, request: StepRequest) -> Result<V
         return Err(EngineError::Pending("answer the pending prompt first".into()));
     }
     let events = match request {
-        StepRequest::Action { actor_id, action_id, target_ids, slot_level } => {
-            resolve_action(state, &actor_id, &action_id, &target_ids, slot_level)?
+        StepRequest::Action { actor_id, action_id, target_ids, slot_level, extra } => {
+            resolve_action(state, &actor_id, &action_id, &target_ids, slot_level, extra)?
         }
         StepRequest::Move { actor_id, target_id, band, feet, opportunity, declined } => {
             move_combatant(state, &actor_id, target_id.as_deref(), band, feet, &opportunity, &declined)?
         }
-        StepRequest::Disengage { actor_id } => disengage(state, &actor_id)?,
+        StepRequest::Disengage { actor_id, extra } => disengage(state, &actor_id, extra)?,
         StepRequest::EndTurn { legendary } => end_turn_events(state, &legendary)?,
         StepRequest::Respond { values, accept } => respond(state, values, accept)?,
         StepRequest::RollInitiative(options) => roll_initiative(state, options)?,
@@ -250,6 +258,7 @@ fn resolve_action(
     action_id: &str,
     target_ids: &[String],
     slot_level: Option<u8>,
+    extra: bool,
 ) -> Result<Vec<EngineEvent>, EngineError> {
     let actor_index = index_of(state, actor_id)?;
     if !can_act(&state.combatants[actor_index]) {
@@ -269,7 +278,15 @@ fn resolve_action(
             }
         }
     }
-    {
+    if extra {
+        if section != ActionSection::Action {
+            return Err(EngineError::Illegal(format!("{actor_id}'s extra action can't take {action_id}, which is not an action")));
+        }
+        let uses = extra_action_left(state, actor_id)?;
+        if !extra_action_allows(&uses, &action) {
+            return Err(extra_action_refused(actor_id, &uses));
+        }
+    } else {
         let economy = &state.combatants[actor_index].action_economy;
         let (used, label) = match section {
             ActionSection::Action => (economy.action_used, "action"),
@@ -289,6 +306,9 @@ fn resolve_action(
     }
     let mut stream = Stream::from_state(state.rng.clone());
     let mut events = Vec::new();
+    if extra {
+        events.push(event("extra_action", format!("{actor_id} uses its extra action"), actor_id, actor_id));
+    }
     for effect in effects {
         resolve_effect(state, &mut stream, actor_id, effect, target_ids, &mut events)?;
         if state.pending.is_some() {
@@ -298,6 +318,7 @@ fn resolve_action(
     state.rng = stream.state();
     let economy = &mut state.combatants[actor_index].action_economy;
     match section {
+        _ if extra => economy.extra_action_used = true,
         ActionSection::Action => economy.action_used = true,
         ActionSection::Bonus => economy.bonus_action_used = true,
         ActionSection::Reaction => economy.reaction_used = true,
@@ -345,13 +366,26 @@ fn with_slot(
 }
 
 /// The Disengage action. The flag lasts until the actor's turn ends.
-fn disengage(state: &mut EncounterState, actor_id: &str) -> Result<Vec<EngineEvent>, EngineError> {
+fn disengage(state: &mut EncounterState, actor_id: &str, extra: bool) -> Result<Vec<EngineEvent>, EngineError> {
     let i = index_of(state, actor_id)?;
     if !can_act(&state.combatants[i]) {
         return Err(EngineError::Illegal(format!("{actor_id} cannot act")));
     }
     if state.active_turn.as_deref().is_some_and(|active| active != actor_id) {
         return Err(EngineError::Illegal(format!("{actor_id} is not the active combatant")));
+    }
+    if extra {
+        let uses = extra_action_left(state, actor_id)?;
+        if !(uses.is_empty() || uses.contains(&ExtraActionUse::Disengage)) {
+            return Err(extra_action_refused(actor_id, &uses));
+        }
+        let economy = &mut state.combatants[i].action_economy;
+        economy.extra_action_used = true;
+        economy.disengaged = true;
+        return Ok(vec![
+            event("extra_action", format!("{actor_id} uses its extra action"), actor_id, actor_id),
+            event("disengage", format!("{actor_id} takes the Disengage action"), actor_id, actor_id),
+        ]);
     }
     let economy = &mut state.combatants[i].action_economy;
     if economy.action_used {
@@ -360,6 +394,56 @@ fn disengage(state: &mut EncounterState, actor_id: &str) -> Result<Vec<EngineEve
     economy.action_used = true;
     economy.disengaged = true;
     Ok(vec![event("disengage", format!("{actor_id} takes the Disengage action"), actor_id, actor_id)])
+}
+
+fn extra_action_grant(state: &EncounterState, actor_id: &str) -> Option<Vec<ExtraActionUse>> {
+    let mut uses = Vec::new();
+    let mut granted = false;
+    let mut any = false;
+    for m in state.modifiers_on(actor_id) {
+        let ModifierTarget::ExtraAction { only } = &m.target else { continue };
+        granted = true;
+        any |= only.is_empty();
+        for u in only {
+            if !uses.contains(u) {
+                uses.push(*u);
+            }
+        }
+    }
+    granted.then(|| if any { vec![] } else { uses })
+}
+
+fn extra_action_left(state: &EncounterState, actor_id: &str) -> Result<Vec<ExtraActionUse>, EngineError> {
+    let uses = extra_action_grant(state, actor_id).ok_or_else(|| EngineError::Illegal(format!("{actor_id} has no extra action")))?;
+    if state.combatants[index_of(state, actor_id)?].action_economy.extra_action_used {
+        return Err(EngineError::Illegal("extra action already used".into()));
+    }
+    Ok(uses)
+}
+
+fn extra_action_refused(actor_id: &str, uses: &[ExtraActionUse]) -> EngineError {
+    let uses: Vec<&str> = uses.iter().map(|u| u.as_str()).collect();
+    EngineError::Illegal(format!("{actor_id}'s extra action allows only {}", uses.join(", ")))
+}
+
+/// The uses of the extra action `actor_id` can take now, or `None` when it has none: no
+/// `extra_action` modifier applies to it, it spent the extra action this turn, or it can't act.
+/// An empty list allows any action. Several applying modifiers give one extra action whose uses
+/// join, and any empty list among them allows any action.
+pub fn extra_action_uses(state: &EncounterState, actor_id: &str) -> Option<Vec<ExtraActionUse>> {
+    let c = state.combatants.iter().find(|c| c.id == actor_id)?;
+    if !can_act(c) || c.action_economy.extra_action_used {
+        return None;
+    }
+    extra_action_grant(state, actor_id)
+}
+
+/// Whether an extra action limited to `uses` may take `action` from the stat block's actions.
+/// `one_attack` allows an action whose effects are exactly one Attack with one target; an
+/// empty list allows any action. Disengage is the `disengage` use and not an action entry.
+pub fn extra_action_allows(uses: &[ExtraActionUse], action: &crate::stat_block::AbilityEntry) -> bool {
+    uses.is_empty()
+        || (uses.contains(&ExtraActionUse::OneAttack) && matches!(action.effects.as_slice(), [Effect::Attack(a)] if a.target_count == 1))
 }
 
 fn spend_usage(state: &mut EncounterState, actor_index: usize, action_id: &str, usage: &Usage) -> Result<(), EngineError> {
@@ -447,7 +531,7 @@ fn resolve_effect(
                             let name = window.option(&id).ok_or_else(|| EngineError::Invalid(format!("{target_id} has no reaction {id} for this hit")))?.name.clone();
                             events.push(event("reaction", format!("REACTION {target_id}: {name} (hit by {actor_id})"), target_id, actor_id));
                             state.rng = stream.state();
-                            events.extend(resolve_action(state, target_id, &id, &[actor_id.to_string()], None)?);
+                            events.extend(resolve_action(state, target_id, &id, &[actor_id.to_string()], None, false)?);
                             *stream = Stream::from_state(state.rng.clone());
                             let ac = base_ac + ac_modifier(state, &state.combatants[target_index]);
                             hit = critical || (natural != 1 && total >= ac);
@@ -483,7 +567,7 @@ fn resolve_effect(
                         resolve_effect(state, stream, actor_id, effect.clone(), &[target_id.clone()], events)?;
                     }
                 }
-                end_triggering_attack(state, target_id);
+                end_triggering_attack(state, stream, target_id, events)?;
             }
         }
         Effect::Damage(damage) => {
@@ -537,6 +621,7 @@ fn resolve_effect(
                     bearer: Some(bearer),
                     source_ability: modifier.source_ability.clone(),
                     ends_on_damage: modifier.ends_on_damage,
+                    on_end: modifier.on_end.clone(),
                 });
             }
         }
@@ -797,7 +882,7 @@ fn cast_spell(
     }
     if spell.concentration {
         if state.combatants[i].concentration.is_some() {
-            break_concentration(state, actor_id, events)?;
+            break_concentration(state, stream, actor_id, events)?;
         }
         state.combatants[i].concentration = Some(spell_id.into());
         events.push(event("concentration", format!("{} begins concentrating on {}", actor_id, spell_id), actor_id, actor_id));
@@ -1470,12 +1555,35 @@ fn ask(state: &mut EncounterState, window: ReactionWindow, events: &mut Vec<Engi
 }
 
 /// End what lasted only for the attack against `target_id` (Parry's AC).
-fn end_triggering_attack(state: &mut EncounterState, target_id: &str) {
+fn end_triggering_attack(state: &mut EncounterState, stream: &mut Stream, target_id: &str, events: &mut Vec<EngineEvent>) -> Result<(), EngineError> {
     let ends = |d: &Duration, source: &Option<String>| matches!(d, Duration::TriggeringAttack) && source.as_deref() == Some(target_id);
-    state.active_modifiers.retain(|m| !ends(&m.remaining, &m.source));
+    let ended = take_modifiers(state, |m| ends(&m.remaining, &m.source));
     for c in &mut state.combatants {
         c.conditions.retain(|x| !ends(&x.duration, &x.source));
     }
+    fire_on_end(state, stream, ended, events)
+}
+
+fn take_modifiers(state: &mut EncounterState, ends: impl Fn(&ActiveModifier) -> bool) -> Vec<ActiveModifier> {
+    let (ended, kept) = std::mem::take(&mut state.active_modifiers).into_iter().partition(|m| ends(m));
+    state.active_modifiers = kept;
+    ended
+}
+
+fn fire_on_end(state: &mut EncounterState, stream: &mut Stream, ended: Vec<ActiveModifier>, events: &mut Vec<EngineEvent>) -> Result<(), EngineError> {
+    for m in ended {
+        let Some(bearer) = m.bearer().map(str::to_string) else { continue };
+        if m.on_end.is_empty() || index_of(state, &bearer).is_err() {
+            continue;
+        }
+        let source = m.source.clone().unwrap_or_else(|| bearer.clone());
+        let what = m.source_ability.as_deref().unwrap_or("a timed modifier");
+        events.push(event("modifier_end", format!("{what} ends on {bearer}"), &source, &bearer));
+        for effect in m.on_end {
+            resolve_effect(state, stream, &source, effect, std::slice::from_ref(&bearer), events)?;
+        }
+    }
+    Ok(())
 }
 
 /// One melee attack: an action whose only effect is an Attack with no range.
@@ -1607,8 +1715,44 @@ pub fn finish_turn(state: &mut EncounterState) -> Result<Vec<EngineEvent>, Engin
     if let Ok(i) = index_of(state, &current) {
         state.combatants[i].action_economy.disengaged = false;
     }
-    decrement_durations(state, &mut events);
+    let mut ended = end_of_turn(state, &current, &mut events);
+    ended.extend(decrement_durations(state, &mut events));
+    if ended.iter().any(|m| !m.on_end.is_empty()) {
+        let mut stream = Stream::from_state(state.rng.clone());
+        fire_on_end(state, &mut stream, ended, &mut events)?;
+        state.rng = stream.state();
+    }
     Ok(events)
+}
+
+fn end_of_turn(state: &mut EncounterState, bearer: &str, events: &mut Vec<EngineEvent>) -> Vec<ActiveModifier> {
+    let ended = take_modifiers(state, |m| matches!(m.remaining, Duration::UntilEndOfTurn) && m.bearer() == Some(bearer));
+    for _ in &ended {
+        events.push(event("modifier_expire", format!("a timed modifier on {bearer} expired"), bearer, bearer));
+    }
+    if let Ok(i) = index_of(state, bearer) {
+        let combatant = &mut state.combatants[i];
+        let (gone, kept) = std::mem::take(&mut combatant.conditions).into_iter().partition::<Vec<_>, _>(|c| matches!(c.duration, Duration::UntilEndOfTurn));
+        combatant.conditions = kept;
+        for condition in gone {
+            events.push(event("condition_expire", format!("{} loses {}", combatant.name, format!("{:?}", condition.condition).to_lowercase()), bearer, bearer));
+        }
+    }
+    ended
+}
+
+fn start_of_turn(state: &mut EncounterState, bearer: &str) {
+    let next = |d: &mut Duration| {
+        if matches!(d, Duration::UntilEndOfNextTurn) {
+            *d = Duration::UntilEndOfTurn;
+        }
+    };
+    for m in state.active_modifiers.iter_mut().filter(|m| m.bearer() == Some(bearer)) {
+        next(&mut m.remaining);
+    }
+    if let Ok(i) = index_of(state, bearer) {
+        state.combatants[i].conditions.iter_mut().for_each(|c| next(&mut c.duration));
+    }
 }
 
 fn legendary_window(state: &mut EncounterState, uses: &[LegendaryUse]) -> Result<Vec<EngineEvent>, EngineError> {
@@ -1673,6 +1817,7 @@ pub fn start_next_turn(state: &mut EncounterState) -> Result<Vec<EngineEvent>, E
     if let Some(next) = state.active_turn.clone() {
         if let Ok(i) = index_of(state, &next) {
             state.combatants[i].action_economy = ActionEconomy::default();
+            start_of_turn(state, &next);
             reset_cooldowns(state, &next);
             roll_recharge(state, &next, &mut events)?;
             roll_death_saves(state, &next, &mut events)?;
@@ -1683,7 +1828,8 @@ pub fn start_next_turn(state: &mut EncounterState) -> Result<Vec<EngineEvent>, E
     Ok(events)
 }
 
-fn decrement_durations(state: &mut EncounterState, events: &mut Vec<EngineEvent>) {
+fn decrement_durations(state: &mut EncounterState, events: &mut Vec<EngineEvent>) -> Vec<ActiveModifier> {
+    let mut ended = Vec::new();
     state.active_modifiers.retain_mut(|modifier| {
         let keep = match &mut modifier.remaining {
             Duration::Rounds(n) => {
@@ -1702,10 +1848,11 @@ fn decrement_durations(state: &mut EncounterState, events: &mut Vec<EngineEvent>
                 *n = n.saturating_sub(1);
                 *n > 0
             }
-            Duration::Concentration | Duration::Instant | Duration::Permanent | Duration::UntilSave { .. } | Duration::TriggeringAttack => true,
+            Duration::Concentration | Duration::Instant | Duration::Permanent | Duration::UntilSave { .. } | Duration::TriggeringAttack | Duration::UntilEndOfNextTurn | Duration::UntilEndOfTurn => true,
         };
         if !keep {
             events.push(event("modifier_expire", "a timed modifier expired".into(), "engine", "engine"));
+            ended.push(modifier.clone());
         }
         keep
     });
@@ -1730,7 +1877,7 @@ fn decrement_durations(state: &mut EncounterState, events: &mut Vec<EngineEvent>
                     *n = n.saturating_sub(1);
                     *n > 0
                 }
-                Duration::Concentration | Duration::Instant | Duration::Permanent | Duration::UntilSave { .. } | Duration::TriggeringAttack => true,
+                Duration::Concentration | Duration::Instant | Duration::Permanent | Duration::UntilSave { .. } | Duration::TriggeringAttack | Duration::UntilEndOfNextTurn | Duration::UntilEndOfTurn => true,
             };
             if !keep {
                 expired.push(idx);
@@ -1741,6 +1888,7 @@ fn decrement_durations(state: &mut EncounterState, events: &mut Vec<EngineEvent>
             events.push(event("condition_expire", format!("{} loses {}", combatant.name, format!("{:?}", condition.condition).to_lowercase()), &combatant.id, &combatant.id));
         }
     }
+    ended
 }
 
 fn roll_recharge(state: &mut EncounterState, combatant_id: &str, events: &mut Vec<EngineEvent>) -> Result<(), EngineError> {
@@ -2013,13 +2161,13 @@ fn apply_damage(
     if amount > 0 {
         let before = state.combatants[i].conditions.len();
         state.combatants[i].conditions.retain(|c| !c.ends_on_damage);
-        let modifiers = state.active_modifiers.len();
-        state.active_modifiers.retain(|m| !(m.ends_on_damage && m.bearer() == Some(target_id)));
+        let ended = take_modifiers(state, |m| m.ends_on_damage && m.bearer() == Some(target_id));
         if state.combatants[i].conditions.len() < before {
             events.push(event("condition_expire", format!("{target_id} is roused by the damage"), target_id, target_id));
-        } else if state.active_modifiers.len() < modifiers {
+        } else if !ended.is_empty() {
             events.push(event("modifier_expire", format!("the damage ends a timed modifier on {target_id}"), target_id, target_id));
         }
+        fire_on_end(state, stream, ended, events)?;
     }
     let mut remaining = amount.max(0);
     let absorbed = remaining.min(state.combatants[i].temp_hp);
@@ -2059,7 +2207,7 @@ fn apply_damage(
             player_dice: marked,
         });
         if !success {
-            break_concentration(state, target_id, events)?;
+            break_concentration(state, stream, target_id, events)?;
         }
     }
     if state.combatants[i].hp <= 0 && state.combatants[i].end_state == EndState::Active {
@@ -2344,6 +2492,7 @@ fn is_concentrating(c: &Combatant) -> bool {
 /// Break concentration and log it.
 fn break_concentration(
     state: &mut EncounterState,
+    stream: &mut Stream,
     target_id: &str,
     events: &mut Vec<EngineEvent>,
 ) -> Result<(), EngineError> {
@@ -2354,7 +2503,8 @@ fn break_concentration(
         for c in &mut state.combatants {
             c.conditions.retain(|x| !held(&x.duration, &x.source));
         }
-        state.active_modifiers.retain(|m| !held(&m.remaining, &m.source));
+        let ended = take_modifiers(state, |m| held(&m.remaining, &m.source));
+        fire_on_end(state, stream, ended, events)?;
     }
     Ok(())
 }
@@ -2641,6 +2791,7 @@ mod tests {
             action_id: "scimitar".into(),
             target_ids: vec!["fighter".into()],
             slot_level: None,
+            extra: false,
         };
         let resp = step(&mut state, req).unwrap();
         assert!(!resp.events.is_empty());
@@ -2689,6 +2840,7 @@ mod tests {
             action_id: "smash".into(),
             target_ids: vec!["fighter".into()],
             slot_level: None,
+            extra: false,
         };
         step(&mut state, req).unwrap();
         assert_eq!(state.combatants[0].end_state, EndState::Unconscious);
@@ -2729,6 +2881,7 @@ mod tests {
             action_id: "smash".into(),
             target_ids: vec!["goblin".into()],
             slot_level: None,
+            extra: false,
         };
         step(&mut state, req).unwrap();
         assert_eq!(state.combatants[1].end_state, EndState::Dead);
@@ -2782,6 +2935,7 @@ mod tests {
             bearer: None,
             source_ability: None,
             ends_on_damage: false,
+            on_end: vec![],
         });
         let modifier = attack_modifier(&state, &state.combatants[0]).unwrap();
         assert_eq!(modifier, 5);
@@ -2895,6 +3049,7 @@ mod tests {
             bearer: None,
             source_ability: None,
             ends_on_damage: false,
+            on_end: vec![],
         });
         state.active_modifiers.push(ActiveModifier {
             target: ModifierTarget::AttackRolls,
@@ -2904,6 +3059,7 @@ mod tests {
             bearer: None,
             source_ability: None,
             ends_on_damage: false,
+            on_end: vec![],
         });
         assert_eq!(disposition(&state, &state.combatants[0], &state.combatants[1]), RollDisposition::Normal);
     }
@@ -3002,6 +3158,7 @@ mod tests {
             action_id: "multiattack".into(),
             target_ids: vec!["target".into()],
             slot_level: None,
+            extra: false,
         };
         let resp = step(&mut state, req).unwrap();
         let attack_events: Vec<_> = resp.events.iter().filter(|e| e.kind == "attack").collect();
@@ -3067,6 +3224,7 @@ mod tests {
             action_id: "multiattack".into(),
             target_ids: vec!["target".into()],
             slot_level: None,
+            extra: false,
         };
         let resp = step(&mut state, req).unwrap();
         let count = |kind: &str| resp.events.iter().filter(|e| e.kind == kind).count();
@@ -3100,7 +3258,7 @@ mod tests {
         let target = test_combatant("target", "target", 50, "ally");
         let mut state = test_encounter(vec![test_stat_block("target", "Target", 50, 10), attacker_block], vec![target, attacker]);
         state.active_turn = Some("attacker".into());
-        let req = StepRequest::Action { actor_id: "attacker".into(), action_id: "multiattack".into(), target_ids: vec!["target".into()], slot_level: None };
+        let req = StepRequest::Action { actor_id: "attacker".into(), action_id: "multiattack".into(), target_ids: vec!["target".into()], slot_level: None, extra: false };
         assert!(matches!(step(&mut state, req), Err(EngineError::NotFound(_))));
     }
 
@@ -3142,6 +3300,7 @@ mod tests {
             action_id: "arrow".into(),
             target_ids: vec!["fighter".into()],
             slot_level: None,
+            extra: false,
         };
         let resp = step(&mut state, req).unwrap();
         assert!(resp.events.iter().any(|e| e.kind == "concentration_save" || e.kind == "concentration"));
@@ -3178,6 +3337,7 @@ mod tests {
                 action_id: "burst".into(),
                 target_ids: targets,
                 slot_level: None,
+                extra: false,
             },
         )
         .unwrap();
@@ -3198,7 +3358,7 @@ mod tests {
             expected.roll_die(6);
         }
         let save_roll = expected.roll_die(20);
-        let resp = step(&mut state, StepRequest::Action { actor_id: "goblin".into(), action_id: "bite".into(), target_ids: vec!["fighter".into()], slot_level: None }).unwrap();
+        let resp = step(&mut state, StepRequest::Action { actor_id: "goblin".into(), action_id: "bite".into(), target_ids: vec!["fighter".into()], slot_level: None, extra: false }).unwrap();
         let save = resp.events.iter().find(|e| e.kind == "concentration_save").expect("concentration save");
         assert_eq!(save.roll, Some(save_roll));
         assert_eq!(state.rng, expected.state());
@@ -3235,7 +3395,7 @@ mod tests {
 
     /// Hit points the fighter lost to one bite, asserting the attack was a plain (non-critical) hit.
     fn bite_damage(state: &mut EncounterState) -> i32 {
-        let resp = step(state, StepRequest::Action { actor_id: "goblin".into(), action_id: "bite".into(), target_ids: vec!["fighter".into()], slot_level: None }).unwrap();
+        let resp = step(state, StepRequest::Action { actor_id: "goblin".into(), action_id: "bite".into(), target_ids: vec!["fighter".into()], slot_level: None, extra: false }).unwrap();
         let attack = resp.events.iter().find(|e| e.kind == "attack").expect("attack event");
         assert_ne!(attack.roll, Some(20), "seed produced a critical hit; pick another seed");
         assert!(attack.message.ends_with("(hit)"), "{}", attack.message);
@@ -3313,7 +3473,7 @@ mod tests {
         };
         let goblin = state.stat_blocks.iter_mut().find(|s| s.id == "goblin").unwrap();
         goblin.stat_block.actions[0].effects = vec![Effect::SavingThrow(save)];
-        step(&mut state, StepRequest::Action { actor_id: "goblin".into(), action_id: "bite".into(), target_ids: vec!["fighter".into()], slot_level: None }).unwrap();
+        step(&mut state, StepRequest::Action { actor_id: "goblin".into(), action_id: "bite".into(), target_ids: vec!["fighter".into()], slot_level: None, extra: false }).unwrap();
         100 - state.combatants.iter().find(|c| c.id == "fighter").unwrap().hp
     }
 
@@ -3419,6 +3579,7 @@ mod tests {
                 action_id: action.into(),
                 target_ids,
                 slot_level: None,
+                extra: false,
             },
         )
     }
@@ -3936,9 +4097,9 @@ mod tests {
         state.combatants[0].concentration = Some("hold-person".into());
         state.combatants[1].conditions.push(ConditionInstance { condition: Condition::Paralyzed, duration: Duration::Concentration, source: Some("a".into()), ends_on_damage: false });
         state.combatants[1].conditions.push(ConditionInstance { condition: Condition::Prone, duration: Duration::Concentration, source: Some("b".into()), ends_on_damage: false });
-        state.active_modifiers.push(ActiveModifier { target: ModifierTarget::ArmorClass, change: ModifierChange::Add(2), remaining: Duration::Concentration, source: Some("a".into()), bearer: None, source_ability: None, ends_on_damage: false });
+        state.active_modifiers.push(ActiveModifier { target: ModifierTarget::ArmorClass, change: ModifierChange::Add(2), remaining: Duration::Concentration, source: Some("a".into()), bearer: None, source_ability: None, ends_on_damage: false, on_end: vec![] });
         let mut events = Vec::new();
-        break_concentration(&mut state, "a", &mut events).unwrap();
+        break_concentration(&mut state, &mut Stream::from_state(RngState::new(1)), "a", &mut events).unwrap();
         assert_eq!(state.combatants[1].conditions.len(), 1);
         assert_eq!(state.combatants[1].conditions[0].condition, Condition::Prone);
         assert!(state.active_modifiers.is_empty());
@@ -4067,7 +4228,7 @@ mod tests {
     #[test]
     fn disengage_spends_the_action_and_the_next_move_provokes_nothing() {
         let mut state = provoking_encounter(0);
-        let events = step_events(&mut state, StepRequest::Disengage { actor_id: "a".into() }).unwrap();
+        let events = step_events(&mut state, StepRequest::Disengage { actor_id: "a".into(), extra: false }).unwrap();
         assert!(events.iter().any(|e| e.kind == "disengage"), "{events:?}");
         assert!(state.combatants[0].action_economy.action_used);
         assert!(state.combatants[0].action_economy.disengaged);
@@ -4079,7 +4240,7 @@ mod tests {
     #[test]
     fn disengage_refuses_a_named_reactor_with_the_reason() {
         let mut state = provoking_encounter(0);
-        step_events(&mut state, StepRequest::Disengage { actor_id: "a".into() }).unwrap();
+        step_events(&mut state, StepRequest::Disengage { actor_id: "a".into(), extra: false }).unwrap();
         let err = move_combatant(&mut state, "a", None, RangeBand::Far, 35, &[oa("b", None)], &[]).unwrap_err();
         assert!(err.to_string().contains("b cannot make an Opportunity Attack: a has disengaged"), "{err}");
         assert!(!state.combatants[1].action_economy.reaction_used);
@@ -4088,20 +4249,20 @@ mod tests {
     #[test]
     fn disengage_needs_the_active_turn_and_an_unused_action() {
         let mut state = provoking_encounter(0);
-        let err = step_events(&mut state, StepRequest::Disengage { actor_id: "b".into() }).unwrap_err();
+        let err = step_events(&mut state, StepRequest::Disengage { actor_id: "b".into(), extra: false }).unwrap_err();
         assert!(err.to_string().contains("not the active combatant"), "{err}");
-        step_events(&mut state, StepRequest::Disengage { actor_id: "a".into() }).unwrap();
-        let err = step_events(&mut state, StepRequest::Disengage { actor_id: "a".into() }).unwrap_err();
+        step_events(&mut state, StepRequest::Disengage { actor_id: "a".into(), extra: false }).unwrap();
+        let err = step_events(&mut state, StepRequest::Disengage { actor_id: "a".into(), extra: false }).unwrap_err();
         assert!(err.to_string().contains("action already used"), "{err}");
         state.combatants[0].action_economy = ActionEconomy::default();
         state.combatants[0].end_state = EndState::Dead;
-        assert!(step_events(&mut state, StepRequest::Disengage { actor_id: "a".into() }).is_err());
+        assert!(step_events(&mut state, StepRequest::Disengage { actor_id: "a".into(), extra: false }).is_err());
     }
 
     #[test]
     fn disengage_ends_with_the_movers_turn() {
         let mut state = provoking_encounter(0);
-        step_events(&mut state, StepRequest::Disengage { actor_id: "a".into() }).unwrap();
+        step_events(&mut state, StepRequest::Disengage { actor_id: "a".into(), extra: false }).unwrap();
         step_events(&mut state, StepRequest::end_turn()).unwrap();
         assert!(!state.combatants[0].action_economy.disengaged, "the flag ends with the turn");
         for _ in 0..2 {
@@ -4211,7 +4372,7 @@ mod tests {
         stunned.combatants[1].conditions.push(ConditionInstance { condition: Condition::Stunned, duration: Duration::Rounds(1), source: None, ends_on_damage: false });
         refused(&mut stunned, None, RangeBand::Far, &[oa("b", None)], "cannot act");
         let mut slowed = base.clone();
-        slowed.active_modifiers.push(ActiveModifier { target: ModifierTarget::Reactions, change: ModifierChange::None, remaining: Duration::Rounds(1), source: Some("b".into()), bearer: None, source_ability: None, ends_on_damage: false });
+        slowed.active_modifiers.push(ActiveModifier { target: ModifierTarget::Reactions, change: ModifierChange::None, remaining: Duration::Rounds(1), source: Some("b".into()), bearer: None, source_ability: None, ends_on_damage: false, on_end: vec![] });
         refused(&mut slowed, None, RangeBand::Far, &[oa("b", None)], "cannot take reactions");
         let mut unseen = base.clone();
         unseen.combatants[0].conditions.push(ConditionInstance { condition: Condition::Invisible, duration: Duration::Rounds(1), source: None, ends_on_damage: false });
@@ -4697,7 +4858,7 @@ mod tests {
                 s.combatants[1].resources.insert(format!("{CASTER}:slot:1"), 4);
             },
             |s| s.combatants[1].conditions.push(ConditionInstance { condition: Condition::Incapacitated, duration: Duration::Permanent, source: None, ends_on_damage: false }),
-            |s| s.active_modifiers.push(ActiveModifier { target: ModifierTarget::Reactions, change: ModifierChange::None, remaining: Duration::Rounds(1), source: Some(CASTER.into()), bearer: None, source_ability: None, ends_on_damage: false }),
+            |s| s.active_modifiers.push(ActiveModifier { target: ModifierTarget::Reactions, change: ModifierChange::None, remaining: Duration::Rounds(1), source: Some(CASTER.into()), bearer: None, source_ability: None, ends_on_damage: false, on_end: vec![] }),
         ];
         for setup in setups {
             let mut state = answering(&base, vec![]);
@@ -5021,6 +5182,7 @@ mod tests {
             bearer: Some(bearer.into()),
             source_ability: ability.map(Into::into),
             ends_on_damage: false,
+            on_end: vec![],
         }
     }
 
@@ -5069,9 +5231,10 @@ mod tests {
         assert!(events.iter().any(|e| e.message == "other gains haste from mage"), "{events:?}");
         assert_eq!((ac_of(&state, "other"), speed_of(&state, "other")), (2, 60));
         assert_eq!((ac_of(&state, "mage"), speed_of(&state, "mage")), (0, 30));
-        break_concentration(&mut state, "mage", &mut vec![]).unwrap();
-        assert_eq!((ac_of(&state, "other"), speed_of(&state, "other")), (0, 30));
-        assert!(state.active_modifiers.is_empty());
+        drop_concentration(&mut state, "mage");
+        assert_eq!((ac_of(&state, "other"), speed_of(&state, "other")), (0, 0), "lethargy roots it");
+        assert_eq!(state.active_modifiers.len(), 1);
+        assert_eq!(state.active_modifiers[0].source_ability.as_deref(), Some("haste-lethargy"));
     }
 
     #[test]
@@ -5108,11 +5271,12 @@ mod tests {
             act(&mut state, "m1", "haste", &["other"]).unwrap();
             state.active_turn = Some("m2".into());
             act(&mut state, "m2", "haste", &["other"]).unwrap();
-            assert_eq!(state.active_modifiers.len(), 6);
+            assert_eq!(state.active_modifiers.len(), 8);
             assert_eq!((ac_of(&state, "other"), speed_of(&state, "other")), (2, 60));
-            break_concentration(&mut state, ending, &mut vec![]).unwrap();
-            assert_eq!(state.active_modifiers.len(), 3);
-            assert_eq!((ac_of(&state, "other"), speed_of(&state, "other")), (2, 60), "after {ending} stops");
+            drop_concentration(&mut state, ending);
+            assert_eq!(state.active_modifiers.iter().filter(|m| m.source_ability.as_deref() == Some("haste")).count(), 4);
+            assert_eq!(ac_of(&state, "other"), 2, "after {ending} stops");
+            assert!(extra_action_uses(&state, "other").is_none(), "lethargy incapacitates it");
         }
     }
 
@@ -5237,5 +5401,169 @@ mod tests {
         let events = act(&mut state, "mage", "fly", &["other"]).unwrap();
         assert!(events.iter().any(|e| e.message == "mage begins concentrating on fly"), "{events:?}");
         assert!(state.active_modifiers.is_empty());
+    }
+
+    fn hasted(casters: &[&str]) -> EncounterState {
+        let mut other = test_stat_block("other", "Other", 40, 12);
+        other.actions.push(smash(4, "1d4", 0));
+        other.actions.push(ability("flurry", vec![fx(serde_json::json!({"multiattack": {"steps": [{"action": {"action_id": "smash", "count": 2}}]}}))], None));
+        other.actions.push(ability("bolt", vec![Effect::Cast(cast("fire-bolt", None))], None));
+        other.actions.push(ability("sweep", vec![fx(serde_json::json!({"attack": {"modifier": 4, "reach": 5, "target_count": 2, "damage": [{"dice": "1d4", "type": "slashing"}]}}))], None));
+        let mut blocks: Vec<StatBlock> = casters.iter().map(|id| sure_caster(id, "haste")).collect();
+        blocks.extend([other, test_stat_block("foe", "Foe", 500, 1)]);
+        let mut combatants: Vec<Combatant> = casters.iter().map(|id| test_combatant(id, id, 30, "ally")).collect();
+        combatants.extend([test_combatant("other", "other", 40, "ally"), test_combatant("foe", "foe", 500, "enemy")]);
+        let mut state = test_encounter(blocks, combatants);
+        for id in casters {
+            state.active_turn = Some(id.to_string());
+            act(&mut state, id, "haste", &["other"]).unwrap();
+        }
+        state
+    }
+
+    fn extra(state: &mut EncounterState, actor: &str, action: &str, targets: &[&str]) -> Result<Vec<EngineEvent>, EngineError> {
+        let target_ids = targets.iter().map(|t| t.to_string()).collect();
+        step_events(state, StepRequest::Action { actor_id: actor.into(), action_id: action.into(), target_ids, slot_level: None, extra: true })
+    }
+
+    fn refusal(result: Result<Vec<EngineEvent>, EngineError>) -> String {
+        match result {
+            Err(EngineError::Illegal(m)) => m,
+            other => panic!("expected a refusal, got {other:?}"),
+        }
+    }
+
+    fn drop_concentration(state: &mut EncounterState, id: &str) -> Vec<EngineEvent> {
+        let mut stream = Stream::from_state(state.rng.clone());
+        let mut events = vec![];
+        break_concentration(state, &mut stream, id, &mut events).unwrap();
+        state.rng = stream.state();
+        events
+    }
+
+    fn end_turn(state: &mut EncounterState) {
+        step_events(state, StepRequest::end_turn()).unwrap();
+    }
+
+    fn incapacitated(state: &EncounterState, id: &str) -> bool {
+        state.combatants[index_of(state, id).unwrap()].conditions.iter().any(|c| c.condition == Condition::Incapacitated)
+    }
+
+    #[test]
+    fn a_hasted_ally_makes_one_extra_attack_after_its_action() {
+        let mut state = hasted(&["mage"]);
+        state.active_turn = Some("other".into());
+        assert_eq!(extra_action_uses(&state, "other"), Some(vec![ExtraActionUse::OneAttack, ExtraActionUse::Disengage]));
+        act(&mut state, "other", "smash", &["foe"]).unwrap();
+        let events = extra(&mut state, "other", "smash", &["foe"]).unwrap();
+        assert!(events.iter().any(|e| e.message == "other uses its extra action"), "{events:?}");
+        assert_eq!(events.iter().filter(|e| e.kind == "attack").count(), 1);
+        let economy = &state.combatants[1].action_economy;
+        assert!(economy.action_used && economy.extra_action_used);
+        assert_eq!(extra_action_uses(&state, "other"), None);
+        assert_eq!(refusal(extra(&mut state, "other", "smash", &["foe"])), "extra action already used");
+    }
+
+    #[test]
+    fn the_extra_action_refuses_a_multiattack_a_spell_and_a_two_target_attack() {
+        let mut state = hasted(&["mage"]);
+        state.active_turn = Some("other".into());
+        for action in ["flurry", "bolt", "sweep"] {
+            assert_eq!(refusal(extra(&mut state, "other", action, &["foe"])), "other's extra action allows only one_attack, disengage", "{action}");
+        }
+        assert!(!state.combatants[1].action_economy.extra_action_used);
+    }
+
+    #[test]
+    fn disengage_as_the_extra_action_leaves_the_action_unused() {
+        let mut state = hasted(&["mage"]);
+        state.active_turn = Some("other".into());
+        step_events(&mut state, StepRequest::Disengage { actor_id: "other".into(), extra: true }).unwrap();
+        let economy = &state.combatants[1].action_economy;
+        assert!(economy.disengaged && economy.extra_action_used && !economy.action_used);
+        act(&mut state, "other", "smash", &["foe"]).unwrap();
+    }
+
+    #[test]
+    fn without_haste_the_extra_action_is_refused() {
+        let mut state = hasted(&[]);
+        state.active_turn = Some("other".into());
+        assert_eq!(extra_action_uses(&state, "other"), None);
+        assert_eq!(refusal(extra(&mut state, "other", "smash", &["foe"])), "other has no extra action");
+        let disengage = step_events(&mut state, StepRequest::Disengage { actor_id: "other".into(), extra: true });
+        assert_eq!(refusal(disengage), "other has no extra action");
+    }
+
+    #[test]
+    fn lethargy_from_the_casters_turn_lasts_through_the_allys_next_turn() {
+        let mut state = hasted(&["mage"]);
+        let events = drop_concentration(&mut state, "mage");
+        assert!(events.iter().any(|e| e.message == "haste ends on other"), "{events:?}");
+        assert!(incapacitated(&state, "other"));
+        assert_eq!(speed_of(&state, "other"), 0);
+        assert_eq!(ac_of(&state, "other"), 0);
+        assert_eq!(extra_action_uses(&state, "other"), None);
+        end_turn(&mut state);
+        assert_eq!(state.active_turn.as_deref(), Some("other"));
+        assert!(incapacitated(&state, "other"));
+        assert_eq!(refusal(act(&mut state, "other", "smash", &["foe"])), "other cannot act");
+        end_turn(&mut state);
+        assert!(!incapacitated(&state, "other"));
+        assert_eq!(speed_of(&state, "other"), 30);
+        assert!(state.active_modifiers.is_empty());
+    }
+
+    #[test]
+    fn lethargy_from_the_allys_own_turn_lasts_through_its_following_turn() {
+        let mut state = hasted(&["mage"]);
+        state.active_turn = Some("other".into());
+        drop_concentration(&mut state, "mage");
+        end_turn(&mut state);
+        assert!(incapacitated(&state, "other"), "the turn it began on does not count");
+        end_turn(&mut state);
+        end_turn(&mut state);
+        assert_eq!(state.active_turn.as_deref(), Some("other"));
+        assert!(incapacitated(&state, "other"));
+        assert_eq!(speed_of(&state, "other"), 0);
+        end_turn(&mut state);
+        assert!(!incapacitated(&state, "other"));
+        assert_eq!(speed_of(&state, "other"), 30);
+    }
+
+    #[test]
+    fn two_hastes_give_one_extra_action_and_either_ending_brings_lethargy() {
+        let mut state = hasted(&["m1", "m2"]);
+        state.active_turn = Some("other".into());
+        extra(&mut state, "other", "smash", &["foe"]).unwrap();
+        assert_eq!(refusal(extra(&mut state, "other", "smash", &["foe"])), "extra action already used");
+        drop_concentration(&mut state, "m1");
+        assert!(incapacitated(&state, "other"));
+        assert_eq!(ac_of(&state, "other"), 2, "the other Haste still applies");
+        assert_eq!(speed_of(&state, "other"), 0);
+    }
+
+    #[test]
+    fn an_empty_extra_action_list_allows_a_multiattack() {
+        let mut state = hasted(&[]);
+        let quicken = fx(serde_json::json!({"timed_modifier": {"target": {"extra_action": {"only": []}}, "change": "none", "duration": "until_end_of_turn", "bearer": "self"}}));
+        let block = &mut state.stat_blocks[0];
+        block.stat_block.bonus_actions.push(ability("quicken", vec![quicken], None));
+        block.hash = StatBlockSnapshot::from_stat_block(block.id.clone(), block.stat_block.clone()).hash;
+        state.active_turn = Some("other".into());
+        act(&mut state, "other", "quicken", &[]).unwrap();
+        assert_eq!(extra_action_uses(&state, "other"), Some(vec![]));
+        let events = extra(&mut state, "other", "flurry", &["foe"]).unwrap();
+        assert_eq!(events.iter().filter(|e| e.kind == "attack").count(), 2);
+        end_turn(&mut state);
+        assert!(state.active_modifiers.is_empty(), "until_end_of_turn ends with the bearer's turn");
+    }
+
+    #[test]
+    fn haste_carries_lethargy_on_its_extra_action_modifier_only() {
+        let state = hasted(&["mage"]);
+        let with_end: Vec<&ActiveModifier> = state.active_modifiers.iter().filter(|m| !m.on_end.is_empty()).collect();
+        assert_eq!(state.active_modifiers.len(), 4);
+        assert_eq!(with_end.len(), 1);
+        assert!(matches!(with_end[0].target, ModifierTarget::ExtraAction { .. }));
     }
 }

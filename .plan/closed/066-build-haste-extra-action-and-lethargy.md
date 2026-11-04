@@ -3,9 +3,9 @@ id: 066
 title: Build Haste extra action and lethargy
 type: task
 mode: AFK
-status: open
+status: closed
 blocked_by: [065]
-claimed: true
+claimed: false
 ---
 
 ## Question
@@ -62,3 +62,23 @@ Docs:
 Hand-off to 056: the policy reads the bearer's extra action through the same check the engine uses, and the buff value of an `extra_action` modifier is the bearer's best `one_attack` value over the horizon.
 
 ## Resolution
+
+Built on branch `ticket-066-build-haste-extra-action-and-lethargy`. A first builder was cut off mid-build; a second builder reviewed its uncommitted work against this ticket, found it complete, verified it and closed the ticket.
+
+- Model. `ModifierTarget::ExtraAction { only: Vec<ExtraActionUse> }` (`one_attack`, `disengage`; empty means any action). `TimedModifier.on_end` and `ActiveModifier.on_end` are serde default and skipped when empty. `ActionEconomy.extra_action_used` is skipped when false and reset with the economy at turn start. Durations `until_end_of_next_turn` and `until_end_of_turn`: storage is the flag the ticket suggested, done by rewriting `until_end_of_next_turn` to `until_end_of_turn` when the bearer's next turn starts, and `until_end_of_turn` ends in `finish_turn` for that bearer. Old states serialize nothing new.
+- Engine. `extra_action_uses(state, id)` (public) returns the joined uses of every applying `extra_action` modifier through `modifiers_on`, or `None` when there is none, it is spent, or the bearer can't act. `extra_action_allows(uses, action)` (public) is the use check: `one_attack` means effects are exactly one `Attack` with `target_count` 1. Ticket 056's policy should call these two. `resolve_action(.., extra)` and `disengage(.., extra)` refuse "<actor> has no extra action", "extra action already used", or "<actor>'s extra action allows only <uses>", log "<actor> uses its extra action", and set `extra_action_used`. Modifiers ended by duration, concentration, damage or a triggering attack go through `take_modifiers` and `fire_on_end`, which logs "<ability> ends on <bearer>" and resolves `on_end` from the source onto the bearer.
+- Data. Haste's fourth modifier is `extra_action` with `on_end` holding Incapacitated and a `set` 0 Speed, both `until_end_of_next_turn` with `source_ability: "haste-lethargy"` so they don't stack-group with Haste. The single agent clause is "The extra action can also Dash, Hide or Utilize." The standard casters 05 to 20 carry the same clause. `check-spell-effects.py` renders `on_end` facts and reports 84 entries consistent.
+- CLI and live. `--extra` on `bench action` and `bench disengage`, which `bench help --json` lists. `Command::Action`/`Disengage` and `StepRequest` carry `extra`, skipped when false. `digest.extra_action` shows the active combatant's uses (`["any"]` for an empty list), and only for party combatants in the public view.
+- Tests (engine and live): one extra attack after the action, a second refused; Multiattack, spell and two-target attack refused; Disengage `--extra` leaves the action unused; no Haste refused; lethargy from the caster's turn and from the ally's own turn; two Hastes give one extra action and either ending brings lethargy; an empty `only` homebrew bonus action allows a Multiattack; Haste's `on_end` sits on one modifier; a live hasted striker uses `--extra` and replays matching.
+- Old states. `bench-core/tests/data/engine-0.1.6-state.json` (a 0.1.6 encounter with a disengage and a Haste cast) loads through `store::load`, passes `store::check`, re-serializes unchanged, and replays its first four commands (no `extra`) with matching hashes, then diverges at the Haste cast because Haste now adds a modifier. The version gate already sends that case to `bench replay`.
+- Versions. Workspace and `ENGINE_VERSION` 0.1.7; policy stays v3. `a_fixture_regenerates_to_its_committed_row` passes, so it isn't ignored. `cargo test --workspace` passes; clippy shows only master's two engine.rs errors (redundant clone at the triggering-attack loop, too many args on `apply_damage`). The SRD import exits 0 with 341 of 341 graduated.
+- Batch numbers. Release builds of master and this branch, `bench batch <id> --levels <L> --fights 200 --seed 66` (goblin warrior with `--assume` for scimitar and shortbow): goblin warrior and adult red dragon at levels 5 and 11 give byte-identical output apart from the engine version strings.
+
+Readings chosen where the ticket was open:
+
+- `until_end_of_turn` is a second new duration, used for the stored form of `until_end_of_next_turn` and available to homebrew ("until the end of its turn").
+- `on_end` does not fire when an override clears a modifier, or when the encounter ends.
+- The lethargy is not removed early when another Haste still applies; the PHB ties it to "when the spell ends".
+- An extra action can't take a bonus action or reaction entry ("..., which is not an action").
+
+No follow-up tickets or new fog.

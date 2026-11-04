@@ -1973,6 +1973,7 @@ mod tests {
             bearer: bearer.map(Into::into),
             source_ability: Some("haste".into()),
             ends_on_damage: false,
+            on_end: vec![],
         };
         state.active_modifiers.push(hasted(Some("a")));
         state.combatants[1].action_economy.movement_used_feet = 5;
