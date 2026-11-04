@@ -115,8 +115,9 @@ Takeable now, in order:
 
 - Build saving-throw condition sources (task, AFK); it also adds timed save modifiers such as Haste's, read through their bearer
 - Batch warns when plans fail or casts are never ready (task, AFK)
+- Build massive damage at 0 Hit Points (task, AFK); found by the 068 audit
 
 Blocked:
 
-- Build v3 scoring for buffs, forced movement and teleports (task, AFK), waits on Build saving-throw condition sources; it regenerates the baseline once
+- Build v3 scoring for buffs, forced movement and teleports (task, AFK), waits on Build saving-throw condition sources and Build massive damage at 0 Hit Points; it regenerates the baseline once
 - Do dragons still read above their CR on the v3 curve (task, AFK), waits on Build v3 scoring; it takes over the dragon fog item, whose reactions half policy v3 now covers
