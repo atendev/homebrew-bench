@@ -48,6 +48,14 @@ _Avoid_: Supported, custom ability
 A part of an otherwise modeled ability that the engine cannot run, kept as text for the agent to resolve. The rest of the ability still runs through the engine.
 _Avoid_: Rider, partial ability
 
+**Cast level**:
+The level a spell takes on for one casting: the level of the slot spent, or the spell's own level when no slot is named. A monster casts at the spell's own level unless its stat block names a "level N version". Cantrips have no cast level; their damage grows with the caster's character level instead.
+_Avoid_: Spell level (that is the spell's fixed level), slot
+
+**Upcast**:
+A cast whose cast level is above the spell's own level. Scaling rules in the spell effects file say what grows per level. What the engine can't apply is kept as an upcast clause, a kind of agent clause.
+_Avoid_: Overcast, higher-level casting
+
 **Modifier**:
 A timed change a modeled ability puts on a combatant's stats or rolls, such as halved Speed, no Reactions, or Disadvantage on Strength checks. It ends on a duration or a successful save. Conditions are separate: the ruleset defines them.
 _Avoid_: Buff, debuff, status

@@ -74,10 +74,11 @@ Both modes ship in phase 1. Everything the engine can't model is labeled agent j
 - [Live legendary actions](closed/048-live-legendary-actions.md): declared on `bench end-turn --legendary <holder>:<action-id>[=<target>,...]` and resolved between the end of one turn and the start of the next, several uses per window in the engine and one in batch, all usage kinds checked, a `digest.legendary` instead of a prompt, and the batch reorder landing with an `ENGINE_VERSION` bump that marks the baseline stale until the v3 build.
 - [Build live legendary actions](closed/057-build-live-legendary-actions.md): `bench end-turn --legendary` resolves declared legendary actions between `finish_turn` and `start_next_turn`, one eligibility function serves the CLI, batch and `digest.legendary`, all usage kinds apply, batch moved into the same gap, and the engine is 0.1.1 with the baseline left stale. See `docs/adr/0016-legendary-actions-declared-on-the-end-turn.md`.
 - [Import legendary action cooldowns](closed/058-import-legendary-action-cooldowns.md): the importer sets `usage: cooldown_until_next_turn` on the 44 SRD legendary actions that say the creature can't take them again until the start of its next turn. It reads this from the prose with a review note, as a recorded exception in ADR 0008. The baseline is left stale on the fixture set for ticket 056 to regenerate.
+- [Upcast spell scaling](closed/050-upcast-spell-scaling.md): a cast resolves at its slot level or the spell's own level, effects entries gain `level` and an `upcast_clause` for what the engine can't apply, scaling rules are `extra_dice`, `extra_modifier`, `extra_targets` and `extra_effects` applied per level above the base, the scaffold and honesty check cover the higher-level text, live gets `bench action --slot`, and the engine goes to 0.1.2 with 14 dragon fixtures changing before ticket 056's regeneration.
 
 ## Not yet specified
 
-- Dragons read a level or more above their CR on the baseline curve from tier 2 up, and the pit fiend and the lich stay hard at high CR (ticket 052). It is not yet clear whether the cause is the SRD's own CR choices, a tactics policy gap such as no reactions or no spreading out against breath weapons, or an engine modeling gap. The batch reactions ticket may answer part of it.
+- Dragons read a level or more above their CR on the baseline curve from tier 2 up, and the pit fiend and the lich stay hard at high CR (ticket 052). It is not yet clear whether the cause is the SRD's own CR choices, a tactics policy gap such as no reactions or no spreading out against breath weapons, or an engine modeling gap. The batch reactions ticket may answer part of it. Upcast scaling (ticket 059) makes the 14 dragons that cast "level N version" spells hit harder, so read dragon cells on the regenerated curve with that in mind.
 
 ## Out of scope
 
@@ -92,7 +93,7 @@ Both modes ship in phase 1. Everything the engine can't model is labeled agent j
 
 Takeable now, in order:
 
-- Upcast spell scaling (grilling)
+- Build upcast spell scaling (task, AFK)
 - Encounter lighting setting (grilling)
 - Live reaction windows (grilling)
 - Batch policy takes reactions (grilling)
@@ -100,4 +101,4 @@ Takeable now, in order:
 
 Blocked:
 
-- Build v3 scoring for buffs, forced movement and teleports (task, AFK), waits on Batch policy takes reactions; it regenerates the baseline once
+- Build v3 scoring for buffs, forced movement and teleports (task, AFK), waits on Batch policy takes reactions and Build upcast spell scaling; it regenerates the baseline once
