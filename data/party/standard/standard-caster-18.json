@@ -49,8 +49,7 @@
     },
     {
       "agent_clauses": [
-        "Each dart hits a visible target of the caster's choice; the engine treats them as auto-hit damage instances.",
-        "One additional dart per spell slot level above 1."
+        "Each dart hits a visible target of the caster's choice; the engine treats them as auto-hit damage instances."
       ],
       "desc": "Level 1 spell. Cast Magic Missile.",
       "effects": [
@@ -102,7 +101,7 @@
     },
     {
       "agent_clauses": [
-        "One additional ray per slot above 2; distribute rays among targets as desired."
+        "Distribute rays among targets as desired."
       ],
       "desc": "Level 2 spell. Cast Scorching Ray.",
       "effects": [
@@ -419,8 +418,7 @@
     },
     {
       "agent_clauses": [
-        "On a failed Wisdom save, up to twelve targets follow a reasonable course of activity for the duration.",
-        "Duration increases with higher-level slots: 7 (10 days), 8 (30 days), 9 (366 days)."
+        "On a failed Wisdom save, up to twelve targets follow a reasonable course of activity for the duration."
       ],
       "desc": "Level 6 spell. Cast Mass Suggestion.",
       "effects": [
@@ -438,8 +436,7 @@
     },
     {
       "agent_clauses": [
-        "Spells of level 5 or lower cast from outside the 10-foot Emanation cannot affect creatures inside it.",
-        "Blocks spells of 1 level higher per spell slot level above 6."
+        "Spells of level 5 or lower cast from outside the 10-foot Emanation cannot affect creatures inside it."
       ],
       "desc": "Level 6 spell. Cast Globe of Invulnerability.",
       "effects": [
@@ -504,7 +501,7 @@
           "cast": {
             "slot_level": 7,
             "spell_id": "dominate-person",
-            "upcast": false
+            "upcast": true
           }
         }
       ],
@@ -514,8 +511,7 @@
     },
     {
       "agent_clauses": [
-        "Target enters the Border Ethereal for the duration and cannot interact with creatures on the Material Plane.",
-        "One additional willing creature per spell slot level above 7, within 10 feet."
+        "Target enters the Border Ethereal for the duration and cannot interact with creatures on the Material Plane."
       ],
       "desc": "Level 7 spell. Cast Etherealness.",
       "effects": [
@@ -644,8 +640,7 @@
     {
       "agent_clauses": [
         "Target has Advantage on the save if the caster or its allies are fighting it.",
-        "The target repeats the save whenever it takes damage, ending the spell on a success.",
-        "Concentration lasts up to 8 hours with a level 9 slot."
+        "The target repeats the save whenever it takes damage, ending the spell on a success."
       ],
       "desc": "Level 9 spell. Cast Dominate Monster.",
       "effects": [
@@ -653,7 +648,7 @@
           "cast": {
             "slot_level": 9,
             "spell_id": "dominate-monster",
-            "upcast": false
+            "upcast": true
           }
         }
       ],

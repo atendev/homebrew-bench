@@ -49,8 +49,7 @@
     },
     {
       "agent_clauses": [
-        "Each dart hits a visible target of the caster's choice; the engine treats them as auto-hit damage instances.",
-        "One additional dart per spell slot level above 1."
+        "Each dart hits a visible target of the caster's choice; the engine treats them as auto-hit damage instances."
       ],
       "desc": "Level 1 spell. Cast Magic Missile.",
       "effects": [

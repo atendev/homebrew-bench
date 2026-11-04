@@ -49,8 +49,7 @@
     },
     {
       "agent_clauses": [
-        "Each dart hits a visible target of the caster's choice; the engine treats them as auto-hit damage instances.",
-        "One additional dart per spell slot level above 1."
+        "Each dart hits a visible target of the caster's choice; the engine treats them as auto-hit damage instances."
       ],
       "desc": "Level 1 spell. Cast Magic Missile.",
       "effects": [
@@ -102,7 +101,7 @@
     },
     {
       "agent_clauses": [
-        "One additional ray per slot above 2; distribute rays among targets as desired."
+        "Distribute rays among targets as desired."
       ],
       "desc": "Level 2 spell. Cast Scorching Ray.",
       "effects": [
@@ -419,8 +418,7 @@
     },
     {
       "agent_clauses": [
-        "On a failed Wisdom save, up to twelve targets follow a reasonable course of activity for the duration.",
-        "Duration increases with higher-level slots: 7 (10 days), 8 (30 days), 9 (366 days)."
+        "On a failed Wisdom save, up to twelve targets follow a reasonable course of activity for the duration."
       ],
       "desc": "Level 6 spell. Cast Mass Suggestion.",
       "effects": [
@@ -438,8 +436,7 @@
     },
     {
       "agent_clauses": [
-        "Spells of level 5 or lower cast from outside the 10-foot Emanation cannot affect creatures inside it.",
-        "Blocks spells of 1 level higher per spell slot level above 6."
+        "Spells of level 5 or lower cast from outside the 10-foot Emanation cannot affect creatures inside it."
       ],
       "desc": "Level 6 spell. Cast Globe of Invulnerability.",
       "effects": [

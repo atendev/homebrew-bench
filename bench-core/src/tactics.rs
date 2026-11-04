@@ -609,7 +609,7 @@ impl<'a> Ctx<'a> {
         effects
             .iter()
             .map(|e| match e {
-                Effect::Heal(h) => dice_average(&h.dice) + f64::from(h.modifier),
+                Effect::Heal(h) => h.dice.as_deref().map_or(0.0, dice_average) + f64::from(h.modifier),
                 Effect::Cast(cast) => engine::bound_cast_effects(block, cast).map_or(0.0, |(fx, _)| self.heal_amount(block, &fx)),
                 Effect::Area(area) => self.heal_amount(block, std::slice::from_ref(&*area.effect)),
                 _ => 0.0,
@@ -800,7 +800,7 @@ impl<'a> Ctx<'a> {
                 let target_threat = if factor == 0.0 || self.threat_nesting.get() >= MAX_THREAT_NESTING { 0.0 } else { self.threat(target) };
                 Value { control: factor * target_threat, ..Default::default() }
             }
-            Effect::Heal(h) => Value { heal: dice_average(&h.dice) + f64::from(h.modifier), ..Default::default() },
+            Effect::Heal(h) => Value { heal: h.dice.as_deref().map_or(0.0, dice_average) + f64::from(h.modifier), ..Default::default() },
             Effect::MoveThenAttack(m) => self.action_value(actor, block, &m.attack_id, target, depth, ranged_in_melee),
             Effect::UseAction(u) => self.action_value(actor, block, &u.action_id, target, depth, ranged_in_melee),
             Effect::Cast(cast) => match engine::bound_cast_effects(block, cast) {
@@ -1359,7 +1359,7 @@ mod tests {
     fn bare_heal_is_self_only_and_never_revives() {
         let mut state = duel(["1d8", "1d8"], [30, 30]);
         let second_wind = AbilityEntry {
-            effects: vec![Effect::Heal(crate::effect::Heal { dice: "1d10".into(), modifier: 1 })],
+            effects: vec![Effect::Heal(crate::effect::Heal { dice: Some("1d10".into()), modifier: 1, spellcasting_modifier: true })],
             usage: Some(Usage::PerRest { rest: crate::effect::RestLength::Short, uses: 1 }),
             ..melee("second-wind", 0, "1d1")
         };

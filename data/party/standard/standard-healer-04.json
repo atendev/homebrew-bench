@@ -85,8 +85,7 @@
     },
     {
       "agent_clauses": [
-        "Up to three targets' Hit Point maximums and current Hit Points increase by 5.",
-        "Increase by 5 per spell slot level above 2."
+        "Up to three targets' Hit Point maximums and current Hit Points increase by 5."
       ],
       "desc": "Level 2 spell. Cast Aid.",
       "effects": [

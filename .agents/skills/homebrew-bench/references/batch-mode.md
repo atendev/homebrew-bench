@@ -57,7 +57,7 @@ If the batch errors with unresolved ids, return to step 2 for those ids.
 
 Present the result from the JSON on stdout, then point to `report_path` for the full HTML report.
 
-1. Lead with anything the numbers leave out: every `findings` entry of kind `skipped`, `ignored`, `assumed` or `agent_clause`, and every cast the sampled logs mark `(not in effects file)`. Say plainly that the results may understate or overstate the monster because of them.
+1. Lead with anything the numbers leave out: every `findings` entry of kind `skipped`, `ignored`, `assumed` or `agent_clause`, every cast the sampled logs mark `(not in effects file)`, and every `Spell <id> at level <n>: <clause> is not applied` warning, which names what a higher slot does that the engine leaves out. Say plainly that the results may understate or overstate the monster because of them.
 2. The headline: `comparison.verdict`, the claimed CR beside `effective_cr`, and `comparison.basis`. The difficulty bands and effective CR are homebrew-bench calibration against the baseline curve, not SRD numbers. Say so.
 3. A table per level: band, win rate, PC deaths, rounds (median), monster damage per round (median), stalemates, and any level `flags`.
 4. Every warning in `comparison.anomalies`, `comparison.thin_cells` and `comparison.stale`, and the run's `warnings`.

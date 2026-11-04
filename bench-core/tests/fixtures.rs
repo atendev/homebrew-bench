@@ -106,3 +106,60 @@ fn grouped_and_optional_multiattack_steps_become_alternatives() {
     let MultiattackStep::Alternatives { sets } = &erinyes[1] else { panic!("{erinyes:?}") };
     assert!(sets[1].is_empty(), "Entangling Rope is optional");
 }
+
+fn casts_in(value: &serde_json::Value, out: &mut Vec<bench_core::effect::Cast>) {
+    match value {
+        serde_json::Value::Object(map) => {
+            if map.contains_key("spell_id") {
+                out.push(serde_json::from_value(value.clone()).expect("cast"));
+            }
+            map.values().for_each(|v| casts_in(v, out));
+        }
+        serde_json::Value::Array(items) => items.iter().for_each(|v| casts_in(v, out)),
+        _ => {}
+    }
+}
+
+#[test]
+fn fixture_and_party_casts_upcast_exactly_above_the_spell_level() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("..");
+    let effects: serde_json::Value = serde_json::from_str(
+        &std::fs::read_to_string(root.join("data/spells/effects.json")).unwrap(),
+    )
+    .unwrap();
+    let mut faults = Vec::new();
+    let mut checked = 0;
+    for dir in ["data/fixtures", "data/party/standard"] {
+        for entry in std::fs::read_dir(root.join(dir)).expect("directory") {
+            let path = entry.unwrap().path();
+            let block: serde_json::Value =
+                serde_json::from_str(&std::fs::read_to_string(&path).unwrap()).unwrap();
+            let mut casts = Vec::new();
+            casts_in(&block, &mut casts);
+            for cast in casts {
+                let Some(level) = effects[&cast.spell_id]["level"].as_u64() else {
+                    continue;
+                };
+                checked += 1;
+                let slot = cast.slot_level.map(u64::from);
+                if slot.is_some_and(|s| s < level) || (level == 0 && slot.is_some()) {
+                    faults.push(format!(
+                        "{}: {} at slot {slot:?} is below level {level}",
+                        path.display(),
+                        cast.spell_id
+                    ));
+                }
+                if cast.upcast != slot.is_some_and(|s| s > level) {
+                    faults.push(format!(
+                        "{}: {} at slot {slot:?} has upcast {}",
+                        path.display(),
+                        cast.spell_id,
+                        cast.upcast
+                    ));
+                }
+            }
+        }
+    }
+    assert!(checked > 100, "only {checked} casts checked");
+    assert!(faults.is_empty(), "{}", faults.join("\n"));
+}

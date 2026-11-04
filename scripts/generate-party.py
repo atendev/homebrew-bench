@@ -161,7 +161,7 @@ def spell_entry(spell_id, name, tier, effects_entry):
         "name": name,
         "desc": f"{level_text}. Cast {name}.",
         "kind": kind,
-        "effects": [{"cast": {"spell_id": spell_id, "slot_level": None if tier == 0 else tier, "upcast": False}}],
+        "effects": [{"cast": {"spell_id": spell_id, "slot_level": None if tier == 0 else tier, "upcast": tier > effects_entry["level"]}}],
     }
     if clauses:
         entry["agent_clauses"] = list(clauses)
