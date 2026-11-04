@@ -2151,6 +2151,7 @@ mod tests {
             assert!(lines(&second).iter().all(|l| !l.starts_with("OPPORTUNITY ATTACK")), "asked before any attack: {:?}", lines(&second));
             assert!(digest_of(&state, true)["pending"].is_null(), "a monster's open window stays private");
             assert_eq!(digest_of(&state, false)["pending"]["kind"], "reaction");
+            let declined_from = state.log.len();
             let resolved = execute(&mut state, decline()).unwrap();
             let Some(shield) = state.pending.clone() else { continue };
             assert_eq!((shield.kind.as_str(), shield.actor_id.as_str()), ("reaction", CASTER), "{:?}", lines(&resolved));
@@ -2166,6 +2167,8 @@ mod tests {
             let public = crate::log::render_public(&state.log);
             assert!(public.contains(&format!("PROMPT {} answered: takes Scimitar", first.message)), "{public}");
             assert!(!public.contains(&next.message), "a declined monster window stays private: {public}");
+            let after_decline = crate::log::render_public(&state.log[declined_from..]);
+            assert!(!after_decline.contains(&order[1]), "nothing about the declined reactor: {after_decline}");
             assert!(crate::log::render(&state.log).contains(&format!("PROMPT {} declined", next.message)));
 
             execute(&mut state, Command::Undo).unwrap();

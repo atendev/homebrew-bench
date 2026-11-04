@@ -56,7 +56,9 @@ pub enum ReactionAnswer {
 /// What the decider says about a window.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Decision {
-    Answer(ReactionAnswer),
+    /// An answer, with an optional one-line reason the engine logs as a
+    /// `reaction_reason` event. Live mode and `PassAll` give none.
+    Answer { answer: ReactionAnswer, reason: Option<String> },
     /// No answer yet: the engine records the window and the caller prompts for it.
     Wait,
 }
@@ -78,9 +80,9 @@ impl ReactionDecider {
     /// Decide one window, given the state as the engine presents it there.
     pub fn decide(&mut self, _state: &EncounterState, window: &ReactionWindow) -> Decision {
         match self {
-            ReactionDecider::PassAll => Decision::Answer(ReactionAnswer::Pass),
+            ReactionDecider::PassAll => Decision::Answer { answer: ReactionAnswer::Pass, reason: None },
             ReactionDecider::Queued(_) if matches!(window.trigger, WindowTrigger::Opportunity { .. }) => Decision::Wait,
-            ReactionDecider::Queued(answers) => answers.pop_front().map_or(Decision::Wait, Decision::Answer),
+            ReactionDecider::Queued(answers) => answers.pop_front().map_or(Decision::Wait, |answer| Decision::Answer { answer, reason: None }),
         }
     }
 }

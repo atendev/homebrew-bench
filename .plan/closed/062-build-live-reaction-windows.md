@@ -131,7 +131,8 @@ Readings chosen where the ticket was open:
 - A move stops at its first unanswered window. An unanswered hit window is recorded and the run continues as a pass, the way a missing die does. A window after a missing die passes unasked, so prompts come in the order the engine met them.
 - An Opportunity Attack window offers the reactor's default attack first, then every other ready single melee attack in stat-block order.
 - `respond --take` with no id is stored in the history with the offered id filled in.
-- Public view: a monster window's opening line and a monster's decline are hidden, and its take is shown. The public digest shows no pending prompt while a monster's window is open. A declined Opportunity Attack still leaves the `opportunity_attack` notice, public as before.
+- Public view: a monster window's opening line and a monster's decline are hidden, and its take is shown. The public digest shows no pending prompt while a monster's window is open.
+- Audit fixes: a reactor that declined its Opportunity Attack window in live mode gets no `opportunity_attack` notice, so the public view shows nothing about it. Batch passes windows inside the engine and keeps the notice. `Decision::Answer` carries an optional reason, logged as a `reaction_reason` event, for ticket 063; live mode and `PassAll` give none. A taken reaction's agent clauses print as `agent_clause` events right after the `attack_rechecked` line, so Riposte's "On a miss" clause reads after the result it depends on.
 - A reaction prompt has `sides: null` and `remaining: 1`.
 - `settings.reaction_windows` can be changed with `bench override` like any settings field. It isn't documented as a way to turn windows off.
 

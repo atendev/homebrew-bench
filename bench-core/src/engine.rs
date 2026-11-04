@@ -442,7 +442,8 @@ fn resolve_effect(
                 if hit && state.settings.reaction_windows {
                     let trigger = WindowTrigger::Hit { attacker_id: actor_id.into(), total, ac, critical };
                     if let Some(window) = hit_window(state, target_index, &attack, trigger) {
-                        if let Some(ReactionAnswer::Take(id)) = ask(state, window.clone()) {
+                        let answer = ask(state, window.clone(), events);
+                        if let Some(ReactionAnswer::Take(id)) = answer {
                             let name = window.option(&id).ok_or_else(|| EngineError::Invalid(format!("{target_id} has no reaction {id} for this hit")))?.name.clone();
                             events.push(event("reaction", format!("REACTION {target_id}: {name} (hit by {actor_id})"), target_id, actor_id));
                             state.rng = stream.state();
@@ -460,6 +461,10 @@ fn resolve_effect(
                                 damage: None,
                                 player_dice: false,
                             });
+                            let clauses = stat_block(state, &state.combatants[target_index])?.reactions.iter().find(|a| a.id == id).map(|a| a.agent_clauses.clone()).unwrap_or_default();
+                            for clause in clauses {
+                                events.push(event("agent_clause", format!("{target_id} {name}, agent clause: {clause}"), target_id, actor_id));
+                            }
                         }
                     }
                 }
@@ -1233,10 +1238,11 @@ fn move_combatant(
         })
         .collect::<Result<Vec<_>, EngineError>>()?;
     let mut attacking: Vec<String> = opportunity.iter().map(|oa| oa.reactor_id.clone()).collect();
+    let mut reasons = Vec::new();
     if state.settings.reaction_windows {
         let open: Vec<String> = provoked.iter().filter(|id| !attacking.contains(id) && !declined.contains(id)).cloned().collect();
         for window in opportunity_windows(state, i, &open) {
-            match ask(state, window.clone()) {
+            match ask(state, window.clone(), &mut reasons) {
                 None => return Ok(vec![]),
                 Some(ReactionAnswer::Pass) => {}
                 Some(ReactionAnswer::Take(id)) => {
@@ -1254,7 +1260,7 @@ fn move_combatant(
         }
     }
 
-    let mut events = Vec::new();
+    let mut events = reasons;
     let mut stream = Stream::from_state(state.rng.clone());
     for (r, attack) in attacks {
         let reactor_id = state.combatants[r].id.clone();
@@ -1279,7 +1285,7 @@ fn move_combatant(
     for (other, _) in &others {
         set_band(state, i, actor_id, other, band)?;
     }
-    for reactor_id in provoked.iter().filter(|id| !attacking.contains(id)) {
+    for reactor_id in provoked.iter().filter(|id| !attacking.contains(id) && !declined.contains(id)) {
         let r = index_of(state, reactor_id)?;
         match opportunity_eligibility(state, r, i) {
             Ok(()) => events.push(event(
@@ -1412,8 +1418,9 @@ fn hit_window(state: &EncounterState, target: usize, attack: &crate::effect::Att
 /// Ask the encounter's decider about one window. `None` means the window waits
 /// for an answer; the engine records it, and the caller throws the run away and
 /// prompts. Once a prompt is owed, by an earlier window or a missing PC die,
-/// every later window passes unasked.
-fn ask(state: &mut EncounterState, window: ReactionWindow) -> Option<ReactionAnswer> {
+/// every later window passes unasked. A decider's reason becomes a
+/// `reaction_reason` event.
+fn ask(state: &mut EncounterState, window: ReactionWindow, events: &mut Vec<EngineEvent>) -> Option<ReactionAnswer> {
     if state.reactions.waiting.is_some() {
         return None;
     }
@@ -1424,7 +1431,12 @@ fn ask(state: &mut EncounterState, window: ReactionWindow) -> Option<ReactionAns
     let decision = decider.decide(state, &window);
     state.reactions.decider = decider;
     match decision {
-        crate::reaction::Decision::Answer(answer) => Some(answer),
+        crate::reaction::Decision::Answer { answer, reason } => {
+            if let Some(reason) = reason {
+                events.push(event("reaction_reason", reason, &window.reactor_id, &window.reactor_id));
+            }
+            Some(answer)
+        }
         crate::reaction::Decision::Wait => {
             state.reactions.waiting = Some(window);
             None
@@ -4681,6 +4693,20 @@ mod tests {
     }
 
     #[test]
+    fn riposte_shows_its_agent_clause_after_the_recheck() {
+        for seed in 1..400 {
+            let mut state = answering(&windowed(fixture_block("ogre"), fixture_block("pirate-captain"), "ally", seed), vec![ReactionAnswer::Take("riposte".into())]);
+            let events = act(&mut state, "ogre", "greatclub", &["pirate-captain"]).unwrap();
+            let Some(recheck) = events.iter().position(|e| e.kind == "attack_rechecked") else { continue };
+            let clause = events.iter().position(|e| e.kind == "agent_clause").expect("clause");
+            assert_eq!(clause, recheck + 1);
+            assert!(events[clause].message.starts_with("pirate-captain Riposte, agent clause: On a miss"), "{}", events[clause].message);
+            return;
+        }
+        panic!("no seed hit");
+    }
+
+    #[test]
     fn opportunity_windows_open_in_initiative_order_before_any_attack() {
         let base = windowed_move(1);
         let mut first = base.clone();
@@ -4708,8 +4734,7 @@ mod tests {
         assert_eq!(events.iter().filter(|e| e.kind == "attack").count(), 1);
         assert!(state.combatants[1].action_economy.reaction_used);
         assert!(!state.combatants[2].action_economy.reaction_used);
-        let notices: Vec<_> = events.iter().filter(|e| e.kind == "opportunity_attack").map(|e| e.actor_id.as_deref()).collect();
-        assert_eq!(notices, [Some("c")]);
+        assert!(events.iter().all(|e| e.actor_id.as_deref() != Some("c")), "a declined reactor leaves no notice: {events:?}");
         assert_eq!(state.combatants[0].ranges["b"], RangeBand::Far);
     }
 
