@@ -20,20 +20,22 @@ The fault being fixed: `resolve_effect` (`bench-core/src/engine.rs`, the `Effect
 
 Model (`bench-core/src/effect.rs`, `bench-core/src/encounter.rs`):
 - `TimedModifier` gains `bearer: ModifierBearer` (`target` or `self`, serde default `target`) and `ends_on_damage: bool` (serde default false, skipped when false, as on `ConditionEffect`).
-- `ActiveModifier` gains `bearer: String`, `source_ability: Option<String>` and `ends_on_damage: bool`. A stored state with no `bearer` reads it as `source`, so states saved before this build keep their meaning. Use a custom deserialize or a post-load fix-up. Don't make `bearer` optional in the type.
+- `ActiveModifier` gains `bearer: Option<String>` (absent means the bearer is `source`), `source_ability: Option<String>` and `ends_on_damage: bool`. The engine sets `bearer` only when it differs from `source`, and every reader goes through one accessor that returns `bearer` or else `source`. Serialize none of the three when absent or false (`skip_serializing_if`), and give each a serde default.
+- Saved states must keep their hashes. `store::check` compares the stored tamper hash and the log's last `state_hash` with hashes of the re-serialized state (`bench-core/src/store.rs`, `check`), so a field that serializes on an old state turns every saved encounter with an active modifier into `StateTampered`. The skip rules above prevent that: an old modifier, and any self-borne modifier with no `source_ability`, serializes exactly as before.
 - These are additive fields with defaults. Keep the schema at version 1 and record the exception in ADR 0005, as ticket 054 did for `no_provoke`. Regenerate the JSON schema files if the repo commits them.
 
 Engine (`bench-core/src/engine.rs`):
 - `self` modifiers land on the actor. `target` modifiers land on each id in `target_ids`. A top-level `target` modifier resolved with no target is `EngineError::Illegal` ("<ability> needs a target for its modifier"). Nested under `on_failure` or `on_hit`, the target list is already the one target.
 - `source` stays the actor. `break_concentration` keeps removing modifiers by `source`.
 - Every reader keys on `bearer`: `attack_modifier`, `save_modifier`, `ac_modifier`, `apply_modifier_target_disposition` and the Reactions check in `opportunity_eligibility`. `RollModifier` pushes with `bearer` = the actor.
-- Same spell on the same bearer: before pushing, remove any active modifier with the same `bearer`, the same `source_ability` (when set) and the same `target`. PHB "Combining Spell Effects", p. 236.
+- Same spell on the same bearer (PHB "Combining Spell Effects", p. 236): keep every instance. When reading, modifiers on one bearer with the same `source_ability` (when set) and the same `target` form a group, and only one of them applies: the most potent, else the most recent. Potency: for `add`, the larger value; for `set` on Speed, the lower value; every other change counts as equally potent. "Most recent" is the later one in `active_modifiers`. When the applying instance ends, the next winner applies on its own. Modifiers with no `source_ability` always apply. Put the rule in the accessor that every reader and the walk-speed function use.
 - `ends_on_damage`: remove the bearer's modifiers that have it when the bearer takes damage, in the same place conditions with `ends_on_damage` end.
 - One walk-speed function, crate-visible, used by the engine, `tactics.rs` and `live.rs` in place of their three copies: the lowest `set` wins outright; otherwise walk speed plus the sum of `add`, then doubled once per `double` and halved once per `halve`, rounding down, floored at 0. Grappled and Restrained give 0 as they do now. Only `ModifierTarget::Speed` modifiers on that bearer count.
 - The modifier event names the bearer: "<bearer> gains <source_ability or 'a timed modifier'> from <source>".
 
 Data (`data/spells/effects.json`, `scripts/`):
-- Shield: `"bearer": "self"`. Haste, Fly, Slow and Hypnotic Pattern stay on the default `target`. Hypnotic Pattern's Speed 0 gets `"ends_on_damage": true`.
+- Shield: `"bearer": "self"`. Haste, Slow and Hypnotic Pattern stay on the default `target`. Hypnotic Pattern's Speed 0 gets `"ends_on_damage": true`.
+- Fly: the file models it as a `double` on Speed, but the 2024 spell gives the target a Fly Speed of 60 feet (PHB p. 275). `ModifierTarget::Speed` has no movement mode, and the engine moves by walk speed only, so a fly-speed modifier would be inert. Remove the modifier and its `extra_targets` scaling rule, keep "Target gains a Fly Speed of 60 feet and can hover for the duration" as an agent clause, and add "One additional target per spell slot level above 3" as an agent clause (or an `upcast_clause` if ticket 059 has landed). Fly then has no effects, like Bless; check that the cast still resolves and logs its clauses.
 - `scripts/scaffold-spells.py` writes `bearer: self` for a spell whose SRD range is Self, and `scripts/check-spell-effects.py` accepts the new fields.
 - Other modifiers in the file: check each top-level one and set `self` where the SRD range is Self.
 
@@ -44,10 +46,12 @@ Tests (write them first):
 - Haste cast on an ally gives that ally +2 AC, Advantage on Dexterity saves and double Speed, and the caster none of it. Breaking the caster's concentration removes all three from the ally.
 - Shield still gives its caster +5 AC on its own.
 - A top-level `target` modifier with no target is refused.
-- Two Hastes from two casters on one bearer leave one set of modifiers, from the second cast. Ending the first caster's concentration leaves the second set alone.
+- Two Hastes from two casters on one bearer: both sets are stored, the bearer gets +2 AC once, not +4, and doubled Speed once. Ending either caster's concentration leaves the other set applying.
+- Potency: a +1 and then a +3 AC from the same `source_ability` on one bearer give +3; ending the +3 brings back the +1. Two equal ones apply once.
 - Hypnotic Pattern's Speed 0 ends when the target takes damage, together with its conditions.
 - Walk speed: halved 30 is 15, doubled 30 is 60, halved and doubled 30 is 30, `set` 0 beats a `double`, an `add` of -40 on 30 is 0. A Hasted creature can make a 60-foot move in live and in the engine, and `movement_left` in the policy agrees.
-- An encounter state saved before this build (modifiers with no `bearer`) loads with `bearer` = `source`, and `replay` reproduces its recorded state hashes.
+- Old states: an encounter state file saved before this build, with an active modifier (write it with `master`'s binary or take a committed fixture state), passes `store::check` and loads with each modifier's bearer read as its `source`.
+- A modifier whose bearer is its source serializes with no `bearer` key, and one without `ends_on_damage` has no `ends_on_damage` key.
 
 Version and baseline:
 - Bump the workspace version, and with it `ENGINE_VERSION`, by one patch from what `master` holds when this lands. 059, 061 and 062 also take the next patch in landing order. Don't regenerate `data/baseline/curve.json`; ticket 056 does that once.
