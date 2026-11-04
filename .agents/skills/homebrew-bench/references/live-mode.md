@@ -36,6 +36,13 @@ Read `digest.active_turn` after every command. For each turn:
    - Until the prompt is answered, only `respond`, `undo`, `override` and read-only commands run.
 4. **Narrate** from `events` and `digest` only. Each event carries a ready-made `line`.
 5. **End the turn** with `bench end-turn` when the actor is done. It runs end- and start-of-turn effects, recharge rolls and repeat saves, and skips combatants who are dead, unconscious or stable. Other combatants who cannot act, such as a paralyzed one, still get a turn; end it at once.
+6. **Legendary actions** happen on the end-turn. Before you end a turn, read `digest.legendary`: it lists each creature that may take one when this turn ends, its `uses_left` and its `ready_actions`. Decide for monsters and ask the user about PCs. Then declare them on the end-turn:
+
+   ```
+   bench end-turn --legendary dragon:tail=mia --legendary dragon:wing=mia,theo
+   ```
+
+   Each `--legendary <holder>:<action-id>[=<target>,...]` costs one use, and they resolve in the order given, after this turn ends and before the next starts. The creature whose turn is ending can't take one; the creature whose turn comes next can. The engine refuses the whole end-turn when a declaration is not allowed: the holder can't act, has no uses left, or the action is not recharged, is on cooldown, or has no uses left today. The error gives the reason. A holder that drops partway loses its remaining uses (a `legendary_lost` event). An unmodeled legendary action still spends its use; resolve its text yourself after the command returns. The engine charges one use per legendary action. For one that costs more, record the extra with `bench override <holder>.resources.<holder>:legendary <used> --reason "<why>"`. Lair actions have no engine support. `bench undo` reverts the end-turn and its legendary actions together.
 
 When the user asks to take a turn back, run `bench undo`; it reverts one command and restores its dice. For anything larger, use an override with a reason.
 
@@ -47,7 +54,6 @@ Each of these is agent judgment. Label it, then record it through `bench roll <d
 - **Reactions.** The engine opens no reaction windows. When a trigger happens, such as a spell being cast, ask the user whether a PC reacts and decide for monsters. A reaction listed on the stat block runs with `bench action <actor> <reaction-id> <target-id>` out of turn.
 - **Opportunity attacks.** The engine rolls them, but you say who takes them, before the move. Check `digest.engagement` for every creature the move leaves. Skip this when the mover took Disengage or has Flyby or Agile: nothing provokes. Otherwise ask the user about each PC, decide for each monster, and pass every reactor on the move with `bench move <actor> <band> --opportunity <reactor>`. The reactor uses its first at-will melee attack. Append `:<attack-id>` to name a different melee attack, such as a limited-use one. The attacks resolve right before the move. If one leaves the mover unable to act, the move stops (a `move_stopped` event) and no movement is spent.
   The engine refuses the whole move when a named reactor can't react: it is on the mover's side, can't act, can't take reactions, has already used its reaction, can't see the mover (the mover is Invisible or the reactor is Blinded), the mover took Disengage this turn or has Flyby or Agile, or the move doesn't leave its reach. The error gives the reason. A provoking move without the flag returns an `opportunity_attack` event for each creature that could still react. If you meant one of them to attack, run `bench undo` and repeat the move with the flag. With `pc_dice = ask`, a PC reactor's dice pause the move on a dice prompt like any PC roll. The reaction comes back at the start of the reactor's own turn.
-- **Legendary actions.** Live mode has no command for them. Resolve them between turns with `bench roll` and `bench override`.
 - **Lighting, terrain, cover**, and every ruling the ruleset leaves open.
 
 Override paths are dotted over the state, such as `goblin-2.hp 14` or `mia.conditions '["prone"]'`. Use `--clear` to remove a value, `--standing` when the call should hold for the rest of the fight, and `--rule <slug>` when a house rule drove it. Add or remove combatants with `bench add <file or fixture id> --side monsters --band near` and `bench remove <id> --reason "<why>"`.

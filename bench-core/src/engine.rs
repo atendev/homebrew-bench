@@ -33,9 +33,40 @@ pub enum StepRequest {
     },
     /// The Disengage action: spends the action and sets the turn flag.
     Disengage { actor_id: String },
-    EndTurn,
+    /// Ends the active turn. The legendary actions listed resolve in order
+    /// after the turn ends and before the next one starts.
+    EndTurn {
+        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        legendary: Vec<LegendaryUse>,
+    },
     Respond { values: Vec<u32>, accept: bool },
     RollInitiative(InitiativeOptions),
+}
+
+impl StepRequest {
+    /// An end-turn with no legendary actions.
+    pub fn end_turn() -> Self {
+        StepRequest::EndTurn { legendary: vec![] }
+    }
+}
+
+/// One legendary action taken in the window between two turns. Each costs one
+/// of the holder's uses this round.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, schemars::JsonSchema)]
+pub struct LegendaryUse {
+    pub holder_id: String,
+    pub action_id: String,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub target_ids: Vec<String>,
+}
+
+/// A creature that may take a legendary action when the active turn ends.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct LegendaryHolder {
+    pub id: String,
+    pub uses_left: u32,
+    /// Legendary actions whose usage allows them now, in stat-block order.
+    pub ready_actions: Vec<String>,
 }
 
 /// A reactor that takes its Opportunity Attack on a move. Without `attack_id`
@@ -188,7 +219,7 @@ pub fn step_events(state: &mut EncounterState, request: StepRequest) -> Result<V
             move_combatant(state, &actor_id, target_id.as_deref(), band, feet, &opportunity)?
         }
         StepRequest::Disengage { actor_id } => disengage(state, &actor_id)?,
-        StepRequest::EndTurn => end_turn_events(state)?,
+        StepRequest::EndTurn { legendary } => end_turn_events(state, &legendary)?,
         StepRequest::Respond { values, accept } => respond(state, values, accept)?,
         StepRequest::RollInitiative(options) => roll_initiative(state, options)?,
     };
@@ -1118,21 +1149,71 @@ fn set_band(
     Ok(())
 }
 
-fn end_turn_events(state: &mut EncounterState) -> Result<Vec<EngineEvent>, EngineError> {
+fn end_turn_events(state: &mut EncounterState, legendary: &[LegendaryUse]) -> Result<Vec<EngineEvent>, EngineError> {
+    if legendary.is_empty() {
+        let mut events = finish_turn(state)?;
+        events.extend(start_next_turn(state)?);
+        return Ok(events);
+    }
+    let mut work = state.clone();
+    let mut events = finish_turn(&mut work)?;
+    events.extend(legendary_window(&mut work, legendary)?);
+    events.extend(start_next_turn(&mut work)?);
+    *state = work;
+    Ok(events)
+}
+
+/// The first half of an end-turn: end-of-turn effects for the active creature.
+/// The active turn stays set, so the legendary window that follows knows whose
+/// turn ended. Call [`start_next_turn`] after it.
+pub fn finish_turn(state: &mut EncounterState) -> Result<Vec<EngineEvent>, EngineError> {
     let current = state.active_turn.clone().ok_or_else(|| EngineError::Invalid("encounter has no active turn".into()))?;
     let mut events = vec![event("end_turn", format!("{current} ends its turn"), &current, &current)];
     if let Ok(i) = index_of(state, &current) {
         state.combatants[i].action_economy.disengaged = false;
     }
-
-    // Decrement durations on active modifiers
     decrement_durations(state, &mut events);
+    Ok(events)
+}
 
+fn legendary_window(state: &mut EncounterState, uses: &[LegendaryUse]) -> Result<Vec<EngineEvent>, EngineError> {
+    let mut scratch = state.clone();
+    for u in uses {
+        for target in &u.target_ids {
+            index_of(state, target)?;
+        }
+        spend_legendary(&mut scratch, &u.holder_id, &u.action_id)?;
+    }
+    let mut events = Vec::new();
+    let mut lost: Vec<&str> = Vec::new();
+    for u in uses {
+        if lost.contains(&u.holder_id.as_str()) {
+            continue;
+        }
+        if !can_act(&state.combatants[index_of(state, &u.holder_id)?]) {
+            events.push(event(
+                "legendary_lost",
+                format!("{} can no longer act and loses its remaining legendary actions", u.holder_id),
+                &u.holder_id,
+                &u.holder_id,
+            ));
+            lost.push(&u.holder_id);
+            continue;
+        }
+        events.extend(use_legendary_action(state, &u.holder_id, &u.action_id, &u.target_ids)?);
+    }
+    Ok(events)
+}
+
+/// The second half of an end-turn: pass over creatures that are down, advance
+/// the round when the order wraps, and run start-of-turn effects for the next
+/// creature.
+pub fn start_next_turn(state: &mut EncounterState) -> Result<Vec<EngineEvent>, EngineError> {
+    let current = state.active_turn.clone().ok_or_else(|| EngineError::Invalid("encounter has no active turn".into()))?;
+    let mut events = Vec::new();
     let current_index = state.initiative_order.iter().position(|id| id == &current).unwrap_or(0);
     let order_len = state.initiative_order.len().max(1);
     let mut next_index = (current_index + 1) % order_len;
-
-    // Skip dead, unconscious, or stable combatants; wrap rounds
     let mut wrapped = false;
     for _ in 0..order_len {
         if let Some(id) = state.initiative_order.get(next_index) {
@@ -1154,20 +1235,12 @@ fn end_turn_events(state: &mut EncounterState) -> Result<Vec<EngineEvent>, Engin
         state.round += 1;
     }
     state.active_turn = state.initiative_order.get(next_index).cloned();
-
-    // Start-of-turn for next combatant
     if let Some(next) = state.active_turn.clone() {
         if let Ok(i) = index_of(state, &next) {
             state.combatants[i].action_economy = ActionEconomy::default();
-            // Reset reaction
-            state.combatants[i].action_economy.reaction_used = false;
-            // Reset CooldownUntilNextTurn abilities
             reset_cooldowns(state, &next);
-            // Roll recharge for abilities with Recharge usage
             roll_recharge(state, &next, &mut events)?;
-            // Roll death saves for dying PCs
             roll_death_saves(state, &next, &mut events)?;
-            // Repeat saves
             process_repeat_saves(state, &next, &mut events)?;
         }
         events.push(event("start_turn", format!("{next} starts its turn"), &next, &next));
@@ -1242,6 +1315,7 @@ fn roll_recharge(state: &mut EncounterState, combatant_id: &str, events: &mut Ve
         .chain(block.traits.iter())
         .chain(block.bonus_actions.iter())
         .chain(block.reactions.iter())
+        .chain(block.legendary_actions.iter())
         .map(|a| (a.id.clone(), a.name.clone(), a.usage.clone()))
         .collect();
     let mut stream = Stream::from_state(state.rng.clone());
@@ -1367,41 +1441,91 @@ fn reset_cooldowns(state: &mut EncounterState, combatant_id: &str) {
     state.combatants[i].resources.remove(&format!("{combatant_id}:legendary"));
 }
 
-/// Spend one legendary action between turns. The engine tracks the per-round budget; the
-/// ability list has no cost field, so every legendary action costs one use.
-pub fn use_legendary_action(
-    state: &mut EncounterState,
-    actor_id: &str,
-    action_id: &str,
-    target_ids: &[String],
-) -> Result<Vec<EngineEvent>, EngineError> {
-    let i = index_of(state, actor_id)?;
-    if !can_act(&state.combatants[i]) {
-        return Err(EngineError::Illegal(format!("{actor_id} cannot act")));
+/// The legendary uses `holder_id` has left for the window that follows the
+/// active turn, or why it can take none. This is the one eligibility rule for
+/// live declarations, the batch policy and `digest.legendary`. The creature
+/// whose turn is ending is refused; the one whose turn comes next is not,
+/// because its budget only resets when its turn starts.
+pub fn legendary_uses_left(state: &EncounterState, holder_id: &str) -> Result<u32, String> {
+    let c = state.combatants.iter().find(|c| c.id == holder_id).ok_or_else(|| format!("{holder_id} is not in the encounter"))?;
+    let block = stat_block(state, c).map_err(|e| e.to_string())?;
+    if block.legendary_uses_per_round == 0 || block.legendary_actions.is_empty() {
+        return Err(format!("{holder_id} has no legendary actions"));
     }
+    if state.active_turn.as_deref() == Some(holder_id) {
+        return Err(format!("{holder_id} is the creature whose turn is ending"));
+    }
+    if !can_act(c) {
+        return Err(format!("{holder_id} cannot act"));
+    }
+    let used = c.resources.get(&format!("{holder_id}:legendary")).copied().unwrap_or(0).max(0) as u32;
+    if used >= block.legendary_uses_per_round {
+        return Err(format!("{holder_id} has no legendary actions left this round"));
+    }
+    Ok(block.legendary_uses_per_round - used)
+}
+
+/// Every creature that may take a legendary action when the active turn ends,
+/// in combatant order.
+pub fn legendary_holders(state: &EncounterState) -> Vec<LegendaryHolder> {
+    state
+        .combatants
+        .iter()
+        .filter_map(|c| {
+            let uses_left = legendary_uses_left(state, &c.id).ok()?;
+            let block = stat_block(state, c).ok()?;
+            let ready_actions = block
+                .legendary_actions
+                .iter()
+                .filter(|a| ability_ready(state, &c.id, a))
+                .map(|a| a.id.clone())
+                .collect();
+            Some(LegendaryHolder { id: c.id.clone(), uses_left, ready_actions })
+        })
+        .collect()
+}
+
+fn spend_legendary(
+    state: &mut EncounterState,
+    holder_id: &str,
+    action_id: &str,
+) -> Result<(crate::stat_block::AbilityEntry, u32, u32), EngineError> {
+    let i = index_of(state, holder_id)?;
+    let uses_left = legendary_uses_left(state, holder_id)
+        .map_err(|why| EngineError::Illegal(format!("{holder_id} cannot take a legendary action: {why}")))?;
     let (action, budget) = {
         let block = stat_block(state, &state.combatants[i])?;
         let action = block.legendary_actions.iter().find(|a| a.id == action_id).cloned()
             .ok_or_else(|| EngineError::NotFound(format!("legendary action {action_id} not found")))?;
-        (action, block.legendary_uses_per_round as i32)
+        (action, block.legendary_uses_per_round)
     };
-    let key = format!("{actor_id}:legendary");
-    let used = state.combatants[i].resources.get(&key).copied().unwrap_or(0);
-    if used >= budget {
-        return Err(EngineError::Illegal(format!("{actor_id} has no legendary actions left this round")));
+    if let Some(usage) = &action.usage {
+        spend_usage(state, i, action_id, usage)?;
     }
-    if let Some(Usage::Recharge { group, .. }) = &action.usage {
-        let rkey = format!("{actor_id}:{}", group.as_deref().unwrap_or(action_id));
-        if state.combatants[i].resources.get(&rkey).copied().unwrap_or(1) <= 0 {
-            return Err(EngineError::Illegal(format!("{action_id} is not recharged")));
-        }
-        state.combatants[i].resources.insert(rkey, 0);
-    }
-    state.combatants[i].resources.insert(key, used + 1);
+    let used = budget - uses_left + 1;
+    state.combatants[i].resources.insert(format!("{holder_id}:legendary"), used as i32);
+    Ok((action, used, budget))
+}
+
+/// Spend one legendary action in the window after the active turn ends. Every
+/// legendary action costs one use, and its own usage (recharge, cooldown, uses
+/// per day) is spent too.
+pub fn use_legendary_action(
+    state: &mut EncounterState,
+    holder_id: &str,
+    action_id: &str,
+    target_ids: &[String],
+) -> Result<Vec<EngineEvent>, EngineError> {
+    let (action, used, budget) = spend_legendary(state, holder_id, action_id)?;
     let mut stream = Stream::from_state(state.rng.clone());
-    let mut events = vec![event("legendary", format!("{actor_id} uses legendary action {}", action.name), actor_id, actor_id)];
+    let mut events = vec![event(
+        "legendary",
+        format!("LEGENDARY ACTION {holder_id}: {} ({used} of {budget})", action.name),
+        holder_id,
+        holder_id,
+    )];
     for effect in action.effects {
-        resolve_effect(state, &mut stream, actor_id, effect, target_ids, &mut events)?;
+        resolve_effect(state, &mut stream, holder_id, effect, target_ids, &mut events)?;
     }
     state.rng = stream.state();
     Ok(events)
@@ -2106,7 +2230,7 @@ mod tests {
             vec![fighter, goblin],
         );
         state.combatants[1].end_state = EndState::Dead;
-        let req = StepRequest::EndTurn;
+        let req = StepRequest::end_turn();
         let resp = step(&mut state, req).unwrap();
         assert!(resp.events.iter().any(|e| e.kind == "forfeit"));
     }
@@ -2711,7 +2835,7 @@ mod tests {
         assert_eq!(ac_modifier(&state, &state.combatants[1].clone()), 5);
         let err = act(&mut state, "mage", "shield", &["mage"]).unwrap_err();
         assert!(matches!(err, EngineError::Illegal(m) if m.contains("reaction")));
-        end_turn_events(&mut state).unwrap();
+        end_turn_events(&mut state, &[]).unwrap();
         assert!(!state.combatants[1].action_economy.reaction_used);
     }
 
@@ -2866,8 +2990,10 @@ mod tests {
         use_legendary_action(&mut state, "dragon", "smash", &targets).unwrap();
         use_legendary_action(&mut state, "dragon", "smash", &targets).unwrap();
         assert!(matches!(use_legendary_action(&mut state, "dragon", "smash", &targets), Err(EngineError::Illegal(_))));
-        end_turn_events(&mut state).unwrap();
+        end_turn_events(&mut state, &[]).unwrap();
         assert_eq!(state.active_turn.as_deref(), Some("dragon"));
+        end_turn_events(&mut state, &[]).unwrap();
+        assert_eq!(legendary_uses_left(&state, "dragon"), Ok(2), "the budget reset at the dragon's turn start");
         use_legendary_action(&mut state, "dragon", "smash", &targets).unwrap();
     }
 
@@ -2884,8 +3010,8 @@ mod tests {
         act(&mut state, "brute", "smash", &["pc"]).unwrap();
         let entry = state.stat_blocks[0].stat_block.actions[0].clone();
         assert!(!ability_ready(&state, "brute", &entry));
-        end_turn_events(&mut state).unwrap();
-        end_turn_events(&mut state).unwrap();
+        end_turn_events(&mut state, &[]).unwrap();
+        end_turn_events(&mut state, &[]).unwrap();
         assert_eq!(state.active_turn.as_deref(), Some("brute"));
         assert!(ability_ready(&state, "brute", &entry));
     }
@@ -3113,10 +3239,10 @@ mod tests {
     fn disengage_ends_with_the_movers_turn() {
         let mut state = provoking_encounter(0);
         step_events(&mut state, StepRequest::Disengage { actor_id: "a".into() }).unwrap();
-        step_events(&mut state, StepRequest::EndTurn).unwrap();
+        step_events(&mut state, StepRequest::end_turn()).unwrap();
         assert!(!state.combatants[0].action_economy.disengaged, "the flag ends with the turn");
         for _ in 0..2 {
-            step_events(&mut state, StepRequest::EndTurn).unwrap();
+            step_events(&mut state, StepRequest::end_turn()).unwrap();
         }
         assert_eq!(state.active_turn.as_deref(), Some("a"));
         assert!(!state.combatants[0].action_economy.disengaged);
@@ -3182,7 +3308,7 @@ mod tests {
     fn the_reaction_comes_back_on_the_reactors_own_turn() {
         let mut state = provoking_encounter(0);
         move_combatant(&mut state, "a", Some("b"), RangeBand::Near, 5, &[oa("b", None)]).unwrap();
-        step(&mut state, StepRequest::EndTurn).unwrap();
+        step(&mut state, StepRequest::end_turn()).unwrap();
         assert_eq!(state.active_turn.as_deref(), Some("b"));
         assert!(!state.combatants[1].action_economy.reaction_used);
     }
@@ -3300,5 +3426,150 @@ mod tests {
         let err = move_combatant(&mut state, "a", None, RangeBand::Far, 35, &[oa("b", None), oa("c", Some("gore"))]).unwrap_err();
         assert!(err.to_string().contains("no uses remaining"), "{err}");
         assert_eq!(serde_json::to_value(&state).unwrap(), before);
+    }
+
+    fn blast(id: &str, damage: i32, usage: Option<Usage>) -> crate::stat_block::AbilityEntry {
+        let damage = Damage { dice: "1d1".into(), damage_type: DamageType::Force, modifier: damage - 1, magical: false, if_target: None, if_target_from_actor: false };
+        ability(id, vec![Effect::Damage(damage)], usage)
+    }
+
+    /// Initiative `pc`, `dragon`, `knight`. The dragon has two legendary uses.
+    fn legendary_encounter() -> EncounterState {
+        let mut dragon = test_stat_block("dragon", "Dragon", 100, 18);
+        dragon.legendary_uses_per_round = 2;
+        dragon.legendary_actions = vec![
+            blast("tail", 1, None),
+            blast("wing", 1, Some(Usage::Recharge { dice: "6".into(), group: None })),
+            blast("roar", 1, Some(Usage::PerDay { uses: 1 })),
+            blast("bite", 1, Some(Usage::CooldownUntilNextTurn)),
+        ];
+        test_encounter(
+            vec![pc_block("pc", 200), dragon, pc_block("knight", 200)],
+            vec![
+                test_combatant("pc", "pc", 200, "ally"),
+                test_combatant("dragon", "dragon", 100, "enemy"),
+                test_combatant("knight", "knight", 200, "ally"),
+            ],
+        )
+    }
+
+    fn lu(holder: &str, action: &str, targets: &[&str]) -> LegendaryUse {
+        LegendaryUse { holder_id: holder.into(), action_id: action.into(), target_ids: targets.iter().map(|t| t.to_string()).collect() }
+    }
+
+    fn end_turn_with(state: &mut EncounterState, legendary: Vec<LegendaryUse>) -> Result<Vec<EngineEvent>, EngineError> {
+        step_events(state, StepRequest::EndTurn { legendary })
+    }
+
+    #[test]
+    fn a_legendary_action_resolves_between_the_end_and_the_start_of_turns() {
+        let mut state = legendary_encounter();
+        let events = end_turn_with(&mut state, vec![lu("dragon", "tail", &["pc"])]).unwrap();
+        let kinds: Vec<&str> = events.iter().map(|e| e.kind.as_str()).collect();
+        assert_eq!(kinds, ["end_turn", "legendary", "damage", "start_turn"], "{events:?}");
+        assert_eq!(events[1].message, "LEGENDARY ACTION dragon: tail (1 of 2)");
+        assert_eq!(state.combatants[0].hp, 199);
+        assert_eq!(state.active_turn.as_deref(), Some("dragon"));
+        assert!(!state.combatants[1].resources.contains_key("dragon:legendary"), "the next creature's budget resets after it spends");
+    }
+
+    fn refused(state: &mut EncounterState, legendary: Vec<LegendaryUse>) -> String {
+        let before = serde_json::to_value(&*state).unwrap();
+        let err = end_turn_with(state, legendary).unwrap_err();
+        assert_eq!(serde_json::to_value(&*state).unwrap(), before, "a refused end-turn changes nothing");
+        err.to_string()
+    }
+
+    #[test]
+    fn an_ineligible_declaration_fails_the_whole_end_turn() {
+        let mut state = legendary_encounter();
+        let err = refused(&mut state, vec![lu("dragon", "tail", &["pc"]), lu("dragon", "tail", &["pc"]), lu("dragon", "tail", &["pc"])]);
+        assert!(err.contains("no legendary actions left this round"), "{err}");
+        let err = refused(&mut state, vec![lu("knight", "tail", &["dragon"])]);
+        assert!(err.contains("knight has no legendary actions"), "{err}");
+        let err = refused(&mut state, vec![lu("dragon", "breath", &["pc"])]);
+        assert!(err.contains("legendary action breath not found"), "{err}");
+        let err = refused(&mut state, vec![lu("dragon", "tail", &["nobody"])]);
+        assert!(err.contains("nobody not found"), "{err}");
+
+        state.active_turn = Some("dragon".into());
+        let err = refused(&mut state, vec![lu("dragon", "tail", &["pc"])]);
+        assert!(err.contains("turn is ending"), "{err}");
+
+        state.active_turn = Some("pc".into());
+        state.combatants[1].conditions.push(ConditionInstance { condition: Condition::Stunned, source: None, duration: Duration::Permanent, ends_on_damage: false });
+        let err = refused(&mut state, vec![lu("dragon", "tail", &["pc"])]);
+        assert!(err.contains("dragon cannot act"), "{err}");
+    }
+
+    #[test]
+    fn legendary_actions_spend_their_own_usage() {
+        for (action, why) in [("wing", "is not recharged"), ("roar", "no uses remaining"), ("bite", "is on cooldown")] {
+            let mut state = legendary_encounter();
+            let err = refused(&mut state, vec![lu("dragon", action, &["pc"]), lu("dragon", action, &["pc"])]);
+            assert!(err.contains(why), "{action}: {err}");
+            end_turn_with(&mut state, vec![lu("dragon", action, &["pc"])]).unwrap();
+        }
+    }
+
+    #[test]
+    fn a_holder_that_drops_partway_loses_its_remaining_uses() {
+        let mut state = legendary_encounter();
+        let mut knight = pc_block("knight", 200);
+        knight.legendary_uses_per_round = 2;
+        knight.legendary_actions = vec![blast("smite", 100, None)];
+        state.stat_blocks[2] = StatBlockSnapshot::from_stat_block("knight".into(), knight);
+        state.stat_blocks[1].stat_block.legendary_actions.push(blast("crush", 300, None));
+        let events = end_turn_with(
+            &mut state,
+            vec![lu("dragon", "crush", &["knight"]), lu("knight", "smite", &["dragon"]), lu("knight", "smite", &["dragon"])],
+        )
+        .unwrap();
+        let lost: Vec<&EngineEvent> = events.iter().filter(|e| e.kind == "legendary_lost").collect();
+        assert_eq!(lost.len(), 1, "{events:?}");
+        assert_eq!(lost[0].message, "knight can no longer act and loses its remaining legendary actions");
+        assert_eq!(state.combatants[1].hp, 100, "the knight's smites never land");
+    }
+
+    #[test]
+    fn one_window_opens_before_the_round_advances_even_past_skipped_creatures() {
+        let mut state = legendary_encounter();
+        state.active_turn = Some("dragon".into());
+        state.combatants[0].end_state = EndState::Dead;
+        state.combatants[2].end_state = EndState::Dead;
+        state.combatants.push(test_combatant("wyrm", "dragon", 100, "enemy"));
+        state.initiative_order.push("wyrm".into());
+        let events = end_turn_with(&mut state, vec![lu("wyrm", "tail", &["dragon"])]).unwrap();
+        let kinds: Vec<&str> = events.iter().map(|e| e.kind.as_str()).collect();
+        assert_eq!(kinds, ["end_turn", "legendary", "damage", "forfeit", "start_turn"], "{events:?}");
+        assert_eq!(state.round, 1);
+        let events = end_turn_with(&mut state, vec![lu("dragon", "tail", &["wyrm"])]).unwrap();
+        let kinds: Vec<&str> = events.iter().map(|e| e.kind.as_str()).collect();
+        assert_eq!(kinds, ["end_turn", "legendary", "damage", "forfeit", "start_turn"], "{events:?}");
+        assert_eq!(state.round, 2);
+    }
+
+    #[test]
+    fn legendary_holders_list_uses_left_and_ready_actions() {
+        let mut state = legendary_encounter();
+        state.combatants[1].resources.insert("dragon:legendary".into(), 1);
+        state.combatants[1].resources.insert("dragon:wing".into(), 0);
+        let holders = legendary_holders(&state);
+        assert_eq!(holders, vec![LegendaryHolder { id: "dragon".into(), uses_left: 1, ready_actions: vec!["tail".into(), "roar".into(), "bite".into()] }]);
+        state.active_turn = Some("dragon".into());
+        assert!(legendary_holders(&state).is_empty());
+    }
+
+    #[test]
+    fn a_legendary_recharge_rolls_at_the_holders_turn_start() {
+        let mut state = legendary_encounter();
+        end_turn_with(&mut state, vec![lu("dragon", "wing", &["pc"])]).unwrap();
+        assert_eq!(state.combatants[1].resources["dragon:wing"], 0);
+        let mut recharged = false;
+        for _ in 0..30 {
+            let events = end_turn_with(&mut state, vec![]).unwrap();
+            recharged |= events.iter().any(|e| e.kind == "recharge" && e.message.contains("wing"));
+        }
+        assert!(recharged);
     }
 }

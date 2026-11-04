@@ -9,8 +9,12 @@
 - `bench disengage <actor>` takes the Disengage action: it spends the action, and the actor's moves for the rest of the turn provoke nothing. A flag on the actor lasts until its turn ends.
 - Flyby and Agile (nine SRD monsters) import as the `no_provoke` effect, so those creatures never provoke an Opportunity Attack. Flyby is not limited to flying out of reach. Batch numbers are unchanged and batch still lists these traits as skipped mechanics; the baseline curve was regenerated for the new fixture fingerprint with identical numbers. See ADR 0015.
 
+- `bench end-turn --legendary <holder>:<action-id>[=<target>,...]` takes legendary actions after the turn ends and before the next one starts. Repeat the flag for several; they resolve in order and each costs one use. The creature whose turn is ending can't take one, and the creature whose turn comes next can. Recharge, cooldown and per-day limits on a legendary action now apply. A declaration that is not allowed fails the whole end-turn with the reason. A holder that drops partway loses its remaining uses. Each use logs `LEGENDARY ACTION <holder>: <name> (<used> of <budget>)`. See ADR 0016.
+- The DM digest has a `legendary` list: who may take a legendary action when the active turn ends, with uses left and ready actions. The public digest leaves it out.
+
 ### Changed
 
+- Batch takes legendary actions between the end of one turn and the start of the next. Before, a monster whose turn came next spent from a budget that had already reset, and its recharge and death-save rolls came first. Batch numbers for monsters with legendary actions change. The engine version is now 0.1.1, so `bench baseline status` and batch reports call the baseline curve stale until the next regeneration.
 - The `opportunity_attack` notice now names only creatures that could still react: enemies that can act, can take reactions, have their reaction, and can see the mover. It no longer reports "has no reaction available", and allies never get it. A reactor that can't see the mover gets an `assumption` line instead.
 
 ## v0.1.0 - 2026-11-02
