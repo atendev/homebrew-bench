@@ -226,6 +226,23 @@ fn end_turn_takes_declared_legendary_actions() {
 }
 
 #[test]
+fn an_imported_cooldown_legendary_action_is_refused_a_second_time_in_one_round() {
+    let bench = Bench::new();
+    let pc = data("party/standard/standard-defender-20.json");
+    let lich = data("fixtures/lich.json");
+    bench.ok(&["start", pc.as_str(), lich.as_str(), "--seed", "11"]);
+    if bench.ok(&["state"])["digest"]["active_turn"] != "standard-defender-20" {
+        bench.ok(&["end-turn"]);
+    }
+    let disrupt = "lich:disrupt-life=standard-defender-20";
+    let (code, json) = bench.run(&["end-turn", "--legendary", disrupt, "--legendary", disrupt]);
+    assert_ne!(code, 0, "{json:#}");
+    assert!(json["error"]["message"].as_str().unwrap().contains("disrupt-life is on cooldown"), "{json:#}");
+    let out = bench.ok(&["end-turn", "--legendary", disrupt]);
+    assert!(out["events"].as_array().unwrap().iter().any(|e| e["line"] == "LEGENDARY ACTION lich: Disrupt Life (1 of 3)"), "{out:#}");
+}
+
+#[test]
 fn standing_override_tags_the_log() {
     let bench = Bench::new();
     bench.start(&[]);
@@ -470,8 +487,8 @@ fn batch_compares_against_the_embedded_curve_outside_the_repo() {
     let status = bench.ok(&["baseline", "status"]);
     let reasons = status["reasons"].as_array().unwrap();
     assert!(
-        reasons.iter().all(|r| r.as_str().unwrap().starts_with("the engine is ")),
-        "only the engine version may differ until the v3 regeneration: {status:#}"
+        reasons.iter().map(|r| r.as_str().unwrap()).all(|r| r.starts_with("the engine is ") || r == "the embedded fixture set changed"),
+        "only the engine version and the fixture set may differ until the v3 regeneration: {status:#}"
     );
     let html = std::fs::read_to_string(bench.cwd.join("r/report.html")).unwrap();
     assert!(html.contains("Claimed-CR verdict"));

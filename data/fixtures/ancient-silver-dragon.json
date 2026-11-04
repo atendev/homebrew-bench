@@ -167,7 +167,8 @@
       "desc": "The dragon uses Spellcasting to cast Hold Monster. The dragon can’t take this action again until the start of its next turn.",
       "id": "chill",
       "kind": "unmodeled",
-      "name": "Chill"
+      "name": "Chill",
+      "usage": "cooldown_until_next_turn"
     },
     {
       "agent_clauses": [
@@ -200,7 +201,8 @@
       ],
       "id": "cold-gale",
       "kind": "partly_modeled",
-      "name": "Cold Gale"
+      "name": "Cold Gale",
+      "usage": "cooldown_until_next_turn"
     },
     {
       "default_resolution": "skipped",

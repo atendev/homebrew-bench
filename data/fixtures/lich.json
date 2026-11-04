@@ -185,14 +185,16 @@
       ],
       "id": "disrupt-life",
       "kind": "modeled",
-      "name": "Disrupt Life"
+      "name": "Disrupt Life",
+      "usage": "cooldown_until_next_turn"
     },
     {
       "default_resolution": "skipped",
       "desc": "The lich casts Fear, using the same spellcasting ability as Spellcasting. The lich can’t take this action again until the start of its next turn.",
       "id": "frightening-gaze",
       "kind": "unmodeled",
-      "name": "Frightening Gaze"
+      "name": "Frightening Gaze",
+      "usage": "cooldown_until_next_turn"
     }
   ],
   "legendary_uses_per_round": 3,

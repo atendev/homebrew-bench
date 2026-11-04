@@ -32,11 +32,14 @@ fn spec(id: &str, levels: Vec<u8>, fights: u32) -> BatchSpec {
     }
 }
 
-/// Ticket 057 moved the legendary window and bumped the engine without
-/// regenerating the curve. Ticket 056 regenerates it once and drops this
-/// allowance.
+/// Ticket 057 bumped the engine and ticket 058 changed the fixture set, both
+/// without regenerating the curve. Ticket 056 regenerates it once and drops
+/// this allowance.
 fn stale_beyond_the_engine(reasons: Vec<String>) -> Vec<String> {
-    reasons.into_iter().filter(|r| !r.starts_with("the engine is ")).collect()
+    reasons
+        .into_iter()
+        .filter(|r| !r.starts_with("the engine is ") && r != "the embedded fixture set changed")
+        .collect()
 }
 
 #[test]

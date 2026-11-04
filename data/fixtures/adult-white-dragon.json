@@ -148,14 +148,16 @@
       ],
       "id": "freezing-burst",
       "kind": "partly_modeled",
-      "name": "Freezing Burst"
+      "name": "Freezing Burst",
+      "usage": "cooldown_until_next_turn"
     },
     {
       "default_resolution": "skipped",
       "desc": "The dragon casts Fear, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 14). The dragon can’t take this action again until the start of its next turn.",
       "id": "frightful-presence",
       "kind": "unmodeled",
-      "name": "Frightful Presence"
+      "name": "Frightful Presence",
+      "usage": "cooldown_until_next_turn"
     },
     {
       "default_resolution": "skipped",

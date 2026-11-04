@@ -149,14 +149,16 @@
       "desc": "The dragon uses Spellcasting to cast Command (level 2 version). The dragon can’t take this action again until the start of its next turn.",
       "id": "commanding-presence",
       "kind": "unmodeled",
-      "name": "Commanding Presence"
+      "name": "Commanding Presence",
+      "usage": "cooldown_until_next_turn"
     },
     {
       "default_resolution": "skipped",
       "desc": "The dragon uses Spellcasting to cast Scorching Ray. The dragon can’t take this action again until the start of its next turn.",
       "id": "fiery-rays",
       "kind": "unmodeled",
-      "name": "Fiery Rays"
+      "name": "Fiery Rays",
+      "usage": "cooldown_until_next_turn"
     },
     {
       "default_resolution": "skipped",
