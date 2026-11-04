@@ -84,6 +84,7 @@ Both modes ship in phase 1. Everything the engine can't model is labeled agent j
 - [Build upcast spell scaling](closed/059-build-upcast-spell-scaling.md): casts resolve at their cast level through one `scaled_effects` function shared by the engine and the batch policy, all 84 effects entries carry `level` with the faulty rules fixed and unapplied higher-slot text in `upcast_clause`, `bench action --slot` picks a PC's slot, batch warns on upcasts with an unapplied clause, and the engine is 0.1.3 with the standard party regenerated and the baseline left stale for ticket 056.
 - [Build encounter lighting](closed/060-build-encounter-lighting.md): `--lighting` on `bench start` and `bench batch` and the `settings.lighting` override set one encounter value, trait roll modifiers reach attacks and saves through `combined_disposition` with saves drawing a second d20 only when not straight, a misplaced or `unspecified` roll modifier fails at load, the 11 SRD lighting traits import as roll modifiers, batch numbers under `unspecified` are unchanged on all 11, and the workspace is 0.1.4. Lighting reaches every save, including concentration and repeat saves. Timed save modifiers (Haste) went to ticket 069, which now also waits on ticket 065 for the modifier's bearer.
 - [Build live reaction windows](closed/062-build-live-reaction-windows.md): live mode holds a move on a `reaction` prompt per eligible Opportunity Attack reactor and holds any command whose hit lands on a creature with a ready hit-trigger reaction, `bench respond --take [<id>]` or `--decline` answers it and the request reruns, the decider on `state.reactions` passes every window in batch, `settings.reaction_windows` gates it so 0.1.4 encounters refold as recorded, Parry (7) and Riposte import as a melee hit trigger and the party Shield as any, batch numbers are unchanged, ADR 0018 records it, and the workspace is 0.1.5.
+- [Build batch reactions policy](closed/063-build-batch-reactions-policy.md): batch opens reaction windows and the policy (now v3) decides each one: Shield or Parry only when it turns the hit into a miss, an Opportunity Attack only above the reaction reserve (`AC_POINT_VALUE` 0.1), and the step-out penalty counts only those attacks. Each window logs a reason, the engine stays 0.1.5, the curve reads stale on the policy until 056 regenerates it, and wins and losses held on goblin, knight and adult red dragon while DPR fell where Shield and Parry fired.
 
 ## Not yet specified
 
@@ -112,11 +113,10 @@ Takeable now, in order:
 - Build modifier bearers and Speed modifiers (task, AFK)
 - Build attack-roll condition sources (task, AFK)
 - Batch warns when plans fail or casts are never ready (task, AFK)
-- Build batch reactions policy (task, AFK); it moves the policy to v3
 
 Blocked:
 
 - Build Haste extra action and lethargy (task, AFK), waits on Build modifier bearers and Speed modifiers
 - Build saving-throw condition sources (task, AFK), waits on Build modifier bearers and Speed modifiers; it also adds timed save modifiers such as Haste's, read through their bearer
-- Build v3 scoring for buffs, forced movement and teleports (task, AFK), waits on Build batch reactions policy, Build modifier bearers and Speed modifiers, Build Haste extra action and lethargy, Build attack-roll condition sources and Build saving-throw condition sources; it regenerates the baseline once
+- Build v3 scoring for buffs, forced movement and teleports (task, AFK), waits on Build modifier bearers and Speed modifiers, Build Haste extra action and lethargy, Build attack-roll condition sources and Build saving-throw condition sources; it regenerates the baseline once
 - Do dragons still read above their CR on the v3 curve (task, AFK), waits on Build v3 scoring; it takes over the dragon fog item, whose reactions half policy v3 now covers

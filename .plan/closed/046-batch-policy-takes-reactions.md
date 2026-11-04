@@ -22,7 +22,7 @@ Scope added by [Live reaction windows](../closed/047-live-reaction-windows.md): 
 
 ## Resolution
 
-Decided on 2026-11-04 by a subagent the user delegated the decision to ("use subagents for making decisions"). It grilled itself one sub-question at a time against ADRs 0005, 0012, 0015 and 0016, tickets 044, 045, 047, 053, 054, 056 and 062, `bench-core/src/tactics.rs`, `engine.rs` and `batch.rs`, and the 2024 PHB (Opportunity Attacks p. 370, Reaction p. 371, Shield p. 315). Build ticket: [Build batch reactions policy](../tickets/063-build-batch-reactions-policy.md).
+Decided on 2026-11-04 by a subagent the user delegated the decision to ("use subagents for making decisions"). It grilled itself one sub-question at a time against ADRs 0005, 0012, 0015 and 0016, tickets 044, 045, 047, 053, 054, 056 and 062, `bench-core/src/tactics.rs`, `engine.rs` and `batch.rs`, and the 2024 PHB (Opportunity Attacks p. 370, Reaction p. 371, Shield p. 315). Build ticket: [Build batch reactions policy](063-build-batch-reactions-policy.md).
 
 **Facts that shaped it.**
 - Only two triggers reach batch: leaving reach (the Opportunity Attack) and being hit by an attack roll (Parry on 7 fixtures, Riposte, and the standard caster's Shield). Every other reaction is skipped or agent judgment (ticket 047).

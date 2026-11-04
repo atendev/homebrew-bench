@@ -3,9 +3,9 @@ id: 063
 title: Build batch reactions policy
 type: task
 mode: AFK
-status: open
+status: closed
 blocked_by: [046, 062]
-claimed: true
+claimed: false
 ---
 
 ## Question
@@ -70,3 +70,26 @@ Hand-off to 056: 056 reuses the AC point constant for `TimedModifier` and the pe
 Overlaps: `tactics.rs` is also touched by 056 (scoring) and 061 (`disposition` in the engine; 056 fixes the policy copy). `batch.rs`'s report sentence is shared with 056. Whichever lands second rebases.
 
 ## Resolution
+
+Built on branch `ticket-063-build-batch-reactions-policy`.
+
+- Engine. 062's `WindowTrigger::Hit` already carried the attacker, total, AC before the reaction and the critical flag, so no window fields were added. `engine::opportunity_eligible` (crate-visible) wraps the one eligibility rule. `engine::opportunity_attack_candidates` lists every at-will single melee attack in the order the default attack is read, and `opportunity_attack_action` now takes its first entry, with unchanged behavior. Live mode and stored state are untouched, and the 0.1.4 state fixture still loads, replays and passes the tamper check.
+- Policy. `POLICY_VERSION = 3`. `tactics::AC_POINT_VALUE = 0.1` is public. `ac_bonus` reads `armor_class` timed modifiers through bound casts. `Ctx::reaction_reserve`, `Ctx::opportunity_value` and `Ctx::step_out_penalty` each take one nesting level and return 0 (or no pick) at `MAX_THREAT_NESTING`. `tactics::decide_reaction` is the public decider. `best_single_attack` is gone.
+- Batch. `reaction_windows: true`, and `ReactionDecider::Policy(PolicyConstants)` is installed beside `PassAll`. The report sentence now says the policy "takes Shield or Parry only when it turns a hit into a miss and an Opportunity Attack only when it is worth more than the reaction held back".
+- Versions. The engine stays 0.1.5. Engine behavior didn't change (two functions exposed, one refactor), and the ticket says not to bump for window work. The policy stale reason is now allowed in `stale_beyond_the_engine` and in the CLI test. `a_fixture_regenerates_to_its_committed_row` still passes, because the goblin row's medians and win counts didn't move, so it isn't ignored. `spellcasting_fixtures_keep_their_difficulty_bands` passes unchanged.
+- Batch shift. `bench batch <id> --levels <L> --fights 40 --seed 7` on master and on this branch (goblin with `--assume` for scimitar and shortbow). Wins and losses are unchanged in all 9 cells. Every shift traces to logged reactions; `--fight` replays of all 360 fights counted them:
+  - goblin-warrior: L1 unchanged (no window opened). L5 DPR 2.23 to 1.27 (14 Shields). L11 DPR 0.73 to 0.33 (4 Shields).
+  - knight: L1 deaths 31 to 32, DPR 11.27 to 11.33, rounds 5.40 to 5.68 (52 Parries, 4 Shields). L5 DPR 14.28 to 11.20 (56 Shields, 22 Parries). L11 DPR 5.04 to 3.91, rounds 1.18 to 1.20 (8 Shields, 14 Parries).
+  - adult red dragon: L1 unchanged. L5 DPR 110.91 to 110.70 (2 Shields). L11 DPR 98.71 to 99.01, rounds 5.00 to 4.95 (4 Shields). It held 41 Shields because the dragon's totals beat AC 12+5, and 2 because the hit was a critical.
+  - No Opportunity Attack fired in these 360 fights. Only a ranged step-out leaves reach, and no plan here chose one.
+- Tests: hit windows (Shield in band, out of band, natural 20, no slot; Parry inside and outside its band, never on a ranged hit; the free option beats the slot), Opportunity Attacks (goblin attacks, a caster holds for Shield and then attacks once its slots run out, the higher-damage leaf, a drop adds threat), penalty zeros (Disengaged, Flyby, Blinded, would pass, ranged only) and penalty equal to the decider's value, reserve (save damage, healing, Parry melee only, capped at one hit, knight against the level 11 party), the nesting limit with a teleport, batch log determinism, and the v3 fingerprint.
+
+Readings chosen where the ticket was open:
+
+- H counts the attacks in each opponent's best action (the ones D counts), not every ready action.
+- "Active opponents" means opponents that can act, the same test `threat()` uses.
+- In a hit window, the cost order is: no usage limit and no slot, then the lowest slot (a limited use without a slot ranks as slot 0), then window order. Window order is stat-block order.
+- Held reasons read `<reactor>: holds its reaction (...)`, and for an Opportunity Attack `<reactor>: holds its reaction against <mover> (<attack>, expected X <= reserve Y)`. A take that would drop the mover adds ", likely drops it".
+- Ties between Opportunity Attack leaves go to the earlier position in `actions`, not the order the Multiattack walk meets them.
+
+No follow-up tickets.
