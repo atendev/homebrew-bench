@@ -625,6 +625,11 @@ def scaffold(spell: dict) -> dict:
                         if isinstance(eff[key]["duration"], dict) and "minutes" in eff[key]["duration"]:
                             eff[key]["duration"] = {"concentration": None}
 
+    if rng["kind"] == "self":
+        for eff in effects:
+            if "timed_modifier" in eff:
+                eff["timed_modifier"]["bearer"] = "self"
+
     # Fallback: if we produced no effects, this entry is unmodeled.
     if not effects:
         agent_clauses.append("No closed effect mapped from SRD fields; resolve as agent judgment.")

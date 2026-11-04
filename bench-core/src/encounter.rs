@@ -55,8 +55,33 @@ pub struct ActiveModifier {
     pub target: crate::effect::ModifierTarget,
     pub change: crate::effect::ModifierChange,
     pub remaining: Duration,
+    /// The combatant whose ability made the modifier; concentration ends what it holds.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub source: Option<String>,
+    /// The combatant the modifier changes, when it is not `source`. Read it through
+    /// [`ActiveModifier::bearer`].
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub bearer: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub source_ability: Option<String>,
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub ends_on_damage: bool,
+}
+
+impl ActiveModifier {
+    /// The combatant the modifier changes: `bearer`, or else `source`.
+    pub fn bearer(&self) -> Option<&str> {
+        self.bearer.as_deref().or(self.source.as_deref())
+    }
+
+    fn potency(&self) -> i64 {
+        use crate::effect::{ModifierChange, ModifierTarget};
+        match (&self.target, &self.change) {
+            (_, ModifierChange::Add(n)) => i64::from(*n),
+            (ModifierTarget::Speed, ModifierChange::Set(n)) => -i64::from(*n),
+            _ => 0,
+        }
+    }
 }
 
 /// Snapshot of a stat block stored in the encounter file, with a tamper hash.
@@ -316,6 +341,23 @@ impl PlayerDice {
 }
 
 impl EncounterState {
+    /// The modifiers that apply to `bearer`. Among modifiers on one bearer with the same
+    /// `source_ability` and the same `target`, only one applies: the most potent, else the
+    /// most recent (PHB "Combining Spell Effects"). Modifiers with no `source_ability`
+    /// always apply.
+    pub fn modifiers_on<'a>(&'a self, bearer: &'a str) -> impl Iterator<Item = &'a ActiveModifier> + 'a {
+        let on = move || self.active_modifiers.iter().enumerate().filter(move |(_, m)| m.bearer() == Some(bearer));
+        on().filter(move |(i, m)| {
+            let Some(ability) = m.source_ability.as_deref() else { return true };
+            let winner = on()
+                .filter(|(_, o)| o.source_ability.as_deref() == Some(ability) && o.target == m.target)
+                .max_by_key(|(j, o)| (o.potency(), *j))
+                .map(|(j, _)| j);
+            winner == Some(*i)
+        })
+        .map(|(_, m)| m)
+    }
+
     /// Compute the tamper hash for this encounter state. The hash excludes the
     /// existing `tamper_hash` field so the value can be verified after the field
     /// is updated.

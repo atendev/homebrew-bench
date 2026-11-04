@@ -148,6 +148,24 @@ def check_upcast(entry: dict, spell: dict) -> list[str]:
     return mismatches
 
 
+def check_bearers(entry: dict, spell: dict) -> list[str]:
+    """A top-level timed modifier lands on the caster (`"bearer": "self"`) exactly when the SRD range is Self."""
+    self_range = spell.get("range", "").strip().lower().startswith("self")
+    mismatches = []
+    for effect in entry.get("effects", []):
+        mod = effect.get("timed_modifier")
+        if mod is None:
+            continue
+        bearer = mod.get("bearer", "target")
+        if bearer not in ("target", "self"):
+            mismatches.append(f"timed modifier bearer {bearer!r} is not target or self")
+        elif (bearer == "self") != self_range:
+            mismatches.append(f"timed modifier bearer is {bearer} but the SRD range is {spell.get('range')}")
+        if not isinstance(mod.get("ends_on_damage", False), bool):
+            mismatches.append("timed modifier ends_on_damage is not a boolean")
+    return mismatches
+
+
 def check_spell(idx: str, entry: dict, spell: dict) -> list[str]:
     """Return a list of mismatch notes for one spell."""
     text = gather_text(spell)
@@ -159,6 +177,7 @@ def check_spell(idx: str, entry: dict, spell: dict) -> list[str]:
         facts.append(f"delayed {delayed['delay']}")
         facts.extend(render_effect_fact(delayed["effect"]))
     mismatches.extend(check_upcast(entry, spell))
+    mismatches.extend(check_bearers(entry, spell))
 
     # Check that concrete facts appear in SRD text.
     for fact in facts:

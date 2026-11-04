@@ -355,12 +355,7 @@ impl<'a> Ctx<'a> {
     }
 
     fn movement_left(&self, c: &Combatant) -> u32 {
-        let speed = self.block(c).and_then(|b| b.speeds.get("walk")).map_or(0, |s| s.feet);
-        let restrained = c.conditions.iter().any(|x| matches!(x.condition, Condition::Grappled | Condition::Restrained));
-        if restrained {
-            return 0;
-        }
-        speed.saturating_sub(c.action_economy.movement_used_feet)
+        engine::walk_speed(self.state, c).saturating_sub(c.action_economy.movement_used_feet)
     }
 
     /// Opponents in target-priority order: next-cycle threat, then the given
@@ -1965,5 +1960,26 @@ mod tests {
         let constants = PolicyConstants::default();
         let v2 = crate::encounter::tamper_hash(&serde_json::json!({ "id": POLICY_ID, "version": 2, "constants": constants }));
         assert_ne!(fingerprint(&constants), v2);
+    }
+
+    #[test]
+    fn movement_left_reads_speed_modifiers_on_the_bearer() {
+        let mut state = duel(["1d8", "1d8"], [20, 20]);
+        let hasted = |bearer: Option<&str>| crate::encounter::ActiveModifier {
+            target: ModifierTarget::Speed,
+            change: ModifierChange::Double,
+            remaining: crate::effect::Duration::Concentration,
+            source: Some("b".into()),
+            bearer: bearer.map(Into::into),
+            source_ability: Some("haste".into()),
+            ends_on_damage: false,
+        };
+        state.active_modifiers.push(hasted(Some("a")));
+        state.combatants[1].action_economy.movement_used_feet = 5;
+        let constants = PolicyConstants::default();
+        let ctx = ctx(&state, &constants);
+        assert_eq!(ctx.movement_left(ctx.combatant("a").unwrap()), 55);
+        assert_eq!(ctx.movement_left(ctx.combatant("b").unwrap()), 30);
+        assert_eq!(ctx.movement_left(ctx.combatant("a").unwrap()), engine::walk_speed(&state, &state.combatants[1]) - 5);
     }
 }
