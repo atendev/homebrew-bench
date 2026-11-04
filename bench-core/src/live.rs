@@ -1851,6 +1851,24 @@ mod tests {
     }
 
     #[test]
+    fn a_pre_lighting_state_file_passes_the_tamper_check() {
+        let (state, _) = start(spec(PcDice::Engine)).unwrap();
+        let value = serde_json::to_value(&state).unwrap();
+        assert!(value["settings"].get("lighting").is_none());
+        assert!(value["initial_snapshot"]["settings"].get("lighting").is_none());
+        let path = std::env::temp_dir().join(format!("bench-pre-lighting-{}.json", std::process::id()));
+        for lighting in [Lighting::Unspecified, Lighting::Sunlight] {
+            let mut lit = spec(PcDice::Engine);
+            lit.lighting = lighting;
+            let (state, _) = start(lit).unwrap();
+            std::fs::write(&path, serde_json::to_string(&state).unwrap()).unwrap();
+            let loaded = crate::store::load(&path, crate::store::VersionCheck::Require);
+            assert_eq!(loaded.map(|s| s.settings.lighting).ok(), Some(lighting));
+        }
+        std::fs::remove_file(&path).unwrap();
+    }
+
+    #[test]
     fn old_state_files_load_with_their_lighting() {
         let (state, _) = start(spec(PcDice::Engine)).unwrap();
         let mut value = serde_json::to_value(&state).unwrap();

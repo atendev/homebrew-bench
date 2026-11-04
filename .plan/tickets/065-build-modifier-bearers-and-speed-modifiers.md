@@ -27,7 +27,7 @@ Model (`bench-core/src/effect.rs`, `bench-core/src/encounter.rs`):
 Engine (`bench-core/src/engine.rs`):
 - `self` modifiers land on the actor. `target` modifiers land on each id in `target_ids`. A top-level `target` modifier resolved with no target is `EngineError::Illegal` ("<ability> needs a target for its modifier"). Nested under `on_failure` or `on_hit`, the target list is already the one target.
 - `source` stays the actor. `break_concentration` keeps removing modifiers by `source`.
-- Every reader keys on `bearer`: `attack_modifier`, `save_modifier`, `ac_modifier`, `apply_modifier_target_disposition` and the Reactions check in `opportunity_eligibility`. `RollModifier` pushes with `bearer` = the actor.
+- Every reader keys on `bearer`: `attack_modifier`, `save_modifier`, `ac_modifier`, `apply_modifier_target_disposition` and the Reactions check in `opportunity_eligibility`.
 - Same spell on the same bearer (PHB "Combining Spell Effects", p. 236): keep every instance. When reading, modifiers on one bearer with the same `source_ability` (when set) and the same `target` form a group, and only one of them applies: the most potent, else the most recent. Potency: for `add`, the larger value; for `set` on Speed, the lower value; every other change counts as equally potent. "Most recent" is the later one in `active_modifiers`. When the applying instance ends, the next winner applies on its own. Modifiers with no `source_ability` always apply. Put the rule in the accessor that every reader and the walk-speed function use.
 - `ends_on_damage`: remove the bearer's modifiers that have it when the bearer takes damage, in the same place conditions with `ends_on_damage` end.
 - One walk-speed function, crate-visible, used by the engine, `tactics.rs` and `live.rs` in place of their three copies: the lowest `set` wins outright; otherwise walk speed plus the sum of `add`, then doubled once per `double` and halved once per `halve`, rounding down, floored at 0. Grappled and Restrained give 0 as they do now. Only `ModifierTarget::Speed` modifiers on that bearer count.
@@ -43,7 +43,7 @@ Live (`bench-core/src/live.rs`): `bench action <caster> --action <spellcasting> 
 
 Tests (write them first):
 - Slow's failed save puts -2 AC, -2 Dexterity saves and no reactions on the target, and nothing on the caster.
-- Haste cast on an ally gives that ally +2 AC, Advantage on Dexterity saves and double Speed, and the caster none of it. Breaking the caster's concentration removes all three from the ally.
+- Haste cast on an ally gives that ally +2 AC and double Speed, and the caster neither. Breaking the caster's concentration removes both from the ally. Haste's Advantage on Dexterity saves is not tested here: saves read no timed Advantage or Disadvantage yet, and ticket [069](069-build-saving-throw-condition-sources.md) delivers it, reading this ticket's `bearer`.
 - Shield still gives its caster +5 AC on its own.
 - A top-level `target` modifier with no target is refused.
 - Two Hastes from two casters on one bearer: both sets are stored, the bearer gets +2 AC once, not +4, and doubled Speed once. Ending either caster's concentration leaves the other set applying.

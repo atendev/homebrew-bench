@@ -582,18 +582,7 @@ fn resolve_save(
     let modifier = block.saving_throws.get(&save.ability).copied()
         .unwrap_or_else(|| block.ability_scores.modifier(save.ability))
         + save_modifier(state, &target, save.ability);
-    let advantage = save_disposition(state, &target, save.ability);
-    let note = lighting_note(state, &target, Roll::Save(save.ability));
-    let first = stream.roll_die(20);
-    let first = player_roll(state, target_id, 20, first);
-    let roll = match advantage {
-        RollDisposition::Normal => first,
-        kept => {
-            let second = stream.roll_die(20);
-            let second = player_roll_in(state, target_id, 20, second, false);
-            if kept == RollDisposition::Advantage { first.max(second) } else { first.min(second) }
-        }
-    };
+    let (roll, note) = save_d20(state, stream, target_id, save.ability)?;
     let success = roll as i32 + modifier >= save.dc;
     let marked = state.player_dice.all_entered_since(target_id);
     events.push(EngineEvent {
@@ -1648,17 +1637,16 @@ fn process_repeat_saves(state: &mut EncounterState, combatant_id: &str, events: 
     for idx in conditions_to_check.into_iter().rev() {
         if let Duration::UntilSave { ability } = state.combatants[i].conditions[idx].duration {
             let block = stat_block(state, &state.combatants[i])?;
-            let roll = stream.roll_die(20);
             let modifier = block.saving_throws.get(&ability)
                 .copied()
                 .unwrap_or_else(|| block.ability_scores.modifier(ability));
-            let roll = player_roll(state, combatant_id, 20, roll);
+            let (roll, note) = save_d20(state, &mut stream, combatant_id, ability)?;
             let dc = 10;
             let success = roll as i32 + modifier >= dc;
             let marked = state.player_dice.all_entered_since(combatant_id);
             events.push(EngineEvent {
                 kind: "repeat_save".into(),
-                message: format!("{combatant_id} {} repeat save DC {dc}", if success { "passes" } else { "fails" }),
+                message: format!("{combatant_id} {} repeat save DC {dc}{note}", if success { "passes" } else { "fails" }),
                 actor_id: Some(combatant_id.into()),
                 target_id: Some(combatant_id.into()),
                 roll: Some(roll),
@@ -1859,16 +1847,15 @@ fn apply_damage(
         // Constitution save DC = max(10, damage / 2) to maintain concentration
         let dc = (remaining / 2).max(10);
         let block = stat_block(state, &state.combatants[i])?;
-        let roll = stream.roll_die(20);
         let modifier = block.saving_throws.get(&Ability::Con)
             .copied()
             .unwrap_or_else(|| block.ability_scores.modifier(Ability::Con));
-        let roll = player_roll(state, target_id, 20, roll);
+        let (roll, note) = save_d20(state, stream, target_id, Ability::Con)?;
         let success = roll as i32 + modifier >= dc;
         let marked = state.player_dice.all_entered_since(target_id);
         events.push(EngineEvent {
             kind: "concentration_save".into(),
-            message: format!("{target_id} {} concentration save DC {dc}", if success { "passes" } else { "fails" }),
+            message: format!("{target_id} {} concentration save DC {dc}{note}", if success { "passes" } else { "fails" }),
             actor_id: source_id.map(|s| s.into()),
             target_id: Some(target_id.into()),
             roll: Some(roll),
@@ -1996,6 +1983,22 @@ fn disposition(state: &EncounterState, actor: &Combatant, target: &Combatant) ->
             .chain(modifier_dispositions(state, actor, ModifierTarget::AttackRolls))
             .chain(lighting_modifiers(state, actor, Roll::Attack).into_iter().map(|(d, _)| d)),
     )
+}
+
+fn save_d20(state: &mut EncounterState, stream: &mut Stream, saver_id: &str, ability: Ability) -> Result<(u32, String), EngineError> {
+    let saver = &state.combatants[index_of(state, saver_id)?];
+    let (advantage, note) = (save_disposition(state, saver, ability), lighting_note(state, saver, Roll::Save(ability)));
+    let first = stream.roll_die(20);
+    let first = player_roll(state, saver_id, 20, first);
+    let roll = match advantage {
+        RollDisposition::Normal => first,
+        kept => {
+            let second = stream.roll_die(20);
+            let second = player_roll_in(state, saver_id, 20, second, false);
+            if kept == RollDisposition::Advantage { first.max(second) } else { first.min(second) }
+        }
+    };
+    Ok((roll, note))
 }
 
 fn save_disposition(state: &EncounterState, target: &Combatant, ability: Ability) -> RollDisposition {
@@ -4333,5 +4336,30 @@ mod tests {
         state.settings.pc_dice = PcDice::Ask;
         save_of(&mut state, "pc", 1);
         assert_eq!(state.player_dice.next_prompt(), Some((20, "pc".to_string(), 2)));
+    }
+
+    #[test]
+    fn a_sunlight_sensitive_concentration_save_rolls_with_disadvantage() {
+        let concentration_save = |lighting: crate::effect::Lighting, seed: u64| {
+            let mut block = test_stat_block("adept", "Adept", 50, 10);
+            block.traits.push(save_trait("Sunlight Sensitivity", "disadvantage"));
+            let mut state = lit(block, lighting);
+            state.combatants[0].concentration = Some("bless".into());
+            let mut stream = Stream::from_seed(seed);
+            let mut events = vec![];
+            apply_damage(&mut state, &mut stream, "adept", 5, Some("fighter"), false, false, &mut events).unwrap();
+            (events.into_iter().find(|e| e.kind == "concentration_save").unwrap(), stream.state())
+        };
+        for seed in 0..10 {
+            let mut probe = Stream::from_seed(seed);
+            let (a, b) = (probe.roll_die(20), probe.roll_die(20));
+            let (event, after) = concentration_save(crate::effect::Lighting::Sunlight, seed);
+            assert_eq!((event.roll, after), (Some(a.min(b)), probe.state()));
+            assert!(event.message.ends_with("(Disadvantage: Sunlight Sensitivity, sunlight)"), "{}", event.message);
+            let mut probe = Stream::from_seed(seed);
+            let a = probe.roll_die(20);
+            let (event, after) = concentration_save(crate::effect::Lighting::Unspecified, seed);
+            assert_eq!((event.roll, after), (Some(a), probe.state()));
+        }
     }
 }

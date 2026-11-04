@@ -126,6 +126,11 @@ impl Lighting {
         }
     }
 
+    /// Whether no lighting was stated.
+    pub fn is_unspecified(&self) -> bool {
+        *self == Lighting::Unspecified
+    }
+
     /// The snake_case spelling used by flags, state files and override paths.
     pub fn as_str(self) -> &'static str {
         match self {

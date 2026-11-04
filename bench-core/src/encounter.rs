@@ -157,8 +157,9 @@ pub enum PcDice {
 pub struct EncounterSettings {
     #[serde(default)]
     pub pc_dice: PcDice,
-    /// The whole encounter's lighting, read by roll modifiers on traits.
-    #[serde(default)]
+    /// The whole encounter's lighting, read by roll modifiers on traits. Left out when
+    /// `unspecified`, so state files written before it existed keep their hashes.
+    #[serde(default, skip_serializing_if = "crate::effect::Lighting::is_unspecified")]
     pub lighting: crate::effect::Lighting,
 }
 
