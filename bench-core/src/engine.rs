@@ -497,7 +497,7 @@ fn resolve_effect(
                 let target = state.combatants[target_index].clone();
                 let actor = state.combatants[index_of(state, actor_id)?].clone();
                 let advantage = disposition(state, &actor, &target);
-                let note = lighting_note(state, &actor, Roll::Attack);
+                let note = disposition_note(advantage, lighting_sources(state, &actor, Roll::Attack));
                 let d20a = stream.roll_die(20);
                 let d20a = player_roll(state, actor_id, 20, d20a);
                 let d20b = stream.roll_die(20);
@@ -2356,7 +2356,7 @@ pub(crate) fn disposition(state: &EncounterState, actor: &Combatant, target: &Co
         conditions
             .into_iter()
             .filter_map(|(applies, d)| applies.then_some(d))
-            .chain(modifier_dispositions(state, actor, |t| *t == ModifierTarget::AttackRolls))
+            .chain(modifier_dispositions(state, actor, ModifierTarget::AttackRolls))
             .chain(lighting_modifiers(state, actor, Roll::Attack).into_iter().map(|(d, _)| d)),
     )
 }
@@ -2433,7 +2433,9 @@ pub(crate) fn automatic_save_failure(saver: &Combatant, ability: Ability) -> Opt
 
 fn save_d20(state: &mut EncounterState, stream: &mut Stream, saver_id: &str, ability: Ability) -> Result<(u32, String), EngineError> {
     let saver = &state.combatants[index_of(state, saver_id)?];
-    let (advantage, note) = (save_disposition(state, saver, ability), lighting_note(state, saver, Roll::Save(ability)));
+    let sources = save_sources(state, saver, ability);
+    let advantage = combined_disposition(sources.iter().map(|(d, _)| *d));
+    let note = disposition_note(advantage, sources);
     let first = stream.roll_die(20);
     let first = player_roll(state, saver_id, 20, first);
     let roll = match advantage {
@@ -2448,13 +2450,27 @@ fn save_d20(state: &mut EncounterState, stream: &mut Stream, saver_id: &str, abi
 }
 
 pub(crate) fn save_disposition(state: &EncounterState, target: &Combatant, ability: Ability) -> RollDisposition {
-    let restrained = ability == Ability::Dex && target.conditions.iter().any(|i| i.condition == Condition::Restrained);
-    let sources = lighting_modifiers(state, target, Roll::Save(ability)).into_iter().map(|(d, _)| d);
-    combined_disposition(
-        sources
-            .chain(restrained.then_some(RollDisposition::Disadvantage))
-            .chain(modifier_dispositions(state, target, saves_with(ability))),
-    )
+    combined_disposition(save_sources(state, target, ability).into_iter().map(|(d, _)| d))
+}
+
+/// Every Advantage and Disadvantage source on a save, named for the event note: lighting traits,
+/// Restrained on Dexterity, and the saver's timed modifiers. Legacy modifiers (saved before 0.1.6)
+/// give none, as on 0.1.5.
+fn save_sources(state: &EncounterState, target: &Combatant, ability: Ability) -> Vec<(RollDisposition, String)> {
+    let mut sources = lighting_sources(state, target, Roll::Save(ability));
+    if ability == Ability::Dex && target.conditions.iter().any(|i| i.condition == Condition::Restrained) {
+        sources.push((RollDisposition::Disadvantage, "restrained".into()));
+    }
+    let timed = state.modifiers_on(&target.id).filter(|m| !m.is_legacy() && reaches(&m.target, Roll::Save(ability)));
+    sources.extend(timed.filter_map(|m| {
+        let name = m.source_ability.clone().unwrap_or_else(|| "timed modifier".into());
+        match m.change {
+            ModifierChange::Advantage => Some((RollDisposition::Advantage, name)),
+            ModifierChange::Disadvantage => Some((RollDisposition::Disadvantage, name)),
+            _ => None,
+        }
+    }));
+    sources
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -2488,18 +2504,26 @@ fn reaches(target: &ModifierTarget, roll: Roll) -> bool {
     }
 }
 
-fn lighting_note(state: &EncounterState, combatant: &Combatant, roll: Roll) -> String {
+fn lighting_sources(state: &EncounterState, combatant: &Combatant, roll: Roll) -> Vec<(RollDisposition, String)> {
     let light = state.settings.lighting.as_str().replace('_', " ");
-    let mut named: Vec<(RollDisposition, &str)> = vec![];
-    for source in lighting_modifiers(state, combatant, roll) {
-        if source.0 != RollDisposition::Normal && !named.contains(&source) {
-            named.push(source);
+    lighting_modifiers(state, combatant, roll).into_iter().map(|(d, name)| (d, format!("{name}, {light}"))).collect()
+}
+
+/// The event note for a roll made with `combined`: each distinct source that points the same way,
+/// as ` (Advantage: Sun Glow, sunlight)`. A straight roll gets no note, even when sources cancelled.
+fn disposition_note(combined: RollDisposition, sources: Vec<(RollDisposition, String)>) -> String {
+    let word = match combined {
+        RollDisposition::Advantage => "Advantage",
+        RollDisposition::Disadvantage => "Disadvantage",
+        RollDisposition::Normal => return String::new(),
+    };
+    let mut named: Vec<String> = vec![];
+    for (_, name) in sources.into_iter().filter(|(d, _)| *d == combined) {
+        if !named.contains(&name) {
+            named.push(name);
         }
     }
-    named
-        .into_iter()
-        .map(|(d, name)| format!(" ({}: {name}, {light})", if d == RollDisposition::Advantage { "Advantage" } else { "Disadvantage" }))
-        .collect()
+    named.into_iter().map(|name| format!(" ({word}: {name})")).collect()
 }
 
 /// The PHB rule for Advantage and Disadvantage (glossary "Advantage", p. 359): a roll has at most one
@@ -2523,11 +2547,11 @@ fn combined_disposition(sources: impl IntoIterator<Item = RollDisposition>) -> R
 fn modifier_dispositions<'a>(
     state: &'a EncounterState,
     combatant: &'a Combatant,
-    on: impl Fn(&ModifierTarget) -> bool + 'a,
+    target: ModifierTarget,
 ) -> impl Iterator<Item = RollDisposition> + 'a {
     state
         .modifiers_on(&combatant.id)
-        .filter(move |m| on(&m.target))
+        .filter(move |m| m.target == target)
         .filter_map(|m| match m.change {
             ModifierChange::Advantage => Some(RollDisposition::Advantage),
             ModifierChange::Disadvantage => Some(RollDisposition::Disadvantage),
@@ -2542,12 +2566,7 @@ fn attack_modifier(state: &EncounterState, actor: &Combatant) -> Result<i32, Eng
 
 /// Compute save modifier from timed modifiers.
 pub(crate) fn save_modifier(state: &EncounterState, target: &Combatant, ability: Ability) -> i32 {
-    added(state, &target.id, saves_with(ability))
-}
-
-/// Matches a `saving_throws` modifier target that reaches a save with `ability`: `ability: null` or the same ability.
-fn saves_with(ability: Ability) -> impl Fn(&ModifierTarget) -> bool {
-    move |t| matches!(t, ModifierTarget::SavingThrows { ability: a } if a.map_or(true, |a| a == ability))
+    added(state, &target.id, |t| reaches(t, Roll::Save(ability)))
 }
 
 /// Compute AC modifier from timed modifiers.
@@ -6035,5 +6054,43 @@ mod tests {
         assert_eq!(events[0].message, "saver fails the save automatically (stunned, Strength)");
         assert_eq!(events[0].kind, "repeat_save");
         assert_eq!(state.combatants[0].conditions.len(), 2);
+    }
+
+    #[test]
+    fn a_legacy_save_modifier_gives_no_advantage_as_on_0_1_5() {
+        let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/data/engine-0.1.5-state.json");
+        let state = crate::store::load(&path, crate::store::VersionCheck::Require).expect("an engine 0.1.5 state loads");
+        assert!(state.active_modifiers.iter().any(|m| m.is_legacy() && matches!(m.change, ModifierChange::Advantage)));
+        let caster = &state.combatants[index_of(&state, CASTER).unwrap()];
+        assert_eq!(save_disposition(&state, caster, Ability::Dex), RollDisposition::Normal);
+    }
+
+    #[test]
+    fn a_save_note_names_every_source_behind_the_roll_and_nothing_when_they_cancel() {
+        let (event, _, _) = save_by(&mut saver_with(&[Condition::Restrained]), save_on(Ability::Dex), 4);
+        assert!(event.message.ends_with("the save (Disadvantage: restrained)"), "{}", event.message);
+
+        let mut hasted = saver_with(&[]);
+        hasted.active_modifiers.push(borne("saver", "fighter", Some("haste"), ModifierTarget::SavingThrows { ability: Some(Ability::Dex) }, ModifierChange::Advantage));
+        let (event, _, _) = save_by(&mut hasted, save_on(Ability::Dex), 4);
+        assert!(event.message.ends_with("the save (Advantage: haste)"), "{}", event.message);
+
+        let mut sunlit = saver_with(&[Condition::Restrained]);
+        sunlit.stat_blocks[0].stat_block.traits.push(save_trait("Sun Glow", "advantage"));
+        sunlit.settings.lighting = crate::effect::Lighting::Sunlight;
+        let (event, _, _) = save_by(&mut sunlit, save_on(Ability::Dex), 4);
+        assert!(event.message.ends_with("the save"), "{}", event.message);
+    }
+
+    #[test]
+    fn an_attack_note_is_empty_when_lighting_is_cancelled() {
+        let mut state = lit(fixture_block("kobold-warrior"), crate::effect::Lighting::Sunlight);
+        state.combatants[1].conditions.push(sourced(Condition::Blinded, None));
+        assert_eq!(disposition(&state, &state.combatants[0], &state.combatants[1]), RollDisposition::Normal);
+        let effect = stat_block(&state, &state.combatants[0]).unwrap().actions[0].effects[0].clone();
+        let mut events = vec![];
+        resolve_effect(&mut state, &mut Stream::from_seed(3), "kobold-warrior", effect, &["fighter".into()], &mut events).unwrap();
+        let attack = events.into_iter().find(|e| e.kind == "attack").unwrap().message;
+        assert!(!attack.contains("Sunlight"), "{attack}");
     }
 }
