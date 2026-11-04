@@ -47,4 +47,4 @@ Left out:
 
 - The engine's attack disposition chains `improve` and `worsen`, so with several sources the result depends on order, against the PHB rule that any Advantage plus any Disadvantage is a straight roll. The tactics policy's `disposition` sums and clamps with the same fault. Fixing attacks changes batch numbers, so it is its own build ticket.
 
-Build tickets: [Build encounter lighting](../tickets/060-build-encounter-lighting.md) and [Fix Advantage and Disadvantage cancellation on attack rolls](../tickets/061-fix-advantage-disadvantage-cancellation.md).
+Build tickets: [Build encounter lighting](060-build-encounter-lighting.md) and [Fix Advantage and Disadvantage cancellation on attack rolls](../tickets/061-fix-advantage-disadvantage-cancellation.md).

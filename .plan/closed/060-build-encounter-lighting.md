@@ -3,9 +3,9 @@ id: 060
 title: Build encounter lighting
 type: task
 mode: AFK
-status: open
+status: closed
 blocked_by: [049]
-claimed: true
+claimed: false
 ---
 
 ## Question
@@ -85,3 +85,21 @@ Versions and baseline:
 Consult `tdd`, `codebase-design`, `domain-modeling` and `code-review`.
 
 ## Resolution
+
+Built on branch `ticket-060-build-encounter-lighting`.
+
+- Model. `Lighting` is `unspecified` (alias `normal`, the default), `dim_light`, `bright_light` and `sunlight`, with `Lighting::meets` and `as_str`. `EncounterSettings.lighting` defaults to `unspecified`, so old state files load. `schema_version` stays 1, recorded in ADR 0005.
+- Load check. `StatBlock` deserializes `traits` and the four action lists through `deserialize_with` hooks in `stat_block.rs`. A `roll_modifier` outside a trait's top-level effects (an action list, or nested in an `on_hit`, `on_failure` or area through `Effect::holds_roll_modifier`) fails with "<id>: a roll modifier is a trait effect", and one keyed to `unspecified` fails too. `bench start`, `bench add`, `bench batch` and fixtures all deserialize before any dice are drawn. Multiattack steps name actions by id, so a modifier "inside a multiattack" is caught on the action it names.
+- Engine. The `RollModifier` branch is gone (it shares the no-op arm with `NoProvoke`). `lighting_modifiers` walks the roller's traits and returns each disposition with its trait name. `disposition` chains it into `combined_disposition` for attacks. `save_disposition` feeds the same helper for saves and is the seam ticket 069 adds Restrained and timed modifiers to. `resolve_save` draws a second d20 only for Advantage or Disadvantage, through `player_roll_in`, so ask mode prompts two d20s as one group. `lighting_note` appends `(Disadvantage: Sunlight Sensitivity, sunlight)` per applying modifier.
+- Live and batch as the ticket lists. The START line reads `(seed N, pc dice engine, lighting unspecified, engine 0.1.4)`.
+- Import. 11 fixtures changed and the review list regenerated. The import exits 0 with 341 of 341 graduated.
+- No batch change under the default. From a scratch release build of `master` and of this branch, `bench batch <id> --seed 11 --fights 30` (unresolved ids assumed ignored) gave identical `levels` and sample seeds for all 11 fixtures.
+- Versions. The caller asked for the workspace at 0.1.4 though the ticket planned no bump; batch numbers don't move, so the bump only marks the release. `a_fixture_regenerates_to_its_committed_row` still passes and is not ignored. `cargo test --workspace` passes. Clippy shows the four warnings already on master.
+
+Readings chosen where the ticket was open:
+
+- `Invocation` doesn't record `--lighting`. `BatchSpec.lighting` round-trips exactly, so `replay_command` reads it from there, with or without an invocation.
+- The event note names the encounter's lighting in words ("sunlight", "bright light"), not the modifier's key, and appears whenever a lighting modifier applies, even when another source cancels it, so the reader sees why a roll was straight.
+- A modeled lighting trait's finding has the new kind `lighting` ("Lighting trait" in the HTML). The vampire Sunlight finding keeps kind `skipped`, so the opening skipped-mechanic warning still names it, and its note is "Applies in sunlight; on in this run. Agent judgment left out: <clause>".
+- Light words in findings follow the rules terms: "sunlight", "Bright Light", "Dim Light".
+- `save_disposition` reads lighting only. Haste's timed Advantage on Dexterity saves still does nothing, as on master; counting it would move batch numbers, so ticket 069 now adds timed save modifiers beside Restrained.
