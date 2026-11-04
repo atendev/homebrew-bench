@@ -137,8 +137,12 @@ A pause in a live encounter where the engine waits for a decision or a die roll 
 _Avoid_: Interrupt, callback
 
 **Reaction window**:
-A pending prompt that offers one combatant a chance to use a reaction, such as Shield or an Opportunity Attack.
-_Avoid_: Trigger, interrupt
+A pending prompt that offers one combatant a chance to use a reaction, such as Shield or an Opportunity Attack. It holds the move or action that triggered it. When the user (for a PC) or the agent (for a monster) takes or declines the reaction, the engine runs that command again with the answer. Legendary actions have no window.
+_Avoid_: Interrupt
+
+**Reaction trigger**:
+The event named on a reaction that lets the engine open a reaction window for it. Two triggers open windows: a creature leaving the reactor's reach, which offers the Opportunity Attack every creature has, and being hit by an attack roll, which offers reactions such as Shield and Parry. A reaction with any other trigger is agent judgment.
+_Avoid_: Reaction condition, hook
 
 **Legendary window**:
 The gap between the end of one creature's turn and the start of the next, when other creatures with legendary actions may take them. The creature whose turn just ended takes none. Each use costs one from the holder's budget for the round, which refills when the holder's own turn starts.
@@ -149,7 +153,7 @@ The standard action that spends the actor's action and sets a flag until its tur
 _Avoid_: Withdraw
 
 **Reactor**:
-A creature that takes a reaction against another's action or movement. For an Opportunity Attack, it is a creature whose engagement the mover breaks. The move names its reactors, and the engine resolves their attacks before the band changes.
+A creature that may take a reaction against another's action or movement. For an Opportunity Attack, it is a creature whose engagement the mover breaks, and the engine resolves its attack before the band changes. For a hit, it is the creature hit, and its reaction resolves before the damage.
 _Avoid_: Responder, defender
 
 **Seed**:
@@ -169,7 +173,7 @@ The human-readable record of every action the engine takes, including overrides 
 _Avoid_: History, trace
 
 **Public view**:
-A filtered read of the log and digest for showing players, not the DM. It hides monster hit points, resources and recharge, and replaces hit points with wounded states. The fact of an override or prompt stays; the hidden detail goes.
+A filtered read of the log and digest for showing players, not the DM. It hides monster hit points, resources and recharge, and replaces hit points with wounded states. The fact of an override or prompt stays, and the hidden detail goes. A reaction window a monster declined is hidden detail.
 _Avoid_: Redacted log, spoiler-free mode
 
 **Wounded state**:

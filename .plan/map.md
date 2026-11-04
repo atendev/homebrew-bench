@@ -76,11 +76,13 @@ Both modes ship in phase 1. Everything the engine can't model is labeled agent j
 - [Import legendary action cooldowns](closed/058-import-legendary-action-cooldowns.md): the importer sets `usage: cooldown_until_next_turn` on the 44 SRD legendary actions that say the creature can't take them again until the start of its next turn. It reads this from the prose with a review note, as a recorded exception in ADR 0008. The baseline is left stale on the fixture set for ticket 056 to regenerate.
 - [Upcast spell scaling](closed/050-upcast-spell-scaling.md): a cast resolves at its slot level or the spell's own level, effects entries gain `level` and an `upcast_clause` for what the engine can't apply, scaling rules are `extra_dice`, `extra_modifier`, `extra_targets` and `extra_effects` applied per level above the base, the scaffold and honesty check cover the higher-level text, live gets `bench action --slot`, and the engine goes to 0.1.2 with 14 dragon fixtures changing before ticket 056's regeneration.
 - [Encounter lighting setting](closed/049-encounter-lighting-setting.md): one `lighting` value per encounter (`unspecified` by default, which turns on no lighting trait, then `dim_light`, `bright_light` and `sunlight`, with sunlight counting as Bright Light) set by `--lighting` on `bench start` and `bench batch` and changed by override, roll modifiers read from traits at roll time and reaching attacks and saves, 11 SRD lighting traits imported as roll modifiers, a Lighting row in the batch report, and no engine bump. The audit found that Advantage and Disadvantage don't cancel on attack rolls, now its own build ticket.
+- [Live reaction windows](closed/047-live-reaction-windows.md): live mode opens a reaction window when a creature leaves a reactor's reach or a creature is hit by an attack roll. Each window is one `reaction` prompt for one reactor that holds the `bench move` or `bench action` and reruns it on `bench respond --take [<id>]` or `--decline`. A new `trigger` field on reactions has one variant, `hit_by_attack_roll`. Parry and Riposte import as modeled, and the caster's Shield gets the trigger. Legendary actions get no prompt. Batch passes every window through a decider that ticket 046 replaces. The engine moves one patch and the baseline is not regenerated.
 
 ## Not yet specified
 
 - Dragons read a level or more above their CR on the baseline curve from tier 2 up, and the pit fiend and the lich stay hard at high CR (ticket 052). It is not yet clear whether the cause is the SRD's own CR choices, a tactics policy gap such as no reactions or no spreading out against breath weapons, or an engine modeling gap. The batch reactions ticket may answer part of it. Upcast scaling (ticket 059) makes the 14 dragons that cast "level N version" spells hit harder, so read dragon cells on the regenerated curve with that in mind.
 - Darkness and Darkvision. An encounter-wide `darkness` lighting value, read against each creature's Darkvision, Blindsight and Truesight, would need no positions: a creature that can't see in it is Blinded. Open: whether sense range counts at all without positions (treat every sense as reaching, or compare it with the range band), how the standard party sees (it has no Darkvision and carries no light), how a homebrew "Dim Light or Darkness" trait maps, and whether the batch report needs a second run in darkness ([Encounter lighting setting](closed/049-encounter-lighting-setting.md)).
+- Reaction triggers beyond leaving reach and being hit by an attack roll. ADR 0005 lists four more: an attack roll made against the creature, taking damage or becoming Bloodied, a creature moving within N feet, and a creature making a check or save. There is also the dormant spell-cast trigger. Nothing modeled uses them yet, so the agent handles them. The open questions: which homebrew reactions would need them, and how "within N feet" reads without positions ([Live reaction windows](closed/047-live-reaction-windows.md)).
 
 ## Out of scope
 
@@ -99,10 +101,10 @@ Takeable now, in order:
 - Build upcast spell scaling (task, AFK)
 - Build encounter lighting (task, AFK)
 - Fix Advantage and Disadvantage cancellation on attack rolls (task, AFK)
-- Live reaction windows (grilling)
+- Build live reaction windows (task, AFK)
 - Batch policy takes reactions (grilling)
 - Haste extra action and ally-targeted buffs (grilling)
 
 Blocked:
 
-- Build v3 scoring for buffs, forced movement and teleports (task, AFK), waits on Batch policy takes reactions, Build upcast spell scaling, Build encounter lighting and Fix Advantage and Disadvantage cancellation; it regenerates the baseline once
+- Build v3 scoring for buffs, forced movement and teleports (task, AFK), waits on Batch policy takes reactions, Build upcast spell scaling, Build encounter lighting, Fix Advantage and Disadvantage cancellation and Build live reaction windows; it regenerates the baseline once
