@@ -4,7 +4,7 @@ title: Build v3 scoring for buffs, forced movement and teleports
 type: task
 mode: AFK
 status: open
-blocked_by: [046, 058, 059, 060, 061, 062, 063, 065, 066]
+blocked_by: [046, 058, 059, 060, 061, 062, 063, 065, 066, 067]
 claimed: false
 ---
 

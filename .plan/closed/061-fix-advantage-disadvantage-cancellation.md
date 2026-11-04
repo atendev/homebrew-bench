@@ -3,7 +3,7 @@ id: 061
 title: Fix Advantage and Disadvantage cancellation on attack rolls
 type: task
 mode: AFK
-status: open
+status: closed
 blocked_by: []
 claimed: false
 ---
@@ -50,3 +50,24 @@ Versions and baseline:
 Consult `tdd`, `codebase-design` and `code-review`.
 
 ## Resolution
+
+Built on branch `ticket-061-fix-advantage-disadvantage-cancellation`.
+
+- `combined_disposition` in `bench-core/src/engine.rs` holds the PHB rule: it takes any number of dispositions, sets one Advantage flag and one Disadvantage flag, and returns `Advantage` or `Disadvantage` when only one is set, otherwise `Normal`. Ticket 060 is to feed its save sources (and the lighting sources for attacks) into this same function.
+- `disposition` now collects its sources and passes them to the helper: the actor's conditions, the target's conditions, Invisible on either side, and the actor's timed modifiers through `modifier_dispositions`, which replaces `apply_modifier_target_disposition`. Its unused `default` parameter is gone. `improve` and `worsen` had no other callers and are removed.
+- The condition list did not change. The attack still draws two d20s, so the dice stream does not move.
+- New tests: two Advantages and one Disadvantage, one and two, and two of each roll straight; two of one kind keep that kind; every order of five source lists gives the same result; the Invisible, Poisoned attacker against a Paralyzed target rolls straight (it rolled with Advantage before); two timed Advantages plus Blinded roll straight. The old chain gave Advantage in both of the last two cases. `disposition_blinded_gives_disadvantage` still passes.
+- The workspace is 0.1.2, and with it `ENGINE_VERSION`. `CHANGELOG.md` has the entry under Changed. `data/baseline/curve.json` is unchanged. `a_fixture_regenerates_to_its_committed_row` still passes, because the goblin-warrior row has no mixed-source attacks, so it is not ignored.
+- `cargo test --workspace` passes. Clippy shows four warnings, all already on master; the fifth was the nested `if` in the removed function. The import review exits 0 with 341 of 341 graduated. The tactics policy's `disposition` is untouched for ticket 056.
+
+Gaps in the condition list against the 2024 conditions (PHB Appendix C), not fixed here:
+
+- Blinded target: attack rolls against it should have Advantage. Not a source.
+- Restrained attacker: its attack rolls should have Disadvantage. Only the target side is a source.
+- Petrified target: attack rolls against it should have Advantage. Not a source.
+- Grappled attacker: Disadvantage on attacks against anyone but the grappler. Not a source.
+- Prone target: Advantage only if the attacker is within 5 feet, otherwise Disadvantage. The engine always gives Advantage, ranged attacks included.
+- Frightened attacker: Disadvantage only while the source of fear is in line of sight. The engine always applies it.
+- Invisible on either side applies even when the other creature can see it (Blindsight, Truesight, See Invisibility).
+
+These became ticket [067](../tickets/067-align-attack-roll-condition-sources-with-2024-rules.md).

@@ -79,6 +79,7 @@ Both modes ship in phase 1. Everything the engine can't model is labeled agent j
 - [Live reaction windows](closed/047-live-reaction-windows.md): live mode opens a reaction window when a creature leaves a reactor's reach or a creature is hit by an attack roll. Each window is one `reaction` prompt for one reactor that holds the `bench move` or `bench action` and reruns it on `bench respond --take [<id>]` or `--decline`. A new `trigger` field on reactions has one variant, `hit_by_attack_roll`. Parry and Riposte import as modeled, and the caster's Shield gets the trigger. Legendary actions get no prompt. Batch passes every window through a decider that ticket 046 replaces. The engine moves one patch and the baseline is not regenerated.
 - [Batch policy takes reactions](closed/046-batch-policy-takes-reactions.md): batch turns reaction windows on and the policy decides each one as the engine asks. It takes Shield or Parry only when the reaction turns the hit into a miss, and an Opportunity Attack when its expected damage beats the reaction reserve (0.1 per AC point of the best ready hit reaction times the attack-roll damage coming at it, capped at one hit). The mover's step-out penalty counts only those attacks. No Disengage plans and no new `policy.*` constants. Build ticket 063 moves the policy to v3, and ticket 056 adds its scoring under the same v3 and regenerates once.
 - [Haste extra action and ally-targeted buffs](closed/055-haste-extra-action-and-ally-targeted-buffs.md): a timed modifier has a bearer apart from its source, `target` by default or `self`, so riders under a failed save or a hit land on the target instead of the attacker (the old reading was a defect). Only the most potent (else most recent) casting of one spell applies on a bearer, a modifier can end on damage, Speed modifiers are read through one walk-speed function, and Fly becomes an agent clause. Built in ticket 065. A modifier can grant an extra action limited to listed uses (Haste's: one attack or Disengage, spent with `--extra`) and can apply effects when it ends (Haste's lethargy). Built in ticket 066. Under v3 the batch policy casts a buff on the self or ally it values most and uses the extra action (added to ticket 056).
+- [Fix Advantage and Disadvantage cancellation](closed/061-fix-advantage-disadvantage-cancellation.md): attack rolls set one Advantage flag and one Disadvantage flag across every source and roll straight with both, through one `combined_disposition` helper that ticket 060's saves reuse. `improve` and `worsen` are gone, the engine is 0.1.2, and the baseline stays stale for ticket 056. Seven gaps against the 2024 conditions went to ticket 067.
 
 ## Not yet specified
 
@@ -104,13 +105,13 @@ Takeable now, in order:
 
 - Build upcast spell scaling (task, AFK)
 - Build encounter lighting (task, AFK)
-- Fix Advantage and Disadvantage cancellation on attack rolls (task, AFK)
 - Build live reaction windows (task, AFK)
 - Build modifier bearers and Speed modifiers (task, AFK)
+- Align attack-roll condition sources with the 2024 conditions (grilling, HITL); decide before ticket 056 regenerates whether it should share that regeneration
 
 Blocked:
 
 - Build Haste extra action and lethargy (task, AFK), waits on Build modifier bearers and Speed modifiers
 - Build batch reactions policy (task, AFK), waits on Build live reaction windows; it moves the policy to v3
-- Build v3 scoring for buffs, forced movement and teleports (task, AFK), waits on Build upcast spell scaling, Build encounter lighting, Fix Advantage and Disadvantage cancellation, Build live reaction windows, Build batch reactions policy, Build modifier bearers and Speed modifiers and Build Haste extra action and lethargy; it regenerates the baseline once
+- Build v3 scoring for buffs, forced movement and teleports (task, AFK), waits on Build upcast spell scaling, Build encounter lighting, Build live reaction windows, Build batch reactions policy, Build modifier bearers and Speed modifiers and Build Haste extra action and lethargy; it regenerates the baseline once
 - Do dragons still read above their CR on the v3 curve (task, AFK), waits on Build v3 scoring; it takes over the dragon fog item, whose reactions half policy v3 now covers
