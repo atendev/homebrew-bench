@@ -65,7 +65,7 @@ Advantage or Disadvantage that a trait gives its own creature on one kind of rol
 _Avoid_: Modifier (that is timed), passive buff
 
 **Lighting**:
-The light one encounter takes place in, one value for every combatant: Dim Light, Bright Light or sunlight. Sunlight is also Bright Light. Dim Light is the default, so no lighting trait applies unless the user picks brighter light. Darkness is not a lighting value; the agent handles it.
+The light one encounter takes place in, one value for every combatant: unspecified, Dim Light, Bright Light or sunlight. Sunlight is also Bright Light. Unspecified is the default and turns on no lighting trait, so a trait keyed to any light applies only when the user names that light. Darkness is not a lighting value yet; the agent handles it.
 _Avoid_: Normal light, illumination, ambient light
 
 **Agent judgment**:

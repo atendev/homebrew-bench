@@ -75,11 +75,12 @@ Both modes ship in phase 1. Everything the engine can't model is labeled agent j
 - [Build live legendary actions](closed/057-build-live-legendary-actions.md): `bench end-turn --legendary` resolves declared legendary actions between `finish_turn` and `start_next_turn`, one eligibility function serves the CLI, batch and `digest.legendary`, all usage kinds apply, batch moved into the same gap, and the engine is 0.1.1 with the baseline left stale. See `docs/adr/0016-legendary-actions-declared-on-the-end-turn.md`.
 - [Import legendary action cooldowns](closed/058-import-legendary-action-cooldowns.md): the importer sets `usage: cooldown_until_next_turn` on the 44 SRD legendary actions that say the creature can't take them again until the start of its next turn. It reads this from the prose with a review note, as a recorded exception in ADR 0008. The baseline is left stale on the fixture set for ticket 056 to regenerate.
 - [Upcast spell scaling](closed/050-upcast-spell-scaling.md): a cast resolves at its slot level or the spell's own level, effects entries gain `level` and an `upcast_clause` for what the engine can't apply, scaling rules are `extra_dice`, `extra_modifier`, `extra_targets` and `extra_effects` applied per level above the base, the scaffold and honesty check cover the higher-level text, live gets `bench action --slot`, and the engine goes to 0.1.2 with 14 dragon fixtures changing before ticket 056's regeneration.
-- [Encounter lighting setting](closed/049-encounter-lighting-setting.md): one `lighting` value per encounter (`dim_light` by default, `bright_light`, `sunlight`, with sunlight counting as Bright Light) set by `--lighting` on `bench start` and `bench batch` and changed by override, roll modifiers read from traits at roll time and reaching attacks and saves, 11 SRD lighting traits imported as roll modifiers, a Lighting row in the batch report, no engine bump, and darkness left out.
+- [Encounter lighting setting](closed/049-encounter-lighting-setting.md): one `lighting` value per encounter (`unspecified` by default, which turns on no lighting trait, then `dim_light`, `bright_light` and `sunlight`, with sunlight counting as Bright Light) set by `--lighting` on `bench start` and `bench batch` and changed by override, roll modifiers read from traits at roll time and reaching attacks and saves, 11 SRD lighting traits imported as roll modifiers, a Lighting row in the batch report, and no engine bump. The audit found that Advantage and Disadvantage don't cancel on attack rolls, now its own build ticket.
 
 ## Not yet specified
 
 - Dragons read a level or more above their CR on the baseline curve from tier 2 up, and the pit fiend and the lich stay hard at high CR (ticket 052). It is not yet clear whether the cause is the SRD's own CR choices, a tactics policy gap such as no reactions or no spreading out against breath weapons, or an engine modeling gap. The batch reactions ticket may answer part of it. Upcast scaling (ticket 059) makes the 14 dragons that cast "level N version" spells hit harder, so read dragon cells on the regenerated curve with that in mind.
+- Darkness and Darkvision. An encounter-wide `darkness` lighting value, read against each creature's Darkvision, Blindsight and Truesight, would need no positions: a creature that can't see in it is Blinded. Open: whether sense range counts at all without positions (treat every sense as reaching, or compare it with the range band), how the standard party sees (it has no Darkvision and carries no light), how a homebrew "Dim Light or Darkness" trait maps, and whether the batch report needs a second run in darkness ([Encounter lighting setting](closed/049-encounter-lighting-setting.md)).
 
 ## Out of scope
 
@@ -88,7 +89,7 @@ Both modes ship in phase 1. Everything the engine can't model is labeled agent j
 - MCP server and long-running server modes: phase 1 is a one-shot CLI. An MCP wrapper can come later over the same commands.
 - Agent-written engine code for house rules: phase 1 applies them as prose through overrides. The house rule format leaves room for it.
 - Magic items in the standard party: the baseline curve shows no fall-off through level 18, and the High cells at levels 19 and 20 are too thin and too concentrated in a few monsters to change the whole party ([Does the standard party fall off at high levels](closed/052-does-the-standard-party-fall-off-at-high-levels.md)).
-- Darkness and per-creature vision: in Darkness a creature that can't see is Blinded, and modeling that needs sense ranges and who-sees-whom per pair, which abstract engagement can't give. The lighting setting stops at Dim Light, and the agent applies Blinded by override in live mode ([Encounter lighting setting](closed/049-encounter-lighting-setting.md)).
+- Position-dependent vision: sense ranges measured against range bands, light sources, and who sees whom per pair need positions that abstract engagement doesn't have ([Encounter lighting setting](closed/049-encounter-lighting-setting.md)).
 - Engine-played monster turns in live mode (a possible `bench auto-turn` that calls the batch tactics policy): phase 1 has the agent choose every monster action. It can be added over the same step function without changing the live contract.
 
 ## Frontier
@@ -97,10 +98,11 @@ Takeable now, in order:
 
 - Build upcast spell scaling (task, AFK)
 - Build encounter lighting (task, AFK)
+- Fix Advantage and Disadvantage cancellation on attack rolls (task, AFK)
 - Live reaction windows (grilling)
 - Batch policy takes reactions (grilling)
 - Haste extra action and ally-targeted buffs (grilling)
 
 Blocked:
 
-- Build v3 scoring for buffs, forced movement and teleports (task, AFK), waits on Batch policy takes reactions, Build upcast spell scaling and Build encounter lighting; it regenerates the baseline once
+- Build v3 scoring for buffs, forced movement and teleports (task, AFK), waits on Batch policy takes reactions, Build upcast spell scaling, Build encounter lighting and Fix Advantage and Disadvantage cancellation; it regenerates the baseline once
