@@ -195,6 +195,37 @@ fn pending_prompt_gates_commands() {
 }
 
 #[test]
+fn end_turn_takes_declared_legendary_actions() {
+    let bench = Bench::new();
+    let mut goblin: Value = serde_json::from_str(&std::fs::read_to_string(data("fixtures/goblin-warrior.json")).unwrap()).unwrap();
+    let mut kick = goblin["actions"][0].clone();
+    kick["id"] = "kick".into();
+    kick["name"] = "Kick".into();
+    goblin["legendary_actions"] = Value::Array(vec![kick]);
+    goblin["legendary_uses_per_round"] = 1.into();
+    let path = bench.cwd.join("legendary-goblin.json");
+    std::fs::write(&path, goblin.to_string()).unwrap();
+    let pc = data("party/standard/standard-striker-03.json");
+    bench.ok(&["start", pc.as_str(), path.to_str().unwrap(), "--seed", "11"]);
+    if bench.ok(&["state"])["digest"]["active_turn"] != "standard-striker-03" {
+        bench.ok(&["end-turn"]);
+    }
+    assert_eq!(bench.ok(&["state"])["digest"]["legendary"][0]["id"], "goblin-warrior");
+
+    let out = bench.ok(&["end-turn", "--legendary", "goblin-warrior:kick=standard-striker-03"]);
+    let lines: Vec<&str> = out["events"].as_array().unwrap().iter().map(|e| e["line"].as_str().unwrap()).collect();
+    assert_eq!(lines[1], "LEGENDARY ACTION goblin-warrior: Kick (1 of 1)", "{lines:?}");
+    assert_eq!(bench.err(&["end-turn", "--legendary", "goblin-warrior:kick=standard-striker-03"]), "illegal_action");
+    for bad in ["goblin-warrior", "goblin-warrior:", ":kick", "goblin-warrior:kick=", "goblin-warrior:kick=a,"] {
+        let out = Command::new(env!("CARGO_BIN_EXE_bench")).args(["end-turn", "--legendary", bad]).env("BENCH_HOME", &bench.home).output().unwrap();
+        assert_eq!(out.status.code(), Some(2), "{bad}");
+    }
+    bench.ok(&["undo"]);
+    bench.ok(&["end-turn", "--legendary", "goblin-warrior:kick=standard-striker-03"]);
+    assert_eq!(bench.ok(&["replay"])["matches"], true);
+}
+
+#[test]
 fn standing_override_tags_the_log() {
     let bench = Bench::new();
     bench.start(&[]);
@@ -437,7 +468,11 @@ fn batch_compares_against_the_embedded_curve_outside_the_repo() {
     assert!(comparison["basis"].as_str().unwrap().starts_with("Basis: "));
     assert!(out["srd"]["xp"] == 450);
     let status = bench.ok(&["baseline", "status"]);
-    assert_eq!(status["current"], true);
+    let reasons = status["reasons"].as_array().unwrap();
+    assert!(
+        reasons.iter().all(|r| r.as_str().unwrap().starts_with("the engine is ")),
+        "only the engine version may differ until the v3 regeneration: {status:#}"
+    );
     let html = std::fs::read_to_string(bench.cwd.join("r/report.html")).unwrap();
     assert!(html.contains("Claimed-CR verdict"));
 }

@@ -555,12 +555,7 @@ fn fight(spec: &BatchSpec, constants: &PolicyConstants, level: u8, index: u64, w
         }
         let actor = state.active_turn.clone().ok_or_else(|| BatchError::Invalid("fight has no active turn".into()))?;
         take_turn(&mut state, &actor, constants, &mut log, &mut monster_damage);
-        let ended = actor.clone();
-        let events = engine::step_events(&mut state, StepRequest::EndTurn).map_err(|e| BatchError::Invalid(e.to_string()))?;
-        log.events(&state, &events, &mut monster_damage);
-        if decided(&state).is_none() {
-            legendary_window(&mut state, &ended, constants, &mut log, &mut monster_damage);
-        }
+        end_turn(&mut state, constants, &mut log, &mut monster_damage)?;
     };
     let rounds = state.round.min(spec.max_rounds).max(1);
     let pc_deaths = state
@@ -650,21 +645,26 @@ fn execute(state: &mut EncounterState, plan: &tactics::Plan) -> Result<Vec<Engin
     Ok(events)
 }
 
-/// After a turn ends, each other creature with legendary actions left spends
-/// one when a plan scores. Unused actions lapse at its own turn start.
-fn legendary_window(state: &mut EncounterState, ended: &str, constants: &PolicyConstants, log: &mut Log, damage: &mut i32) {
-    let holders: Vec<(String, u32)> = state
-        .combatants
-        .iter()
-        .filter(|c| c.id != ended && c.end_state == EndState::Active)
-        .filter_map(|c| {
-            let block = &state.stat_blocks.iter().find(|s| s.id == c.stat_block_id)?.stat_block;
-            (block.legendary_uses_per_round > 0 && !block.legendary_actions.is_empty()).then(|| (c.id.clone(), block.legendary_uses_per_round))
-        })
-        .collect();
-    for (id, budget) in holders {
-        let used = state.combatants.iter().find(|c| c.id == id).and_then(|c| c.resources.get(&format!("{id}:legendary")).copied()).unwrap_or(0);
-        if used >= budget as i32 || decided(state).is_some() {
+/// Finish the active turn, open the legendary window, then start the next
+/// turn, so legendary actions resolve before start-of-turn resets and rolls.
+fn end_turn(state: &mut EncounterState, constants: &PolicyConstants, log: &mut Log, damage: &mut i32) -> Result<(), BatchError> {
+    let invalid = |e: engine::EngineError| BatchError::Invalid(e.to_string());
+    let events = engine::finish_turn(state).map_err(invalid)?;
+    log.events(state, &events, damage);
+    if decided(state).is_none() {
+        legendary_window(state, constants, log, damage);
+    }
+    let events = engine::start_next_turn(state).map_err(invalid)?;
+    log.events(state, &events, damage);
+    Ok(())
+}
+
+/// Each creature that may take a legendary action spends one use when a plan
+/// scores. Unused uses lapse when its own turn starts.
+fn legendary_window(state: &mut EncounterState, constants: &PolicyConstants, log: &mut Log, damage: &mut i32) {
+    let holders: Vec<String> = engine::legendary_holders(state).into_iter().map(|h| h.id).collect();
+    for id in holders {
+        if decided(state).is_some() || engine::legendary_uses_left(state, &id).is_err() {
             continue;
         }
         if let Some(plan) = tactics::choose(state, &id, Section::Legendary, constants) {
@@ -1318,6 +1318,50 @@ mod tests {
         let fight = replay_fight(&s, fight_index(5, 0, 1)).unwrap();
         let log = fight.log.unwrap();
         assert!(log.contains("legendary action: tail"), "{log}");
+        assert!(log.contains("LEGENDARY ACTION ogre: Tail (1 of 1)"), "{log}");
+    }
+
+    #[test]
+    fn the_creature_up_next_spends_before_its_budget_resets() {
+        let mut monster = fixture("ogre");
+        let mut tail = monster.actions[0].clone();
+        tail.id = "tail".into();
+        tail.name = "Tail".into();
+        monster.legendary_actions.push(tail);
+        monster.legendary_uses_per_round = 1;
+        let s = spec(monster, vec![5], 1);
+        let mut entrants = vec![Entrant { stat_block: s.monster.clone(), side: MONSTER_SIDE.into(), band: RangeBand::Near }];
+        entrants.extend(s.party[&5].iter().map(|pc| Entrant { stat_block: pc.clone(), side: PARTY_SIDE.into(), band: RangeBand::Near }));
+        let (mut state, _) = live::start(StartSpec {
+            id: "t".into(),
+            origin_directory: String::new(),
+            entrants,
+            seed: 3,
+            surprised: vec![],
+            individual_initiative: true,
+            pc_dice: PcDice::Engine,
+        })
+        .unwrap();
+        let ogre = state.combatants.iter().find(|c| c.side_id != PARTY_SIDE).unwrap().id.clone();
+        let before = state.initiative_order.iter().position(|id| id == &ogre).unwrap();
+        let len = state.initiative_order.len();
+        state.active_turn = Some(state.initiative_order[(before + len - 1) % len].clone());
+        let party: Vec<String> = state.combatants.iter().filter(|c| c.side_id == PARTY_SIDE).map(|c| c.id.clone()).collect();
+        for c in state.combatants.iter_mut() {
+            let others: Vec<String> = if c.id == ogre { party.clone() } else { vec![ogre.clone()] };
+            for other in others {
+                c.ranges.insert(other.clone(), RangeBand::Engaged);
+                c.engagement.push(other);
+            }
+        }
+        let mut log = Log::new(true);
+        let mut damage = 0;
+        end_turn(&mut state, &PolicyConstants::default(), &mut log, &mut damage).unwrap();
+        let log = log.finish().unwrap();
+        assert!(log.contains("LEGENDARY ACTION"), "{log}");
+        assert_eq!(state.active_turn.as_deref(), Some(ogre.as_str()));
+        let ogre = state.combatants.iter().find(|c| c.id == ogre).unwrap();
+        assert!(!ogre.resources.keys().any(|k| k.ends_with(":legendary")), "the spend came before the reset: {:?}", ogre.resources);
     }
 
     #[test]

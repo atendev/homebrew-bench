@@ -72,6 +72,7 @@ Both modes ship in phase 1. Everything the engine can't model is labeled agent j
 - [Build Disengage and no-provoke traits](closed/054-build-disengage-and-no-provoke-traits.md): `bench disengage` sets a flag until the actor's turn ends, Flyby and Agile import as the `no_provoke` effect (Flyby read like Agile), one eligibility function reads both, the schema stays at version 1 by recorded exception, and batch output is unchanged. See `docs/adr/0015-opportunity-attacks-declared-on-the-move.md`.
 
 - [Live legendary actions](closed/048-live-legendary-actions.md): declared on `bench end-turn --legendary <holder>:<action-id>[=<target>,...]` and resolved between the end of one turn and the start of the next, several uses per window in the engine and one in batch, all usage kinds checked, a `digest.legendary` instead of a prompt, and the batch reorder landing with an `ENGINE_VERSION` bump that marks the baseline stale until the v3 build.
+- [Build live legendary actions](closed/057-build-live-legendary-actions.md): `bench end-turn --legendary` resolves declared legendary actions between `finish_turn` and `start_next_turn`, one eligibility function serves the CLI, batch and `digest.legendary`, all usage kinds apply, batch moved into the same gap, and the engine is 0.1.1 with the baseline left stale. See `docs/adr/0016-legendary-actions-declared-on-the-end-turn.md`.
 
 ## Not yet specified
 
@@ -95,7 +96,7 @@ Takeable now, in order:
 - Live reaction windows (grilling)
 - Batch policy takes reactions (grilling)
 - Haste extra action and ally-targeted buffs (grilling)
-- Build live legendary actions (task, AFK)
+- Import legendary action cooldowns (task, AFK)
 
 Blocked:
 

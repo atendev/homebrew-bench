@@ -16,7 +16,7 @@ use crate::encounter::{
     ActionEconomy, CommandRecord, Combatant, EncounterEnd, EncounterSettings, EncounterState, EndState,
     PcDice, PendingPrompt, PlayerDice, RangeBand, Side, StandingAssumption, StatBlockSnapshot, PARTY_SIDE,
 };
-use crate::engine::{self, EngineError, EngineEvent, InitiativeOptions, OpportunityAttack, StepRequest};
+use crate::engine::{self, EngineError, EngineEvent, InitiativeOptions, LegendaryUse, OpportunityAttack, StepRequest};
 use crate::log::{LogEntry, LogLine};
 use crate::override_path;
 use crate::rng::{RngState, Stream};
@@ -53,7 +53,12 @@ pub enum Command {
     Disengage {
         actor: String,
     },
-    EndTurn,
+    /// End the active turn. Legendary actions listed here resolve in order
+    /// between the end of this turn and the start of the next.
+    EndTurn {
+        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        legendary: Vec<LegendaryUse>,
+    },
     End {
         reason: String,
     },
@@ -91,13 +96,18 @@ pub enum Command {
 }
 
 impl Command {
+    /// An end-turn with no legendary actions.
+    pub fn end_turn() -> Self {
+        Command::EndTurn { legendary: vec![] }
+    }
+
     pub fn name(&self) -> &'static str {
         match self {
             Command::Action { .. } => "action",
             Command::Move { .. } => "move",
             Command::Disengage { .. } => "disengage",
             Command::Respond { .. } => "respond",
-            Command::EndTurn => "end-turn",
+            Command::EndTurn { .. } => "end-turn",
             Command::End { .. } => "end",
             Command::Override { .. } => "override",
             Command::Roll { .. } => "roll",
@@ -574,7 +584,9 @@ fn apply(state: &mut EncounterState, cmd: &Command) -> Result<Applied, LiveError
             )
         }
         Command::Disengage { actor } => run_engine(state, StepRequest::Disengage { actor_id: actor.clone() }, vec![], false),
-        Command::EndTurn => run_engine(state, StepRequest::EndTurn, vec![], false),
+        Command::EndTurn { legendary } => {
+            run_engine(state, StepRequest::EndTurn { legendary: legendary.clone() }, vec![], false)
+        }
         Command::Respond { values, decline } => respond(state, values, *decline),
         Command::End { reason } => {
             state.ended = Some(EncounterEnd { round: state.round, reason: reason.clone() });
@@ -709,7 +721,7 @@ fn respond(state: &mut EncounterState, values: &[u32], decline: bool) -> Result<
         applied.items.insert(0, prompt_line(&prompt, &answer));
         return Ok(applied);
     }
-    let request: StepRequest = serde_json::from_value(prompt.metadata["request"].clone()).map_err(unreadable)?;
+    let request = stored_request(&prompt.metadata["request"]).map_err(unreadable)?;
     let mut faces: Vec<u32> = serde_json::from_value(prompt.metadata["faces"].clone()).unwrap_or_default();
     if !decline {
         faces.extend_from_slice(values);
@@ -718,6 +730,15 @@ fn respond(state: &mut EncounterState, values: &[u32], decline: bool) -> Result<
     let mut applied = run_engine(state, request, faces, decline)?;
     applied.items.insert(0, prompt_line(&prompt, &answer));
     Ok(applied)
+}
+
+/// The request a dice prompt holds. Prompts saved before end-turn took
+/// legendary actions hold a bare `"end_turn"`.
+fn stored_request(value: &Value) -> Result<StepRequest, serde_json::Error> {
+    if value.as_str() == Some("end_turn") {
+        return Ok(StepRequest::end_turn());
+    }
+    serde_json::from_value(value.clone())
 }
 
 /// Hold a PC's `bench add` until the user enters its initiative d20.
@@ -770,6 +791,10 @@ fn event_line(state: &EncounterState, e: &EngineEvent) -> LogLine {
         ("heal", true, Some(word)) => LogLine::replaced(text, format!("{target} regains HP ({word})")),
         ("temp_hp", true, Some(_)) => LogLine::replaced(text, format!("{target} gains temporary HP")),
         ("recharge", _, _) if !state.is_party(e.actor_id.as_deref().unwrap_or_default()) => LogLine::hidden(text),
+        ("legendary", _, _) if !state.is_party(e.actor_id.as_deref().unwrap_or_default()) => {
+            let public = text.rsplit_once(" (").map_or(text.as_str(), |(head, _)| head).to_string();
+            LogLine::replaced(text, public)
+        }
         _ => LogLine::same(text),
     }
 }
@@ -896,7 +921,7 @@ fn remove_combatant(state: &mut EncounterState, id: &str, reason: &str) -> Resul
     }
     let mut applied = Applied::line("remove", Some(id), LogLine::same(format!("REMOVE {id} (reason: {reason})")));
     if state.active_turn.as_deref() == Some(id) && state.initiative_order.len() > 1 {
-        let turn = run_engine(state, StepRequest::EndTurn, vec![], true)?;
+        let turn = run_engine(state, StepRequest::end_turn(), vec![], true)?;
         applied.items.extend(turn.items);
     }
     state.combatants.retain(|c| c.id != id);
@@ -1127,7 +1152,7 @@ mod tests {
     fn replay_matches_and_finds_divergence() {
         let (mut state, _) = start(spec(PcDice::Engine)).unwrap();
         { let cmd = attack(&state); execute(&mut state, cmd) }.unwrap();
-        execute(&mut state, Command::EndTurn).unwrap();
+        execute(&mut state, Command::end_turn()).unwrap();
         execute(
             &mut state,
             Command::Override {
@@ -1156,7 +1181,7 @@ mod tests {
         assert_eq!((prompt.kind.as_str(), prompt.actor_id.as_str(), prompt.sides, prompt.remaining), ("dice", "standard-striker-03", Some(20), 1));
         assert!(lines(&started).iter().any(|l| l.starts_with("PROMPT ")), "{:?}", lines(&started));
         assert_eq!((state.round, state.active_turn.clone()), (0, None));
-        assert!(matches!(execute(&mut state, Command::EndTurn), Err(LiveError::Pending(_))));
+        assert!(matches!(execute(&mut state, Command::end_turn()), Err(LiveError::Pending(_))));
 
         let answered = execute(&mut state, Command::Respond { values: vec![17], decline: false }).unwrap();
         assert!(state.pending.is_none());
@@ -1226,7 +1251,7 @@ mod tests {
         let (mut state, _) = start(spec(PcDice::Ask)).unwrap();
         execute(&mut state, Command::Respond { values: vec![10], decline: false }).unwrap();
         if state.active_turn.as_deref() != Some("standard-striker-03") {
-            execute(&mut state, Command::EndTurn).unwrap();
+            execute(&mut state, Command::end_turn()).unwrap();
         }
         let asked = { let cmd = attack(&state); execute(&mut state, cmd) }.unwrap();
         let d20s = asked.pending.expect("attack roll prompt").remaining as usize;
@@ -1296,7 +1321,7 @@ mod tests {
         let prompt = asked.pending.expect("initiative prompt for the added PC");
         assert_eq!((prompt.sides, prompt.remaining), (Some(20), 1));
         assert!(!state.combatants.iter().any(|c| c.id == "standard-striker-03-2"));
-        assert!(matches!(execute(&mut state, Command::EndTurn), Err(LiveError::Pending(_))));
+        assert!(matches!(execute(&mut state, Command::end_turn()), Err(LiveError::Pending(_))));
 
         let added = lines(&execute(&mut state, Command::Respond { values: vec![14], decline: false }).unwrap());
         assert_eq!(state.initiative_rolls["standard-striker-03-2"], 14 + striker.initiative);
@@ -1379,7 +1404,7 @@ mod tests {
                 let cmd = attack(&state);
                 execute(&mut state, cmd).unwrap();
             }
-            execute(&mut state, Command::EndTurn).unwrap();
+            execute(&mut state, Command::end_turn()).unwrap();
         }
         let line = damage(&state).expect("the striker hits the goblin within ten rounds");
         assert!(line.ends_with(" [standing assumption: goblin-warrior.max_hp]"), "{line}");
@@ -1430,7 +1455,7 @@ mod tests {
         let engage = Command::Move { actor, target: Some(other.into()), band: RangeBand::Engaged, feet: None, opportunity: vec![] };
         execute(state, engage).unwrap();
         while state.active_turn.as_deref() != Some(mover) || state.combatants.iter().any(|c| c.id == mover && c.action_economy.movement_used_feet > 0) {
-            execute(state, Command::EndTurn).unwrap();
+            execute(state, Command::end_turn()).unwrap();
         }
     }
 
@@ -1508,13 +1533,13 @@ mod tests {
         let (mut state, _) = start(spec(PcDice::Ask)).unwrap();
         execute(&mut state, Command::Respond { values: vec![10], decline: false }).unwrap();
         if state.active_turn.as_deref() != Some("standard-striker-03") {
-            execute(&mut state, Command::EndTurn).unwrap();
+            execute(&mut state, Command::end_turn()).unwrap();
         }
         let asked = { let cmd = attack(&state); execute(&mut state, cmd) }.unwrap();
         let prompt = asked.pending.clone().expect("dice prompt");
         assert_eq!(prompt.kind, "dice");
         assert!(asked.events[0].line.starts_with("PROMPT "));
-        assert!(matches!(execute(&mut state, Command::EndTurn), Err(LiveError::Pending(_))));
+        assert!(matches!(execute(&mut state, Command::end_turn()), Err(LiveError::Pending(_))));
         assert!(matches!(
             execute(&mut state, Command::Respond { values: vec![1; prompt.remaining as usize + 1], decline: false }),
             Err(LiveError::Invalid(_))
@@ -1527,7 +1552,7 @@ mod tests {
             answered.extend(lines(&out));
         }
         assert!(answered.iter().any(|l| l.contains("(player dice)")), "{answered:?}");
-        execute(&mut state, Command::EndTurn).unwrap();
+        execute(&mut state, Command::end_turn()).unwrap();
         let report = replay(&state);
         let names: Vec<_> = state.command_history.iter().map(|r| (r.name.clone(), r.args.clone())).collect();
         assert!(report.matches, "{report:?} {names:?}");
@@ -1588,5 +1613,102 @@ mod tests {
         for bad in ["", "2x6", "d", "2d", "3+", "+-2", "0d6"] {
             assert!(roll_expression(&mut stream, bad).is_err(), "{bad}");
         }
+    }
+
+    /// The goblin gets a legendary Kick and the striker a legendary Volley, one use each.
+    fn legendary_spec(pc_dice: PcDice) -> StartSpec {
+        let mut spec = spec(pc_dice);
+        for (entrant, from, id) in [(0, "shortsword", "volley"), (1, "scimitar", "kick")] {
+            let block = &mut spec.entrants[entrant].stat_block;
+            let mut action = block.actions.iter().find(|a| a.id == from).unwrap().clone();
+            action.id = id.into();
+            action.name = id.into();
+            block.legendary_actions.push(action);
+            block.legendary_uses_per_round = 1;
+        }
+        spec
+    }
+
+    fn until_turn(state: &mut EncounterState, id: &str) {
+        while state.active_turn.as_deref() != Some(id) {
+            execute(state, Command::end_turn()).unwrap();
+        }
+    }
+
+    fn legendary(holder: &str, action: &str, target: &str) -> Command {
+        Command::EndTurn {
+            legendary: vec![LegendaryUse { holder_id: holder.into(), action_id: action.into(), target_ids: vec![target.into()] }],
+        }
+    }
+
+    #[test]
+    fn end_turn_takes_legendary_actions_between_the_turns_and_undo_reverts_it_all() {
+        let (mut state, _) = start(legendary_spec(PcDice::Engine)).unwrap();
+        until_turn(&mut state, STRIKER);
+        let before = (serde_json::to_value(&state.combatants).unwrap(), state.round, state.active_turn.clone());
+        let out = execute(&mut state, legendary(GOBLIN, "kick", STRIKER)).unwrap();
+        let lines = lines(&out);
+        let at = |needle: &str| lines.iter().position(|l| l.contains(needle)).unwrap_or_else(|| panic!("{needle}: {lines:?}"));
+        assert!(at("ends its turn") < at("LEGENDARY ACTION goblin-warrior: kick (1 of 1)"), "{lines:?}");
+        assert!(at("LEGENDARY ACTION") < at("Goblin Warrior attacks"), "{lines:?}");
+        assert!(at("Goblin Warrior attacks") < at("starts its turn"), "{lines:?}");
+        assert_eq!(state.command_history.last().unwrap().args["legendary"][0]["holder_id"], GOBLIN);
+
+        execute(&mut state, Command::Undo).unwrap();
+        assert_eq!((serde_json::to_value(&state.combatants).unwrap(), state.round, state.active_turn.clone()), before);
+        execute(&mut state, legendary(GOBLIN, "kick", STRIKER)).unwrap();
+        assert!(replay(&state).matches);
+    }
+
+    #[test]
+    fn an_ineligible_legendary_declaration_fails_the_end_turn() {
+        let (mut state, _) = start(legendary_spec(PcDice::Engine)).unwrap();
+        until_turn(&mut state, GOBLIN);
+        let history = state.command_history.len();
+        let err = execute(&mut state, legendary(GOBLIN, "kick", STRIKER)).unwrap_err();
+        assert!(matches!(&err, LiveError::Illegal(why) if why.contains("turn is ending")), "{err:?}");
+        assert_eq!(state.command_history.len(), history);
+        assert_eq!(state.active_turn.as_deref(), Some(GOBLIN));
+    }
+
+    #[test]
+    fn digest_lists_who_may_take_a_legendary_action_next() {
+        let (mut state, _) = start(legendary_spec(PcDice::Engine)).unwrap();
+        until_turn(&mut state, GOBLIN);
+        let digest = digest::digest(&state);
+        assert_eq!(digest["legendary"], serde_json::json!([{"id": STRIKER, "uses_left": 1, "ready_actions": ["volley"]}]));
+        assert!(digest::public_digest(&state).get("legendary").is_none());
+    }
+
+    #[test]
+    fn ask_mode_holds_the_whole_end_turn_on_a_pc_legendary_attack() {
+        let (mut state, _) = start(legendary_spec(PcDice::Ask)).unwrap();
+        execute(&mut state, Command::Respond { values: vec![10], decline: false }).unwrap();
+        until_turn(&mut state, GOBLIN);
+        let before = (serde_json::to_value(&state.combatants).unwrap(), state.round);
+        let asked = execute(&mut state, legendary(STRIKER, "volley", GOBLIN)).unwrap();
+        assert_eq!(asked.pending.as_ref().map(|p| p.actor_id.as_str()), Some(STRIKER));
+        assert_eq!((serde_json::to_value(&state.combatants).unwrap(), state.round), before);
+        assert_eq!(state.active_turn.as_deref(), Some(GOBLIN));
+
+        let mut answered = vec![];
+        while let Some(p) = state.pending.clone() {
+            let out = execute(&mut state, Command::Respond { values: vec![p.sides.unwrap(); p.remaining as usize], decline: false }).unwrap();
+            answered.extend(lines(&out));
+        }
+        assert_eq!(answered.iter().filter(|l| l.contains("ends its turn")).count(), 1, "{answered:?}");
+        assert!(answered.iter().any(|l| l == "LEGENDARY ACTION standard-striker-03: volley (1 of 1)"), "{answered:?}");
+        assert_eq!(state.active_turn.as_deref(), Some(STRIKER));
+        assert!(replay(&state).matches);
+    }
+
+    #[test]
+    fn a_bare_end_turn_still_reads_and_writes_the_same() {
+        let bare = serde_json::json!({"command": "end_turn"});
+        let cmd: Command = serde_json::from_value(bare.clone()).unwrap();
+        assert!(matches!(&cmd, Command::EndTurn { legendary } if legendary.is_empty()));
+        assert_eq!(serde_json::to_value(&cmd).unwrap(), bare);
+        let held: StepRequest = stored_request(&serde_json::json!("end_turn")).unwrap();
+        assert!(matches!(held, StepRequest::EndTurn { legendary } if legendary.is_empty()));
     }
 }

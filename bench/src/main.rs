@@ -11,7 +11,7 @@ use bench_core::{
     batch::{self, BatchError, BatchSpec},
     config::{Config, OutputTarget},
     encounter::{EncounterState, PcDice, RangeBand, StandingAssumption, PARTY_SIDE},
-    engine::OpportunityAttack,
+    engine::{LegendaryUse, OpportunityAttack},
     error::{CodedError, ErrorCode},
     live::{self, Command, Entrant, LiveError, StartSpec},
     log, paths,
@@ -164,8 +164,14 @@ enum Commands {
         #[command(flatten)]
         at: At,
     },
-    /// End the active turn.
+    /// End the active turn. Legendary actions named with --legendary resolve
+    /// after the turn ends and before the next one starts.
     EndTurn {
+        /// A legendary action taken between the turns, at the listed targets.
+        /// Repeat for several; they resolve in the order given and each costs
+        /// one use. Any that is not allowed fails the whole command.
+        #[arg(long, value_name = "HOLDER:ACTION[=TARGET,...]", value_parser = parse_legendary)]
+        legendary: Vec<LegendaryUse>,
         #[command(flatten)]
         at: At,
     },
@@ -442,6 +448,20 @@ fn parse_opportunity(spec: &str) -> Result<OpportunityAttack, String> {
     Ok(OpportunityAttack { reactor_id: reactor.into(), attack_id: attack.map(Into::into) })
 }
 
+fn parse_legendary(spec: &str) -> Result<LegendaryUse, String> {
+    let bad = || format!("`{spec}` is not HOLDER:ACTION or HOLDER:ACTION=TARGET,...");
+    let (declared, targets) = match spec.split_once('=') {
+        Some((declared, targets)) => (declared, Some(targets)),
+        None => (spec, None),
+    };
+    let (holder, action) = declared.split_once(':').ok_or_else(bad)?;
+    let target_ids: Vec<String> = targets.map(|t| t.split(',').map(str::to_string).collect()).unwrap_or_default();
+    if holder.is_empty() || action.is_empty() || target_ids.iter().any(String::is_empty) {
+        return Err(bad());
+    }
+    Ok(LegendaryUse { holder_id: holder.into(), action_id: action.into(), target_ids })
+}
+
 fn parse_entrant(spec: &str) -> Result<Entrant, CodedError> {
     let (side, rest) = match spec.split_once('=') {
         Some((side, rest)) => (Some(side.to_string()), rest),
@@ -527,7 +547,7 @@ fn run(command: Commands) -> Result<String, CodedError> {
             step(&at, Command::Move { actor, target, band: band.into(), feet, opportunity })
         }
         Commands::Respond { values, decline, at } => step(&at, Command::Respond { values, decline }),
-        Commands::EndTurn { at } => step(&at, Command::EndTurn),
+        Commands::EndTurn { legendary, at } => step(&at, Command::EndTurn { legendary }),
         Commands::End { reason, at } => step(&at, Command::End { reason }),
         Commands::Override { path, value, clear: _, standing, why, at } => {
             check_rule(&why.rule)?;

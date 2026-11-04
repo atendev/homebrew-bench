@@ -121,8 +121,12 @@ A pause in a live encounter where the engine waits for a decision or a die roll 
 _Avoid_: Interrupt, callback
 
 **Reaction window**:
-A pending prompt that offers one combatant a chance to use a reaction, such as Shield or an Opportunity Attack, or a legendary action between turns.
+A pending prompt that offers one combatant a chance to use a reaction, such as Shield or an Opportunity Attack.
 _Avoid_: Trigger, interrupt
+
+**Legendary window**:
+The gap between the end of one creature's turn and the start of the next, when other creatures with legendary actions may take them. The creature whose turn just ended takes none. Each use costs one from the holder's budget for the round, which refills when the holder's own turn starts.
+_Avoid_: Legendary phase, off-turn action
 
 **Disengage**:
 The standard action that spends the actor's action and sets a flag until its turn ends. Its moves provoke no Opportunity Attack. Flyby and Agile give the same effect permanently as the `no_provoke` trait effect.

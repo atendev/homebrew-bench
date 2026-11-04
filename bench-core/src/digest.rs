@@ -4,6 +4,7 @@ use serde::Serialize;
 use serde_json::Value;
 
 use crate::encounter::{Combatant, EncounterState};
+use crate::engine;
 
 /// Public stand-in for a monster's hit points.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
@@ -50,6 +51,8 @@ pub fn wounded(c: &Combatant) -> WoundedState {
 }
 
 /// The DM digest: everything the agent needs to narrate the next step.
+/// `legendary` lists the creatures that may take a legendary action when the
+/// active turn ends, with their uses left and ready actions.
 pub fn digest(state: &EncounterState) -> Value {
     build(state, false)
 }
@@ -101,7 +104,7 @@ fn build(state: &EncounterState, public: bool) -> Value {
             serde_json::to_value(p).unwrap_or_default()
         }
     });
-    serde_json::json!({
+    let mut digest = serde_json::json!({
         "encounter": state.id,
         "round": state.round,
         "active_turn": state.active_turn,
@@ -109,7 +112,11 @@ fn build(state: &EncounterState, public: bool) -> Value {
         "combatants": combatants,
         "pending": pending,
         "ended": state.ended,
-    })
+    });
+    if !public {
+        digest["legendary"] = serde_json::to_value(engine::legendary_holders(state)).unwrap_or_default();
+    }
+    digest
 }
 
 #[cfg(test)]
