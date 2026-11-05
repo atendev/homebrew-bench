@@ -120,8 +120,10 @@ Both modes ship in phase 1. Everything the engine can't model is labeled agent j
 Takeable now, in order:
 
 - Document saving-throw condition sources in live mode (task, AFK); the live-mode line ticket 069 couldn't add
-- Build v3 scoring for buffs, forced movement and teleports (task, AFK); every blocker is closed, and it regenerates the baseline once
+- Build v3 scoring for buffs and forced movement (task, AFK); every blocker is closed. Split for size on 2026-11-04 into this, the teleport and dispositions build, and the one regeneration
 
 Blocked:
 
-- Do dragons still read above their CR on the v3 curve (task, AFK), waits on Build v3 scoring; it takes over the dragon fog item, whose reactions half policy v3 now covers
+- Build v3 teleport scoring and engine-sourced policy dispositions (task, AFK), waits on Build v3 scoring for buffs
+- Regenerate the baseline for policy v3 (task, AFK), waits on both v3 scoring builds; the only regeneration
+- Do dragons still read above their CR on the v3 curve (task, AFK), waits on Regenerate the baseline for policy v3; it takes over the dragon fog item, whose reactions half policy v3 now covers
