@@ -4,13 +4,13 @@ title: Do dragons still read above their CR on the v3 curve
 type: task
 mode: AFK
 status: open
-blocked_by: [056]
+blocked_by: [074]
 claimed: false
 ---
 
 ## Question
 
-On the baseline curve that ticket 056 regenerates for policy v3, do dragons still read a level or more above their CR from tier 2 up, and do the pit fiend and the lich still read hard at high CR? If they do, which cause fits the logs best: the SRD's own CR choices, area counts against breath weapons (the policy assumes a large area catches 4, so the party never spreads out), or an engine modeling gap?
+On the baseline curve that ticket 074 regenerates for policy v3, do dragons still read a level or more above their CR from tier 2 up, and do the pit fiend and the lich still read hard at high CR? If they do, which cause fits the logs best: the SRD's own CR choices, area counts against breath weapons (the policy assumes a large area catches 4, so the party never spreads out), or an engine modeling gap?
 
 ## Notes
 
