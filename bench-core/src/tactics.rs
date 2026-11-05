@@ -319,7 +319,7 @@ impl Value {
         Value { damage: self.damage * factor, control: self.control * factor, heal: self.heal * factor, survival: self.survival * factor }
     }
 
-    /// What a Multiattack choice ranks its options by.
+    /// What a Multiattack choice ranks its options by, and what a step-out must beat.
     fn worth(&self) -> f64 {
         self.damage + self.control + self.survival
     }
@@ -589,7 +589,7 @@ impl<'a> Ctx<'a> {
                 if self.movement_left(actor) >= cost {
                     let (stepped, stepped_picks) = self.ability_value(actor, block, ability, target, 0, Footing::STEPPED_OUT);
                     let oa = self.step_out_penalty(actor, &engaged_foes);
-                    if stepped.damage + stepped.control - oa > value.damage + value.control {
+                    if stepped.worth() - oa > value.worth() {
                         value = stepped;
                         picks = stepped_picks;
                         penalty = oa;
@@ -2595,6 +2595,21 @@ mod tests {
         assert_eq!(teleport_value(&state), avoided);
         let plan = choose_action(&state, "archer");
         assert!((plan.survival - avoided).abs() < 1e-9, "{}", plan.reason);
+        assert!(plan.reason.contains(&format!("teleports clear of {avoided:.1} opportunity damage")), "{}", plan.reason);
+    }
+
+    #[test]
+    fn a_shot_that_teleports_stays_put_rather_than_pay_the_attacks_its_teleport_avoids() {
+        let mut state = skirmish();
+        snapshot(&mut state, "archer").actions = vec![entry(serde_json::json!({"id": "blink-shot", "name": "Blink Shot", "kind": "modeled", "effects": [
+            {"attack": {"modifier": 5, "range": [80, 320], "target_count": 1, "damage": [{"dice": "4d10", "type": "piercing"}]}},
+            {"teleport": {"range": 30, "destination": "unoccupied space you can see"}}]}))];
+        let avoided = pick(&state, "brute", "archer").value;
+        // Stepping out gains 16.5 - 10.835 = 5.665 of bow damage, more than one Opportunity Attack
+        // (3.375) but less than paying it and losing the teleport's credit for avoiding it.
+        assert!(5.665 > avoided && 5.665 < 2.0 * avoided, "{avoided}");
+        let plan = choose_action(&state, "archer");
+        assert!(plan.movement.is_empty(), "{}", plan.reason);
         assert!(plan.reason.contains(&format!("teleports clear of {avoided:.1} opportunity damage")), "{}", plan.reason);
     }
 

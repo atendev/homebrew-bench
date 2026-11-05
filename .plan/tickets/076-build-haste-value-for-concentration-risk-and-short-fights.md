@@ -43,7 +43,7 @@ Policy (`bench-core/src/tactics.rs`):
 
 Docs:
 
-- ADR 0012, the buffs paragraph (amended by 056 and 073): replace "valued over `BUFF_HORIZON` (2) rounds: its rounds when shorter, the whole horizon for concentration and longer durations" with the rounds-left cap and keep-chance weighting from 075, and replace "and Haste's lethargy is not scored" with the lethargy cost. Name 075 in the paragraph's ticket list.
+- ADR 0012, the buffs paragraph (amended by 056; 073 added its own "Teleports and roll sources" paragraph after it and left this one unchanged): replace "valued over `BUFF_HORIZON` (2) rounds: its rounds when shorter, the whole horizon for concentration and longer durations" with the rounds-left cap and keep-chance weighting from 075, and replace "and Haste's lethargy is not scored" with the lethargy cost. Name 075 in the paragraph's ticket list.
 - The batch report's method sentence in `bench-core/src/batch.rs`: "over two rounds on the ally it helps most" becomes "over up to two rounds, no more than the fight is expected to last, weighted by the chance the caster keeps concentration, on the ally it helps most", and "Haste's extra action as one more attack" becomes "Haste's extra action as one more attack less a lost turn when lethargy is likely". Update the test that checks the sentence.
 - `CHANGELOG.md` under Changed: the batch policy now values a buff by the rounds the fight has left and the chance the caster keeps concentration, and counts Haste's lethargy as a lost turn. The standard caster casts Haste far less, almost never against monsters the party beats in one or two rounds, and batch numbers change.
 - `CONTEXT.md` already has **Buff horizon** (added by 075). Check it still matches the code.
