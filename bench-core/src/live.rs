@@ -637,16 +637,18 @@ fn apply(state: &mut EncounterState, cmd: &Command) -> Result<Applied, LiveError
             ))
         }
         Command::Override { path, value, reason, rule, standing } => {
-            let free_concentrators: Vec<String> = state
+            let before: Vec<(String, bool, Option<String>)> = state
                 .combatants
                 .iter()
-                .filter(|c| c.concentration.is_some() && !engine::is_incapacitated_by_condition(c))
-                .map(|c| c.id.clone())
+                .map(|c| (c.id.clone(), engine::cannot_concentrate(c), c.concentration.clone()))
                 .collect();
             let target = override_path::apply(state, path, value.clone()).map_err(LiveError::Invalid)?;
-            let dropped: Vec<String> = free_concentrators
-                .into_iter()
-                .filter(|id| state.combatants.iter().any(|c| &c.id == id && engine::is_incapacitated_by_condition(c)))
+            let dropped: Vec<String> = state
+                .combatants
+                .iter()
+                .filter(|c| c.concentration.is_some() && engine::cannot_concentrate(c))
+                .filter(|c| before.iter().find(|(id, ..)| id == &c.id).map_or(true, |(_, unable, held)| !unable || held != &c.concentration))
+                .map(|c| c.id.clone())
                 .collect();
             let concentration_events = engine::end_concentration(state, &dropped)?;
             let mut tag = rule_tag(rule);
@@ -1907,6 +1909,69 @@ mod tests {
         let mut other = concentrating();
         set(&mut other, "goblin-warrior.hp", Value::from(3)).unwrap();
         assert_eq!(goblin(&other), Some("bless".into()), "an unrelated override leaves it");
+    }
+
+    #[test]
+    fn override_ending_concentration_for_end_state_and_concentration_overrides() {
+        let set = |state: &mut EncounterState, path: &str, value: Value| {
+            execute(state, Command::Override { path: path.into(), value: Some(value), reason: "t".into(), rule: None, standing: false })
+        };
+        let fresh = || start(spec(PcDice::Engine)).unwrap().0;
+        let concentrating = || {
+            let mut state = fresh();
+            state.combatants.iter_mut().find(|c| c.id == "goblin-warrior").unwrap().concentration = Some("bless".into());
+            state
+        };
+        let goblin = |state: &EncounterState| state.combatants.iter().find(|c| c.id == "goblin-warrior").unwrap().concentration.clone();
+
+        for end_state in ["unconscious", "dead", "stable"] {
+            let mut state = concentrating();
+            let outcome = set(&mut state, "goblin-warrior.end_state", Value::from(end_state)).unwrap();
+            assert_eq!(goblin(&state), None, "{end_state}");
+            assert!(replay(&state).matches, "{end_state}");
+            assert!(lines_of(&outcome).iter().any(|l| l == "goblin-warrior loses concentration"), "{end_state}: {:?}", lines_of(&outcome));
+        }
+
+        let mut active = concentrating();
+        set(&mut active, "goblin-warrior.end_state", Value::from("active")).unwrap();
+        assert_eq!(goblin(&active), Some("bless".into()), "Active leaves it");
+
+        let mut stunned = fresh();
+        set(&mut stunned, "goblin-warrior.conditions", serde_json::json!(["stunned"])).unwrap();
+        let outcome = set(&mut stunned, "goblin-warrior.concentration", Value::from("bless")).unwrap();
+        assert_eq!(goblin(&stunned), None, "an incapacitated creature can't hold it");
+        assert!(lines_of(&outcome).iter().any(|l| l == "goblin-warrior loses concentration"), "{:?}", lines_of(&outcome));
+
+        assert!(replay(&stunned).matches);
+
+        let mut able = fresh();
+        set(&mut able, "goblin-warrior.concentration", Value::from("bless")).unwrap();
+        assert_eq!(goblin(&able), Some("bless".into()), "an able creature keeps it");
+
+        let mut holding = concentrating();
+        holding.combatants.iter_mut().find(|c| c.id == "standard-striker-03").unwrap().conditions.push(crate::encounter::ConditionInstance {
+            condition: crate::stat_block::Condition::Blinded,
+            duration: crate::effect::Duration::Concentration,
+            source: Some("goblin-warrior".into()),
+            ends_on_damage: false,
+        });
+        set(&mut holding, "goblin-warrior.end_state", Value::from("dead")).unwrap();
+        assert!(holding.combatants.iter().find(|c| c.id == "standard-striker-03").unwrap().conditions.is_empty(), "what it held ends");
+
+        let mut stale = concentrating();
+        stale.combatants.iter_mut().find(|c| c.id == "goblin-warrior").unwrap().end_state = EndState::Dead;
+        set(&mut stale, "settings.lighting", Value::from("dim_light")).unwrap();
+        assert_eq!(goblin(&stale), Some("bless".into()), "an override elsewhere leaves a creature it didn't touch");
+
+        let mut by_id = concentrating();
+        set(&mut by_id, "combatants.goblin-warrior.end_state", Value::from("dead")).unwrap();
+        assert_eq!(goblin(&by_id), None, "the combatants.<id> path");
+        assert!(replay(&by_id).matches);
+
+        let mut by_index = concentrating();
+        let index = by_index.combatants.iter().position(|c| c.id == "goblin-warrior").unwrap();
+        set(&mut by_index, &format!("combatants.{index}.conditions"), serde_json::json!(["stunned"])).unwrap();
+        assert_eq!(goblin(&by_index), None, "the combatants.<index> path");
     }
 
     #[test]
