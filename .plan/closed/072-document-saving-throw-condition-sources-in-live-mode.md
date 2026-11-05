@@ -3,7 +3,7 @@ id: 072
 title: Document saving-throw condition sources in live mode
 type: task
 mode: AFK
-status: open
+status: closed
 blocked_by: [069]
 claimed: false
 ---
@@ -21,3 +21,5 @@ In `.agents/skills/homebrew-bench/references/live-mode.md`, under step 2 after t
 Docs only: no version bump, no tests. Consult `writing-for-agents`.
 
 ## Resolution
+
+Added the bullet under step 2 of `.agents/skills/homebrew-bench/references/live-mode.md`, after the `bench action` bullet, with the wording above. The user approved making it with the Edit tool after the shell guard held the 069 builder's Python edit. Docs only: no version bump, no tests.
