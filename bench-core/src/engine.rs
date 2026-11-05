@@ -2682,8 +2682,11 @@ fn can_act(c: &Combatant) -> bool {
     c.end_state == EndState::Active && !c.conditions.iter().any(|x| incapacitates(x.condition))
 }
 
+/// Conditions under which a creature takes no actions: Incapacitated and those that include it.
+pub(crate) const STOPS_ACTING: [Condition; 5] = [Condition::Incapacitated, Condition::Paralyzed, Condition::Petrified, Condition::Stunned, Condition::Unconscious];
+
 fn incapacitates(condition: Condition) -> bool {
-    matches!(condition, Condition::Incapacitated | Condition::Paralyzed | Condition::Petrified | Condition::Stunned | Condition::Unconscious)
+    STOPS_ACTING.contains(&condition)
 }
 fn index_of(state: &EncounterState, id: &str) -> Result<usize, EngineError> { state.combatants.iter().position(|c| c.id == id).ok_or_else(|| EngineError::NotFound(format!("combatant {id} not found"))) }
 fn stat_block<'a>(state: &'a EncounterState, c: &Combatant) -> Result<&'a StatBlock, EngineError> { state.stat_blocks.iter().find(|s| s.id == c.stat_block_id).map(|s| &s.stat_block).ok_or_else(|| EngineError::NotFound(format!("stat block {} not found", c.stat_block_id))) }

@@ -10,7 +10,7 @@ claimed: false
 
 ## Question
 
-Split from [Build v3 scoring for buffs and forced movement](../closed/056-build-v3-scoring-for-buffs-forced-movement-and-teleports.md) for size. Regenerate `data/baseline/curve.json` exactly once, after 056, [073](../closed/073-build-v3-teleport-scoring-and-engine-sourced-dispositions.md), [076](076-build-haste-value-for-concentration-risk-and-short-fights.md), [077](077-build-ranged-attacks-in-close-combat.md) and [078](078-build-teleport-subject.md) land, and remove every stale-curve allowance. No engine or policy change here, so no version bump.
+Split from [Build v3 scoring for buffs and forced movement](../closed/056-build-v3-scoring-for-buffs-forced-movement-and-teleports.md) for size. Regenerate `data/baseline/curve.json` exactly once, after 056, [073](../closed/073-build-v3-teleport-scoring-and-engine-sourced-dispositions.md), [076](../closed/076-build-haste-value-for-concentration-risk-and-short-fights.md), [077](077-build-ranged-attacks-in-close-combat.md) and [078](078-build-teleport-subject.md) land, and remove every stale-curve allowance. No engine or policy change here, so no version bump.
 
 ## Notes
 
@@ -31,7 +31,7 @@ After the regeneration, clean up the stale-curve allowances so the tests again r
 - Remove the `#[ignore]` on `a_fixture_regenerates_to_its_committed_row`, whichever ticket added it (059, 061, 063, 065, 066, 068 or 069).
 
 Report how the dragon cells moved between the old curve and the new one in the Resolution. [Do dragons still read above their CR on the v3 curve](064-do-dragons-still-read-above-cr-on-the-v3-curve.md) reads them next.
-- Also landed since the list above was written: [Build massive damage at 0 Hit Points](../closed/071-build-massive-damage-at-zero-hit-points.md), [Batch warns on quiet plan failures](../closed/070-batch-warns-on-quiet-plan-failures.md) (warnings only), 056, 073 and [Build Haste value for concentration risk and short fights](076-build-haste-value-for-concentration-risk-and-short-fights.md) (076, which changes v3 buff scoring and the engine version). Remove any `#[ignore]` they added too.
+- Also landed since the list above was written: [Build massive damage at 0 Hit Points](../closed/071-build-massive-damage-at-zero-hit-points.md), [Batch warns on quiet plan failures](../closed/070-batch-warns-on-quiet-plan-failures.md) (warnings only), 056, 073 and [Build Haste value for concentration risk and short fights](../closed/076-build-haste-value-for-concentration-risk-and-short-fights.md) (076, which changes v3 buff scoring and the engine version; it added no `#[ignore]`, as the calibration row still matched). Remove any `#[ignore]` they added too.
 - Still to land before the regeneration: [Build ranged attacks in close combat](077-build-ranged-attacks-in-close-combat.md) (077, an engine attack source and the engine version) and [Build teleport subject](078-build-teleport-subject.md) (078, the teleport vocabulary, policy teleport plans and the engine version). Remove any `#[ignore]` they add.
 
 ## Resolution

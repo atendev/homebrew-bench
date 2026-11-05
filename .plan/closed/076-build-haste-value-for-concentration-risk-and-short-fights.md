@@ -3,7 +3,7 @@ id: 076
 title: Build Haste value for concentration risk and short fights
 type: task
 mode: AFK
-status: open
+status: closed
 blocked_by: [073]
 claimed: false
 ---
@@ -85,3 +85,33 @@ Versions and baseline:
 - Ticket 074 waits on this ticket so its one regeneration covers it.
 
 ## Resolution
+
+Built in `bench-core/src/tactics.rs` as 075 decided, test-first.
+
+- `threat` and the new `damage_threat` read one `threat_parts` (a `ThreatParts { damage, total }` under the same nesting counter). `damage` drops healing and caps each foe's share at its hit points. `threat` returns what it did.
+- `rounds_left`, `acts_before_opponents` and `concentration_keep` follow the spec. The keep chance reuses 073's `Ctx::save_success` for the Constitution save. Area-only saves are a new `Rolls::AreaSaves`, whose Area arm in `roll_value` recurses with `Saves(None)`, so a single-target save counts only from an opponent that ranks the caster first. Each opponent's action is picked by counted damage.
+- `bearer_value(actor, bearer, modifiers)` computes the rounds left and the keep chance lazily, once per call, weights rounds with `weighted_rounds`, and charges lethargy for a concentration modifier whose `on_end` holds a condition from `STOPS_ACTING`, the one list `can_act` also reads. The plan reason adds `<rounds> of <h> rounds at keep <k>` and `lethargy -<cost>` as specified.
+- Tests: `rounds_left`, `acts_before_opponents`, seven keep-chance tests (including the breath-over-Multiattack choice and the single-target save), weighted rounds (long fight equals 2 rounds, half a round halves the extra action, `k^0` first round), lethargy (cost and the exact reason tail, none without `on_end`), a Shield-like self buff, and the level 11 ogre (`rounds_left < 1`, no Haste). `the_caster_hastes_the_striker_over_itself_...` keeps its assertions on a 1000 HP ogre with a decoy the ogre ranks first. The three batch Haste tests now fight a 400 HP ogre that the caster's damage types and control conditions can't touch, with a 400 HP striker. The extra-attack and failed-extra-action tests use it as is. The lethargy test adds a Recharge 6, 30-foot stomp that catches the caster and breaks concentration in some of its 40 fights.
+- Docs: ADR 0012's buffs paragraph has the rounds-left cap, keep weighting, lethargy cost, reason notes and the accepted approximations, and names 075. The batch method sentence and its test use the new wording. CHANGELOG says what changed. CONTEXT.md's **Buff horizon** already matched.
+- Versions: `POLICY_VERSION` stays 3. The workspace and `ENGINE_VERSION` are 0.1.13. No live-state field changed. The curve wasn't regenerated. `a_fixture_regenerates_to_its_committed_row` still passes, so it isn't ignored.
+- Checks: `cargo test --workspace` passes. Clippy shows only master's two engine.rs errors (`cloned_ref_to_slice_refs` at 574, `too_many_arguments` at 2123) and is clean with those allowed. The SRD import exits 0 with 341 of 341 graduated.
+
+Measured with release builds from `git archive` (pre-056 `3f89ef6^1`, master `4ae3165`, branch), `HOME=$(mktemp -d)`, seed 7, 100 fights per cell. Wins/PC deaths/monster DPR mean/rounds mean, with Haste casts and extra actions counted from `--fight` replays of all 100 fights:
+
+| Cell | pre-056 | master | branch | casts master → branch |
+| --- | --- | --- | --- | --- |
+| ogre L5 | 100/0/3.97/1.95 | 100/0/5.02/2.12 | 100/0/3.97/1.95 | 110 → 0 |
+| ogre L11 | 100/0/1.61/1.18 | 100/0/2.56/1.61 | 100/0/1.61/1.18 | 64 → 0 |
+| ogre L17 | 100/0/1.20/1.05 | 100/0/2.15/1.39 | 100/0/1.20/1.05 | 65 → 0 |
+| knight L5 | 100/0/7.56/2.09 | 100/1/9.16/2.44 | 100/0/7.56/2.09 | 98 → 0 |
+| knight L11 | 100/0/4.18/1.19 | 100/0/4.53/1.58 | 100/0/4.18/1.19 | 50 → 0 |
+| knight L17 | 100/0/3.86/1.07 | 100/0/5.39/1.41 | 100/0/3.86/1.07 | 61 → 0 |
+| adult red dragon L5 | 0/100/122.47/2.33 | 0/100/127.20/2.19 | 0/100/123.14/2.29 | 53 → 0 |
+| adult red dragon L11 | 34/66/94.57/5.09 | 35/65/101.78/4.95 | 43/57/96.18/4.70 | 140 → 47 (48 extra attacks) |
+| adult red dragon L17 | 100/0/113.22/2.91 | 92/8/108.68/4.34 | 99/1/114.28/2.94 | 200 → 6 (8 extra actions) |
+
+Against 075's prototype: level 17 matches exactly (99/1/114.28/2.94, 6 casts), level 11 matches on casts (47) and extra attacks (48) but ends 43 wins against 44 (DPR 96.18 against 94.90), and ogre and knight equal pre-056 with no casts, as predicted. The dragon at level 5 casts no Haste but doesn't equal pre-056. The prototype was built on 3f89ef6, before 073. With Haste gone, the caster sleeps the level 5 dragon more often, and 073's footing rule (melee "within 5 feet" read from the plan's move) now gives the striker Advantage and automatic crits walking into an unconscious dragon. It takes its shortsword 9 times (pre-056: 0) and the caster drops 2 Hypnotic Patterns. 3f89ef6 and master give identical dragon cells at 5, 11 and 17, so 073 shows only once Haste stops filling those turns. The one-win gap at level 11 is the same kind of 073-era trajectory change, not a formula difference: dropping the hit-point cap in `damage_threat` or rounding the DC instead of flooring it leaves both dragon cells unchanged.
+
+Note: the reason prints rounds and horizon to one decimal, so a horizon cut to 1.95 reads `2.0 of 2.0 rounds at keep 1.00`. That follows the spec's format.
+
+No new tickets or fog. With 076 closed, [Build ranged attacks in close combat](../tickets/077-build-ranged-attacks-in-close-combat.md) is takeable.
