@@ -9,7 +9,7 @@
 
 use serde::{Deserialize, Serialize};
 
-use crate::effect::{Area, AttackFilter, Duration, Effect, ExtraActionUse, ModifierBearer, ModifierChange, ModifierTarget, MultiattackStep, ReactionTrigger, RollDisposition, TimedModifier, Usage};
+use crate::effect::{Area, AttackFilter, Duration, Effect, ExtraActionUse, ModifierBearer, ModifierChange, ModifierTarget, MultiattackStep, ReactionTrigger, RollDisposition, TeleportSubject, TimedModifier, Usage};
 use crate::encounter::{Combatant, EncounterState, EndState, RangeBand};
 use crate::engine::{self, can_act, Within};
 use crate::reaction::{ReactionAnswer, ReactionWindow, WindowTrigger};
@@ -659,6 +659,9 @@ impl<'a> Ctx<'a> {
         if !modifiers.is_empty() && only_modifiers {
             return self.modifier_plan(actor, ability, section, resource, &modifiers);
         }
+        if only_self_teleports(block, &ability.effects, 0) {
+            return Some(self.teleport_plan(actor, ability, section, resource));
+        }
         let own = self.bearer_value(&BuffOutlook::new(actor), actor, modifiers.iter().filter(|m| m.bearer == ModifierBearer::Actor));
         if let Some((area, effect)) = area_of(block, &ability.effects) {
             return self.area_plan(actor, block, ability, section, resource, &area, &effect, false);
@@ -745,6 +748,33 @@ impl<'a> Ctx<'a> {
             });
         }
         None
+    }
+
+    /// A plan for an ability whose effects are all teleports of the actor. It targets nobody and
+    /// is worth the Opportunity Attacks the actor avoids.
+    fn teleport_plan(&self, actor: &Combatant, ability: &AbilityEntry, section: Section, resource: Option<String>) -> Plan {
+        let avoided = self.teleport_value(actor, Footing::default());
+        let w = &self.constants.weights;
+        let cost = if is_limited(ability) { 1.0 } else { 0.0 };
+        let mut reason = "teleports".to_string();
+        if avoided > 0.0 {
+            reason.push_str(&format!(" clear of {avoided:.1} opportunity damage"));
+        }
+        Plan {
+            actor_id: actor.id.clone(),
+            section,
+            action_id: ability.id.clone(),
+            targets: Vec::new(),
+            movement: Vec::new(),
+            picks: Vec::new(),
+            expected_damage: 0.0,
+            control: 0.0,
+            survival: avoided,
+            score: w.survival * avoided - w.resource_cost * cost,
+            reason,
+            resource,
+            area: None,
+        }
     }
 
     /// A plan for an ability whose effects are all timed modifiers. `self` modifiers are valued
@@ -1151,7 +1181,8 @@ impl<'a> Ctx<'a> {
                 let target_threat = if factor == 0.0 || self.threat_nesting.get() >= MAX_THREAT_NESTING { 0.0 } else { self.threat(target) };
                 Value { control: factor * target_threat, ..Default::default() }
             }
-            Effect::Teleport(_) => Value { survival: self.teleport_value(actor, footing), ..Default::default() },
+            Effect::Teleport(teleport) if teleport.subject == TeleportSubject::Actor => Value { survival: self.teleport_value(actor, footing), ..Default::default() },
+            Effect::Teleport(_) => Value::default(),
             Effect::TempHp(_) | Effect::TimedModifier(_) | Effect::RollModifier(_) | Effect::NoProvoke => Value::default(),
         };
         (value, vec![])
@@ -1764,6 +1795,17 @@ fn horizon(duration: &Duration) -> u32 {
 
 fn ability_word(ability: crate::stat_block::Ability) -> String {
     serde_json::to_value(ability).ok().and_then(|v| v.as_str().map(str::to_string)).unwrap_or_default()
+}
+
+/// True when every effect, read through a cast's bound effects, teleports the creature using
+/// the ability.
+fn only_self_teleports(block: &StatBlock, effects: &[Effect], depth: u8) -> bool {
+    !effects.is_empty()
+        && effects.iter().all(|e| match e {
+            Effect::Teleport(t) => t.subject == TeleportSubject::Actor,
+            Effect::Cast(c) if depth < 4 => engine::bound_cast_effects(block, c).is_some_and(|(fx, _)| only_self_teleports(block, &fx, depth + 1)),
+            _ => false,
+        })
 }
 
 /// The timed modifiers among an ability's top-level effects, read through a cast's bound
@@ -2899,6 +2941,63 @@ mod tests {
         let plan = choose_action(&state, "archer");
         assert!((plan.survival - avoided).abs() < 1e-9, "{}", plan.reason);
         assert!(plan.reason.contains(&format!("teleports clear of {avoided:.1} opportunity damage")), "{}", plan.reason);
+    }
+
+    /// The archer holds Misty Step and is engaged by two brutes.
+    fn blinker() -> EncounterState {
+        let mut archer = block("archer", 20, 12);
+        archer.actions.push(misty_step());
+        let mut brute = block("brute", 30, 12);
+        brute.actions.push(melee("claw", 5, "1d8"));
+        let mut other = block("other", 30, 12);
+        other.actions.push(melee("claw", 5, "1d8"));
+        let mut state = encounter(
+            vec![archer, brute, other],
+            vec![fighter("archer", "party", 20), fighter("brute", "monsters", 30), fighter("other", "monsters", 30)],
+        );
+        engage(&mut state, "archer", "brute");
+        engage(&mut state, "archer", "other");
+        state
+    }
+
+    #[test]
+    fn a_teleport_plan_targets_nobody_and_credits_exactly_what_the_engine_frees() {
+        let mut state = blinker();
+        let both = pick(&state, "brute", "archer").value + pick(&state, "other", "archer").value;
+        let plan = choose_action(&state, "archer");
+        assert!(plan.targets.is_empty(), "{}", plan.reason);
+        assert!(plan.reason.contains(&format!("teleports clear of {both:.1} opportunity damage")), "{}", plan.reason);
+        assert!((plan.survival - both).abs() < 1e-9, "{} vs {both}", plan.survival);
+        engine::step_events(
+            &mut state,
+            crate::engine::StepRequest::Action { actor_id: plan.actor_id.clone(), action_id: plan.action_id.clone(), target_ids: plan.targets.clone(), slot_level: None, extra: false },
+        )
+        .unwrap();
+        for id in ["archer", "brute", "other"] {
+            assert!(state.combatants.iter().find(|c| c.id == id).unwrap().engagement.is_empty(), "{id} still engaged");
+        }
+    }
+
+    #[test]
+    fn a_cast_of_a_teleport_spell_targets_nobody() {
+        let mut state = blinker();
+        snapshot(&mut state, "archer").actions = vec![entry(serde_json::json!({"id": "step", "name": "Step", "kind": "modeled",
+            "effects": [{"cast": {"spell_id": "misty-step", "slot_level": 2, "upcast": false}}]}))];
+        let plan = choose_action(&state, "archer");
+        assert!(plan.targets.is_empty(), "{}", plan.reason);
+        assert!(plan.reason.starts_with("teleports clear of "), "{}", plan.reason);
+    }
+
+    #[test]
+    fn a_teleport_of_the_target_scores_nothing() {
+        let state = skirmish();
+        let constants = PolicyConstants::default();
+        let ctx = ctx(&state, &constants);
+        let archer = ctx.combatant("archer").unwrap();
+        let away = entry(serde_json::json!({"id": "away", "name": "Away", "kind": "modeled",
+            "effects": [{"teleport": {"range": 30, "destination": "away", "subject": "target"}}]})).effects.remove(0);
+        let value = ctx.effect_value(archer, ctx.block(archer).unwrap(), &away, ctx.combatant("brute").unwrap(), 0, Footing::default()).0;
+        assert_eq!(value.survival, 0.0);
     }
 
     #[test]

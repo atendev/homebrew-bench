@@ -420,6 +420,30 @@ pub struct TempHp {
 pub struct Teleport {
     pub range: u32,
     pub destination: String,
+    /// Who is teleported: the creature using the ability (the default) or each target the
+    /// effect resolves against.
+    #[serde(default, skip_serializing_if = "TeleportSubject::is_actor")]
+    pub subject: TeleportSubject,
+}
+
+/// The creature a teleport moves.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize, schemars::JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum TeleportSubject {
+    /// The creature using the ability (Misty Step, "teleports up to 40 feet").
+    #[default]
+    #[serde(rename = "self")]
+    Actor,
+    /// Each target the effect resolves against; under a save's `on_failure` or an attack's
+    /// `on_hit`, that target.
+    Target,
+}
+
+impl TeleportSubject {
+    /// True for the default, `self`.
+    pub fn is_actor(&self) -> bool {
+        *self == TeleportSubject::Actor
+    }
 }
 
 /// Move-then-attack effect.
