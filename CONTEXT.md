@@ -100,6 +100,10 @@ _Avoid_: Default
 The built-in party of four stat blocks, one per role (defender, striker, healer, caster), available at every level from 1 to 20. Batch mode fights homebrew against it by default, and `--party` substitutes a user's own party. It carries no magic items.
 _Avoid_: Default party, test party
 
+**Buff horizon**:
+The rounds the batch tactics policy values a buff over: at most two, no more than the fight is expected to last, with each round weighted by the chance the caster still holds concentration by then. Haste's lethargy counts against it as a lost turn for the bearer, weighted by the chance concentration breaks inside the horizon.
+_Avoid_: Buff duration (the spell's own duration is longer)
+
 **Batch tactics policy**:
 The deterministic, versioned decision policy that chooses targets, movement, actions, resources, area targets, healing, consumables and reactions for both sides in batch mode. Its decisions and assumptions are logged, and its inputs are part of baseline fingerprints.
 _Avoid_: AI strategy, simulator behavior

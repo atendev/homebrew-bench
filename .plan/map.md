@@ -92,6 +92,7 @@ Both modes ship in phase 1. Everything the engine can't model is labeled agent j
 - [Build massive damage at 0 Hit Points](closed/071-build-massive-damage-at-zero-hit-points.md): a dying or Stable PC dies outright when one hit's damage, after Temporary Hit Points, meets its Hit Point maximum; a lesser hit gives one failure (two on a critical) as before, and Temporary HP now soaks hits on downed PCs. Dropping to 0 HP, dying or gaining an incapacitating condition now ends concentration, with no save on the dropping hit. The engine is 0.1.10, the curve stays stale for 056, and the calibration fixture row still matches.
 - [Batch warns when plans fail or casts are never ready](closed/070-batch-warns-on-quiet-plan-failures.md): `bench batch` adds one warning per distinct (combatant, action, engine error) behind a refused plan across every fight, most frequent first, with how many turns it cost; a stat block whose cast's slot level is below the spell's level fails at load. Fights don't change, so the engine stays 0.1.10 and batch output on ogre and adult red dragon is byte-identical to master.
 - [Build v3 scoring for buffs and forced movement](closed/056-build-v3-scoring-for-buffs-forced-movement-and-teleports.md): a buff is valued over `BUFF_HORIZON` (2) rounds on the actor or the living ally it helps most (AC at `AC_POINT_VALUE` per point of attack-roll damage on the bearer, attack bonus at `AC_POINT_VALUE` of its threat, save Advantage at 0.3 of damage from saves of that ability, an extra action at one allowed attack unless the bearer can't act), ties to the actor then the lower id, 0 on a bearer that already has it; batch takes Haste's extra action as a third turn section with `plan_failed` routing; a push scores 0.25 or 1.0 of a melee-only target's threat. Engine 0.1.11, policy stays v3, curve not regenerated. Caster Haste makes the standard party weaker in every measured cell (adult red dragon level 17 wins 100 to 92), raised as ticket 075.
+- [Should Haste's batch value count concentration risk and short fights](closed/075-should-haste-value-count-concentration-risk-and-short-fights.md): yes, under v3 before the regeneration. A buff's horizon is cut to the rounds the fight has left (opponents' HP over the side's damage), each round is weighted by the caster's chance to keep concentration (Constitution saves against the hits and save damage it expects, 0 when that damage would drop it, attacks counted only from opponents that rank the caster first), and Haste's lethargy costs the bearer's threat times the chance concentration breaks in the horizon. In a prototype the caster stopped hasting against the ogre and knight (cells equal pre-056), and adult red dragon wins went from 35 to 44 at level 11 and 92 to 99 at level 17. Built in ticket 076, after 073 and before 074.
 
 ## Not yet specified
 
@@ -122,9 +123,9 @@ Takeable now, in order:
 
 - Document saving-throw condition sources in live mode (task, AFK); the live-mode line ticket 069 couldn't add
 - Build v3 teleport scoring and engine-sourced policy dispositions (task, AFK); Build v3 scoring for buffs is closed
-- Should Haste's batch value count concentration risk and short fights (grilling, HITL); from ticket 056's cell-shift check. If it changes v3 scoring, the regeneration should wait for its build
 
 Blocked:
 
-- Regenerate the baseline for policy v3 (task, AFK), waits on Build v3 teleport scoring; the only regeneration
+- Build Haste value for concentration risk and short fights (task, AFK), waits on Build v3 teleport scoring; it reuses 073's save chance
+- Regenerate the baseline for policy v3 (task, AFK), waits on Build v3 teleport scoring and Build Haste value for concentration risk; the only regeneration
 - Do dragons still read above their CR on the v3 curve (task, AFK), waits on Regenerate the baseline for policy v3; it takes over the dragon fog item, whose reactions half policy v3 now covers
