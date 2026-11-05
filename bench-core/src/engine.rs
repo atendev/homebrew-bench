@@ -8,7 +8,7 @@ use std::collections::HashMap;
 use serde::{Deserialize, Serialize};
 
 use crate::effect::{
-    recharge_minimum, Attack, Duration, Effect, ExtraActionUse, Lighting, ModifierBearer, ModifierChange, ModifierTarget, ReactionTrigger, RollDisposition, Usage,
+    recharge_minimum, Attack, Duration, Effect, ExtraActionUse, Lighting, ModifierBearer, ModifierChange, ModifierTarget, ReactionTrigger, RollDisposition, TeleportSubject, Usage,
 };
 use crate::encounter::{
     ActionEconomy, ActiveModifier, Combatant, ConditionInstance, EndState, EncounterState,
@@ -677,13 +677,21 @@ fn resolve_effect(
                 events.push(EngineEvent { player_dice: marked, ..event("temp_hp", message, actor_id, &target_id) });
             }
         }
-        Effect::Teleport(_) => {
-            for target_id in target_ids {
-                let i = index_of(state, target_id)?;
+        Effect::Teleport(teleport) => {
+            let subjects = match teleport.subject {
+                TeleportSubject::Actor => vec![actor_id.to_string()],
+                TeleportSubject::Target => target_ids.to_vec(),
+            };
+            if subjects.is_empty() {
+                return Err(EngineError::Illegal("a teleport of its target needs a target".into()));
+            }
+            for subject in subjects {
+                let i = index_of(state, &subject)?;
                 state.combatants[i].engagement.clear();
                 for c in &mut state.combatants {
-                    c.engagement.retain(|id| id != target_id);
+                    c.engagement.retain(|id| id != &subject);
                 }
+                events.push(event("teleport", format!("{subject} teleports up to {} feet", teleport.range), actor_id, &subject));
             }
         }
         Effect::MoveThenAttack(movement) => {
@@ -6389,5 +6397,99 @@ mod tests {
         resolve_effect(&mut state, &mut Stream::from_seed(3), "kobold-warrior", effect, &["fighter".into()], &mut events).unwrap();
         let attack = events.into_iter().find(|e| e.kind == "attack").unwrap().message;
         assert!(!attack.contains("Sunlight"), "{attack}");
+    }
+
+    /// A blinker engaged by a fighter and a paladin, with the fighter also engaged by a cleric.
+    fn blinker_state(effect: serde_json::Value) -> EncounterState {
+        let mut blinker = test_stat_block("blinker", "Blinker", 30, 12);
+        blinker.actions.push(ability("blink", vec![fx(effect)], None));
+        let blocks = vec![blinker, test_stat_block("fighter", "Fighter", 30, 12), test_stat_block("paladin", "Paladin", 30, 12), test_stat_block("cleric", "Cleric", 30, 12)];
+        let mut combatants = vec![
+            test_combatant("blinker", "blinker", 30, "enemy"),
+            test_combatant("fighter", "fighter", 30, "ally"),
+            test_combatant("paladin", "paladin", 30, "ally"),
+            test_combatant("cleric", "cleric", 30, "enemy"),
+        ];
+        for (a, b) in [(0, 1), (0, 2), (1, 3)] {
+            let (x, y) = (combatants[a].id.clone(), combatants[b].id.clone());
+            combatants[a].engagement.push(y);
+            combatants[b].engagement.push(x);
+        }
+        let mut state = test_encounter(blocks, combatants);
+        state.active_turn = Some("blinker".into());
+        state
+    }
+
+    fn engaged_with(state: &EncounterState, id: &str) -> Vec<String> {
+        let mut engaged = state.combatants.iter().find(|c| c.id == id).unwrap().engagement.clone();
+        engaged.sort();
+        engaged
+    }
+
+    const SELF_TELEPORT: &str = r#"{"teleport": {"range": 30, "destination": "unoccupied space you can see"}}"#;
+
+    #[test]
+    fn a_self_teleport_frees_the_actor_and_leaves_other_engagements() {
+        let mut state = blinker_state(serde_json::from_str(SELF_TELEPORT).unwrap());
+        let events = act(&mut state, "blinker", "blink", &["fighter"]).unwrap();
+        assert!(engaged_with(&state, "blinker").is_empty());
+        assert!(engaged_with(&state, "paladin").is_empty());
+        assert_eq!(engaged_with(&state, "fighter"), vec!["cleric"]);
+        assert!(events.iter().any(|e| e.kind == "teleport" && e.message == "blinker teleports up to 30 feet"), "{events:?}");
+    }
+
+    #[test]
+    fn a_self_teleport_with_no_target_moves_the_actor() {
+        let mut state = blinker_state(serde_json::from_str(SELF_TELEPORT).unwrap());
+        act(&mut state, "blinker", "blink", &[]).unwrap();
+        assert!(engaged_with(&state, "blinker").is_empty());
+    }
+
+    #[test]
+    fn a_self_teleport_in_a_multiattack_moves_the_actor() {
+        let mut state = blinker_state(serde_json::json!({"multiattack": {"steps": [{"action": {"action_id": "hop", "count": 1}}]}}));
+        let hop = ability("hop", vec![fx(serde_json::from_str(SELF_TELEPORT).unwrap())], None);
+        state.stat_blocks.iter_mut().find(|s| s.id == "blinker").unwrap().stat_block.actions.push(hop);
+        act(&mut state, "blinker", "blink", &["fighter"]).unwrap();
+        assert!(engaged_with(&state, "blinker").is_empty());
+        assert!(engaged_with(&state, "paladin").is_empty());
+    }
+
+    #[test]
+    fn a_target_teleport_under_on_hit_frees_the_hit_target() {
+        let mut state = blinker_state(serde_json::json!({"attack": {"modifier": 100, "reach": 5, "target_count": 1,
+            "damage": [], "on_hit": [{"teleport": {"range": 30, "destination": "away", "subject": "target"}}]}}));
+        act(&mut state, "blinker", "blink", &["fighter"]).unwrap();
+        assert!(engaged_with(&state, "fighter").is_empty());
+        assert_eq!(engaged_with(&state, "blinker"), vec!["paladin"]);
+        assert!(engaged_with(&state, "cleric").is_empty());
+    }
+
+    #[test]
+    fn a_top_level_target_teleport_with_no_target_is_refused() {
+        let mut state = blinker_state(serde_json::json!({"teleport": {"range": 30, "destination": "away", "subject": "target"}}));
+        let err = act(&mut state, "blinker", "blink", &[]).unwrap_err();
+        assert!(matches!(&err, EngineError::Illegal(m) if m == "a teleport of its target needs a target"), "{err:?}");
+    }
+
+    #[test]
+    fn a_snapshot_holding_a_self_teleport_verifies_and_round_trips_without_a_subject() {
+        let state = blinker_state(serde_json::from_str(SELF_TELEPORT).unwrap());
+        let snapshot = &state.stat_blocks[0];
+        let json = serde_json::to_string(snapshot).unwrap();
+        assert!(!json.contains("subject"), "{json}");
+        let loaded: StatBlockSnapshot = serde_json::from_str(&json).unwrap();
+        assert!(loaded.verify());
+        assert_eq!(serde_json::to_string(&loaded).unwrap(), json);
+    }
+
+    #[test]
+    fn a_teleport_subject_defaults_to_self_and_serializes_without_it() {
+        let old = r#"{"teleport":{"range":30,"destination":"unoccupied space you can see"}}"#;
+        let effect: Effect = serde_json::from_str(old).unwrap();
+        assert!(matches!(&effect, Effect::Teleport(t) if t.subject == TeleportSubject::Actor));
+        assert_eq!(serde_json::to_string(&effect).unwrap(), old);
+        let target: Effect = serde_json::from_str(r#"{"teleport": {"range": 30, "destination": "away", "subject": "target"}}"#).unwrap();
+        assert!(serde_json::to_string(&target).unwrap().contains(r#""subject":"target""#));
     }
 }

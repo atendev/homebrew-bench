@@ -119,7 +119,8 @@ def render_effect_fact(effect: dict) -> list[str]:
         for on_end in mod.get("on_end", []):
             facts.extend(render_effect_fact(on_end))
     if "teleport" in effect:
-        facts.append(f"teleport up to {effect['teleport']['range']} feet")
+        subject = effect["teleport"].get("subject", "self")
+        facts.append(f"teleport up to {effect['teleport']['range']} feet" + ("" if subject == "self" else f" ({subject})"))
     if "area" in effect:
         area = effect["area"]["area"]
         shape = next(iter(area.keys()))

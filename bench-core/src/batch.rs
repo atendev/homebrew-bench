@@ -1931,4 +1931,21 @@ mod tests {
         );
         assert!(report.summary.warnings.iter().any(|w| w.starts_with("Skipped mechanic: Sunlight (sunlight)")));
     }
+    #[test]
+    fn a_homebrew_teleporter_teleports_itself_and_targets_nobody() {
+        let mut blinker = fixture("blink-dog");
+        blinker.id = "blinker".into();
+        blinker.name = "blinker".into();
+        for action in blinker.actions.iter_mut().chain(blinker.bonus_actions.iter_mut()).filter(|a| a.id == "teleport") {
+            *action = serde_json::from_value(serde_json::json!({"id": "teleport", "name": "Teleport", "kind": "modeled",
+                "usage": {"recharge": {"dice": "4-6"}},
+                "effects": [{"teleport": {"range": 40, "destination": "unoccupied space you can see"}}]}))
+            .unwrap();
+        }
+        let mut s = spec(blinker, vec![5], 20);
+        s.master_seed = 7;
+        let report = run(&s).unwrap();
+        let log = report.logs.iter().map(|(_, log)| log.as_str()).find(|log| log.contains("blinker teleports up to 40 feet")).expect("a sampled fight teleports");
+        assert!(log.contains("DECISION blinker bonus action: teleport -> none | reason: teleports clear of "), "{log}");
+    }
 }
