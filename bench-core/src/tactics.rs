@@ -9,7 +9,7 @@
 
 use serde::{Deserialize, Serialize};
 
-use crate::effect::{Area, AttackFilter, Duration, Effect, ExtraActionUse, ModifierBearer, ModifierChange, ModifierTarget, MultiattackStep, ReactionTrigger, TimedModifier, Usage};
+use crate::effect::{Area, AttackFilter, Duration, Effect, ExtraActionUse, ModifierBearer, ModifierChange, ModifierTarget, MultiattackStep, ReactionTrigger, RollDisposition, TimedModifier, Usage};
 use crate::encounter::{Combatant, EncounterState, EndState, RangeBand};
 use crate::engine;
 use crate::reaction::{ReactionAnswer, ReactionWindow, WindowTrigger};
@@ -303,6 +303,8 @@ struct Value {
     damage: f64,
     control: f64,
     heal: f64,
+    /// Opportunity Attacks a teleport avoids.
+    survival: f64,
 }
 
 impl Value {
@@ -310,11 +312,42 @@ impl Value {
         self.damage += other.damage;
         self.control += other.control;
         self.heal += other.heal;
+        self.survival += other.survival;
     }
 
     fn scaled(self, factor: f64) -> Value {
-        Value { damage: self.damage * factor, control: self.control * factor, heal: self.heal * factor }
+        Value { damage: self.damage * factor, control: self.control * factor, heal: self.heal * factor, survival: self.survival * factor }
     }
+
+    /// What a Multiattack choice ranks its options by, and what a step-out must beat.
+    fn worth(&self) -> f64 {
+        self.damage + self.control + self.survival
+    }
+}
+
+/// Where a plan leaves the actor when it acts: attack dispositions read "within 5 feet" of the
+/// target from it, and a teleport reads which engagements it escapes.
+#[derive(Debug, Clone, Copy, Default)]
+struct Footing {
+    moves: Moves,
+    /// A foe is engaged when the actor shoots, so ranged attacks take the policy's close-combat
+    /// Disadvantage. The engine doesn't apply it.
+    ranged_in_melee: bool,
+}
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+enum Moves {
+    /// Engagement as the state holds it.
+    #[default]
+    Stays,
+    /// The plan moves the actor to engage the target first.
+    In,
+    /// The plan steps the actor out of every engagement first.
+    Out,
+}
+
+impl Footing {
+    const STEPPED_OUT: Footing = Footing { moves: Moves::Out, ranged_in_melee: false };
 }
 
 /// Which rolls an incoming-damage sum counts: attack rolls through a filter, or saving throws
@@ -445,7 +478,7 @@ impl<'a> Ctx<'a> {
                 let total: f64 = foes
                     .iter()
                     .map(|f| {
-                        let v = self.ability_value(c, block, a, f, 0, false).0;
+                        let v = self.ability_value(c, block, a, f, 0, Footing::default()).0;
                         v.damage + v.heal
                     })
                     .sum();
@@ -532,7 +565,7 @@ impl<'a> Ctx<'a> {
         }
         let melee = needs_engaged(block, &ability.effects, 0);
         let ranged = has_ranged_attack(block, &ability.effects, 0);
-        let immediate = |t: &Combatant| self.ability_value(actor, block, ability, t, 0, false).0.damage;
+        let immediate = |t: &Combatant| self.ability_value(actor, block, ability, t, 0, Footing::default()).0.damage;
         let ranked = self.ranked_opponents(actor, Some(&immediate));
         for target in ranked {
             let band = self.band(actor, target);
@@ -549,13 +582,14 @@ impl<'a> Ctx<'a> {
                 .opponents(actor)
                 .filter(|o| o.end_state == EndState::Active && self.band(actor, o) == RangeBand::Engaged)
                 .collect();
-            let (mut value, mut picks) = self.ability_value(actor, block, ability, target, 0, !engaged_foes.is_empty() && ranged);
+            let footing = Footing { moves: if movement.is_empty() { Moves::Stays } else { Moves::In }, ranged_in_melee: !engaged_foes.is_empty() && ranged };
+            let (mut value, mut picks) = self.ability_value(actor, block, ability, target, 0, footing);
             if ranged && !melee && !engaged_foes.is_empty() && section != Section::Legendary {
                 let cost = 5 * engaged_foes.len() as u32;
                 if self.movement_left(actor) >= cost {
-                    let (stepped, stepped_picks) = self.ability_value(actor, block, ability, target, 0, false);
+                    let (stepped, stepped_picks) = self.ability_value(actor, block, ability, target, 0, Footing::STEPPED_OUT);
                     let oa = self.step_out_penalty(actor, &engaged_foes);
-                    if stepped.damage + stepped.control - oa > value.damage + value.control {
+                    if stepped.worth() - oa > value.worth() {
                         value = stepped;
                         picks = stepped_picks;
                         penalty = oa;
@@ -569,7 +603,7 @@ impl<'a> Ctx<'a> {
             }
             value.damage = value.damage.min(hit_points(target));
             let kill = if value.damage >= hit_points(target) { self.threat(target) } else { 0.0 };
-            let survival = kill - penalty + own.survival;
+            let survival = kill - penalty + value.survival + own.survival;
             let w = &self.constants.weights;
             let cost = if is_limited(ability) { 1.0 } else { 0.0 };
             let score = w.expected_damage * (value.damage + own.damage) + w.control * value.control + w.survival * survival - w.resource_cost * cost;
@@ -587,6 +621,9 @@ impl<'a> Ctx<'a> {
             }
             if penalty > 0.0 {
                 reason.push_str(&format!(", steps out of melee despite {penalty:.1} opportunity damage"));
+            }
+            if value.survival > 0.0 {
+                reason.push_str(&format!(", teleports clear of {:.1} opportunity damage", value.survival));
             }
             return Some(Plan {
                 actor_id: actor.id.clone(),
@@ -706,7 +743,7 @@ impl<'a> Ctx<'a> {
             .actions
             .iter()
             .filter(|a| !a.effects.is_empty() && engine::extra_action_allows(only, a) && engine::ability_ready(self.state, &bearer.id, a))
-            .map(|a| self.ability_value(bearer, block, a, target, 0, false).0.damage.min(hit_points(target)))
+            .map(|a| self.ability_value(bearer, block, a, target, 0, Footing::default()).0.damage.min(hit_points(target)))
             .fold(0.0, f64::max)
     }
 
@@ -823,7 +860,7 @@ impl<'a> Ctx<'a> {
             AreaClass::Large => counts.large,
         } as usize;
         let per_target = |t: &Combatant| {
-            let mut v = self.effect_value(actor, block, effect, t, 0, false).0;
+            let mut v = self.effect_value(actor, block, effect, t, 0, Footing::default()).0;
             v.damage = v.damage.min(hit_points(t));
             v
         };
@@ -887,18 +924,18 @@ impl<'a> Ctx<'a> {
         })
     }
 
-    fn ability_value(&self, actor: &Combatant, block: &StatBlock, ability: &AbilityEntry, target: &Combatant, depth: u8, ranged_in_melee: bool) -> (Value, Vec<Vec<usize>>) {
+    fn ability_value(&self, actor: &Combatant, block: &StatBlock, ability: &AbilityEntry, target: &Combatant, depth: u8, footing: Footing) -> (Value, Vec<Vec<usize>>) {
         let mut total = Value::default();
         let mut picks = Vec::new();
         for effect in &ability.effects {
-            let (v, p) = self.effect_value(actor, block, effect, target, depth, ranged_in_melee);
+            let (v, p) = self.effect_value(actor, block, effect, target, depth, footing);
             total.add(v);
             picks.extend(p);
         }
         (total, picks)
     }
 
-    fn action_value(&self, actor: &Combatant, block: &StatBlock, action_id: &str, target: &Combatant, depth: u8, ranged_in_melee: bool) -> Value {
+    fn action_value(&self, actor: &Combatant, block: &StatBlock, action_id: &str, target: &Combatant, depth: u8, footing: Footing) -> Value {
         if depth > 4 {
             return Value::default();
         }
@@ -906,24 +943,27 @@ impl<'a> Ctx<'a> {
             .actions
             .iter()
             .find(|a| a.id == action_id)
-            .map(|a| self.ability_value(actor, block, a, target, depth + 1, ranged_in_melee).0)
+            .map(|a| self.ability_value(actor, block, a, target, depth + 1, footing).0)
             .unwrap_or_default()
     }
 
-    fn effect_value(&self, actor: &Combatant, block: &StatBlock, effect: &Effect, target: &Combatant, depth: u8, ranged_in_melee: bool) -> (Value, Vec<Vec<usize>>) {
+    fn effect_value(&self, actor: &Combatant, block: &StatBlock, effect: &Effect, target: &Combatant, depth: u8, footing: Footing) -> (Value, Vec<Vec<usize>>) {
         let Some(target_block) = self.block(target) else { return (Value::default(), vec![]) };
         let value = match effect {
             Effect::Attack(attack) => {
                 let ac = target_block.armor_class.first().map_or(10, |a| a.value);
-                let mut disposition = self.disposition(actor, target);
-                if ranged_in_melee && attack.range.is_some() && attack.reach.is_none() {
-                    disposition -= 1;
-                }
+                let within = match footing.moves {
+                    Moves::Stays => self.band(actor, target) == RangeBand::Engaged,
+                    Moves::In => true,
+                    Moves::Out => false,
+                };
+                let close_combat = footing.ranged_in_melee && attack.range.is_some() && attack.reach.is_none();
+                let disposition = engine::disposition_with(self.state, actor, target, within, close_combat.then_some(RollDisposition::Disadvantage));
                 let base = (f64::from(21 - (ac - attack.modifier)) / 20.0).clamp(0.05, 0.95);
-                let (p_hit, p_crit) = match disposition.signum() {
-                    1 => (1.0 - (1.0 - base).powi(2), 1.0 - 0.95f64.powi(2)),
-                    -1 => (base * base, 0.0025),
-                    _ => (base, 0.05),
+                let (p_hit, p_crit) = match disposition {
+                    RollDisposition::Advantage => (1.0 - (1.0 - base).powi(2), 1.0 - 0.95f64.powi(2)),
+                    RollDisposition::Disadvantage => (base * base, 0.0025),
+                    RollDisposition::Normal => (base, 0.05),
                 };
                 let mut dmg = 0.0;
                 let mut crit_dice = 0.0;
@@ -933,17 +973,12 @@ impl<'a> Ctx<'a> {
                 }
                 let mut v = Value { damage: p_hit * dmg + p_crit * crit_dice, ..Default::default() };
                 for on_hit in &attack.on_hit {
-                    v.add(self.effect_value(actor, block, on_hit, target, depth + 1, ranged_in_melee).0.scaled(p_hit));
+                    v.add(self.effect_value(actor, block, on_hit, target, depth + 1, footing).0.scaled(p_hit));
                 }
                 v
             }
             Effect::SavingThrow(save) => {
-                let modifier = target_block
-                    .saving_throws
-                    .get(&save.ability)
-                    .copied()
-                    .unwrap_or_else(|| target_block.ability_scores.modifier(save.ability));
-                let p_success = (f64::from(21 - (save.dc - modifier)) / 20.0).clamp(0.0, 1.0);
+                let p_success = self.save_success(target, save.ability, save.dc);
                 let p_fail = 1.0 - p_success;
                 let dmg: f64 = save
                     .damage
@@ -954,7 +989,7 @@ impl<'a> Ctx<'a> {
                 let on_success = if save.no_damage_on_success { 0.0 } else if save.half_on_success { 0.5 } else { 1.0 };
                 let mut v = Value { damage: dmg * (p_fail + p_success * on_success), ..Default::default() };
                 for fail in &save.on_failure {
-                    v.add(self.effect_value(actor, block, fail, target, depth + 1, ranged_in_melee).0.scaled(p_fail));
+                    v.add(self.effect_value(actor, block, fail, target, depth + 1, footing).0.scaled(p_fail));
                 }
                 v
             }
@@ -974,25 +1009,61 @@ impl<'a> Ctx<'a> {
                 Value { control: factor * target_threat, ..Default::default() }
             }
             Effect::Heal(h) => Value { heal: h.dice.as_deref().map_or(0.0, dice_average) + f64::from(h.modifier), ..Default::default() },
-            Effect::MoveThenAttack(m) => self.action_value(actor, block, &m.attack_id, target, depth, ranged_in_melee),
-            Effect::UseAction(u) => self.action_value(actor, block, &u.action_id, target, depth, ranged_in_melee),
+            Effect::MoveThenAttack(m) => self.action_value(actor, block, &m.attack_id, target, depth, footing),
+            Effect::UseAction(u) => self.action_value(actor, block, &u.action_id, target, depth, footing),
             Effect::Cast(cast) => match engine::bound_cast_effects(block, cast) {
                 Some((effects, _)) if depth < 4 => effects.iter().fold(Value::default(), |mut acc, e| {
-                    acc.add(self.effect_value(actor, block, e, target, depth + 1, ranged_in_melee).0);
+                    acc.add(self.effect_value(actor, block, e, target, depth + 1, footing).0);
                     acc
                 }),
                 _ => Value::default(),
             },
-            Effect::Area(area) => self.effect_value(actor, block, &area.effect, target, depth + 1, ranged_in_melee).0,
-            Effect::Multiattack(multi) => return self.multiattack_value(actor, block, &multi.steps, target, depth, ranged_in_melee),
+            Effect::Area(area) => self.effect_value(actor, block, &area.effect, target, depth + 1, footing).0,
+            Effect::Multiattack(multi) => return self.multiattack_value(actor, block, &multi.steps, target, depth, footing),
             Effect::ForcedMove(m) => {
                 let factor = if depth > 3 { 0.0 } else { self.forced_move_factor(target, target_block, m) };
                 let target_threat = if factor == 0.0 || self.threat_nesting.get() >= MAX_THREAT_NESTING { 0.0 } else { self.threat(target) };
                 Value { control: factor * target_threat, ..Default::default() }
             }
-            Effect::TempHp(_) | Effect::TimedModifier(_) | Effect::RollModifier(_) | Effect::Teleport(_) | Effect::NoProvoke => Value::default(),
+            Effect::Teleport(_) => Value { survival: self.teleport_value(actor, footing), ..Default::default() },
+            Effect::TempHp(_) | Effect::TimedModifier(_) | Effect::RollModifier(_) | Effect::NoProvoke => Value::default(),
         };
         (value, vec![])
+    }
+
+    /// The chance `saver` succeeds on a save of `ability` against `dc`, from every source the engine
+    /// reads: the stat block's save, timed save bonuses, Advantage and Disadvantage, and the
+    /// automatic Strength and Dexterity failures. A save has no natural 1 or 20 rule.
+    fn save_success(&self, saver: &Combatant, ability: crate::stat_block::Ability, dc: i32) -> f64 {
+        if engine::automatic_save_failure(saver, ability).is_some() {
+            return 0.0;
+        }
+        let Some(block) = self.block(saver) else { return 0.0 };
+        let modifier = block.saving_throws.get(&ability).copied().unwrap_or_else(|| block.ability_scores.modifier(ability))
+            + engine::save_modifier(self.state, saver, ability);
+        let p = (f64::from(21 - (dc - modifier)) / 20.0).clamp(0.0, 1.0);
+        match engine::save_disposition(self.state, saver, ability) {
+            RollDisposition::Advantage => 1.0 - (1.0 - p).powi(2),
+            RollDisposition::Disadvantage => p * p,
+            RollDisposition::Normal => p,
+        }
+    }
+
+    /// A teleport's value (ADR 0012): the Opportunity Attacks the actor avoids by teleporting
+    /// rather than walking out of the engagements the plan leaves it in, priced by the step-out
+    /// penalty. Nothing when the plan already stepped out or nothing is engaged.
+    fn teleport_value(&self, actor: &Combatant, footing: Footing) -> f64 {
+        if footing.moves == Moves::Out {
+            return 0.0;
+        }
+        let engaged: Vec<&Combatant> = self
+            .opponents(actor)
+            .filter(|o| o.end_state == EndState::Active && self.band(actor, o) == RangeBand::Engaged)
+            .collect();
+        if engaged.is_empty() {
+            return 0.0;
+        }
+        self.step_out_penalty(actor, &engaged)
     }
 
     /// Share of the target's threat a push denies (ADR 0012): 1.0 for a push of 35 feet or more
@@ -1012,12 +1083,12 @@ impl<'a> Ctx<'a> {
 
     /// Value of a multiattack and the picks that reach it: the best `pick`
     /// options of each `Choice` and the best set of each `Alternatives`.
-    fn multiattack_value(&self, actor: &Combatant, block: &StatBlock, steps: &[MultiattackStep], target: &Combatant, depth: u8, ranged_in_melee: bool) -> (Value, Vec<Vec<usize>>) {
+    fn multiattack_value(&self, actor: &Combatant, block: &StatBlock, steps: &[MultiattackStep], target: &Combatant, depth: u8, footing: Footing) -> (Value, Vec<Vec<usize>>) {
         let mut total = Value::default();
         let mut picks = Vec::new();
         let slot = |action_id: &str, cast: Option<&crate::effect::Cast>| match cast {
-            Some(c) => self.effect_value(actor, block, &Effect::Cast(c.clone()), target, depth + 1, ranged_in_melee).0,
-            None => self.action_value(actor, block, action_id, target, depth, ranged_in_melee),
+            Some(c) => self.effect_value(actor, block, &Effect::Cast(c.clone()), target, depth + 1, footing).0,
+            None => self.action_value(actor, block, action_id, target, depth, footing),
         };
         for step in steps {
             match step {
@@ -1030,7 +1101,7 @@ impl<'a> Ctx<'a> {
                         .enumerate()
                         .map(|(i, o)| {
                             let v = slot(&o.action_id, o.cast.as_ref()).scaled(f64::from(o.count));
-                            (v.damage + v.control, i, v)
+                            (v.worth(), i, v)
                         })
                         .collect();
                     scored.sort_by(|a, b| b.0.total_cmp(&a.0).then(a.1.cmp(&b.1)));
@@ -1045,8 +1116,8 @@ impl<'a> Ctx<'a> {
                 MultiattackStep::Alternatives { sets } => {
                     let mut best: Option<(f64, usize, Value, Vec<Vec<usize>>)> = None;
                     for (i, set) in sets.iter().enumerate() {
-                        let (v, p) = self.multiattack_value(actor, block, set, target, depth, ranged_in_melee);
-                        let s = v.damage + v.control;
+                        let (v, p) = self.multiattack_value(actor, block, set, target, depth, footing);
+                        let s = v.worth();
                         if best.as_ref().map_or(true, |b| s > b.0 + 1e-9) {
                             best = Some((s, i, v, p));
                         }
@@ -1094,7 +1165,7 @@ impl<'a> Ctx<'a> {
             let block = self.block(reactor)?;
             let mut best: Option<(f64, usize, &AbilityEntry)> = None;
             for attack in engine::opportunity_attack_candidates(block) {
-                let damage = self.ability_value(reactor, block, attack, mover, 0, false).0.damage;
+                let damage = self.ability_value(reactor, block, attack, mover, 0, Footing::default()).0.damage;
                 let order = block.actions.iter().position(|a| a.id == attack.id).unwrap_or(usize::MAX);
                 let better = best.map_or(true, |(d, o, _)| damage > d + 1e-9 || ((damage - d).abs() <= 1e-9 && order < o));
                 if better {
@@ -1166,11 +1237,11 @@ impl<'a> Ctx<'a> {
         for effect in effects {
             match effect {
                 Effect::Attack(a) if matches!(kind, Rolls::Attacks(filter) if filter.matches(a)) => {
-                    let expected = self.effect_value(actor, block, effect, target, depth, false).0.damage;
+                    let expected = self.effect_value(actor, block, effect, target, depth, Footing::default()).0.damage;
                     add((expected, self.hit_average(actor, a, target)), 1.0);
                 }
                 Effect::SavingThrow(save) if matches!(kind, Rolls::Saves(ability) if ability.map_or(true, |a| a == save.ability)) => {
-                    add((self.effect_value(actor, block, effect, target, depth, false).0.damage, 0.0), 1.0);
+                    add((self.effect_value(actor, block, effect, target, depth, Footing::default()).0.damage, 0.0), 1.0);
                 }
                 Effect::Area(area) if matches!(kind, Rolls::Saves(_)) => {
                     add(self.roll_value(actor, block, std::slice::from_ref(&*area.effect), target, kind, depth + 1), 1.0);
@@ -1281,25 +1352,6 @@ impl<'a> Ctx<'a> {
             return (ReactionAnswer::Take(pick.attack_id.clone()), line);
         }
         hold(format!("{}, expected {:.1} <= reserve {:.1}{drops}", pick.attack_id, pick.value, decision.reserve))
-    }
-
-    /// +1 advantage, -1 disadvantage, 0 straight, from conditions alone.
-    fn disposition(&self, actor: &Combatant, target: &Combatant) -> i32 {
-        let has = |c: &Combatant, list: &[Condition]| c.conditions.iter().any(|x| list.contains(&x.condition));
-        let mut d = 0;
-        if has(actor, &[Condition::Blinded, Condition::Frightened, Condition::Poisoned, Condition::Prone]) {
-            d -= 1;
-        }
-        if has(target, &[Condition::Paralyzed, Condition::Prone, Condition::Restrained, Condition::Stunned, Condition::Unconscious]) {
-            d += 1;
-        }
-        if has(target, &[Condition::Invisible]) {
-            d -= 1;
-        }
-        if has(actor, &[Condition::Invisible]) {
-            d += 1;
-        }
-        d.clamp(-1, 1)
     }
 }
 
@@ -2195,7 +2247,7 @@ mod tests {
         let ctx = ctx(state, &constants);
         let (ogre, a) = (ctx.combatant("ogre").unwrap(), ctx.combatant("a").unwrap());
         let block = ctx.block(ogre).unwrap();
-        (ctx.effect_value(ogre, block, effect, a, 0, false).0.control, ctx.threat(a))
+        (ctx.effect_value(ogre, block, effect, a, 0, Footing::default()).0.control, ctx.threat(a))
     }
 
     #[test]
@@ -2455,5 +2507,143 @@ mod tests {
         assert_eq!(ctx.movement_left(ctx.combatant("a").unwrap()), 55);
         assert_eq!(ctx.movement_left(ctx.combatant("b").unwrap()), 30);
         assert_eq!(ctx.movement_left(ctx.combatant("a").unwrap()), engine::walk_speed(&state, &state.combatants[1]) - 5);
+    }
+
+    fn afflict(state: &mut EncounterState, id: &str, condition: Condition) {
+        let c = state.combatants.iter_mut().find(|c| c.id == id).unwrap();
+        c.conditions.push(crate::encounter::ConditionInstance { condition, duration: Duration::Concentration, source: None, ends_on_damage: false });
+    }
+
+    fn expected_damage(state: &EncounterState, actor: &str, effect: &Effect, target: &str) -> f64 {
+        let constants = PolicyConstants::default();
+        let ctx = ctx(state, &constants);
+        let actor = ctx.combatant(actor).unwrap();
+        let block = ctx.block(actor).unwrap();
+        ctx.effect_value(actor, block, effect, ctx.combatant(target).unwrap(), 0, Footing::default()).0.damage
+    }
+
+    #[test]
+    fn two_advantage_sources_and_one_disadvantage_score_a_straight_roll() {
+        let mut state = duel(["1d8", "1d8"], [20, 20]);
+        afflict(&mut state, "a", Condition::Invisible);
+        afflict(&mut state, "a", Condition::Poisoned);
+        afflict(&mut state, "ogre", Condition::Restrained);
+        let sword = melee("sword", 5, "1d8").effects.remove(0);
+        // +5 against AC 12 hits on 7 or more: 0.7 × 4.5 plus a 0.05 critical's extra 4.5.
+        assert!((expected_damage(&state, "a", &sword, "ogre") - 3.375).abs() < 1e-9);
+    }
+
+    #[test]
+    fn a_ranged_plan_against_a_prone_target_scores_disadvantage_and_a_melee_plan_advantage() {
+        let mut state = skirmish();
+        state.combatants.iter_mut().for_each(|c| c.engagement.clear());
+        state.combatants.iter_mut().for_each(|c| c.ranges.values_mut().for_each(|b| *b = RangeBand::Near));
+        afflict(&mut state, "brute", Condition::Prone);
+        let plan = choose_action(&state, "archer");
+        // Disadvantage at +5 against AC 12: 0.7² × 7 plus 0.0025 × 7.
+        assert!((plan.expected_damage - 3.4475).abs() < 1e-9, "{}", plan.expected_damage);
+        snapshot(&mut state, "archer").actions = vec![melee("knife", 5, "1d8")];
+        let plan = choose_action(&state, "archer");
+        assert_eq!(plan.movement.len(), 1, "{}", plan.reason);
+        // Moving in puts the knife within 5 feet: Advantage, 0.91 × 4.5 plus 0.0975 × 4.5.
+        assert!((plan.expected_damage - 4.53375).abs() < 1e-9, "{}", plan.expected_damage);
+    }
+
+    #[test]
+    fn a_dexterity_save_against_a_paralyzed_target_is_a_certain_failure() {
+        let mut state = duel(["1d8", "1d8"], [20, 20]);
+        let fire = breath("dex").effects.remove(0);
+        afflict(&mut state, "a", Condition::Paralyzed);
+        assert!((expected_damage(&state, "ogre", &fire, "a") - 33.0).abs() < 1e-9);
+        let constants = PolicyConstants::default();
+        let ctx = ctx(&state, &constants);
+        let a = ctx.combatant("a").unwrap();
+        assert_eq!(ctx.save_success(a, crate::stat_block::Ability::Dex, 15), 0.0);
+        assert_eq!(ctx.save_success(a, crate::stat_block::Ability::Con, 15), 0.3);
+    }
+
+    #[test]
+    fn a_restrained_target_saves_dexterity_at_disadvantage() {
+        let mut state = duel(["1d8", "1d8"], [20, 20]);
+        afflict(&mut state, "a", Condition::Restrained);
+        let constants = PolicyConstants::default();
+        let ctx = ctx(&state, &constants);
+        let a = ctx.combatant("a").unwrap();
+        assert!((ctx.save_success(a, crate::stat_block::Ability::Dex, 15) - 0.09).abs() < 1e-9);
+        assert!((ctx.save_success(a, crate::stat_block::Ability::Str, 15) - 0.3).abs() < 1e-9);
+    }
+
+    fn misty_step() -> AbilityEntry {
+        entry(serde_json::json!({"id": "misty-step", "name": "Misty Step", "kind": "modeled",
+            "effects": [{"teleport": {"range": 30, "destination": "unoccupied space you can see"}}]}))
+    }
+
+    fn teleport_value(state: &EncounterState) -> f64 {
+        let constants = PolicyConstants::default();
+        let ctx = ctx(state, &constants);
+        let archer = ctx.combatant("archer").unwrap();
+        let teleport = misty_step().effects.remove(0);
+        ctx.effect_value(archer, ctx.block(archer).unwrap(), &teleport, ctx.combatant("brute").unwrap(), 0, Footing::default()).0.survival
+    }
+
+    #[test]
+    fn a_teleport_scores_the_opportunity_attacks_it_avoids() {
+        let mut state = skirmish();
+        snapshot(&mut state, "archer").actions = vec![misty_step()];
+        let avoided = pick(&state, "brute", "archer").value;
+        assert!(avoided > 0.0);
+        assert_eq!(teleport_value(&state), avoided);
+        let plan = choose_action(&state, "archer");
+        assert!((plan.survival - avoided).abs() < 1e-9, "{}", plan.reason);
+        assert!(plan.reason.contains(&format!("teleports clear of {avoided:.1} opportunity damage")), "{}", plan.reason);
+    }
+
+    #[test]
+    fn a_shot_that_teleports_stays_put_rather_than_pay_the_attacks_its_teleport_avoids() {
+        let mut state = skirmish();
+        snapshot(&mut state, "archer").actions = vec![entry(serde_json::json!({"id": "blink-shot", "name": "Blink Shot", "kind": "modeled", "effects": [
+            {"attack": {"modifier": 5, "range": [80, 320], "target_count": 1, "damage": [{"dice": "4d10", "type": "piercing"}]}},
+            {"teleport": {"range": 30, "destination": "unoccupied space you can see"}}]}))];
+        let avoided = pick(&state, "brute", "archer").value;
+        // Stepping out gains 16.5 - 10.835 = 5.665 of bow damage, more than one Opportunity Attack
+        // (3.375) but less than paying it and losing the teleport's credit for avoiding it.
+        assert!(5.665 > avoided && 5.665 < 2.0 * avoided, "{avoided}");
+        let plan = choose_action(&state, "archer");
+        assert!(plan.movement.is_empty(), "{}", plan.reason);
+        assert!(plan.reason.contains(&format!("teleports clear of {avoided:.1} opportunity damage")), "{}", plan.reason);
+    }
+
+    #[test]
+    fn a_teleport_avoids_nothing_the_reactors_would_not_take() {
+        let mut state = skirmish();
+        snapshot(&mut state, "archer").actions = vec![misty_step(), melee("knife", 5, "6d10")];
+        snapshot(&mut state, "brute").reactions.push(ac_reaction("parry", 2, "melee"));
+        assert!(reserve(&state, "brute") > pick(&state, "brute", "archer").value, "the brute holds its reaction for Parry");
+        assert_eq!(teleport_value(&state), 0.0);
+        let mut state = skirmish();
+        state.combatants.iter_mut().for_each(|c| c.engagement.clear());
+        assert_eq!(teleport_value(&state), 0.0, "nothing to avoid unengaged");
+    }
+
+    #[test]
+    fn a_teleporting_multiattack_against_a_parrying_reactor_does_not_overflow() {
+        let blinker = |id: &str| {
+            let mut b = block(id, 40, 14);
+            b.actions = vec![
+                melee("claw", 5, "2d6"),
+                misty_step(),
+                entry(serde_json::json!({"id": "multiattack", "name": "Multiattack", "kind": "modeled", "effects": [{"multiattack": {"steps": [
+                    {"action": {"action_id": "claw", "count": 2}}, {"action": {"action_id": "misty-step", "count": 1}}]}}]})),
+            ];
+            b.reactions.push(ac_reaction("parry", 2, "melee"));
+            b
+        };
+        let mut state = encounter(vec![blinker("x"), blinker("y")], vec![fighter("x", "party", 40), fighter("y", "monsters", 40)]);
+        engage(&mut state, "x", "y");
+        for id in ["x", "y"] {
+            assert!(choose(&state, id, Section::Action, &PolicyConstants::default()).is_some(), "{id} found no plan");
+        }
+        let (answer, _) = decide_reaction(&state, &opportunity_window("y", "x", &["claw"]), &PolicyConstants::default());
+        assert!(matches!(answer, ReactionAnswer::Take(_) | ReactionAnswer::Pass));
     }
 }
