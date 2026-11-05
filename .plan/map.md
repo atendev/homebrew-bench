@@ -90,6 +90,7 @@ Both modes ship in phase 1. Everything the engine can't model is labeled agent j
 - [Build attack-roll condition sources](closed/068-build-attack-roll-condition-sources.md): `disposition` (now `pub(crate)` for ticket 056) reads Blinded and Petrified targets, Restrained and Grappled attackers (straight against the grappler in `source`), Prone by engagement, Frightened only while the attacker sees its `source`, and Invisible through ADR 0017's sight rule (`sees`), with downed PCs counted as Unconscious and Prone (`counts_as_unconscious`, which ticket 069 reuses). Engaged hits on Paralyzed or Unconscious targets are critical and say why, damage to a Stable PC gives a failure and makes it dying again, and Opportunity Attacks use the same sight rule. The engine is 0.1.8, the curve stays stale for 056, and the calibration fixture row still matches.
 - [Build saving-throw condition sources](closed/069-build-saving-throw-condition-sources.md): Paralyzed, Petrified, Stunned and Unconscious creatures and downed PCs fail Strength and Dexterity saves without a die or prompt (repeat saves too), a Restrained creature has Disadvantage on Dexterity saves, and timed save modifiers on the saver's bearer reach `save_disposition`, so Haste gives Advantage on Dexterity saves. `automatic_save_failure`, `save_disposition` and `save_modifier` are `pub(crate)` for ticket 056's save scoring. The engine is 0.1.9, the curve stays stale for 056, and the calibration fixture row still matches. The live-mode reference line went to ticket 072 after the shell guard held the edit.
 - [Build massive damage at 0 Hit Points](closed/071-build-massive-damage-at-zero-hit-points.md): a dying or Stable PC dies outright when one hit's damage, after Temporary Hit Points, meets its Hit Point maximum; a lesser hit gives one failure (two on a critical) as before, and Temporary HP now soaks hits on downed PCs. Dropping to 0 HP, dying or gaining an incapacitating condition now ends concentration, with no save on the dropping hit. The engine is 0.1.10, the curve stays stale for 056, and the calibration fixture row still matches.
+- [Batch warns when plans fail or casts are never ready](closed/070-batch-warns-on-quiet-plan-failures.md): `bench batch` adds one warning per distinct (combatant, action, engine error) behind a refused plan across every fight, most frequent first, with how many turns it cost; a stat block whose cast's slot level is below the spell's level fails at load. Fights don't change, so the engine stays 0.1.10 and batch output on ogre and adult red dragon is byte-identical to master.
 
 ## Not yet specified
 
@@ -101,6 +102,8 @@ Both modes ship in phase 1. Everything the engine can't model is labeled agent j
 - Seeing Invisible creatures by spell or trait. See Invisibility and homebrew "sees invisible creatures" traits have no effect in the vocabulary, so ADR 0017's sight rule counts only Blindsight and Truesight and the agent overrides the rest. Open: whether it is a trait effect, a timed modifier, or both, and whether the standard party ever casts it ([Align attack-roll condition sources](closed/067-align-attack-roll-condition-sources-with-2024-rules.md)).
 - Concentration and overridden conditions. Since 071, concentration ends when a creature drops to 0 HP, dies, or gains an incapacitating condition from an effect. A condition set with `bench override` doesn't end it, so a live agent who stuns a concentrating caster by override must also end the concentration by hand. Open: whether override should run the same check, or the live-mode doc should say so. Found by the 071 audit.
 - `is_limited` and `usage_word` in `bench-core/src/tactics.rs` still read `slot_level` to tell a leveled cast from a cantrip. A homebrew PC with `spell_slots` whose leveled cast has no slot level would be scored as unlimited. Found by the 059 audit.
+- Cantrip casts with a slot level. A `cast` of a cantrip that names a `slot_level` is never ready, like a slot below the spell's level, but load doesn't refuse it, so the batch policy skips it quietly. Open: whether to refuse it with the same check. Found by ticket 070.
+- Plan-failure warnings split per level. Batch keys a failure on the combatant's name and the error text, so one fault in a standard-party PC repeats once per party level, and errors that name a combatant id split further. Open: whether to key on the stat block's archetype and strip ids from the text. Found by ticket 070.
 
 ## Out of scope
 
@@ -116,7 +119,6 @@ Both modes ship in phase 1. Everything the engine can't model is labeled agent j
 
 Takeable now, in order:
 
-- Batch warns when plans fail or casts are never ready (task, AFK)
 - Document saving-throw condition sources in live mode (task, AFK); the live-mode line ticket 069 couldn't add
 - Build v3 scoring for buffs, forced movement and teleports (task, AFK); every blocker is closed, and it regenerates the baseline once
 

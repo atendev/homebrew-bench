@@ -544,6 +544,27 @@ fn lighting_is_a_start_flag_and_a_misplaced_roll_modifier_fails_at_load() {
 }
 
 #[test]
+fn a_cast_below_its_spell_level_is_refused_before_any_dice() {
+    let bench = Bench::new();
+    let mut monster: Value = serde_json::from_str(&std::fs::read_to_string(data("fixtures/kobold-warrior.json")).unwrap()).unwrap();
+    monster["id"] = "fiery-kobold".into();
+    monster["actions"].as_array_mut().unwrap().push(serde_json::json!({
+        "id": "fireball", "name": "Fireball", "kind": "modeled",
+        "effects": [{"cast": {"spell_id": "fireball", "slot_level": 1, "upcast": false}}]
+    }));
+    let path = bench.cwd.join("fiery-kobold.json");
+    std::fs::write(&path, monster.to_string()).unwrap();
+    let path = path.display().to_string();
+    for args in [vec!["start", path.as_str(), "--seed", "1"], vec!["batch", path.as_str(), "--levels", "1", "--fights", "1", "--seed", "1"]] {
+        let (code, json) = bench.run(&args);
+        assert_ne!(code, 0);
+        let message = json["error"]["details"][0]["message"].as_str().unwrap_or_default();
+        assert!(message.starts_with("fireball: a cast's slot level is below the spell's level"), "{json:#}");
+    }
+    assert_eq!(bench.ok(&["list"])["encounters"].as_array().unwrap().len(), 0);
+}
+
+#[test]
 fn schema_validate_warns_on_a_self_buff_with_no_bearer() {
     let bench = Bench::new();
     let knight = data("fixtures/knight.json");

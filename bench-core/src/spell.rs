@@ -1,5 +1,8 @@
 //! Engine-owned spell effects file model.
 
+use std::collections::HashMap;
+use std::sync::OnceLock;
+
 use serde::{Deserialize, Serialize};
 
 use crate::effect::{Duration, Effect};
@@ -57,6 +60,25 @@ pub struct SpellEffect {
     pub upcast_clause: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub notes: Option<String>,
+}
+
+/// The embedded spell effects file, parsed once and keyed by spell id.
+pub(crate) fn catalog() -> Result<&'static HashMap<String, SpellEffect>, &'static str> {
+    static CACHE: OnceLock<Result<HashMap<String, SpellEffect>, String>> = OnceLock::new();
+    CACHE
+        .get_or_init(|| {
+            let value: serde_json::Value = serde_json::from_str(crate::embedded::spell_effects_json()).map_err(|e| format!("invalid spell effects json: {e}"))?;
+            let mut map = HashMap::new();
+            if let Some(obj) = value.as_object() {
+                for (key, entry_value) in obj {
+                    let spell: SpellEffect = serde_json::from_value(entry_value.clone()).map_err(|e| format!("spell {key} invalid: {e}"))?;
+                    map.insert(key.clone(), spell);
+                }
+            }
+            Ok(map)
+        })
+        .as_ref()
+        .map_err(String::as_str)
 }
 
 #[cfg(test)]
