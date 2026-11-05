@@ -20,7 +20,7 @@ Build what [Live legendary actions](../closed/048-live-legendary-actions.md) dec
 - Add a computed `digest.legendary` (eligible holders, uses left, ready actions). There is no prompt.
 - Log `LEGENDARY ACTION <holder>: <name> (<used> of <budget>)` between `end_turn` and `start_turn`. Undo reverts the whole end-turn. Replay keeps the list in the command arguments, and a bare `EndTurn` must still deserialize.
 - In ask mode, PC dice hold the whole end-turn, and `respond` reruns it from the state before the command.
-- Batch: bump `ENGINE_VERSION`, keep `POLICY_VERSION` at 2, and leave one use per window. Do not regenerate `data/baseline/curve.json`. It reports itself stale through `Baseline::stale_reasons`, and the v3 build ([056](../tickets/056-build-v3-scoring-for-buffs-forced-movement-and-teleports.md)) regenerates it once.
+- Batch: bump `ENGINE_VERSION`, keep `POLICY_VERSION` at 2, and leave one use per window. Do not regenerate `data/baseline/curve.json`. It reports itself stale through `Baseline::stale_reasons`, and the v3 build ([056](056-build-v3-scoring-for-buffs-forced-movement-and-teleports.md)) regenerates it once.
 - Docs: a new ADR or amendments to ADRs 0004 and 0012, and an update to `.agents/skills/homebrew-bench/references/live-mode.md` line 50. The skill test checks the new flag against `bench help --json`.
 - Known limits, not built: lair action use counts, legendary actions that cost more than one use, and legendary actions that move.
 - Consult `tdd`, `codebase-design`, `domain-modeling` and `code-review`.
