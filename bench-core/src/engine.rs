@@ -605,6 +605,9 @@ fn resolve_effect(
                         ends_on_damage: condition.ends_on_damage,
                     });
                     events.push(event("condition", format!("{target_id} is {}", format!("{:?}", condition.condition).to_lowercase()), actor_id, target_id));
+                    if incapacitates(condition.condition) {
+                        break_concentration(state, stream, target_id, events)?;
+                    }
                 }
             }
         }
@@ -2156,8 +2159,7 @@ fn apply_damage(
             state.combatants[i].end_state = EndState::Unconscious;
             events.push(event("destabilize", format!("{target_id} is no longer stable"), source_id.unwrap_or(target_id), target_id));
         }
-        let failures = if critical { 2 } else { 1 };
-        state.combatants[i].death_saves.failures += failures;
+        let remaining = soak_temp_hp(&mut state.combatants[i], amount);
         events.push(EngineEvent {
             kind: "damage".into(),
             message: format!("{target_id} takes {amount} damage while down"),
@@ -2168,6 +2170,11 @@ fn apply_damage(
             damage: Some(amount),
             player_dice: marked,
         });
+        if remaining >= state.combatants[i].max_hp {
+            return die_from_massive_damage(state, stream, target_id, events);
+        }
+        let failures = if critical { 2 } else { 1 };
+        state.combatants[i].death_saves.failures += failures;
         events.push(event("death_save", format!("{target_id} suffers {failures} death save failure(s) from the hit"), source_id.unwrap_or(target_id), target_id));
         if state.combatants[i].death_saves.failures >= 3 {
             state.combatants[i].end_state = EndState::Dead;
@@ -2186,11 +2193,9 @@ fn apply_damage(
         }
         fire_on_end(state, stream, ended, events)?;
     }
-    let mut remaining = amount.max(0);
-    let absorbed = remaining.min(state.combatants[i].temp_hp);
-    state.combatants[i].temp_hp -= absorbed;
-    remaining -= absorbed;
+    let remaining = soak_temp_hp(&mut state.combatants[i], amount.max(0));
     state.combatants[i].hp -= remaining;
+    let drops = state.combatants[i].hp <= 0 && state.combatants[i].end_state == EndState::Active;
     if amount > 0 {
         events.push(EngineEvent {
             kind: "damage".into(),
@@ -2203,7 +2208,7 @@ fn apply_damage(
             player_dice: marked,
         });
     }
-    if remaining > 0 && is_concentrating(&state.combatants[i]) {
+    if remaining > 0 && !drops && is_concentrating(&state.combatants[i]) {
         // Constitution save DC = max(10, damage / 2) to maintain concentration
         let dc = (remaining / 2).max(10);
         let block = stat_block(state, &state.combatants[i])?;
@@ -2227,11 +2232,10 @@ fn apply_damage(
             break_concentration(state, stream, target_id, events)?;
         }
     }
-    if state.combatants[i].hp <= 0 && state.combatants[i].end_state == EndState::Active {
+    if drops {
         let dying = stat_block(state, &state.combatants[i])?.dying;
         if dying && -state.combatants[i].hp >= state.combatants[i].max_hp {
-            state.combatants[i].end_state = EndState::Dead;
-            events.push(event("dies", format!("{target_id} dies from massive damage"), target_id, target_id));
+            return die_from_massive_damage(state, stream, target_id, events);
         } else if dying {
             state.combatants[i].hp = 0;
             state.combatants[i].end_state = EndState::Unconscious;
@@ -2241,8 +2245,22 @@ fn apply_damage(
             state.combatants[i].end_state = EndState::Dead;
             events.push(event("dies", format!("{target_id} dies"), target_id, target_id));
         }
+        break_concentration(state, stream, target_id, events)?;
     }
     Ok(())
+}
+
+fn soak_temp_hp(c: &mut Combatant, amount: i32) -> i32 {
+    let absorbed = amount.min(c.temp_hp);
+    c.temp_hp -= absorbed;
+    amount - absorbed
+}
+
+fn die_from_massive_damage(state: &mut EncounterState, stream: &mut Stream, target_id: &str, events: &mut Vec<EngineEvent>) -> Result<(), EngineError> {
+    let i = index_of(state, target_id)?;
+    state.combatants[i].end_state = EndState::Dead;
+    events.push(event("dies", format!("{target_id} dies from massive damage"), target_id, target_id));
+    break_concentration(state, stream, target_id, events)
 }
 
 fn apply_forced_move(
@@ -2669,9 +2687,11 @@ fn roll_dice(state: &mut EncounterState, stream: &mut Stream, owner: &str, expre
 }
 
 fn can_act(c: &Combatant) -> bool {
-    c.end_state == EndState::Active
-        && !c.conditions.iter().any(|x| matches!(x.condition,
-            Condition::Incapacitated | Condition::Paralyzed | Condition::Petrified | Condition::Stunned | Condition::Unconscious))
+    c.end_state == EndState::Active && !c.conditions.iter().any(|x| incapacitates(x.condition))
+}
+
+fn incapacitates(condition: Condition) -> bool {
+    matches!(condition, Condition::Incapacitated | Condition::Paralyzed | Condition::Petrified | Condition::Stunned | Condition::Unconscious)
 }
 fn index_of(state: &EncounterState, id: &str) -> Result<usize, EngineError> { state.combatants.iter().position(|c| c.id == id).ok_or_else(|| EngineError::NotFound(format!("combatant {id} not found"))) }
 fn stat_block<'a>(state: &'a EncounterState, c: &Combatant) -> Result<&'a StatBlock, EngineError> { state.stat_blocks.iter().find(|s| s.id == c.stat_block_id).map(|s| &s.stat_block).ok_or_else(|| EngineError::NotFound(format!("stat block {} not found", c.stat_block_id))) }
@@ -5897,6 +5917,98 @@ mod tests {
         failing.combatants[0].death_saves.failures = 2;
         let (after, _, _) = bite_on(&failing, |n| n > 1 && n < 20);
         assert_eq!(fighter_of(&after).end_state, EndState::Dead);
+    }
+
+    #[test]
+    fn damage_at_or_over_max_hp_kills_a_downed_pc() {
+        let downed = |end_state, max_hp, temp_hp| {
+            let mut state = one_damage_bite(|_, f| {
+                f.hp = 0;
+                f.max_hp = max_hp;
+                f.temp_hp = temp_hp;
+                f.end_state = end_state;
+            });
+            disengage_bite(&mut state, RangeBand::Far);
+            state
+        };
+        let hit = |n: u32| n > 1 && n < 20;
+
+        let (after, _, events) = bite_on(&downed(EndState::Unconscious, 1, 0), hit);
+        assert_eq!(fighter_of(&after).end_state, EndState::Dead);
+        assert!(events.iter().any(|e| e.message == "fighter dies from massive damage"), "{events:?}");
+
+        let (after, _, _) = bite_on(&downed(EndState::Unconscious, 2, 0), hit);
+        assert_eq!((fighter_of(&after).end_state, fighter_of(&after).death_saves.failures), (EndState::Unconscious, 1));
+
+        let (after, _, _) = bite_on(&downed(EndState::Stable, 1, 0), hit);
+        assert_eq!(fighter_of(&after).end_state, EndState::Dead);
+
+        let (after, _, _) = bite_on(&downed(EndState::Unconscious, 1, 1), hit);
+        let fighter = fighter_of(&after);
+        assert_eq!((fighter.end_state, fighter.death_saves.failures, fighter.temp_hp), (EndState::Unconscious, 1, 0), "temporary HP soaks the hit first");
+
+        let engaged = one_damage_bite(|_, f| {
+            f.hp = 0;
+            f.max_hp = 2;
+            f.end_state = EndState::Unconscious;
+        });
+        let (after, attack, events) = bite_on(&engaged, hit);
+        assert!(attack.message.contains("(critical: unconscious, within 5 feet)"), "{}", attack.message);
+        assert_eq!(fighter_of(&after).end_state, EndState::Dead, "the critical's 2 damage meets max HP 2");
+        assert!(events.iter().any(|e| e.message == "fighter dies from massive damage"), "{events:?}");
+        assert_eq!(fighter_of(&after).death_saves.failures, 0, "massive damage kills without counting failures");
+
+        let soaked = one_damage_bite(|_, f| {
+            f.hp = 0;
+            f.max_hp = 1;
+            f.temp_hp = 1;
+            f.end_state = EndState::Unconscious;
+        });
+        let (after, _, _) = bite_on(&soaked, hit);
+        assert_eq!(fighter_of(&after).end_state, EndState::Dead, "1 temporary HP leaves 1 of the critical's 2 damage, meeting max HP 1");
+    }
+
+    #[test]
+    fn dropping_to_zero_hit_points_ends_concentration_without_a_save() {
+        let concentrating = |dying: bool, max_hp: i32| {
+            let mut state = one_damage_bite(|b, f| {
+                b.dying = dying;
+                f.hp = 1;
+                f.max_hp = max_hp;
+                f.concentration = Some("haste".into());
+            });
+            disengage_bite(&mut state, RangeBand::Far);
+            state
+        };
+        for (state, natural, end_state) in [
+            (concentrating(true, 100), 10, EndState::Unconscious),
+            (concentrating(true, 1), 20, EndState::Dead),
+            (concentrating(false, 100), 10, EndState::Dead),
+        ] {
+            let (after, _, events) = bite_on(&state, |n| n == natural);
+            let fighter = fighter_of(&after);
+            assert_eq!((fighter.end_state, fighter.concentration.as_deref()), (end_state, None), "{events:?}");
+            assert!(events.iter().any(|e| e.message == "fighter loses concentration"), "{events:?}");
+            assert!(events.iter().all(|e| e.kind != "concentration_save"), "{events:?}");
+        }
+    }
+
+    #[test]
+    fn an_incapacitating_condition_ends_concentration() {
+        let condition = |condition| Effect::Condition(crate::effect::ConditionEffect { condition, duration: Duration::Permanent, ends_on_damage: false, source_ability: None });
+        let mut state = caster_and(true, "haste");
+        act(&mut state, "mage", "haste", &["other"]).unwrap();
+        assert!(state.combatants[0].concentration.is_some());
+        let mut events = vec![];
+        resolve_effect(&mut state, &mut Stream::from_state(RngState::new(1)), "other", condition(Condition::Stunned), &["mage".to_string()], &mut events).unwrap();
+        assert_eq!(state.combatants[0].concentration, None);
+        assert!(events.iter().any(|e| e.message == "mage loses concentration"), "{events:?}");
+        assert!(!state.active_modifiers.iter().any(|m| m.source.as_deref() == Some("mage") && matches!(m.remaining, Duration::Concentration)), "Haste ends");
+
+        let mut prone = caster_and(true, "haste");
+        act(&mut prone, "mage", "haste", &["other"]).unwrap();
+        resolve_effect(&mut prone, &mut Stream::from_state(RngState::new(1)), "other", condition(Condition::Prone), &["mage".to_string()], &mut vec![]).unwrap();
+        assert!(prone.combatants[0].concentration.is_some(), "Prone doesn't incapacitate");
     }
 
     #[test]
