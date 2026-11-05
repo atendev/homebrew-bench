@@ -530,6 +530,28 @@ impl Effect {
     }
 }
 
+/// Every cast in serialized stat block JSON, at any depth: actions, Multiattack
+/// steps, and effects nested in other effects.
+pub fn casts_in(value: &serde_json::Value) -> Vec<Cast> {
+    fn walk(value: &serde_json::Value, out: &mut Vec<Cast>) {
+        match value {
+            serde_json::Value::Object(map) => {
+                if map.contains_key("spell_id") {
+                    if let Ok(cast) = serde_json::from_value(value.clone()) {
+                        out.push(cast);
+                    }
+                }
+                map.values().for_each(|v| walk(v, out));
+            }
+            serde_json::Value::Array(items) => items.iter().for_each(|v| walk(v, out)),
+            _ => {}
+        }
+    }
+    let mut out = Vec::new();
+    walk(value, &mut out);
+    out
+}
+
 /// Resource map for usage tracking on a combatant.
 pub type Resources = HashMap<String, i32>;
 

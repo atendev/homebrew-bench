@@ -100,4 +100,14 @@ pub struct Reactions {
     /// The first window the decider could not answer. Once set, the engine
     /// passes every later window, and the caller discards the run and prompts.
     pub waiting: Option<ReactionWindow>,
+    /// The reaction whose resolution raised the request's error, when one did. The
+    /// error text is unchanged; this says whose ability it came from.
+    pub fault: Option<ReactionFault>,
+}
+
+/// A reaction that failed while another creature's request resolved.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ReactionFault {
+    pub reactor_id: String,
+    pub ability_id: String,
 }

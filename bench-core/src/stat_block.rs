@@ -3,7 +3,7 @@
 use serde::{Deserialize, Deserializer, Serialize};
 use std::collections::HashMap;
 
-use crate::effect::{Cast, Effect, Lighting, MultiattackStep, ReactionTrigger, Usage};
+use crate::effect::{Effect, Lighting, ReactionTrigger, Usage};
 
 /// Ability score names.
 #[derive(
@@ -341,17 +341,17 @@ fn checked_entries<'de, D: Deserializer<'de>>(deserializer: D, reactions: bool) 
         check_trigger(entry, reactions)?;
         for effect in &entry.effects {
             refuse_roll_modifier(entry, effect)?;
-            refuse_cast_below_spell_level(entry, effect)?;
         }
+        refuse_cast_below_spell_level(entry)?;
     }
     Ok(entries)
 }
 
 /// A cast whose slot is below its spell's level is never ready, so the policy would
 /// silently never pick it. Spells the effects file lacks are left to the missing-spell warning.
-fn refuse_cast_below_spell_level<E: serde::de::Error>(entry: &AbilityEntry, effect: &Effect) -> Result<(), E> {
-    let Ok(spells) = crate::spell::catalog() else { return Ok(()) };
-    for cast in casts_in(effect) {
+fn refuse_cast_below_spell_level<E: serde::de::Error>(entry: &AbilityEntry) -> Result<(), E> {
+    let (Ok(spells), Ok(value)) = (crate::spell::catalog(), serde_json::to_value(&entry.effects)) else { return Ok(()) };
+    for cast in crate::effect::casts_in(&value) {
         let (Some(slot), Some(spell)) = (cast.slot_level, spells.get(&cast.spell_id)) else { continue };
         if slot < spell.level {
             return Err(E::custom(format!(
@@ -361,23 +361,6 @@ fn refuse_cast_below_spell_level<E: serde::de::Error>(entry: &AbilityEntry, effe
         }
     }
     Ok(())
-}
-
-fn casts_in(effect: &Effect) -> Vec<&Cast> {
-    fn step_casts<'a>(step: &'a MultiattackStep, out: &mut Vec<&'a Cast>) {
-        match step {
-            MultiattackStep::Action { cast, .. } => out.extend(cast),
-            MultiattackStep::Choice { options, .. } => out.extend(options.iter().filter_map(|o| o.cast.as_ref())),
-            MultiattackStep::Alternatives { sets } => sets.iter().flatten().for_each(|s| step_casts(s, out)),
-        }
-    }
-    let mut out = Vec::new();
-    match effect {
-        Effect::Cast(cast) => out.push(cast),
-        Effect::Multiattack(m) => m.steps.iter().for_each(|s| step_casts(s, &mut out)),
-        _ => {}
-    }
-    out
 }
 
 fn check_trigger<E: serde::de::Error>(entry: &AbilityEntry, reaction: bool) -> Result<(), E> {
@@ -438,6 +421,17 @@ pub fn bearer_warnings(value: &serde_json::Value) -> Vec<String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn a_multiattack_cast_below_its_spell_level_fails_at_load() {
+        let mut block: serde_json::Value = serde_json::from_str(crate::embedded::fixture_json("adult-black-dragon").unwrap()).unwrap();
+        assert!(serde_json::from_value::<StatBlock>(block.clone()).is_ok());
+        let text = block.to_string().replace(r#""slot_level":3,"spell_id":"acid-arrow""#, r#""slot_level":1,"spell_id":"acid-arrow""#);
+        assert_ne!(text, block.to_string(), "the fixture's acid-arrow cast moved");
+        block = serde_json::from_str(&text).unwrap();
+        let err = serde_json::from_value::<StatBlock>(block).unwrap_err().to_string();
+        assert!(err.starts_with("multiattack: a cast's slot level is below the spell's level (acid-arrow is level 2"), "{err}");
+    }
 
     #[test]
     fn a_top_level_modifier_without_a_bearer_warns() {

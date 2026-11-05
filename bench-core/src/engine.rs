@@ -537,7 +537,8 @@ fn resolve_effect(
                             let name = window.option(&id).ok_or_else(|| EngineError::Invalid(format!("{target_id} has no reaction {id} for this hit")))?.name.clone();
                             events.push(event("reaction", format!("REACTION {target_id}: {name} (hit by {actor_id})"), target_id, actor_id));
                             state.rng = stream.state();
-                            events.extend(resolve_action(state, target_id, &id, &[actor_id.to_string()], None, false)?);
+                            let resolved = resolve_action(state, target_id, &id, &[actor_id.to_string()], None, false);
+                            events.extend(blame_reaction(state, target_id, &id, resolved)?);
                             *stream = Stream::from_state(state.rng.clone());
                             let ac = base_ac + ac_modifier(state, &state.combatants[target_index]);
                             hit = natural_20 || (natural != 1 && total >= ac);
@@ -1080,6 +1081,14 @@ fn spend_slot(actor: &Combatant, block: &StatBlock, level: u8) -> Result<(), Eng
     Ok(())
 }
 
+/// Name the reaction behind a failed resolution on `state.reactions.fault`; the innermost one wins.
+fn blame_reaction<T>(state: &mut EncounterState, reactor_id: &str, ability_id: &str, result: Result<T, EngineError>) -> Result<T, EngineError> {
+    if result.is_err() && state.reactions.fault.is_none() {
+        state.reactions.fault = Some(crate::reaction::ReactionFault { reactor_id: reactor_id.into(), ability_id: ability_id.into() });
+    }
+    result
+}
+
 fn load_spell_effects() -> Result<&'static HashMap<String, crate::spell::SpellEffect>, EngineError> {
     crate::spell::catalog().map_err(|e| EngineError::Invalid(e.to_string()))
 }
@@ -1106,25 +1115,7 @@ fn retarget_if_down(state: &EncounterState, actor_id: &str, target_id: &str) -> 
 }
 
 fn casts_in(block: &StatBlock) -> Vec<crate::effect::Cast> {
-    fn walk(value: &serde_json::Value, out: &mut Vec<crate::effect::Cast>) {
-        match value {
-            serde_json::Value::Object(map) => {
-                if map.contains_key("spell_id") {
-                    if let Ok(cast) = serde_json::from_value(value.clone()) {
-                        out.push(cast);
-                    }
-                }
-                map.values().for_each(|v| walk(v, out));
-            }
-            serde_json::Value::Array(items) => items.iter().for_each(|v| walk(v, out)),
-            _ => {}
-        }
-    }
-    let mut out = Vec::new();
-    if let Ok(value) = serde_json::to_value(block) {
-        walk(&value, &mut out);
-    }
-    out
+    serde_json::to_value(block).map(|v| crate::effect::casts_in(&v)).unwrap_or_default()
 }
 
 /// Spell ids a stat block casts that the spell effects file does not hold. A cast
@@ -1366,11 +1357,13 @@ fn move_combatant(
     for (r, attack) in attacks {
         let reactor_id = state.combatants[r].id.clone();
         if let Some(usage) = &attack.usage {
-            spend_usage(state, r, &attack.id, usage)?;
+            let spent = spend_usage(state, r, &attack.id, usage);
+            blame_reaction(state, &reactor_id, &attack.id, spent)?;
         }
         events.push(event("reaction", format!("OPPORTUNITY ATTACK {reactor_id} on {actor_id} (reaction)"), &reactor_id, actor_id));
         for effect in attack.effects {
-            resolve_effect(state, &mut stream, &reactor_id, effect, &[actor_id.to_string()], &mut events)?;
+            let resolved = resolve_effect(state, &mut stream, &reactor_id, effect, &[actor_id.to_string()], &mut events);
+            blame_reaction(state, &reactor_id, &attack.id, resolved)?;
         }
         state.combatants[r].action_economy.reaction_used = true;
         if !can_act(&state.combatants[i]) {

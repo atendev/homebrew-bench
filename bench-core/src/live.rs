@@ -736,7 +736,7 @@ fn run_engine(state: &mut EncounterState, held: Held) -> Result<Applied, LiveErr
         trial.pending = None;
     }
     trial.player_dice = PlayerDice { faces: held.faces.clone().into(), engine_fills_rest: held.engine_fills_rest, ..Default::default() };
-    trial.reactions = Reactions { decider: ReactionDecider::Queued(held.answers.clone().into()), waiting: None };
+    trial.reactions = Reactions { decider: ReactionDecider::Queued(held.answers.clone().into()), waiting: None, fault: None };
     let response = engine::step(&mut trial, held.request.clone())?;
     if let Some(window) = trial.reactions.waiting.take() {
         return Ok(reaction_prompt(state, held, window));
