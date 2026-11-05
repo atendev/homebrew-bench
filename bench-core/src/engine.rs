@@ -2324,8 +2324,21 @@ fn adjust_damage(state: &EncounterState, target: &Combatant, amount: i32, damage
 
 /// Roll disposition for an attack roll from every source (PHB Appendix C, read through ADR 0017):
 /// the actor's and target's conditions, Invisible on either side as sight allows, the actor's timed
-/// modifiers, and lighting roll modifiers on its traits. Ticket 056's policy reads it too.
+/// modifiers, and lighting roll modifiers on its traits.
 pub(crate) fn disposition(state: &EncounterState, actor: &Combatant, target: &Combatant) -> RollDisposition {
+    disposition_with(state, actor, target, within_5_feet(actor, target), [])
+}
+
+/// `disposition` with "within 5 feet" given instead of read from engagement, and `extra` sources
+/// combined under the same rule. The batch policy scores a plan this way: `within` is where the
+/// plan leaves the actor, and `extra` carries the policy's own close-combat Disadvantage.
+pub(crate) fn disposition_with(
+    state: &EncounterState,
+    actor: &Combatant,
+    target: &Combatant,
+    within: bool,
+    extra: impl IntoIterator<Item = RollDisposition>,
+) -> RollDisposition {
     use RollDisposition::{Advantage, Disadvantage};
     let has = |c: &Combatant, f: fn(Condition) -> bool| c.conditions.iter().any(|i| f(i.condition));
     let grappled_away = actor
@@ -2344,7 +2357,7 @@ pub(crate) fn disposition(state: &EncounterState, actor: &Combatant, target: &Co
         (grappled_away || frightened, Disadvantage),
         (has(target, |c| matches!(c, Condition::Blinded | Condition::Paralyzed | Condition::Petrified | Condition::Restrained | Condition::Stunned)), Advantage),
         (counts_as_unconscious(target), Advantage),
-        (counts_as_prone(target), if within_5_feet(actor, target) { Advantage } else { Disadvantage }),
+        (counts_as_prone(target), if within { Advantage } else { Disadvantage }),
         (!sees(state, actor, target), Disadvantage),
         (!sees(state, target, actor), Advantage),
     ];
@@ -2353,7 +2366,8 @@ pub(crate) fn disposition(state: &EncounterState, actor: &Combatant, target: &Co
             .into_iter()
             .filter_map(|(applies, d)| applies.then_some(d))
             .chain(modifier_dispositions(state, actor, ModifierTarget::AttackRolls))
-            .chain(lighting_modifiers(state, actor, Roll::Attack).into_iter().map(|(d, _)| d)),
+            .chain(lighting_modifiers(state, actor, Roll::Attack).into_iter().map(|(d, _)| d))
+            .chain(extra),
     )
 }
 
