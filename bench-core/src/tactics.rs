@@ -25,8 +25,9 @@ pub const POLICY_VERSION: u32 = 3;
 /// damage (ADR 0012). The reaction reserve prices Shield and Parry with it.
 pub const AC_POINT_VALUE: f64 = 0.1;
 
-/// Rounds a timed modifier is valued over (ADR 0012). A concentration or longer duration
-/// counts as the whole horizon.
+/// Rounds a timed modifier is valued over at most (ADR 0012). A concentration or longer duration
+/// counts as the whole horizon, cut to the rounds the fight is expected to last and, for
+/// concentration, weighted round by round by the chance the caster keeps it.
 pub const BUFF_HORIZON: u32 = 2;
 
 /// Share of a bearer's incoming damage that Advantage on saving throws is worth per round
@@ -298,6 +299,13 @@ struct Ctx<'a> {
 /// reaction reserve and the step-out penalty are valued at zero.
 const MAX_THREAT_NESTING: u8 = 2;
 
+/// What a combatant's best ready action puts out: damage alone, and damage plus healing.
+#[derive(Debug, Clone, Copy, Default)]
+struct ThreatParts {
+    damage: f64,
+    total: f64,
+}
+
 #[derive(Debug, Clone, Copy, Default)]
 struct Value {
     damage: f64,
@@ -350,12 +358,13 @@ impl Footing {
     const STEPPED_OUT: Footing = Footing { moves: Moves::Out, ranged_in_melee: false };
 }
 
-/// Which rolls an incoming-damage sum counts: attack rolls through a filter, or saving throws
-/// of one ability (any ability when `None`).
+/// Which rolls an incoming-damage sum counts: attack rolls through a filter, saving throws
+/// of one ability (any ability when `None`), or saving throws inside areas only.
 #[derive(Debug, Clone, Copy)]
 enum Rolls {
     Attacks(AttackFilter),
     Saves(Option<crate::stat_block::Ability>),
+    AreaSaves,
 }
 
 #[derive(Debug, Clone, Default)]
@@ -364,6 +373,11 @@ struct BearerValue {
     survival: f64,
     /// Per-round value of an extra action, already counted in `damage`.
     extra_action: f64,
+    /// The weighted rounds, horizon and keep chance of the first modifier whose rounds were cut
+    /// short or weighted.
+    horizon: Option<(f64, f64, f64)>,
+    /// Lethargy cost, already taken off `damage`.
+    lethargy: f64,
     notes: Vec<String>,
 }
 
@@ -372,6 +386,8 @@ impl BearerValue {
         self.damage += other.damage;
         self.survival += other.survival;
         self.extra_action += other.extra_action;
+        self.horizon = self.horizon.or(other.horizon);
+        self.lethargy += other.lethargy;
         self.notes.extend(other.notes.iter().cloned());
     }
 }
@@ -454,6 +470,16 @@ impl<'a> Ctx<'a> {
     /// Expected damage plus healing the combatant can put out on its next
     /// action, against its living opponents on average.
     fn threat(&self, c: &Combatant) -> f64 {
+        self.threat_parts(c).total
+    }
+
+    /// `threat` without healing, each foe's share capped at its hit points: what the combatant
+    /// takes off its opponents on its next action.
+    fn damage_threat(&self, c: &Combatant) -> f64 {
+        self.threat_parts(c).damage
+    }
+
+    fn threat_parts(&self, c: &Combatant) -> ThreatParts {
         let open = self.threat_nesting.get();
         self.threat_nesting.set(open + 1);
         let value = self.threat_unnested(c);
@@ -461,30 +487,95 @@ impl<'a> Ctx<'a> {
         value
     }
 
-    fn threat_unnested(&self, c: &Combatant) -> f64 {
+    fn threat_unnested(&self, c: &Combatant) -> ThreatParts {
+        let mut best = ThreatParts::default();
         if !can_act(c) {
-            return 0.0;
+            return best;
         }
-        let Some(block) = self.block(c) else { return 0.0 };
+        let Some(block) = self.block(c) else { return best };
         let foes: Vec<&Combatant> = self.opponents(c).filter(|o| o.end_state == EndState::Active).collect();
         if foes.is_empty() {
-            return 0.0;
+            return best;
         }
-        block
-            .actions
-            .iter()
-            .filter(|a| !a.effects.is_empty() && engine::ability_ready(self.state, &c.id, a))
-            .map(|a| {
-                let total: f64 = foes
-                    .iter()
-                    .map(|f| {
-                        let v = self.ability_value(c, block, a, f, 0, Footing::default()).0;
-                        v.damage + v.heal
-                    })
-                    .sum();
-                total / foes.len() as f64
-            })
-            .fold(0.0, f64::max)
+        let n = foes.len() as f64;
+        for a in block.actions.iter().filter(|a| !a.effects.is_empty() && engine::ability_ready(self.state, &c.id, a)) {
+            let mut parts = ThreatParts::default();
+            for f in &foes {
+                let v = self.ability_value(c, block, a, f, 0, Footing::default()).0;
+                parts.damage += v.damage.min(hit_points(f)) / n;
+                parts.total += (v.damage + v.heal) / n;
+            }
+            best.damage = best.damage.max(parts.damage);
+            best.total = best.total.max(parts.total);
+        }
+        best
+    }
+
+    /// Rounds the fight has left: the actor's active opponents' hit points over the damage its
+    /// side's able combatants deal per round, or [`BUFF_HORIZON`] when the side deals none.
+    fn rounds_left(&self, actor: &Combatant) -> f64 {
+        let hp: f64 = self.opponents(actor).filter(|o| o.end_state == EndState::Active).map(hit_points).sum();
+        let damage: f64 = self.allies(actor).filter(|a| can_act(a)).map(|a| self.damage_threat(a)).sum();
+        if damage > 0.0 {
+            hp / damage
+        } else {
+            f64::from(BUFF_HORIZON)
+        }
+    }
+
+    /// Whether `bearer`'s next turn, walking the initiative order on from the actor's, comes
+    /// before every able opponent's. Never for the actor itself or an actor outside the order.
+    fn acts_before_opponents(&self, actor: &Combatant, bearer: &Combatant) -> bool {
+        let order = &self.state.initiative_order;
+        let Some(at) = order.iter().position(|id| *id == actor.id) else { return false };
+        if bearer.id == actor.id {
+            return false;
+        }
+        for id in order.iter().cycle().skip(at + 1).take(order.len() - 1) {
+            if *id == bearer.id {
+                return true;
+            }
+            if self.combatant(id).is_some_and(|c| c.side_id != actor.side_id && can_act(c)) {
+                return false;
+            }
+        }
+        false
+    }
+
+    /// The chance `caster` keeps concentration through one round of its opponents' turns (ADR
+    /// 0012). An able opponent that ranks the caster first counts its attack-roll and save damage
+    /// on it; any other counts only its area saves. Each uses the ready action with the most
+    /// counted damage. Each expected hit, and each save effect, is one Constitution save at
+    /// `max(10, damage / 2)`. 0 when the counted damage would drop the caster.
+    fn concentration_keep(&self, caster: &Combatant) -> f64 {
+        let save_at = |damage: f64| self.save_success(caster, crate::stat_block::Ability::Con, ((damage / 2.0).floor() as i32).max(10));
+        let mut counted = 0.0;
+        let mut keep = 1.0;
+        for foe in self.opponents(caster).filter(|o| can_act(o)) {
+            let Some(block) = self.block(foe) else { continue };
+            let focused = self.ranked_opponents(foe, None).first().is_some_and(|t| t.id == caster.id);
+            let mut best: Option<((f64, f64), f64)> = None;
+            for a in block.actions.iter().filter(|a| !a.effects.is_empty() && engine::ability_ready(self.state, &foe.id, a)) {
+                let attacks = if focused { self.roll_value(foe, block, &a.effects, caster, Rolls::Attacks(AttackFilter::Any), 0) } else { (0.0, 0.0) };
+                let saves = self.roll_value(foe, block, &a.effects, caster, if focused { Rolls::Saves(None) } else { Rolls::AreaSaves }, 0).0;
+                if best.map_or(true, |(b, s)| attacks.0 + saves > b.0 + s + 1e-9) {
+                    best = Some((attacks, saves));
+                }
+            }
+            let Some(((d, a), s)) = best else { continue };
+            counted += d + s;
+            if d > 0.0 && a > 0.0 {
+                keep *= save_at(a).powf(d / a);
+            }
+            if s > 0.0 {
+                keep *= save_at(s);
+            }
+        }
+        if counted >= hit_points(caster) {
+            0.0
+        } else {
+            keep
+        }
     }
 
     /// Sum of every living opponent's threat: what could land before `c` acts again.
@@ -556,7 +647,7 @@ impl<'a> Ctx<'a> {
         if !modifiers.is_empty() && only_modifiers {
             return self.modifier_plan(actor, ability, section, resource, &modifiers);
         }
-        let own = self.bearer_value(actor, modifiers.iter().filter(|m| m.bearer == ModifierBearer::Actor));
+        let own = self.bearer_value(actor, actor, modifiers.iter().filter(|m| m.bearer == ModifierBearer::Actor));
         if let Some((area, effect)) = area_of(block, &ability.effects) {
             return self.area_plan(actor, block, ability, section, resource, &area, &effect, false);
         }
@@ -655,12 +746,12 @@ impl<'a> Ctx<'a> {
             allies.sort_by(|a, b| a.id.cmp(&b.id));
             bearers.extend(allies);
         }
-        let own = self.bearer_value(actor, modifiers.iter().filter(|m| m.bearer == ModifierBearer::Actor));
+        let own = self.bearer_value(actor, actor, modifiers.iter().filter(|m| m.bearer == ModifierBearer::Actor));
         let w = &self.constants.weights;
         let cost = if is_limited(ability) { 1.0 } else { 0.0 };
         let mut best: Option<(f64, &Combatant, BearerValue)> = None;
         for bearer in bearers {
-            let mut value = self.bearer_value(bearer, modifiers.iter().filter(|m| m.bearer == ModifierBearer::Target));
+            let mut value = self.bearer_value(actor, bearer, modifiers.iter().filter(|m| m.bearer == ModifierBearer::Target));
             value.add(&own);
             let score = w.expected_damage * value.damage + w.survival * value.survival - w.resource_cost * cost;
             if best.as_ref().map_or(true, |(b, _, _)| score > b + 1e-9) {
@@ -671,6 +762,12 @@ impl<'a> Ctx<'a> {
         let mut notes = value.notes.clone();
         if value.extra_action > 0.0 {
             notes.push(format!("extra action {:.1}", value.extra_action));
+        }
+        if let Some((rounds, h, k)) = value.horizon {
+            notes.push(format!("{rounds:.1} of {h:.1} rounds at keep {k:.2}"));
+        }
+        if value.lethargy > 0.0 {
+            notes.push(format!("lethargy -{:.1}", value.lethargy));
         }
         Some(Plan {
             actor_id: actor.id.clone(),
@@ -689,17 +786,35 @@ impl<'a> Ctx<'a> {
         })
     }
 
-    /// What `modifiers` are worth on `bearer` over the buff horizon (ADR 0012). A modifier
-    /// scores 0 on a bearer that already has one from the same `source_ability`.
-    fn bearer_value<'m>(&self, bearer: &Combatant, modifiers: impl Iterator<Item = &'m TimedModifier>) -> BearerValue {
+    /// What `actor`'s `modifiers` are worth on `bearer` over the buff horizon (ADR 0012), cut to
+    /// the rounds the fight has left and, for concentration, weighted round by round by the
+    /// chance the actor keeps concentration. A concentration modifier whose `on_end` stops the
+    /// bearer acting costs its threat times the chance concentration breaks in the horizon. A
+    /// modifier scores 0 on a bearer that already has one from the same `source_ability`.
+    fn bearer_value<'m>(&self, actor: &Combatant, bearer: &Combatant, modifiers: impl Iterator<Item = &'m TimedModifier>) -> BearerValue {
         let mut out = BearerValue::default();
+        let mut rounds_left: Option<f64> = None;
+        let mut keep: Option<f64> = None;
         for m in modifiers {
             let held = m.source_ability.as_deref().is_some_and(|ability| {
                 self.state.active_modifiers.iter().any(|a| a.bearer() == Some(bearer.id.as_str()) && a.source_ability.as_deref() == Some(ability))
             });
-            let rounds = f64::from(horizon(&m.duration));
-            if held || rounds == 0.0 {
+            let cap = f64::from(horizon(&m.duration));
+            if held || cap == 0.0 {
                 continue;
+            }
+            let h = cap.min(*rounds_left.get_or_insert_with(|| self.rounds_left(actor)));
+            let concentration = matches!(m.duration, Duration::Concentration);
+            let k = if concentration { *keep.get_or_insert_with(|| self.concentration_keep(actor)) } else { 1.0 };
+            let rounds = weighted_rounds(h, k, self.acts_before_opponents(actor, bearer));
+            if (k < 1.0 || h < cap) && out.horizon.is_none() {
+                out.horizon = Some((rounds, h, k));
+            }
+            let lethargic = m.on_end.iter().any(|e| matches!(e, Effect::Condition(c) if STOPS_ACTING.contains(&c.condition)));
+            if concentration && lethargic && can_act(bearer) {
+                let cost = self.threat(bearer) * (1.0 - k.powf(h));
+                out.damage -= cost;
+                out.lethargy += cost;
             }
             match (&m.target, &m.change) {
                 (ModifierTarget::ArmorClass, ModifierChange::Add(n)) if *n > 0 => {
@@ -1243,8 +1358,9 @@ impl<'a> Ctx<'a> {
                 Effect::SavingThrow(save) if matches!(kind, Rolls::Saves(ability) if ability.map_or(true, |a| a == save.ability)) => {
                     add((self.effect_value(actor, block, effect, target, depth, Footing::default()).0.damage, 0.0), 1.0);
                 }
-                Effect::Area(area) if matches!(kind, Rolls::Saves(_)) => {
-                    add(self.roll_value(actor, block, std::slice::from_ref(&*area.effect), target, kind, depth + 1), 1.0);
+                Effect::Area(area) if matches!(kind, Rolls::Saves(_) | Rolls::AreaSaves) => {
+                    let inner = if matches!(kind, Rolls::AreaSaves) { Rolls::Saves(None) } else { kind };
+                    add(self.roll_value(actor, block, std::slice::from_ref(&*area.effect), target, inner, depth + 1), 1.0);
                 }
                 Effect::UseAction(u) => add(nested(&u.action_id), 1.0),
                 Effect::MoveThenAttack(m) => add(nested(&m.attack_id), 1.0),
@@ -1355,14 +1471,19 @@ impl<'a> Ctx<'a> {
     }
 }
 
+/// Conditions under which a creature takes no actions.
+const STOPS_ACTING: [Condition; 5] = [Condition::Incapacitated, Condition::Paralyzed, Condition::Petrified, Condition::Stunned, Condition::Unconscious];
+
 fn can_act(c: &Combatant) -> bool {
-    c.end_state == EndState::Active
-        && !c.conditions.iter().any(|x| {
-            matches!(
-                x.condition,
-                Condition::Incapacitated | Condition::Paralyzed | Condition::Petrified | Condition::Stunned | Condition::Unconscious
-            )
-        })
+    c.end_state == EndState::Active && !c.conditions.iter().any(|x| STOPS_ACTING.contains(&x.condition))
+}
+
+/// Rounds of benefit over a horizon of `h` rounds when each round holds with chance `keep`:
+/// `Σ_{i=1..ceil(h)} keep^(i - f) × clamp(h - (i - 1), 0, 1)`, with `f` 1 when the first
+/// round's benefit lands before any opponent acts.
+fn weighted_rounds(h: f64, keep: f64, first_is_safe: bool) -> f64 {
+    let f = i32::from(first_is_safe);
+    (1..=h.ceil() as i32).map(|i| keep.powi(i - f) * (h - f64::from(i - 1)).clamp(0.0, 1.0)).sum()
 }
 
 /// Damage that can still land; anything past this is wasted.
@@ -2452,13 +2573,151 @@ mod tests {
         assert!(!plan.reason.contains("extra action"), "{}", plan.reason);
     }
 
+    /// `caster_with` the allies and a decoy the ogre ranks first, whose flat smite no extra
+    /// action allows, against an ogre with 1000 HP: a long fight where the caster is safe.
+    fn long_fight(allies: Vec<StatBlock>) -> EncounterState {
+        let mut decoy = block("decoy", 60, 22);
+        decoy.actions.push(flat("smite", 60));
+        let mut state = caster_with(allies.into_iter().chain(std::iter::once(decoy)).collect());
+        state.combatants.iter_mut().find(|c| c.id == "ogre").unwrap().hp = 1000;
+        state
+    }
+
     #[test]
     fn the_caster_hastes_the_striker_over_itself_once_the_extra_attack_counts() {
-        let state = caster_with(vec![party_block("defender", 5), party_block("striker", 5)]);
+        let state = long_fight(vec![party_block("defender", 5), party_block("striker", 5)]);
         let plan = choose_action(&state, "standard-caster-05");
         assert_eq!((plan.action_id.as_str(), plan.targets.as_slice()), ("haste", ["standard-striker-05".to_string()].as_slice()), "{}", plan.reason);
         assert!(plan.reason.contains("extra action "), "{}", plan.reason);
         assert!(plan.expected_damage > 0.0);
+        assert!(!plan.reason.contains("rounds at keep") && !plan.reason.contains("lethargy"), "a safe caster in a long fight: {}", plan.reason);
+    }
+
+    #[test]
+    fn the_caster_doesnt_haste_against_an_ogre_the_level_11_party_kills_within_a_round() {
+        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).parent().unwrap();
+        let ogre: StatBlock = serde_json::from_str(&std::fs::read_to_string(root.join("data/fixtures/ogre.json")).unwrap()).unwrap();
+        let mut combatants = vec![fighter("ogre", "monsters", ogre.hit_points.average)];
+        let mut blocks = vec![ogre];
+        for archetype in crate::party::ARCHETYPES {
+            let pc = party_block(archetype, 11);
+            combatants.push(fighter(&pc.id, "party", pc.hit_points.average));
+            blocks.push(pc);
+        }
+        let state = encounter(blocks, combatants);
+        let constants = PolicyConstants::default();
+        let ctx = ctx(&state, &constants);
+        let caster = ctx.combatant("standard-caster-11").unwrap();
+        assert!(ctx.rounds_left(caster) < 1.0, "{}", ctx.rounds_left(caster));
+        let plan = choose_action(&state, "standard-caster-11");
+        assert_ne!(plan.action_id, "haste", "{}", plan.reason);
+    }
+
+    fn haste_modifiers() -> Vec<TimedModifier> {
+        let caster = party_block("caster", 5);
+        let haste = caster.actions.iter().find(|a| a.id == "haste").unwrap();
+        let Effect::Cast(cast) = &haste.effects[0] else { panic!() };
+        engine::bound_cast_effects(&caster, cast)
+            .unwrap()
+            .0
+            .into_iter()
+            .map(|e| match e {
+                Effect::TimedModifier(m) => m,
+                _ => panic!(),
+            })
+            .collect()
+    }
+
+    /// In initiative order: a Con +2 caster (80 HP, AC 12) with a flat zap, a striker whose
+    /// +30 sword deals exactly its 2d6 average of 7, a decoy with a flat 10, and a brute with
+    /// a +5 2d6 claw. The brute ranks the decoy first unless the caster's zap is above 10.
+    fn haste_fight(caster_zap: i32, brute_hp: i32) -> EncounterState {
+        let mut caster = block("caster", 80, 12);
+        caster.ability_scores.constitution = 14;
+        caster.actions.push(flat("zap", caster_zap));
+        let mut striker = block("striker", 80, 12);
+        striker.actions.push(melee("sword", 30, "2d6"));
+        let mut decoy = block("decoy", 80, 12);
+        decoy.actions.push(flat("smite", DECOY));
+        let mut brute = block("brute", brute_hp, 12);
+        brute.actions.push(melee("claw", 5, "2d6"));
+        let combatants = vec![fighter("caster", "party", 80), fighter("striker", "party", 80), fighter("decoy", "party", 80), fighter("brute", "monsters", brute_hp)];
+        encounter(vec![caster, striker, decoy, brute], combatants)
+    }
+
+    fn value_on(state: &EncounterState, bearer: &str, modifiers: &[TimedModifier]) -> BearerValue {
+        let constants = PolicyConstants::default();
+        let ctx = ctx(state, &constants);
+        ctx.bearer_value(ctx.combatant("caster").unwrap(), ctx.combatant(bearer).unwrap(), modifiers.iter())
+    }
+
+    const SWORD: f64 = 7.0;
+    const DECOY: i32 = 10;
+
+    #[test]
+    fn a_safe_caster_in_a_long_fight_values_haste_over_the_whole_horizon() {
+        let value = value_on(&haste_fight(5, 300), "striker", &haste_modifiers());
+        assert!((value.extra_action - SWORD).abs() < 1e-9, "{value:?}");
+        assert!((value.damage - SWORD * f64::from(BUFF_HORIZON)).abs() < 1e-9, "{value:?}");
+        assert!(value.horizon.is_none() && value.lethargy == 0.0, "{value:?}");
+    }
+
+    #[test]
+    fn a_fight_with_half_a_round_left_halves_the_extra_action() {
+        let state = haste_fight(5, 11);
+        assert!((rounds_left(&state, "caster") - 11.0 / (5.0 + SWORD + f64::from(DECOY))).abs() < 1e-9);
+        let value = value_on(&state, "striker", &haste_modifiers());
+        assert!((value.damage - SWORD * 0.5).abs() < 1e-9, "{value:?}");
+        let (rounds, h, k) = value.horizon.unwrap();
+        assert!((rounds - 0.5).abs() < 1e-9 && (h - 0.5).abs() < 1e-9 && k == 1.0, "{value:?}");
+    }
+
+    #[test]
+    fn the_first_round_is_safe_when_the_bearer_acts_before_the_opponents() {
+        let mut state = haste_fight(25, 300);
+        let mut modifiers = haste_modifiers();
+        for m in &mut modifiers {
+            m.on_end.clear();
+        }
+        let k = KEEP_DC_10.powf(CLAW_HITS);
+        assert!((keep(&state) - k).abs() < 1e-9);
+        let value = value_on(&state, "striker", &modifiers);
+        assert!((value.damage - SWORD * (1.0 + k)).abs() < 1e-9, "{value:?}");
+        assert_eq!(value.lethargy, 0.0, "no on_end, no lethargy");
+        state.initiative_order = ["caster", "brute", "striker", "decoy"].map(String::from).to_vec();
+        let value = value_on(&state, "striker", &modifiers);
+        assert!((value.damage - SWORD * (k + k * k)).abs() < 1e-9, "{value:?}");
+    }
+
+    #[test]
+    fn lethargy_costs_the_bearers_threat_times_the_chance_concentration_breaks() {
+        let state = haste_fight(25, 300);
+        let k = KEEP_DC_10.powf(CLAW_HITS);
+        let cost = SWORD * (1.0 - k * k);
+        let value = value_on(&state, "striker", &haste_modifiers());
+        assert!((value.lethargy - cost).abs() < 1e-9, "{value:?}");
+        assert!((value.damage - (SWORD * (1.0 + k) - cost)).abs() < 1e-9, "{value:?}");
+        let haste = party_block("caster", 5).actions.into_iter().find(|a| a.id == "haste").unwrap();
+        let constants = PolicyConstants::default();
+        let ctx = ctx(&state, &constants);
+        let plan = ctx.modifier_plan(ctx.combatant("caster").unwrap(), &haste, Section::Action, None, &haste_modifiers()).unwrap();
+        assert_eq!(plan.targets, ["striker"]);
+        assert!(plan.reason.ends_with(&format!(", extra action 7.0, {:.1} of 2.0 rounds at keep {k:.2}, lethargy -{cost:.1})", 1.0 + k)), "{}", plan.reason);
+    }
+
+    #[test]
+    fn a_shield_like_self_buff_is_cut_to_the_rounds_left_without_keep_or_lethargy() {
+        let state = haste_fight(25, 26);
+        let shield: TimedModifier = serde_json::from_value(serde_json::json!({"bearer": "self", "change": {"add": 5}, "duration": {"rounds": 1},
+            "source_ability": "shield", "target": "armor_class"}))
+        .unwrap();
+        let h = 26.0 / (25.0 + SWORD + f64::from(DECOY));
+        let value = value_on(&state, "caster", &[shield]);
+        let (rounds, cut, k) = value.horizon.unwrap();
+        assert!((rounds - h).abs() < 1e-9 && (cut - h).abs() < 1e-9 && k == 1.0, "{value:?}");
+        assert_eq!(value.lethargy, 0.0);
+        let claw = 0.70 * 7.0 + 0.05 * 7.0;
+        assert!((value.survival - claw * AC_POINT_VALUE * 5.0 * h).abs() < 1e-9, "{value:?}");
     }
 
     #[test]
@@ -2645,5 +2904,162 @@ mod tests {
         }
         let (answer, _) = decide_reaction(&state, &opportunity_window("y", "x", &["claw"]), &PolicyConstants::default());
         assert!(matches!(answer, ReactionAnswer::Take(_) | ReactionAnswer::Pass));
+    }
+
+    fn flat(id: &str, amount: i32) -> AbilityEntry {
+        entry(serde_json::json!({"id": id, "name": id, "kind": "modeled", "effects": [{"damage": {"dice": "0d1", "type": "force", "modifier": amount}}]}))
+    }
+
+    fn mender(id: &str, amount: i32) -> AbilityEntry {
+        entry(serde_json::json!({"id": id, "name": id, "kind": "modeled", "effects": [{"heal": {"modifier": amount}}]}))
+    }
+
+    /// Two foes of 30 and 20 HP against allies dealing a flat 10 and 15.
+    fn short_fight() -> EncounterState {
+        let mut a = block("a", 20, 12);
+        a.actions.push(flat("zap", 10));
+        let mut b = block("b", 20, 12);
+        b.actions.push(flat("zap", 15));
+        let mut x = block("x", 30, 12);
+        x.actions.push(flat("zap", 1));
+        let mut y = block("y", 20, 12);
+        y.actions.push(flat("zap", 1));
+        encounter(vec![a, b, x, y], vec![fighter("a", "party", 20), fighter("b", "party", 20), fighter("x", "monsters", 30), fighter("y", "monsters", 20)])
+    }
+
+    fn rounds_left(state: &EncounterState, actor: &str) -> f64 {
+        let constants = PolicyConstants::default();
+        let ctx = ctx(state, &constants);
+        ctx.rounds_left(ctx.combatant(actor).unwrap())
+    }
+
+    #[test]
+    fn rounds_left_is_the_opponents_hit_points_over_the_sides_damage() {
+        let mut state = short_fight();
+        assert!((rounds_left(&state, "a") - (30.0 + 20.0) / (10.0 + 15.0)).abs() < 1e-9);
+        snapshot(&mut state, "a").actions.push(mender("mend", 40));
+        assert!((rounds_left(&state, "a") - 2.0).abs() < 1e-9, "healing doesn't shorten the fight");
+        for id in ["a", "b"] {
+            snapshot(&mut state, id).actions = vec![mender("mend", 40)];
+        }
+        assert_eq!(rounds_left(&state, "a"), f64::from(BUFF_HORIZON));
+    }
+
+    fn acts_before(state: &EncounterState, actor: &str, bearer: &str) -> bool {
+        let constants = PolicyConstants::default();
+        let ctx = ctx(state, &constants);
+        ctx.acts_before_opponents(ctx.combatant(actor).unwrap(), ctx.combatant(bearer).unwrap())
+    }
+
+    #[test]
+    fn a_bearer_acts_first_when_its_turn_comes_before_any_able_opponents() {
+        let mut state = short_fight();
+        let order = |ids: &[&str]| ids.iter().map(|s| s.to_string()).collect::<Vec<_>>();
+        state.initiative_order = order(&["a", "b", "x", "y"]);
+        assert!(acts_before(&state, "a", "b"));
+        assert!(!acts_before(&state, "a", "a"), "the actor's own buff");
+        state.initiative_order = order(&["b", "y", "a", "x"]);
+        assert!(!acts_before(&state, "a", "b"), "x comes up first, wrapping");
+        afflict(&mut state, "x", Condition::Stunned);
+        assert!(acts_before(&state, "a", "b"), "a stunned foe is skipped");
+        state.initiative_order = order(&["b", "x", "y"]);
+        assert!(!acts_before(&state, "a", "b"), "an actor out of the order");
+    }
+
+    /// A Con +2 caster with 80 HP and AC 12, an ally and a brute with a +5 2d6 claw. The brute
+    /// ranks whichever of the two deals more first.
+    fn vigil(caster_first: bool) -> EncounterState {
+        let mut caster = block("caster", 80, 12);
+        caster.ability_scores.constitution = 14;
+        caster.actions.push(flat("zap", if caster_first { 20 } else { 10 }));
+        let mut ally = block("ally", 80, 12);
+        ally.actions.push(flat("zap", 15));
+        let mut brute = block("brute", 300, 12);
+        brute.actions.push(melee("claw", 5, "2d6"));
+        encounter(vec![caster, ally, brute], vec![fighter("caster", "party", 80), fighter("ally", "party", 80), fighter("brute", "monsters", 300)])
+    }
+
+    fn keep(state: &EncounterState) -> f64 {
+        let constants = PolicyConstants::default();
+        let ctx = ctx(state, &constants);
+        ctx.concentration_keep(ctx.combatant("caster").unwrap())
+    }
+
+    fn blast(id: &str, amount: i32, area: bool) -> AbilityEntry {
+        let save = serde_json::json!({"saving_throw": {"ability": "dex", "dc": 30, "damage": [{"dice": "0d1", "type": "fire", "modifier": amount}],
+            "half_on_success": false, "no_damage_on_success": false}});
+        let effect = if area { serde_json::json!({"area": {"area": {"cone": {"size": 60}}, "origin": "self_", "target_count": 4, "effect": save}}) } else { save };
+        entry(serde_json::json!({"id": id, "name": id, "kind": "modeled", "effects": [effect]}))
+    }
+
+    /// Con +2 against DC 10: 13 of 20.
+    const KEEP_DC_10: f64 = 0.65;
+    /// The claw: 0.70 to hit plus 0.05 crit dice, over an average hit of 7.
+    const CLAW_HITS: f64 = (0.70 * 7.0 + 0.05 * 7.0) / 7.0;
+
+    #[test]
+    fn an_opponent_aiming_elsewhere_without_saves_leaves_concentration_safe() {
+        assert_eq!(keep(&vigil(false)), 1.0);
+    }
+
+    #[test]
+    fn each_expected_hit_on_the_caster_is_a_dc_10_constitution_save() {
+        let k = keep(&vigil(true));
+        assert!((k - KEEP_DC_10.powf(CLAW_HITS)).abs() < 1e-9, "{k}");
+    }
+
+    #[test]
+    fn save_damage_sets_the_dc_at_half_and_can_make_the_save_hopeless() {
+        let mut state = vigil(true);
+        snapshot(&mut state, "brute").actions = vec![blast("blast", 53, false)];
+        assert_eq!(keep(&state), 0.0, "DC 26 against Con +2");
+        snapshot(&mut state, "brute").actions = vec![blast("blast", 30, false)];
+        let k = keep(&state);
+        assert!((k - 8.0 / 20.0).abs() < 1e-9, "DC 15 against Con +2: {k}");
+    }
+
+    #[test]
+    fn counted_damage_that_would_drop_the_caster_breaks_concentration() {
+        let mut state = vigil(true);
+        snapshot(&mut state, "brute").actions = vec![blast("blast", 20, false)];
+        assert!(keep(&state) > 0.0);
+        state.combatants.iter_mut().find(|c| c.id == "caster").unwrap().hp = 20;
+        assert_eq!(keep(&state), 0.0);
+    }
+
+    #[test]
+    fn an_opponent_picks_its_action_by_the_damage_counted_on_the_caster() {
+        let mut state = vigil(false);
+        let multiattack = entry(serde_json::json!({"id": "multiattack", "name": "Multiattack", "kind": "modeled",
+            "effects": [{"multiattack": {"steps": [{"action": {"action_id": "claw", "count": 20}}]}}]}));
+        snapshot(&mut state, "brute").actions = vec![multiattack, melee("claw", 5, "2d6"), blast("breath", 53, true)];
+        assert_eq!(keep(&state), 0.0, "the breath catches the caster at DC 26 though the brute ranks the ally first");
+    }
+
+    #[test]
+    fn a_single_target_save_counts_only_from_an_opponent_aiming_at_the_caster() {
+        let mut state = vigil(false);
+        snapshot(&mut state, "brute").actions = vec![blast("bolt", 30, false)];
+        assert_eq!(keep(&state), 1.0);
+        snapshot(&mut state, "caster").actions = vec![flat("zap", 20)];
+        assert!((keep(&state) - 8.0 / 20.0).abs() < 1e-9, "DC 15 against Con +2");
+    }
+
+    #[test]
+    fn advantage_on_constitution_saves_squares_the_failure_chance() {
+        let mut state = vigil(true);
+        state.active_modifiers.push(crate::encounter::ActiveModifier {
+            target: ModifierTarget::SavingThrows { ability: Some(crate::stat_block::Ability::Con) },
+            change: ModifierChange::Advantage,
+            remaining: Duration::Rounds(10),
+            source: Some("caster".into()),
+            bearer: Some("caster".into()),
+            source_ability: Some("ward".into()),
+            ends_on_damage: false,
+            on_end: vec![],
+        });
+        let k = keep(&state);
+        let fail = 1.0 - KEEP_DC_10;
+        assert!((k - (1.0 - fail * fail).powf(CLAW_HITS)).abs() < 1e-9, "{k}");
     }
 }

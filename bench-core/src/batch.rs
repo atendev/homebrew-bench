@@ -1278,7 +1278,7 @@ pub fn render_html(s: &Summary) -> String {
     h.push_str("      </tbody>\n    </table>\n  </section>\n\n");
 
     h.push_str(&format!(
-        "  <section aria-labelledby=\"method\">\n    <h2 id=\"method\">Method and limitations</h2>\n    <p>Every fight is one {name} against the party at one level, played by the deterministic batch tactics policy for both sides with engine-rolled dice. A fight ends when one side is down or at the round cap. When the monster wins, downed PCs count as deaths. Policy v{} values an effect that raises AC, saving throws or attack rolls by the damage it prevents or adds over two rounds on the ally it helps most, Haste's extra action as one more attack, a push as the melee it denies, and a teleport as the Opportunity Attacks it avoids, gives other unscored effects no value, reads Advantage, Disadvantage and automatic save failures from the same sources the engine rolls with, takes Shield or Parry only when it turns a hit into a miss and an Opportunity Attack only when it is worth more than the reaction held back, and agent clauses on any stat block are left out. Engine {}.</p>\n  </section>\n\n",
+        "  <section aria-labelledby=\"method\">\n    <h2 id=\"method\">Method and limitations</h2>\n    <p>Every fight is one {name} against the party at one level, played by the deterministic batch tactics policy for both sides with engine-rolled dice. A fight ends when one side is down or at the round cap. When the monster wins, downed PCs count as deaths. Policy v{} values an effect that raises AC, saving throws or attack rolls by the damage it prevents or adds over up to two rounds, no more than the fight is expected to last, weighted by the chance the caster keeps concentration, on the ally it helps most, Haste's extra action as one more attack less a lost turn when lethargy is likely, a push as the melee it denies, and a teleport as the Opportunity Attacks it avoids, gives other unscored effects no value, reads Advantage, Disadvantage and automatic save failures from the same sources the engine rolls with, takes Shield or Parry only when it turns a hit into a miss and an Opportunity Attack only when it is worth more than the reaction held back, and agent clauses on any stat block are left out. Engine {}.</p>\n  </section>\n\n",
         s.policy.version, esc(&s.engine_version)
     ));
     h.push_str("  <footer>\n    <p>This work includes material from the System Reference Document 5.2.1 (\"SRD 5.2.1\") by Wizards of the Coast LLC, available at <a href=\"https://www.dndbeyond.com/srd\">https://www.dndbeyond.com/srd</a>. The SRD 5.2.1 is licensed under the <a href=\"https://creativecommons.org/licenses/by/4.0/legalcode\">Creative Commons Attribution 4.0 International License</a>. The SRD-derived material is modified here by reformatting and restructuring into a report. The difficulty bands and results above are Homebrew Bench analysis, not SRD tables.</p>\n  </footer>\n</main>\n</body>\n</html>\n");
@@ -1419,7 +1419,8 @@ mod tests {
         assert!(all.contains("    knight: Parry (") || all.contains("    knight: holds its reaction ("), "no Parry window was decided");
         let html = run(&s).unwrap().html;
         assert!(html.contains("takes Shield or Parry only when it turns a hit into a miss"));
-        assert!(html.contains("Haste's extra action as one more attack, a push as the melee it denies, and a teleport as the Opportunity Attacks it avoids, gives other unscored effects no value, reads Advantage, Disadvantage and automatic save failures from the same sources the engine rolls with"));
+        assert!(html.contains("over up to two rounds, no more than the fight is expected to last, weighted by the chance the caster keeps concentration, on the ally it helps most, "));
+        assert!(html.contains("Haste's extra action as one more attack less a lost turn when lethargy is likely, a push as the melee it denies, and a teleport as the Opportunity Attacks it avoids, gives other unscored effects no value, reads Advantage, Disadvantage and automatic save failures from the same sources the engine rolls with"));
         assert!(!html.contains("gives buffs"));
     }
 
@@ -1438,14 +1439,39 @@ mod tests {
         }
     }
 
-    fn level_5_logs(monster: &str, fights: u32) -> Vec<String> {
-        let s = spec(fixture(monster), vec![5], fights);
+    /// An ogre with 400 HP that the standard caster's spells can't hurt or control, so it ranks
+    /// another PC first and the caster hastes in a long fight. With `stomp`, a Recharge 6 area
+    /// catches the caster now and then and can break its concentration.
+    fn hasting_ogre(stomp: bool) -> StatBlock {
+        use crate::stat_block::{Condition, DamageType};
+        let mut ogre = fixture("ogre");
+        ogre.hit_points.average = 400;
+        ogre.damage_immunities = vec![DamageType::Fire, DamageType::Force, DamageType::Thunder, DamageType::Lightning, DamageType::Cold];
+        ogre.condition_immunities = vec![Condition::Charmed, Condition::Incapacitated, Condition::Paralyzed, Condition::Unconscious];
+        if !stomp {
+            return ogre;
+        }
+        ogre.actions.push(
+            serde_json::from_value(serde_json::json!({"id": "stomp", "name": "Stomp", "kind": "modeled", "usage": {"recharge": {"dice": "6"}},
+                "effects": [{"area": {"area": {"sphere": {"radius": 30}}, "origin": "self_", "target_count": 4, "effect": {"saving_throw": {
+                    "ability": "dex", "dc": 13, "damage": [{"dice": "3d6", "type": "bludgeoning"}], "half_on_success": true, "no_damage_on_success": false}}}}]}))
+            .unwrap(),
+        );
+        ogre
+    }
+
+    /// Level 5 fights against the hasting ogre, with a striker sturdy enough to outlast it.
+    fn hasting_logs(stomp: bool, fights: u32) -> Vec<String> {
+        let mut s = spec(hasting_ogre(stomp), vec![5], fights);
+        for pc in s.party.get_mut(&5).unwrap().iter_mut().filter(|b| b.id == "standard-striker-05") {
+            pc.hit_points.average = 400;
+        }
         (0..fights).map(|i| replay_fight(&s, fight_index(5, i, fights)).unwrap().log.unwrap()).collect()
     }
 
     #[test]
     fn a_hasted_striker_makes_one_extra_attack_per_turn_and_never_a_multiattack() {
-        let logs = level_5_logs("ogre", 12);
+        let logs = hasting_logs(false, 12);
         let mut extra_attacks = 0;
         for log in &logs {
             let lines: Vec<&str> = log.lines().collect();
@@ -1475,7 +1501,7 @@ mod tests {
 
     #[test]
     fn when_haste_ends_the_striker_loses_its_next_turn() {
-        let logs = level_5_logs("ogre", 40);
+        let logs = hasting_logs(true, 40);
         let mut ended = 0;
         for log in &logs {
             let Some(at) = log.find("haste ends on standard-striker-05") else { continue };
@@ -1490,9 +1516,7 @@ mod tests {
 
     #[test]
     fn a_failed_extra_action_is_reported_as_a_lost_extra_action() {
-        let mut ogre = fixture("ogre");
-        ogre.hit_points.average = 400;
-        let mut s = spec(ogre, vec![5], 6);
+        let mut s = spec(hasting_ogre(false), vec![5], 6);
         for pc in s.party.get_mut(&5).unwrap().iter_mut().filter(|b| b.id == "standard-striker-05") {
             for a in pc.actions.iter_mut() {
                 set_damage_dice(a, "70");
