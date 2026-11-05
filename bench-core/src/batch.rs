@@ -1439,6 +1439,16 @@ mod tests {
         }
     }
 
+    #[test]
+    fn an_engaged_striker_shooting_the_ogre_names_the_close_combat_source() {
+        let s = spec(fixture("ogre"), vec![1], 10);
+        let all: String = (0..10).map(|i| replay_fight(&s, fight_index(1, i, 10)).unwrap().log.unwrap()).collect::<Vec<_>>().join("\n");
+        assert!(
+            all.lines().any(|l| l.trim_start().starts_with("Standard Striker (Level 1) attacks Ogre: ") && l.ends_with(" (Disadvantage: ranged attack in close combat)")),
+            "no engaged striker shot"
+        );
+    }
+
     /// An ogre with 400 HP that the standard caster's spells can't hurt or control, so it ranks
     /// another PC first and the caster hastes in a long fight. With `stomp`, a Recharge 6 area
     /// catches the caster now and then and can break its concentration.

@@ -3,7 +3,7 @@ id: 077
 title: Build ranged attacks in close combat
 type: task
 mode: AFK
-status: open
+status: closed
 blocked_by: [076]
 claimed: false
 ---
@@ -55,3 +55,33 @@ Versions and baseline:
 - Measure before closing, as 073 did: release builds of master and the branch from `git archive` in a temp dir with `HOME=$(mktemp -d)`, `bench batch <id> --levels <L> --fights 100 --seed 7` for goblin warrior, knight, ogre and adult red dragon at levels 5, 11 and 17. Report wins, PC deaths, monster DPR mean and rounds mean.
 
 ## Resolution
+
+Built as asked. Engine 0.1.14, `POLICY_VERSION` stays 3, curve not regenerated.
+
+- Engine. `Attack::is_ranged(target_within)` (`effect.rs`) is the rule's reading: a range and either no reach or a target that isn't within 5 feet. The ticket asked for "a range and no reach"; the audit tightened it, because the 2024 rules make a thrown weapon (23 SRD fixture attacks have reach and range) a ranged attack against a target out of reach, so an engaged creature throwing a javelin at another foe takes the Disadvantage. `AttackFilter` is unchanged. Its doc comment names every reading of "ranged": the filter, `engine::is_melee_attack`, and the policy's `needs_engaged` and `has_ranged_attack` read `range` alone (can it be made at range), and the close-combat rule reads `is_ranged` (is this roll ranged). `disposition(state, actor, target, attack)` and `disposition_with(state, actor, target, attack, within)` replace the old `within: bool` and `extra` parameters with `engine::Within`: `Held` (engagement on either side), `HeldAnd(id)` (held plus the target the plan moves in to) and `Nobody` (stepped out). The target's Prone and the new `in_close_combat` source both read it. An enemy counts when it is on another side, within, `can_act` (Active and no `STOPS_ACTING` condition, which covers downed and dead) and `sees` the attacker. The attack event adds `(Disadvantage: ranged attack in close combat)` beside lighting sources when the roll goes that way. Both d20s are still drawn every time.
+- Policy. `Footing::ranged_in_melee` and its computation are gone; `effect_value` maps `Moves` to `Within` and calls the engine. The policy's copy of `can_act` is gone; it uses the engine's, now `pub(crate)`, so one function reads `STOPS_ACTING`. The step-out comparison is unchanged and now prices the engine's real Disadvantage: an archer engaged only with an Incapacitated brute shoots straight and stays. 063's and 073's step-out and teleport tests pass with no state changes.
+- Tests. Engine: bow vs. thrown dagger vs. sword at the engaged foe; a javelin thrown by an engaged creature at an unengaged foe (Disadvantage), at its engaged foe, after moving in, and with nobody engaged (straight); near band; engagement recorded only on the enemy; Incapacitated, Paralyzed, Stunned, Unconscious, Petrified, downed, stable and dead enemies; Invisible archer with and without Truesight; Blinded enemy; engaged ally; two enemies and a cancelling Restrained target; `disposition_with` over each `Within`; the event note. Policy: engaged archer scores Disadvantage and stays; Incapacitated brute scores straight and stays; a shot read under each footing. Batch: an engaged level 1 standard striker shooting the ogre (seed-fixed) logs the source.
+- Deviation. The ticket's policy case "a melee plan that moves in and also carries a ranged attack" can't arise through `plan_for`: `needs_engaged` moves in only when every attack is melee. The test checks `effect_value` directly under `Moves::In` instead. The ticket's "Stunned brute" case is tested with Incapacitated, because Stunned also gives the shot Advantage against the brute.
+- Docs. ADR 0017 lists the rule; ADR 0012's "Teleports and roll sources" says the source is the engine's; live-mode.md's engagement paragraph gains the rule (the shell guard did not hold the edit); CHANGELOG under Changed. CONTEXT.md **Engaged** still matches.
+- Checks. `cargo test --workspace` passes; `a_fixture_regenerates_to_its_committed_row` still matches, so no `#[ignore]`. Clippy shows only the two known engine.rs errors. `python3 -I scripts/import-srd-monsters.py` exits 0 with 341 of 341.
+
+Seed 7, 100 fights, master (0.1.13) to branch, as wins / PC deaths / monster DPR mean / rounds mean. Goblin warrior and centaur trooper refuse to batch without assumptions (unmodeled attacks) on both builds, so they are left out. After the audit's thrown-weapon change every cell below was measured again and is unchanged.
+
+| Cell | Master | Branch |
+|---|---|---|
+| knight L5, L11, L17 | 100/0/7.56/2.09, 100/0/4.18/1.19, 100/0/3.86/1.07 | identical |
+| ogre L5, L17 | 100/0/3.97/1.95, 100/0/1.20/1.05 | identical |
+| ogre L11 | 100/0/1.61/1.18 | 100/0/1.61/1.19 |
+| adult red dragon L5, L11, L17 | 0/100/123.14/2.29, 43/57/96.18/4.70, 99/1/114.28/2.94 | identical |
+| scout L5, L11, L17 | 100/0/2.50/1.04, 100/0/1.67/1.00, 100/0/0.77/1.00 | identical |
+| ogre L1 | 91/13/4.52/4.35 | 91/13/4.47/4.40 |
+| ogre L3 | 100/0/4.05/2.56 | 100/0/4.33/2.78 |
+| knight L1 | 21/84/13.69/5.15 | 23/82/13.40/5.12 |
+| knight L3 | 85/16/11.00/4.83 | 85/16/11.13/4.81 |
+| gnoll warrior L1 | 100/1/1.87/1.96 | 100/1/1.84/1.97 |
+| bandit captain L1 | 91/12/5.42/3.91 | 91/12/5.43/3.90 |
+| bandit captain L3 | 100/0/4.86/2.63 | 100/0/4.68/2.66 |
+
+Scout L1 and L3 and gnoll warrior L3 are identical. The shift is small. The policy already scored engaged shots at Disadvantage, so engaged shooters mostly stepped out or used a melee attack, and engaged shots were rare. Cells move where an engaged shot still happens (the engine now rolls it at Disadvantage, where it rolled straight before) or where the engaged foe can't act or see the shooter (the policy now scores it straight).
+
+No new tickets or fog. With 077 closed, [Build teleport subject](../tickets/078-build-teleport-subject.md) is takeable.

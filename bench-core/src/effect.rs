@@ -14,7 +14,13 @@ pub enum ReactionTrigger {
     HitByAttackRoll { attack: AttackFilter },
 }
 
-/// Which attack rolls a hit trigger answers. A melee attack is one with no range.
+/// Which attack rolls a hit trigger answers. A melee attack is one with no range, so a thrown
+/// weapon matches `Ranged`. The readings of "ranged" differ on purpose:
+/// - This filter, the Opportunity Attack default (`engine::is_melee_attack`) and the batch
+///   policy's `needs_engaged` and `has_ranged_attack` ask whether an attack *can* be made at
+///   range, from `range` alone: a thrown weapon can, so it never forces a move in.
+/// - The close-combat rule asks whether one roll *is* ranged, through `Attack::is_ranged`: a
+///   thrown weapon is melee at an engaged target and ranged at any other.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum AttackFilter {
@@ -179,6 +185,15 @@ pub struct Attack {
     pub damage: Vec<Damage>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub on_hit: Vec<Effect>,
+}
+
+impl Attack {
+    /// The attack roll is a ranged attack for the close-combat rule (PHB p. 25): it has a range,
+    /// and either no reach or a target that isn't within 5 feet (`target_within`, engaged). A
+    /// thrown weapon has both: at an engaged target it is a melee attack, at any other a ranged one.
+    pub fn is_ranged(&self, target_within: bool) -> bool {
+        self.range.is_some() && (self.reach.is_none() || !target_within)
+    }
 }
 
 /// Saving-throw effect with its success semantics.
