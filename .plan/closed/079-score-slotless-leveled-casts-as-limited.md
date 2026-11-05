@@ -3,9 +3,9 @@ id: 079
 title: Score slotless leveled casts as limited
 type: task
 mode: AFK
-status: open
+status: closed
 blocked_by: []
-claimed: true
+claimed: false
 ---
 
 ## Question
@@ -20,3 +20,8 @@ Consult `tdd` and `code-review`. The engine side is `cast_level` and `spend_slot
 
 ## Resolution
 
+Built. A new `cast_slot(block, cast)` in `bench-core/src/tactics.rs` reads a cast's slot as the engine spends it: the named `slot_level`, or, when the cast names none and the caster has `spell_slots`, the spell's level from the effects catalog. A cantrip, a spell missing from the catalog, or a slotless cast on a creature without `spell_slots` gives none. `is_limited`, `slot_level` and `usage_word` now take the stat block and go through `cast_slot`, so the limited-use bar in `pick_best`, the resource cost in every plan, the reason's `level N slot` and the cheapest-reaction order in `decide_hit` all agree with the engine. `teleport_plan` and `modifier_plan` take the block to reach it.
+
+A cast that names a slot level on a creature with no `spell_slots` (the 14 dragon upcasts) still counts as limited, though the engine spends nothing for it. That mismatch already existed and is left alone, because changing it would move SRD numbers.
+
+Engine 0.1.16, `POLICY_VERSION` stays 3. Since ticket 074 the tests require a curve that matches the engine version, so `data/baseline/curve.json` was regenerated (1m53s). It differs from the committed curve only in `engine_version`, which confirms that no SRD fixture or standard-party cell moves. Test: `a_slotless_leveled_cast_uses_a_slot_only_when_the_caster_has_slots`. Workspace tests pass. A haiku audit approved the change on the first round. No CI runs on branch pushes (`release.yml` runs on pull requests and tags only), so nothing was pushed.
