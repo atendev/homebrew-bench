@@ -59,7 +59,7 @@ Defaults are levels `1-20` and 100 fights per level. Narrow with `--levels 5` or
 
 Every fight runs with lighting `unspecified` unless you pass `--lighting <dim_light|bright_light|sunlight>`, and `unspecified` turns no lighting trait on. When the monster has a sunlight or Bright Light trait, run a second batch with `--lighting sunlight` or `--lighting bright_light` and the same seed, and report both. A Dim Light trait is off by default; tell the user to run `--lighting dim_light` to see it. The report's Lighting row and each lighting trait's finding ("Applies in sunlight; on in this run.") say which light the numbers assume.
 
-If the batch errors with unresolved ids, return to step 2 for those ids. If it refuses an ability because "a cast's slot level is below the spell's level", the cast could never be used: raise its `slot_level` to at least the spell's level, or drop it so the spell's own level applies, and revalidate.
+If the batch errors with unresolved ids, return to step 2 for those ids. If it refuses an ability because "a cast's slot level is below the spell's level", the cast could never be used: raise its `slot_level` to at least the spell's level, or drop it so the spell's own level applies, and revalidate. If it refuses one because "a cantrip's cast names a slot level", drop the cantrip's `slot_level` and revalidate.
 
 ## 4. Report
 
