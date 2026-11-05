@@ -91,6 +91,7 @@ Both modes ship in phase 1. Everything the engine can't model is labeled agent j
 - [Build saving-throw condition sources](closed/069-build-saving-throw-condition-sources.md): Paralyzed, Petrified, Stunned and Unconscious creatures and downed PCs fail Strength and Dexterity saves without a die or prompt (repeat saves too), a Restrained creature has Disadvantage on Dexterity saves, and timed save modifiers on the saver's bearer reach `save_disposition`, so Haste gives Advantage on Dexterity saves. `automatic_save_failure`, `save_disposition` and `save_modifier` are `pub(crate)` for ticket 056's save scoring. The engine is 0.1.9, the curve stays stale for 056, and the calibration fixture row still matches. The live-mode reference line went to ticket 072 after the shell guard held the edit.
 - [Build massive damage at 0 Hit Points](closed/071-build-massive-damage-at-zero-hit-points.md): a dying or Stable PC dies outright when one hit's damage, after Temporary Hit Points, meets its Hit Point maximum; a lesser hit gives one failure (two on a critical) as before, and Temporary HP now soaks hits on downed PCs. Dropping to 0 HP, dying or gaining an incapacitating condition now ends concentration, with no save on the dropping hit. The engine is 0.1.10, the curve stays stale for 056, and the calibration fixture row still matches.
 - [Batch warns when plans fail or casts are never ready](closed/070-batch-warns-on-quiet-plan-failures.md): `bench batch` adds one warning per distinct (combatant, action, engine error) behind a refused plan across every fight, most frequent first, with how many turns it cost; a stat block whose cast's slot level is below the spell's level fails at load. Fights don't change, so the engine stays 0.1.10 and batch output on ogre and adult red dragon is byte-identical to master.
+- [Build v3 scoring for buffs and forced movement](closed/056-build-v3-scoring-for-buffs-forced-movement-and-teleports.md): a buff is valued over `BUFF_HORIZON` (2) rounds on the actor or the living ally it helps most (AC at `AC_POINT_VALUE` per point of attack-roll damage on the bearer, attack bonus at `AC_POINT_VALUE` of its threat, save Advantage at 0.3 of damage from saves of that ability, an extra action at one allowed attack unless the bearer can't act), ties to the actor then the lower id, 0 on a bearer that already has it; batch takes Haste's extra action as a third turn section with `plan_failed` routing; a push scores 0.25 or 1.0 of a melee-only target's threat. Engine 0.1.11, policy stays v3, curve not regenerated. Caster Haste makes the standard party weaker in every measured cell (adult red dragon level 17 wins 100 to 92), raised as ticket 075.
 
 ## Not yet specified
 
@@ -120,10 +121,10 @@ Both modes ship in phase 1. Everything the engine can't model is labeled agent j
 Takeable now, in order:
 
 - Document saving-throw condition sources in live mode (task, AFK); the live-mode line ticket 069 couldn't add
-- Build v3 scoring for buffs and forced movement (task, AFK); every blocker is closed. Split for size on 2026-11-04 into this, the teleport and dispositions build, and the one regeneration
+- Build v3 teleport scoring and engine-sourced policy dispositions (task, AFK); Build v3 scoring for buffs is closed
+- Should Haste's batch value count concentration risk and short fights (grilling, HITL); from ticket 056's cell-shift check. If it changes v3 scoring, the regeneration should wait for its build
 
 Blocked:
 
-- Build v3 teleport scoring and engine-sourced policy dispositions (task, AFK), waits on Build v3 scoring for buffs
-- Regenerate the baseline for policy v3 (task, AFK), waits on both v3 scoring builds; the only regeneration
+- Regenerate the baseline for policy v3 (task, AFK), waits on Build v3 teleport scoring; the only regeneration
 - Do dragons still read above their CR on the v3 curve (task, AFK), waits on Regenerate the baseline for policy v3; it takes over the dragon fog item, whose reactions half policy v3 now covers

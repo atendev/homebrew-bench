@@ -10,7 +10,7 @@ claimed: false
 
 ## Question
 
-Split from [Build v3 scoring for buffs and forced movement](056-build-v3-scoring-for-buffs-forced-movement-and-teleports.md) for size. In `bench-core/src/tactics.rs`, score teleports by the Opportunity Attacks they avoid, and make the policy read attack and save dispositions from the engine instead of its own partial lists. Amend ADR 0012 where these change it. `POLICY_VERSION` stays 3. Batch numbers change, so bump the workspace version one patch. Don't regenerate `data/baseline/curve.json`. If `a_fixture_regenerates_to_its_committed_row` differs, add `#[ignore = "curve stale until ticket 074 regenerates it"]`.
+Split from [Build v3 scoring for buffs and forced movement](../closed/056-build-v3-scoring-for-buffs-forced-movement-and-teleports.md) for size. In `bench-core/src/tactics.rs`, score teleports by the Opportunity Attacks they avoid, and make the policy read attack and save dispositions from the engine instead of its own partial lists. Amend ADR 0012 where these change it. `POLICY_VERSION` stays 3. Batch numbers change, so bump the workspace version one patch. Don't regenerate `data/baseline/curve.json`. If `a_fixture_regenerates_to_its_committed_row` differs, add `#[ignore = "curve stale until ticket 074 regenerates it"]`.
 
 ## Notes
 

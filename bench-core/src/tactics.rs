@@ -9,7 +9,7 @@
 
 use serde::{Deserialize, Serialize};
 
-use crate::effect::{Area, AttackFilter, Effect, ModifierChange, ModifierTarget, MultiattackStep, ReactionTrigger, Usage};
+use crate::effect::{Area, AttackFilter, Duration, Effect, ExtraActionUse, ModifierBearer, ModifierChange, ModifierTarget, MultiattackStep, ReactionTrigger, TimedModifier, Usage};
 use crate::encounter::{Combatant, EncounterState, EndState, RangeBand};
 use crate::engine;
 use crate::reaction::{ReactionAnswer, ReactionWindow, WindowTrigger};
@@ -24,6 +24,14 @@ pub const POLICY_VERSION: u32 = 3;
 /// d20 lands in an n-point band 5n% of the time, near 0.1n of the expected
 /// damage (ADR 0012). The reaction reserve prices Shield and Parry with it.
 pub const AC_POINT_VALUE: f64 = 0.1;
+
+/// Rounds a timed modifier is valued over (ADR 0012). A concentration or longer duration
+/// counts as the whole horizon.
+pub const BUFF_HORIZON: u32 = 2;
+
+/// Share of a bearer's incoming damage that Advantage on saving throws is worth per round
+/// (ADR 0012).
+pub const SAVE_ADVANTAGE_VALUE: f64 = 0.3;
 
 /// Score weights. Resource cost is 0.0 because a batch fight is one encounter.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
@@ -108,6 +116,8 @@ pub enum Section {
     Action,
     Bonus,
     Legendary,
+    /// The extra action a modifier grants, such as Haste's; only actions the engine allows for it.
+    Extra,
 }
 
 /// One band change relative to one combatant, priced by the step engine.
@@ -194,14 +204,21 @@ pub fn choose(state: &EncounterState, actor_id: &str, section: Section, constant
         return None;
     }
     let block = ctx.block(actor)?;
+    let extra_uses = match section {
+        Section::Extra => Some(engine::extra_action_uses(state, actor_id)?),
+        _ => None,
+    };
     let abilities: &[AbilityEntry] = match section {
-        Section::Action => &block.actions,
+        Section::Action | Section::Extra => &block.actions,
         Section::Bonus => &block.bonus_actions,
         Section::Legendary => &block.legendary_actions,
     };
     let mut candidates: Vec<Plan> = Vec::new();
     for ability in abilities {
         if ability.effects.is_empty() || !engine::ability_ready(state, actor_id, ability) {
+            continue;
+        }
+        if extra_uses.as_ref().is_some_and(|uses| !engine::extra_action_allows(uses, ability)) {
             continue;
         }
         if is_consumable(block, ability) && !ctx.consumable_allowed(actor, block) {
@@ -297,6 +314,32 @@ impl Value {
 
     fn scaled(self, factor: f64) -> Value {
         Value { damage: self.damage * factor, control: self.control * factor, heal: self.heal * factor }
+    }
+}
+
+/// Which rolls an incoming-damage sum counts: attack rolls through a filter, or saving throws
+/// of one ability (any ability when `None`).
+#[derive(Debug, Clone, Copy)]
+enum Rolls {
+    Attacks(AttackFilter),
+    Saves(Option<crate::stat_block::Ability>),
+}
+
+#[derive(Debug, Clone, Default)]
+struct BearerValue {
+    damage: f64,
+    survival: f64,
+    /// Per-round value of an extra action, already counted in `damage`.
+    extra_action: f64,
+    notes: Vec<String>,
+}
+
+impl BearerValue {
+    fn add(&mut self, other: &BearerValue) {
+        self.damage += other.damage;
+        self.survival += other.survival;
+        self.extra_action += other.extra_action;
+        self.notes.extend(other.notes.iter().cloned());
     }
 }
 
@@ -429,15 +472,22 @@ impl<'a> Ctx<'a> {
         })
     }
 
-    /// Casting a concentration spell would end one whose conditions still hold an opponent.
+    /// Casting a concentration spell would end one whose conditions still hold an opponent,
+    /// or whose concentration modifiers are still on a combatant (a Haste on an ally).
     fn breaks_own_concentration(&self, actor: &Combatant, block: &StatBlock, ability: &AbilityEntry) -> bool {
         let concentration = ability.effects.iter().any(|e| match e {
             Effect::Cast(c) => engine::bound_cast_effects(block, c).is_some_and(|(_, conc)| conc),
             _ => false,
         });
+        let own = Some(actor.id.as_str());
+        let holds_modifier = self
+            .state
+            .active_modifiers
+            .iter()
+            .any(|m| m.source.as_deref() == own && matches!(m.remaining, Duration::Concentration));
         concentration
             && actor.concentration.is_some()
-            && self.opponents(actor).any(|o| o.conditions.iter().any(|c| c.source.as_deref() == Some(actor.id.as_str())))
+            && (holds_modifier || self.opponents(actor).any(|o| o.conditions.iter().any(|c| c.source.as_deref() == own)))
     }
 
     fn heals(&self, block: &StatBlock, effects: &[Effect]) -> bool {
@@ -469,6 +519,11 @@ impl<'a> Ctx<'a> {
         if self.heals(block, &ability.effects) {
             return self.heal_plan(actor, block, ability, section, resource);
         }
+        let (modifiers, only_modifiers) = top_modifiers(block, &ability.effects, 0);
+        if !modifiers.is_empty() && only_modifiers {
+            return self.modifier_plan(actor, ability, section, resource, &modifiers);
+        }
+        let own = self.bearer_value(actor, modifiers.iter().filter(|m| m.bearer == ModifierBearer::Actor));
         if let Some((area, effect)) = area_of(block, &ability.effects) {
             return self.area_plan(actor, block, ability, section, resource, &area, &effect, false);
         }
@@ -514,10 +569,10 @@ impl<'a> Ctx<'a> {
             }
             value.damage = value.damage.min(hit_points(target));
             let kill = if value.damage >= hit_points(target) { self.threat(target) } else { 0.0 };
-            let survival = kill - penalty;
+            let survival = kill - penalty + own.survival;
             let w = &self.constants.weights;
             let cost = if is_limited(ability) { 1.0 } else { 0.0 };
-            let score = w.expected_damage * value.damage + w.control * value.control + w.survival * survival - w.resource_cost * cost;
+            let score = w.expected_damage * (value.damage + own.damage) + w.control * value.control + w.survival * survival - w.resource_cost * cost;
             let mut reason = format!(
                 "top-priority target {} (threat {:.1}), expected damage {:.1}",
                 target.id,
@@ -550,6 +605,109 @@ impl<'a> Ctx<'a> {
             });
         }
         None
+    }
+
+    /// A plan for an ability whose effects are all timed modifiers. `self` modifiers are valued
+    /// on the actor; `target` ones on the actor or a living ally, whichever scores best (ties to
+    /// the actor, then the lower id), and the plan targets that bearer.
+    fn modifier_plan(&self, actor: &Combatant, ability: &AbilityEntry, section: Section, resource: Option<String>, modifiers: &[TimedModifier]) -> Option<Plan> {
+        let targeted = modifiers.iter().any(|m| m.bearer == ModifierBearer::Target);
+        let mut bearers = vec![actor];
+        if targeted {
+            let mut allies: Vec<&Combatant> = self.allies(actor).filter(|a| a.id != actor.id && a.end_state == EndState::Active).collect();
+            allies.sort_by(|a, b| a.id.cmp(&b.id));
+            bearers.extend(allies);
+        }
+        let own = self.bearer_value(actor, modifiers.iter().filter(|m| m.bearer == ModifierBearer::Actor));
+        let w = &self.constants.weights;
+        let cost = if is_limited(ability) { 1.0 } else { 0.0 };
+        let mut best: Option<(f64, &Combatant, BearerValue)> = None;
+        for bearer in bearers {
+            let mut value = self.bearer_value(bearer, modifiers.iter().filter(|m| m.bearer == ModifierBearer::Target));
+            value.add(&own);
+            let score = w.expected_damage * value.damage + w.survival * value.survival - w.resource_cost * cost;
+            if best.as_ref().map_or(true, |(b, _, _)| score > b + 1e-9) {
+                best = Some((score, bearer, value));
+            }
+        }
+        let (score, bearer, value) = best?;
+        let mut notes = value.notes.clone();
+        if value.extra_action > 0.0 {
+            notes.push(format!("extra action {:.1}", value.extra_action));
+        }
+        Some(Plan {
+            actor_id: actor.id.clone(),
+            section,
+            action_id: ability.id.clone(),
+            targets: if targeted { vec![bearer.id.clone()] } else { vec![] },
+            movement: vec![],
+            picks: vec![],
+            expected_damage: value.damage,
+            control: 0.0,
+            survival: value.survival,
+            score,
+            reason: format!("{} on {} ({})", ability.id, bearer.id, notes.join(", ")),
+            resource,
+            area: None,
+        })
+    }
+
+    /// What `modifiers` are worth on `bearer` over the buff horizon (ADR 0012). A modifier
+    /// scores 0 on a bearer that already has one from the same `source_ability`.
+    fn bearer_value<'m>(&self, bearer: &Combatant, modifiers: impl Iterator<Item = &'m TimedModifier>) -> BearerValue {
+        let mut out = BearerValue::default();
+        for m in modifiers {
+            let held = m.source_ability.as_deref().is_some_and(|ability| {
+                self.state.active_modifiers.iter().any(|a| a.bearer() == Some(bearer.id.as_str()) && a.source_ability.as_deref() == Some(ability))
+            });
+            let rounds = f64::from(horizon(&m.duration));
+            if held || rounds == 0.0 {
+                continue;
+            }
+            match (&m.target, &m.change) {
+                (ModifierTarget::ArmorClass, ModifierChange::Add(n)) if *n > 0 => {
+                    let attacks = self.incoming_rolls(bearer, Rolls::Attacks(AttackFilter::Any)).0;
+                    out.survival += attacks * AC_POINT_VALUE * f64::from(*n) * rounds;
+                    out.notes.push(format!("+{n} AC against {attacks:.1} attack damage"));
+                }
+                (ModifierTarget::SavingThrows { ability }, ModifierChange::Advantage) => {
+                    let saves = self.incoming_rolls(bearer, Rolls::Saves(*ability)).0;
+                    out.survival += saves * SAVE_ADVANTAGE_VALUE * rounds;
+                    out.notes.push(match ability {
+                        Some(a) => format!("advantage on {0} saves against {saves:.1} {0} save damage", ability_word(*a)),
+                        None => format!("advantage on saves against {saves:.1} save damage"),
+                    });
+                }
+                (ModifierTarget::AttackRolls, ModifierChange::Add(n)) if *n > 0 => {
+                    out.damage += self.threat(bearer) * AC_POINT_VALUE * f64::from(*n) * rounds;
+                    out.notes.push(format!("+{n} to attack rolls"));
+                }
+                (ModifierTarget::ExtraAction { only }, _) => {
+                    let per_round = self.extra_action_value(bearer, only);
+                    out.damage += per_round * rounds;
+                    out.extra_action += per_round;
+                }
+                _ => {}
+            }
+        }
+        out
+    }
+
+    /// The bearer's best expected damage from one action its extra action allows, against its
+    /// top-priority opponent, capped at that opponent's hit points; 0 when it can't act now,
+    /// as in Haste's lethargy.
+    fn extra_action_value(&self, bearer: &Combatant, only: &[ExtraActionUse]) -> f64 {
+        if !can_act(bearer) {
+            return 0.0;
+        }
+        let Some(block) = self.block(bearer) else { return 0.0 };
+        let Some(target) = self.ranked_opponents(bearer, None).into_iter().next() else { return 0.0 };
+        block
+            .actions
+            .iter()
+            .filter(|a| !a.effects.is_empty() && engine::extra_action_allows(only, a) && engine::ability_ready(self.state, &bearer.id, a))
+            .map(|a| self.ability_value(bearer, block, a, target, 0, false).0.damage.min(hit_points(target)))
+            .fold(0.0, f64::max)
     }
 
     fn heal_plan(&self, actor: &Combatant, block: &StatBlock, ability: &AbilityEntry, section: Section, resource: Option<String>) -> Option<Plan> {
@@ -827,9 +985,29 @@ impl<'a> Ctx<'a> {
             },
             Effect::Area(area) => self.effect_value(actor, block, &area.effect, target, depth + 1, ranged_in_melee).0,
             Effect::Multiattack(multi) => return self.multiattack_value(actor, block, &multi.steps, target, depth, ranged_in_melee),
-            Effect::TempHp(_) | Effect::TimedModifier(_) | Effect::RollModifier(_) | Effect::ForcedMove(_) | Effect::Teleport(_) | Effect::NoProvoke => Value::default(),
+            Effect::ForcedMove(m) => {
+                let factor = if depth > 3 { 0.0 } else { self.forced_move_factor(target, target_block, m) };
+                let target_threat = if factor == 0.0 || self.threat_nesting.get() >= MAX_THREAT_NESTING { 0.0 } else { self.threat(target) };
+                Value { control: factor * target_threat, ..Default::default() }
+            }
+            Effect::TempHp(_) | Effect::TimedModifier(_) | Effect::RollModifier(_) | Effect::Teleport(_) | Effect::NoProvoke => Value::default(),
         };
         (value, vec![])
+    }
+
+    /// Share of the target's threat a push denies (ADR 0012): 1.0 for a push of 35 feet or more
+    /// to Far on a target slower than 35 feet, 0.25 for a push of 5 feet or more, and 0 for a
+    /// pull or a target with any attack that doesn't need engagement.
+    fn forced_move_factor(&self, target: &Combatant, target_block: &StatBlock, m: &crate::effect::ForcedMove) -> f64 {
+        let attacks: Vec<Effect> = target_block.actions.iter().chain(&target_block.bonus_actions).flat_map(|a| a.effects.iter().cloned()).collect();
+        if m.direction.eq_ignore_ascii_case("pull") || m.feet < 5 || !needs_engaged(target_block, &attacks, 0) {
+            return 0.0;
+        }
+        if m.feet >= 35 && engine::walk_speed(self.state, target) < 35 {
+            1.0
+        } else {
+            0.25
+        }
     }
 
     /// Value of a multiattack and the picks that reach it: the best `pick`
@@ -943,14 +1121,16 @@ impl<'a> Ctx<'a> {
                     if n <= 0 {
                         return 0.0;
                     }
-                    let (d, h) = self.incoming_attack_rolls(reactor, filter);
+                    let (d, h) = self.incoming_rolls(reactor, Rolls::Attacks(filter));
                     (AC_POINT_VALUE * f64::from(n) * d).min(h)
                 })
                 .fold(0.0, f64::max)
         })
     }
 
-    fn incoming_attack_rolls(&self, reactor: &Combatant, filter: AttackFilter) -> (f64, f64) {
+    /// Expected damage `reactor`'s opponents deal it through the rolls `kind` selects, each
+    /// opponent using its best ready action for them, and the largest average attack hit among them.
+    fn incoming_rolls(&self, reactor: &Combatant, kind: Rolls) -> (f64, f64) {
         let mut expected = 0.0;
         let mut largest: f64 = 0.0;
         for foe in self.opponents(reactor).filter(|o| can_act(o)) {
@@ -959,7 +1139,7 @@ impl<'a> Ctx<'a> {
                 .actions
                 .iter()
                 .filter(|a| !a.effects.is_empty() && engine::ability_ready(self.state, &foe.id, a))
-                .map(|a| self.attack_roll_value(foe, block, &a.effects, reactor, filter, 0))
+                .map(|a| self.roll_value(foe, block, &a.effects, reactor, kind, 0))
                 .fold((0.0, 0.0), |b, v| if v.0 > b.0 + 1e-9 { v } else { b });
             expected += best.0;
             largest = largest.max(best.1);
@@ -967,7 +1147,7 @@ impl<'a> Ctx<'a> {
         (expected, largest)
     }
 
-    fn attack_roll_value(&self, actor: &Combatant, block: &StatBlock, effects: &[Effect], target: &Combatant, filter: AttackFilter, depth: u8) -> (f64, f64) {
+    fn roll_value(&self, actor: &Combatant, block: &StatBlock, effects: &[Effect], target: &Combatant, kind: Rolls, depth: u8) -> (f64, f64) {
         if depth > 4 {
             return (0.0, 0.0);
         }
@@ -976,7 +1156,7 @@ impl<'a> Ctx<'a> {
                 .actions
                 .iter()
                 .find(|a| a.id == id)
-                .map_or((0.0, 0.0), |a| self.attack_roll_value(actor, block, &a.effects, target, filter, depth + 1))
+                .map_or((0.0, 0.0), |a| self.roll_value(actor, block, &a.effects, target, kind, depth + 1))
         };
         let mut total = (0.0, 0.0f64);
         let mut add = |v: (f64, f64), count: f64| {
@@ -985,20 +1165,26 @@ impl<'a> Ctx<'a> {
         };
         for effect in effects {
             match effect {
-                Effect::Attack(a) if filter.matches(a) => {
+                Effect::Attack(a) if matches!(kind, Rolls::Attacks(filter) if filter.matches(a)) => {
                     let expected = self.effect_value(actor, block, effect, target, depth, false).0.damage;
                     add((expected, self.hit_average(actor, a, target)), 1.0);
+                }
+                Effect::SavingThrow(save) if matches!(kind, Rolls::Saves(ability) if ability.map_or(true, |a| a == save.ability)) => {
+                    add((self.effect_value(actor, block, effect, target, depth, false).0.damage, 0.0), 1.0);
+                }
+                Effect::Area(area) if matches!(kind, Rolls::Saves(_)) => {
+                    add(self.roll_value(actor, block, std::slice::from_ref(&*area.effect), target, kind, depth + 1), 1.0);
                 }
                 Effect::UseAction(u) => add(nested(&u.action_id), 1.0),
                 Effect::MoveThenAttack(m) => add(nested(&m.attack_id), 1.0),
                 Effect::Cast(c) => {
                     if let Some((fx, _)) = engine::bound_cast_effects(block, c) {
-                        add(self.attack_roll_value(actor, block, &fx, target, filter, depth + 1), 1.0);
+                        add(self.roll_value(actor, block, &fx, target, kind, depth + 1), 1.0);
                     }
                 }
                 Effect::Multiattack(m) => {
                     for step in &m.steps {
-                        add(self.multiattack_step_attack_rolls(actor, block, step, target, filter, depth + 1), 1.0);
+                        add(self.multiattack_step_rolls(actor, block, step, target, kind, depth + 1), 1.0);
                     }
                 }
                 _ => {}
@@ -1007,10 +1193,10 @@ impl<'a> Ctx<'a> {
         total
     }
 
-    fn multiattack_step_attack_rolls(&self, actor: &Combatant, block: &StatBlock, step: &MultiattackStep, target: &Combatant, filter: AttackFilter, depth: u8) -> (f64, f64) {
+    fn multiattack_step_rolls(&self, actor: &Combatant, block: &StatBlock, step: &MultiattackStep, target: &Combatant, kind: Rolls, depth: u8) -> (f64, f64) {
         let slot = |action_id: &str, cast: Option<&crate::effect::Cast>| match cast {
-            Some(c) => self.attack_roll_value(actor, block, &[Effect::Cast(c.clone())], target, filter, depth),
-            None => self.attack_roll_value(actor, block, &[Effect::UseAction(crate::effect::UseAction { action_id: action_id.into() })], target, filter, depth),
+            Some(c) => self.roll_value(actor, block, &[Effect::Cast(c.clone())], target, kind, depth),
+            None => self.roll_value(actor, block, &[Effect::UseAction(crate::effect::UseAction { action_id: action_id.into() })], target, kind, depth),
         };
         match step {
             MultiattackStep::Action { action_id, count, cast } => {
@@ -1033,7 +1219,7 @@ impl<'a> Ctx<'a> {
                 .iter()
                 .map(|set| {
                     set.iter()
-                        .map(|s| self.multiattack_step_attack_rolls(actor, block, s, target, filter, depth + 1))
+                        .map(|s| self.multiattack_step_rolls(actor, block, s, target, kind, depth + 1))
                         .fold((0.0, 0.0), |acc, v| (acc.0 + v.0, f64::max(acc.1, v.1)))
                 })
                 .fold((0.0, 0.0), |b, v| if v.0 > b.0 + 1e-9 { v } else { b }),
@@ -1385,7 +1571,45 @@ fn section_word(section: Section) -> &'static str {
         Section::Action => "action",
         Section::Bonus => "bonus action",
         Section::Legendary => "legendary action",
+        Section::Extra => "extra action",
     }
+}
+
+/// Rounds of a modifier's duration that count toward its value, at most [`BUFF_HORIZON`].
+fn horizon(duration: &Duration) -> u32 {
+    match duration {
+        Duration::Rounds(n) => (*n).min(BUFF_HORIZON),
+        Duration::UntilEndOfNextTurn => 1.min(BUFF_HORIZON),
+        Duration::Instant | Duration::TriggeringAttack | Duration::UntilEndOfTurn => 0,
+        _ => BUFF_HORIZON,
+    }
+}
+
+fn ability_word(ability: crate::stat_block::Ability) -> String {
+    serde_json::to_value(ability).ok().and_then(|v| v.as_str().map(str::to_string)).unwrap_or_default()
+}
+
+/// The timed modifiers among an ability's top-level effects, read through a cast's bound
+/// effects, and whether those are all its effects. Modifiers under a save, attack or area
+/// land on that effect's targets and are left out.
+fn top_modifiers(block: &StatBlock, effects: &[Effect], depth: u8) -> (Vec<TimedModifier>, bool) {
+    let mut found = Vec::new();
+    let mut only = true;
+    for e in effects {
+        match e {
+            Effect::TimedModifier(m) => found.push(m.clone()),
+            Effect::Cast(c) if depth < 4 => match engine::bound_cast_effects(block, c) {
+                Some((fx, _)) => {
+                    let (inner, inner_only) = top_modifiers(block, &fx, depth + 1);
+                    found.extend(inner);
+                    only &= inner_only;
+                }
+                None => only = false,
+            },
+            _ => only = false,
+        }
+    }
+    (found, only)
 }
 
 #[cfg(test)]
@@ -1901,7 +2125,7 @@ mod tests {
         let constants = PolicyConstants::default();
         let ctx = ctx(&state, &constants);
         let knight = ctx.combatant("knight").unwrap();
-        let (_, largest) = ctx.incoming_attack_rolls(knight, AttackFilter::Melee);
+        let (_, largest) = ctx.incoming_rolls(knight, Rolls::Attacks(AttackFilter::Melee));
         let held = ctx.reaction_reserve(knight);
         assert!(held > 0.0 && held <= largest + 1e-9, "{held} vs {largest}");
         let mut above = 0;
@@ -1960,6 +2184,255 @@ mod tests {
         let constants = PolicyConstants::default();
         let v2 = crate::encounter::tamper_hash(&serde_json::json!({ "id": POLICY_ID, "version": 2, "constants": constants }));
         assert_ne!(fingerprint(&constants), v2);
+    }
+
+    fn shove(feet: u32, direction: &str) -> Effect {
+        Effect::ForcedMove(crate::effect::ForcedMove { feet, direction: direction.into() })
+    }
+
+    fn forced_move_control(state: &EncounterState, effect: &Effect) -> (f64, f64) {
+        let constants = PolicyConstants::default();
+        let ctx = ctx(state, &constants);
+        let (ogre, a) = (ctx.combatant("ogre").unwrap(), ctx.combatant("a").unwrap());
+        let block = ctx.block(ogre).unwrap();
+        (ctx.effect_value(ogre, block, effect, a, 0, false).0.control, ctx.threat(a))
+    }
+
+    #[test]
+    fn a_push_scores_a_quarter_of_a_melee_only_targets_threat() {
+        let state = duel(["1d8", "1d8"], [20, 20]);
+        let (control, threat) = forced_move_control(&state, &shove(10, "push"));
+        assert!(threat > 0.0);
+        assert_eq!(control, 0.25 * threat);
+        assert_eq!(forced_move_control(&state, &shove(0, "push")).0, 0.0);
+    }
+
+    #[test]
+    fn a_push_to_far_scores_the_whole_threat_of_a_slow_melee_only_target() {
+        let mut state = duel(["1d8", "1d8"], [20, 20]);
+        let (control, threat) = forced_move_control(&state, &shove(35, "push"));
+        assert_eq!(control, threat);
+        snapshot(&mut state, "a").speeds.get_mut("walk").unwrap().feet = 35;
+        assert_eq!(forced_move_control(&state, &shove(35, "push")).0, 0.25 * threat);
+    }
+
+    #[test]
+    fn a_pull_or_a_target_with_a_ranged_attack_scores_no_forced_movement() {
+        let mut state = duel(["1d8", "1d8"], [20, 20]);
+        assert_eq!(forced_move_control(&state, &shove(40, "pull")).0, 0.0);
+        snapshot(&mut state, "a").bonus_actions = vec![ranged("dagger-throw", 5, "1d4")];
+        assert_eq!(forced_move_control(&state, &shove(10, "push")).0, 0.0);
+        snapshot(&mut state, "a").actions = vec![ranged("bow", 5, "1d8")];
+        assert_eq!(forced_move_control(&state, &shove(40, "push")).0, 0.0);
+    }
+
+    #[test]
+    fn a_shove_on_hit_scales_by_the_hit_chance() {
+        let mut state = duel(["1d8", "1d8"], [20, 20]);
+        let shoving = entry(serde_json::json!({"id": "slam", "name": "slam", "kind": "modeled", "effects": [{"attack": {"modifier": 5, "reach": 5,
+            "target_count": 1, "damage": [], "on_hit": [{"forced_move": {"feet": 10, "direction": "push"}}]}}]}));
+        snapshot(&mut state, "ogre").actions = vec![shoving];
+        let plan = choose_action(&state, "ogre");
+        assert_eq!(plan.action_id, "slam");
+        assert!(plan.control > 0.0 && plan.reason.contains("control"), "{}", plan.reason);
+    }
+
+    fn party_block(archetype: &str, level: u8) -> StatBlock {
+        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).parent().unwrap().join("data/party/standard");
+        let id = crate::party::block_id(archetype, level);
+        serde_json::from_str(&std::fs::read_to_string(root.join(format!("{id}.json"))).unwrap()).unwrap()
+    }
+
+    /// The level 5 caster, the given allies and an ogre with a heavy claw.
+    fn caster_with(allies: Vec<StatBlock>) -> EncounterState {
+        let caster = party_block("caster", 5);
+        let mut ogre = block("ogre", 80, 12);
+        ogre.actions.push(melee("claw", 6, "3d10"));
+        let mut combatants = vec![fighter("ogre", "monsters", 80)];
+        let mut fighters: Vec<Combatant> = std::iter::once(&caster).chain(&allies).map(|b| fighter(&b.id, "party", b.hit_points.average)).collect();
+        combatants.append(&mut fighters);
+        let blocks = std::iter::once(caster).chain(allies).chain(std::iter::once(ogre)).collect();
+        encounter(blocks, combatants)
+    }
+
+    fn hasted_by(source: &str, bearer: &str) -> Vec<crate::encounter::ActiveModifier> {
+        let caster = party_block("caster", 5);
+        let haste = caster.actions.iter().find(|a| a.id == "haste").unwrap();
+        let Effect::Cast(cast) = &haste.effects[0] else { panic!() };
+        engine::bound_cast_effects(&caster, cast)
+            .unwrap()
+            .0
+            .into_iter()
+            .map(|e| {
+                let Effect::TimedModifier(m) = e else { panic!() };
+                crate::encounter::ActiveModifier {
+                    target: m.target,
+                    change: m.change,
+                    remaining: m.duration,
+                    source: Some(source.into()),
+                    bearer: Some(bearer.into()),
+                    source_ability: m.source_ability,
+                    ends_on_damage: false,
+                    on_end: m.on_end,
+                }
+            })
+            .collect()
+    }
+
+    fn only_haste(state: &mut EncounterState) {
+        snapshot(state, "standard-caster-05").actions.retain(|a| a.id == "haste");
+    }
+
+    #[test]
+    fn the_caster_hastes_the_ally_with_the_highest_incoming_damage() {
+        let mut squire = block("squire", 30, 5);
+        squire.actions.clear();
+        let mut wall = block("wall", 30, 22);
+        wall.actions.clear();
+        let mut state = caster_with(vec![wall, squire]);
+        only_haste(&mut state);
+        let plan = choose_action(&state, "standard-caster-05");
+        assert_eq!(plan.action_id, "haste");
+        assert_eq!(plan.targets, ["squire"]);
+        assert!(plan.reason.starts_with("haste on squire (+2 AC against "), "{}", plan.reason);
+        assert!(plan.survival > 0.0 && plan.expected_damage == 0.0);
+    }
+
+    #[test]
+    fn ties_between_bearers_go_to_the_actor_then_the_lower_id() {
+        let mut twin = block("b-twin", 30, 12);
+        twin.actions.clear();
+        let mut other = block("a-twin", 30, 12);
+        other.actions.clear();
+        let mut state = caster_with(vec![twin, other]);
+        only_haste(&mut state);
+        snapshot(&mut state, "standard-caster-05").armor_class[0].value = 12;
+        assert_eq!(choose_action(&state, "standard-caster-05").targets, ["standard-caster-05"]);
+        state.active_modifiers = hasted_by("x", "standard-caster-05");
+        assert_eq!(choose_action(&state, "standard-caster-05").targets, ["a-twin"]);
+    }
+
+    #[test]
+    fn a_second_haste_on_an_already_hasted_ally_scores_zero() {
+        let mut squire = block("squire", 30, 5);
+        squire.actions.clear();
+        let mut state = caster_with(vec![squire]);
+        only_haste(&mut state);
+        state.active_modifiers = hasted_by("someone", "squire");
+        let plan = choose_action(&state, "standard-caster-05");
+        assert_eq!(plan.targets, ["standard-caster-05"], "{}", plan.reason);
+        state.active_modifiers.extend(hasted_by("someone", "standard-caster-05"));
+        assert!(choose(&state, "standard-caster-05", Section::Action, &PolicyConstants::default()).is_none());
+    }
+
+    #[test]
+    fn slows_riders_add_no_buff_value_to_the_caster() {
+        let mut state = caster_with(vec![]);
+        let slow = entry(serde_json::json!({"id": "slow", "name": "Slow", "kind": "modeled",
+            "effects": [{"cast": {"spell_id": "slow", "slot_level": 3, "upcast": false}}]}));
+        snapshot(&mut state, "standard-caster-05").actions = vec![slow];
+        assert!(choose(&state, "standard-caster-05", Section::Action, &PolicyConstants::default()).is_none());
+    }
+
+    #[test]
+    fn a_self_modifier_is_valued_on_the_actor_only() {
+        let mut squire = block("squire", 30, 5);
+        squire.actions.clear();
+        let mut state = caster_with(vec![squire]);
+        let ward = entry(serde_json::json!({"id": "ward", "name": "Ward", "kind": "modeled",
+            "effects": [{"timed_modifier": {"bearer": "self", "change": {"add": 3}, "duration": {"rounds": 1}, "source_ability": "ward", "target": "armor_class"}}]}));
+        snapshot(&mut state, "standard-caster-05").actions = vec![ward];
+        let plan = choose_action(&state, "standard-caster-05");
+        assert!(plan.targets.is_empty());
+        assert_eq!(plan.reason, "ward on standard-caster-05 (+3 AC against 13.2 attack damage)");
+        let claw = 0.75 * 16.5 + 0.05 * 16.5;
+        assert!((plan.survival - claw * 0.3).abs() < 1e-9, "{} vs {claw}", plan.survival);
+    }
+
+    fn self_buff(change: serde_json::Value, target: serde_json::Value) -> AbilityEntry {
+        entry(serde_json::json!({"id": "ward", "name": "Ward", "kind": "modeled",
+            "effects": [{"timed_modifier": {"bearer": "self", "change": change, "duration": {"rounds": 2}, "source_ability": "ward", "target": target}}]}))
+    }
+
+    fn breath(ability: &str) -> AbilityEntry {
+        entry(serde_json::json!({"id": "breath", "name": "Breath", "kind": "modeled", "effects": [{"saving_throw": {"ability": ability, "dc": 15,
+            "damage": [{"dice": "6d10", "type": "fire"}], "half_on_success": true, "no_damage_on_success": false}}]}))
+    }
+
+    #[test]
+    fn an_ac_buff_is_worth_nothing_against_a_monster_whose_damage_is_all_saves() {
+        let mut state = caster_with(vec![]);
+        snapshot(&mut state, "standard-caster-05").actions = vec![self_buff(serde_json::json!({"add": 3}), serde_json::json!("armor_class"))];
+        assert!(choose(&state, "standard-caster-05", Section::Action, &PolicyConstants::default()).is_some());
+        snapshot(&mut state, "ogre").actions = vec![breath("dex")];
+        assert!(choose(&state, "standard-caster-05", Section::Action, &PolicyConstants::default()).is_none());
+    }
+
+    #[test]
+    fn save_advantage_counts_only_damage_from_saves_of_its_ability() {
+        let mut state = caster_with(vec![]);
+        let nimble = self_buff(serde_json::json!("advantage"), serde_json::json!({"saving_throws": {"ability": "dex"}}));
+        snapshot(&mut state, "standard-caster-05").actions = vec![nimble];
+        assert!(choose(&state, "standard-caster-05", Section::Action, &PolicyConstants::default()).is_none(), "the claw is no save");
+        snapshot(&mut state, "ogre").actions = vec![breath("con")];
+        assert!(choose(&state, "standard-caster-05", Section::Action, &PolicyConstants::default()).is_none(), "a Con save");
+        snapshot(&mut state, "ogre").actions = vec![breath("dex")];
+        let plan = choose_action(&state, "standard-caster-05");
+        assert!(plan.reason.starts_with("ward on standard-caster-05 (advantage on dex saves against "), "{}", plan.reason);
+        assert!(plan.survival > 0.0);
+    }
+
+    #[test]
+    fn a_bearer_that_cant_act_gets_no_extra_action_value() {
+        let mut state = caster_with(vec![party_block("defender", 5), party_block("striker", 5)]);
+        let striker = state.combatants.iter_mut().find(|c| c.id == "standard-striker-05").unwrap();
+        striker.conditions.push(crate::encounter::ConditionInstance {
+            condition: Condition::Incapacitated,
+            duration: Duration::UntilEndOfNextTurn,
+            source: Some("standard-caster-05".into()),
+            ends_on_damage: false,
+        });
+        only_haste(&mut state);
+        let plan = choose_action(&state, "standard-caster-05");
+        assert_eq!(plan.targets, ["standard-defender-05"], "{}", plan.reason);
+        state.combatants.retain(|c| c.id != "standard-defender-05");
+        let plan = choose_action(&state, "standard-caster-05");
+        assert!(!plan.reason.contains("extra action"), "{}", plan.reason);
+    }
+
+    #[test]
+    fn the_caster_hastes_the_striker_over_itself_once_the_extra_attack_counts() {
+        let state = caster_with(vec![party_block("defender", 5), party_block("striker", 5)]);
+        let plan = choose_action(&state, "standard-caster-05");
+        assert_eq!((plan.action_id.as_str(), plan.targets.as_slice()), ("haste", ["standard-striker-05".to_string()].as_slice()), "{}", plan.reason);
+        assert!(plan.reason.contains("extra action "), "{}", plan.reason);
+        assert!(plan.expected_damage > 0.0);
+    }
+
+    #[test]
+    fn the_caster_doesnt_recast_haste_while_it_holds_one() {
+        let mut squire = block("squire", 30, 5);
+        squire.actions.clear();
+        let mut state = caster_with(vec![squire, party_block("striker", 5)]);
+        only_haste(&mut state);
+        state.active_modifiers = hasted_by("standard-caster-05", "standard-striker-05");
+        assert_eq!(choose_action(&state, "standard-caster-05").targets, ["squire"]);
+        state.combatants.iter_mut().find(|c| c.id == "standard-caster-05").unwrap().concentration = Some("haste".into());
+        assert!(choose(&state, "standard-caster-05", Section::Action, &PolicyConstants::default()).is_none());
+    }
+
+    #[test]
+    fn an_extra_action_plan_is_one_allowed_attack_and_needs_an_extra_action() {
+        let mut state = caster_with(vec![party_block("defender", 5)]);
+        let extra = |state: &EncounterState| choose(state, "standard-defender-05", Section::Extra, &PolicyConstants::default());
+        assert!(extra(&state).is_none());
+        state.active_modifiers = hasted_by("standard-caster-05", "standard-defender-05");
+        assert!(choose_action(&state, "standard-defender-05").action_id == "multiattack");
+        let plan = extra(&state).expect("an extra action plan");
+        assert_eq!((plan.action_id.as_str(), plan.section), ("longsword", Section::Extra));
+        assert!(plan.log_line().starts_with("DECISION standard-defender-05 extra action: longsword -> ogre"), "{}", plan.log_line());
+        state.combatants.iter_mut().find(|c| c.id == "standard-defender-05").unwrap().action_economy.extra_action_used = true;
+        assert!(extra(&state).is_none());
     }
 
     #[test]

@@ -688,11 +688,15 @@ fn decided(state: &EncounterState) -> Option<Outcome> {
 }
 
 fn take_turn(state: &mut EncounterState, actor: &str, constants: &PolicyConstants, log: &mut Log, damage: &mut i32) {
-    for section in [Section::Action, Section::Bonus] {
+    for section in [Section::Action, Section::Bonus, Section::Extra] {
         if decided(state).is_some() {
             return;
         }
-        let during = if section == Section::Action { "action" } else { "bonus action" };
+        let during = match section {
+            Section::Action => "action",
+            Section::Bonus => "bonus action",
+            _ => "extra action",
+        };
         let first_failure = log.failures.len();
         let mut ran = false;
         let mut attempts = 0;
@@ -758,7 +762,7 @@ fn execute(state: &mut EncounterState, plan: &tactics::Plan) -> Result<Vec<Engin
                 action_id: plan.action_id.clone(),
                 target_ids: plan.targets.clone(),
                 slot_level: None,
-                extra: false,
+                extra: plan.section == Section::Extra,
             },
         ),
     };
@@ -1274,7 +1278,7 @@ pub fn render_html(s: &Summary) -> String {
     h.push_str("      </tbody>\n    </table>\n  </section>\n\n");
 
     h.push_str(&format!(
-        "  <section aria-labelledby=\"method\">\n    <h2 id=\"method\">Method and limitations</h2>\n    <p>Every fight is one {name} against the party at one level, played by the deterministic batch tactics policy for both sides with engine-rolled dice. A fight ends when one side is down or at the round cap. When the monster wins, downed PCs count as deaths. Policy v{} gives buffs and other unscored effects no value, takes Shield or Parry only when it turns a hit into a miss and an Opportunity Attack only when it is worth more than the reaction held back, and agent clauses on any stat block are left out. Engine {}.</p>\n  </section>\n\n",
+        "  <section aria-labelledby=\"method\">\n    <h2 id=\"method\">Method and limitations</h2>\n    <p>Every fight is one {name} against the party at one level, played by the deterministic batch tactics policy for both sides with engine-rolled dice. A fight ends when one side is down or at the round cap. When the monster wins, downed PCs count as deaths. Policy v{} values an effect that raises AC, saving throws or attack rolls by the damage it prevents or adds over two rounds on the ally it helps most, Haste's extra action as one more attack, and a push as the melee it denies, gives teleports and other unscored effects no value, takes Shield or Parry only when it turns a hit into a miss and an Opportunity Attack only when it is worth more than the reaction held back, and agent clauses on any stat block are left out. Engine {}.</p>\n  </section>\n\n",
         s.policy.version, esc(&s.engine_version)
     ));
     h.push_str("  <footer>\n    <p>This work includes material from the System Reference Document 5.2.1 (\"SRD 5.2.1\") by Wizards of the Coast LLC, available at <a href=\"https://www.dndbeyond.com/srd\">https://www.dndbeyond.com/srd</a>. The SRD 5.2.1 is licensed under the <a href=\"https://creativecommons.org/licenses/by/4.0/legalcode\">Creative Commons Attribution 4.0 International License</a>. The SRD-derived material is modified here by reformatting and restructuring into a report. The difficulty bands and results above are Homebrew Bench analysis, not SRD tables.</p>\n  </footer>\n</main>\n</body>\n</html>\n");
@@ -1413,7 +1417,10 @@ mod tests {
         let all = logs.join("\n");
         assert!(all.contains("Policy: homebrew-bench.tactics v3 ("));
         assert!(all.contains("    knight: Parry (") || all.contains("    knight: holds its reaction ("), "no Parry window was decided");
-        assert!(run(&s).unwrap().html.contains("takes Shield or Parry only when it turns a hit into a miss"));
+        let html = run(&s).unwrap().html;
+        assert!(html.contains("takes Shield or Parry only when it turns a hit into a miss"));
+        assert!(html.contains("Haste's extra action as one more attack, and a push as the melee it denies, gives teleports and other unscored effects no value"));
+        assert!(!html.contains("gives buffs"));
     }
 
     #[test]
@@ -1429,6 +1436,71 @@ mod tests {
         for pair in lines.windows(2) {
             assert!(!(pair[0].contains("holds its reaction against") && pair[1].contains("may use an Opportunity Attack")), "{pair:?}");
         }
+    }
+
+    fn level_5_logs(monster: &str, fights: u32) -> Vec<String> {
+        let s = spec(fixture(monster), vec![5], fights);
+        (0..fights).map(|i| replay_fight(&s, fight_index(5, i, fights)).unwrap().log.unwrap()).collect()
+    }
+
+    #[test]
+    fn a_hasted_striker_makes_one_extra_attack_per_turn_and_never_a_multiattack() {
+        let logs = level_5_logs("ogre", 12);
+        let mut extra_attacks = 0;
+        for log in &logs {
+            let lines: Vec<&str> = log.lines().collect();
+            let mut turn: Option<&str> = None;
+            let mut extras_this_turn = 0;
+            for (i, line) in lines.iter().enumerate() {
+                let Some(decision) = line.trim_start().strip_prefix("DECISION ") else { continue };
+                let actor = decision.split(' ').next().unwrap();
+                if turn != Some(actor) || decision.starts_with(&format!("{actor} action:")) {
+                    turn = Some(actor);
+                    extras_this_turn = 0;
+                }
+                if decision.starts_with(&format!("{actor} extra action:")) {
+                    extras_this_turn += 1;
+                    extra_attacks += 1;
+                    assert_eq!(actor, "standard-striker-05", "{line}");
+                    assert!(decision.starts_with("standard-striker-05 extra action: longbow ") || decision.starts_with("standard-striker-05 extra action: shortsword "), "{line}");
+                    assert_eq!(lines[i + 1].trim(), "standard-striker-05 uses its extra action");
+                    assert!(extras_this_turn <= 1, "two extra actions in one turn: {line}");
+                }
+            }
+        }
+        assert!(extra_attacks > 0, "no extra attack in any fight");
+        assert!(logs.iter().all(|l| !l.contains("extra action: multiattack")));
+        assert!(logs.iter().any(|l| l.contains("DECISION standard-caster-05 action: haste -> standard-striker-05 | reason: haste on standard-striker-05 (+2 AC")));
+    }
+
+    #[test]
+    fn when_haste_ends_the_striker_loses_its_next_turn() {
+        let logs = level_5_logs("ogre", 40);
+        let mut ended = 0;
+        for log in &logs {
+            let Some(at) = log.find("haste ends on standard-striker-05") else { continue };
+            ended += 1;
+            if let Some(next) = log[at..].find("DECISION standard-striker-05 ") {
+                let line = log[at + next..].lines().next().unwrap();
+                assert!(line.starts_with("DECISION standard-striker-05 action: no legal plan"), "{line}");
+            }
+        }
+        assert!(ended > 0, "Haste never ended on the striker");
+    }
+
+    #[test]
+    fn a_failed_extra_action_is_reported_as_a_lost_extra_action() {
+        let mut ogre = fixture("ogre");
+        ogre.hit_points.average = 400;
+        let mut s = spec(ogre, vec![5], 6);
+        for pc in s.party.get_mut(&5).unwrap().iter_mut().filter(|b| b.id == "standard-striker-05") {
+            for a in pc.actions.iter_mut() {
+                set_damage_dice(a, "70");
+            }
+        }
+        let report = run(&s).unwrap();
+        let rows = failure_rows(&report);
+        assert!(rows.iter().any(|r| r.contains("the extra action was lost")), "{rows:?}");
     }
 
     #[test]

@@ -10,7 +10,7 @@ claimed: false
 
 ## Question
 
-Split from [Build v3 scoring for buffs and forced movement](056-build-v3-scoring-for-buffs-forced-movement-and-teleports.md) for size. Regenerate `data/baseline/curve.json` exactly once, after 056 and [073](073-build-v3-teleport-scoring-and-engine-sourced-dispositions.md) land, and remove every stale-curve allowance. No engine or policy change here, so no version bump.
+Split from [Build v3 scoring for buffs and forced movement](../closed/056-build-v3-scoring-for-buffs-forced-movement-and-teleports.md) for size. Regenerate `data/baseline/curve.json` exactly once, after 056 and [073](073-build-v3-teleport-scoring-and-engine-sourced-dispositions.md) land, and remove every stale-curve allowance. No engine or policy change here, so no version bump.
 
 ## Notes
 
