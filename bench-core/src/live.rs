@@ -637,7 +637,18 @@ fn apply(state: &mut EncounterState, cmd: &Command) -> Result<Applied, LiveError
             ))
         }
         Command::Override { path, value, reason, rule, standing } => {
+            let free_concentrators: Vec<String> = state
+                .combatants
+                .iter()
+                .filter(|c| c.concentration.is_some() && !engine::is_incapacitated_by_condition(c))
+                .map(|c| c.id.clone())
+                .collect();
             let target = override_path::apply(state, path, value.clone()).map_err(LiveError::Invalid)?;
+            let dropped: Vec<String> = free_concentrators
+                .into_iter()
+                .filter(|id| state.combatants.iter().any(|c| &c.id == id && engine::is_incapacitated_by_condition(c)))
+                .collect();
+            let concentration_events = engine::end_concentration(state, &dropped)?;
             let mut tag = rule_tag(rule);
             state.standing_assumptions.retain(|a| &a.path != path);
             if *standing {
@@ -658,7 +669,12 @@ fn apply(state: &mut EncounterState, cmd: &Command) -> Result<Applied, LiveError
             } else {
                 LogLine::same(text)
             };
-            Ok(Applied::line("override", target.combatant.as_deref(), line))
+            let mut applied = Applied::line("override", target.combatant.as_deref(), line);
+            for event in concentration_events {
+                let line = event_line(state, &event).tagged(&assumption_tag(state, &event));
+                applied.items.push((event, line));
+            }
+            Ok(applied)
         }
         Command::Roll { expression, reason, rule } => {
             let mut stream = Stream::from_state(state.rng.clone());
@@ -1858,6 +1874,39 @@ mod tests {
         assert!(set(&mut state, None, "goblin-warrior.hp").is_err());
         assert!(set(&mut state, Some(Value::from(1)), "goblin-warrior.id").is_err());
         assert!(set(&mut state, Some(Value::from(1)), "engine_version").is_err());
+    }
+
+    #[test]
+    fn override_ending_concentration_with_an_incapacitating_condition() {
+        let set = |state: &mut EncounterState, path: &str, value: Value| {
+            execute(state, Command::Override { path: path.into(), value: Some(value), reason: "t".into(), rule: None, standing: false })
+        };
+        let concentrating = || {
+            let (mut state, _) = start(spec(PcDice::Engine)).unwrap();
+            state.combatants.iter_mut().find(|c| c.id == "goblin-warrior").unwrap().concentration = Some("bless".into());
+            state
+        };
+        let goblin = |state: &EncounterState| state.combatants.iter().find(|c| c.id == "goblin-warrior").unwrap().concentration.clone();
+
+        let mut stunned = concentrating();
+        stunned.combatants.iter_mut().find(|c| c.id == "standard-striker-03").unwrap().conditions.push(crate::encounter::ConditionInstance {
+            condition: crate::stat_block::Condition::Blinded,
+            duration: crate::effect::Duration::Concentration,
+            source: Some("goblin-warrior".into()),
+            ends_on_damage: false,
+        });
+        let outcome = set(&mut stunned, "goblin-warrior.conditions", serde_json::json!(["stunned"])).unwrap();
+        assert_eq!(goblin(&stunned), None);
+        assert!(stunned.combatants.iter().find(|c| c.id == "standard-striker-03").unwrap().conditions.is_empty(), "what it held ends");
+        assert!(lines_of(&outcome).iter().any(|l| l == "goblin-warrior loses concentration"), "{:?}", lines_of(&outcome));
+
+        let mut prone = concentrating();
+        set(&mut prone, "goblin-warrior.conditions", serde_json::json!(["prone"])).unwrap();
+        assert_eq!(goblin(&prone), Some("bless".into()), "Prone doesn't incapacitate");
+
+        let mut other = concentrating();
+        set(&mut other, "goblin-warrior.hp", Value::from(3)).unwrap();
+        assert_eq!(goblin(&other), Some("bless".into()), "an unrelated override leaves it");
     }
 
     #[test]

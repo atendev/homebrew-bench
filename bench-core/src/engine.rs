@@ -2688,6 +2688,24 @@ fn break_concentration(
     Ok(())
 }
 
+/// True if the combatant holds a condition that incapacitates it.
+pub(crate) fn is_incapacitated_by_condition(c: &Combatant) -> bool {
+    c.conditions.iter().any(|x| incapacitates(x.condition))
+}
+
+/// Break the concentration of each listed combatant that still concentrates.
+/// `bench override` calls this after it leaves a concentrating creature with an
+/// incapacitating condition, which skips the `Effect::Condition` arm.
+pub fn end_concentration(state: &mut EncounterState, ids: &[String]) -> Result<Vec<EngineEvent>, EngineError> {
+    let mut stream = Stream::from_state(state.rng.clone());
+    let mut events = Vec::new();
+    for id in ids {
+        break_concentration(state, &mut stream, id, &mut events)?;
+    }
+    state.rng = stream.state();
+    Ok(events)
+}
+
 /// Draw a die for `owner`, then swap in a user-entered face when the owner is
 /// a PC and the encounter asks for player dice. The draw always happens, so
 /// the stream position never depends on the dice mode (ADR 0007).
