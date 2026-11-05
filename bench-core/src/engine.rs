@@ -498,7 +498,7 @@ fn resolve_effect(
                 let actor = state.combatants[index_of(state, actor_id)?].clone();
                 let advantage = disposition(state, &actor, &target, &attack);
                 let mut sources = lighting_sources(state, &actor, Roll::Attack);
-                if in_close_combat(state, &actor, &attack, Within::Held) {
+                if in_close_combat(state, &actor, &target, &attack, Within::Held) {
                     sources.push((RollDisposition::Disadvantage, CLOSE_COMBAT.into()));
                 }
                 let note = disposition_note(advantage, sources);
@@ -2380,7 +2380,7 @@ pub(crate) fn disposition_with(state: &EncounterState, actor: &Combatant, target
         (counts_as_prone(target), if within.reaches(actor, target) { Advantage } else { Disadvantage }),
         (!sees(state, actor, target), Disadvantage),
         (!sees(state, target, actor), Advantage),
-        (in_close_combat(state, actor, attack, within), Disadvantage),
+        (in_close_combat(state, actor, target, attack, within), Disadvantage),
     ];
     combined_disposition(
         conditions
@@ -2396,8 +2396,8 @@ const CLOSE_COMBAT: &str = "ranged attack in close combat";
 /// "Ranged Attacks in Close Combat" (PHB ch. 1, p. 25): a ranged attack roll has Disadvantage while
 /// an enemy within 5 feet of the attacker can see it and isn't Incapacitated. An enemy is a
 /// combatant on another side; a dead or downed one can't act, so it never counts.
-fn in_close_combat(state: &EncounterState, actor: &Combatant, attack: &Attack, within: Within) -> bool {
-    attack.is_ranged_only()
+fn in_close_combat(state: &EncounterState, actor: &Combatant, target: &Combatant, attack: &Attack, within: Within) -> bool {
+    attack.is_ranged(within.reaches(actor, target))
         && state
             .combatants
             .iter()
@@ -5884,10 +5884,29 @@ mod tests {
     }
 
     #[test]
-    fn an_engaged_bow_shot_has_disadvantage_and_a_thrown_or_melee_weapon_does_not() {
+    fn an_engaged_bow_shot_has_disadvantage_and_a_thrown_or_melee_weapon_at_the_engaged_foe_does_not() {
         assert_eq!(shot_disposition(&bow(), |_, c| engage_duel(c)), RollDisposition::Disadvantage);
         assert_eq!(shot_disposition(&bare_attack(Some(5), Some((20, 60))), |_, c| engage_duel(c)), RollDisposition::Normal);
         assert_eq!(shot_disposition(&sword(), |_, c| engage_duel(c)), RollDisposition::Normal);
+    }
+
+    #[test]
+    fn an_engaged_creature_throwing_at_a_foe_it_is_not_engaged_with_has_disadvantage() {
+        let state = duel(|b, c| {
+            b.push(test_stat_block("ogre", "Ogre", 30, 11));
+            c.push(test_combatant("ogre", "ogre", 30, "enemy"));
+            engage_duel(c);
+        });
+        let javelin = bare_attack(Some(5), Some((30, 120)));
+        let (thrower, goblin, ogre) = (&state.combatants[0], &state.combatants[1], &state.combatants[2]);
+        assert_eq!(disposition(&state, thrower, ogre, &javelin), RollDisposition::Disadvantage);
+        assert_eq!(disposition(&state, thrower, goblin, &javelin), RollDisposition::Normal);
+        assert_eq!(disposition_with(&state, thrower, ogre, &javelin, Within::HeldAnd("ogre")), RollDisposition::Normal, "moving in makes it a melee attack");
+        let alone = duel(|b, c| {
+            b.push(test_stat_block("ogre", "Ogre", 30, 11));
+            c.push(test_combatant("ogre", "ogre", 30, "enemy"));
+        });
+        assert_eq!(disposition(&alone, &alone.combatants[0], &alone.combatants[2], &javelin), RollDisposition::Normal, "nobody engaged");
     }
 
     #[test]
