@@ -99,6 +99,7 @@ Both modes ship in phase 1. Everything the engine can't model is labeled agent j
 - [Build ranged attacks in close combat](closed/077-build-ranged-attacks-in-close-combat.md): the engine gives a ranged attack roll (`Attack::is_ranged`: a range and no reach, or a thrown weapon at a target the attacker isn't engaged with) Disadvantage while an enemy engaged with the attacker sees it and can act, and the attack event names `(Disadvantage: ranged attack in close combat)`. `disposition_with` takes the attack and a `Within` footing (`Held`, `HeldAnd(id)`, `Nobody`) in place of its bool and extra sources; the policy drops `Footing::ranged_in_melee` and shares the engine's `can_act`. Engine 0.1.14, policy stays v3, curve not regenerated and the calibration row still matches. Seed 7: level 5, 11 and 17 cells for knight, ogre, adult red dragon and scout are equal but for ogre L11 rounds (1.18 to 1.19); low-level cells move slightly (knight L1 21 to 23 wins).
 - [Build teleport subject](closed/078-build-teleport-subject.md): a teleport moves the creature using it by default and `"subject": "target"` moves each target, with engagements cleared on both sides and a `teleport` event logged; a teleport-only ability plans no target and a `target` teleport scores 0. `subject` isn't serialized when `self`, `POLICY_VERSION` stays 3, the engine is 0.1.15 and the curve isn't regenerated. The audit left `target` unrestricted at load.
 - [Regenerate the baseline for policy v3](closed/074-regenerate-the-baseline-for-policy-v3.md): the curve was regenerated once for engine 0.1.15 and policy v3 and every stale-curve allowance is gone. 23 of 43 dragons read easier (median one level), none harder; the pit fiend moves 2 levels and the lich 3 levels easier.
+- [Do dragons still read above their CR on the v3 curve](closed/064-do-dragons-still-read-above-cr-on-the-v3-curve.md): mostly no. From tier 2 up the median dragon reads at or below its CR, the lich reads Low at level 20, and the pit fiend is within noise of Low. Seven low and mid CR breath-heavy dragons still read +2 or more. Lowering `policy.area_counts.large` closes only the dragon turtle's gap, and only the wyrmlings' 15-foot cones count more targets than the DMG's spread-out figure (at 1 they still read a level above CR), so no ticket opens on spreading the party out ([findings](../docs/research/064-dragons-on-the-v3-curve.md)).
 
 ## Not yet specified
 
@@ -126,6 +127,4 @@ Both modes ship in phase 1. Everything the engine can't model is labeled agent j
 
 ## Frontier
 
-Takeable now, in order:
-
-- Do dragons still read above their CR on the v3 curve (task, AFK); it takes over the dragon fog item, whose reactions half policy v3 now covers
+No ticket is takeable now. The next session turns one item from Not yet specified into a ticket.
