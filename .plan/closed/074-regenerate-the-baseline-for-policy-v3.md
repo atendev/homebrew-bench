@@ -3,9 +3,9 @@ id: 074
 title: Regenerate the baseline for policy v3
 type: task
 mode: AFK
-status: open
+status: closed
 blocked_by: [056, 073, 076, 077, 078]
-claimed: true
+claimed: false
 ---
 
 ## Question
@@ -36,3 +36,21 @@ Report how the dragon cells moved between the old curve and the new one in the R
 - The committed goblin-warrior row is degenerate. Both its attacks carry agent clauses, and baseline generation ignores unresolved attacks, so the row shows 0 DPR, 1 round and 100 wins at every level, and `a_fixture_regenerates_to_its_committed_row` passes trivially. Switch that test to a fixture whose attacks are fully modeled. Found by the 077 audit.
 
 ## Resolution
+
+Regenerated `data/baseline/curve.json` once with `bench baseline generate` (engine 0.1.15, policy v3, lighting `unspecified`, seed 20261102, 341 fixtures, 620 cells, 60 thin). No engine or policy change, so no version bump. `bench baseline status` now reports no reasons.
+
+Cleanup:
+- Removed `stale_beyond_the_engine` from `bench-core/tests/calibration.rs`; the curve and comparison tests now require an empty stale list.
+- The embedded-curve test in `bench/tests/cli.rs` (`batch_compares_against_the_embedded_curve_outside_the_repo`) now requires `baseline status` to give no reasons.
+- No `#[ignore]` was left on `a_fixture_regenerates_to_its_committed_row`; none of 056, 073, 076, 077 or 078 added one. The only `#[ignore]` in the repo is `from_source_with_real_cargo` in `bench/tests/install.rs`, which is unrelated.
+- The regeneration test now uses `ogre` (dpr 4.9 at level 1, 85 wins) instead of the degenerate goblin warrior.
+
+Dragon cells, measured as the lowest party level with 90 or more wins out of 100 (old curve to new curve):
+- All 43 dragon fixtures: 23 read easier, 0 read harder, the median shift is one level easier.
+- Adult dragons move 0 to 4 levels easier: black 13 to 11, bronze 15 to 12, gold 20 to 16, red 17 to 15, silver 17 to 13. Blue stays at 11.
+- Ancient dragons: black 21 to 17, brass 21 to 17, copper 21 to 17, white 21 to 18, blue 19 to 18. Bronze, gold, green, red and silver stay at the 21 cap.
+- Young dragons move 0 to 2 levels easier, wyrmlings 0 to 1. Gold and red young dragons are the exception at 12 to 11.
+- Pit fiend (CR 20) goes 21 to 19 and lich (CR 21) goes 21 to 18.
+- Across all 341 fixtures the median shift is 0, so the movement is specific to dragons and high-CR casters.
+
+[Do dragons still read above their CR on the v3 curve](../tickets/064-do-dragons-still-read-above-cr-on-the-v3-curve.md) reads these next.

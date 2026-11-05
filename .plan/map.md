@@ -98,6 +98,7 @@ Both modes ship in phase 1. Everything the engine can't model is labeled agent j
 - [Build Haste value for concentration risk and short fights](closed/076-build-haste-value-for-concentration-risk-and-short-fights.md): built as 075 decided. `damage_threat` (threat without healing), `rounds_left`, `concentration_keep` over 073's `save_success` with a `Rolls::AreaSaves` walk, and `acts_before_opponents` feed `bearer_value`, which cuts the horizon to the rounds left, weights concentration rounds by the keep chance and charges lethargy through the `STOPS_ACTING` list `can_act` shares. Engine 0.1.13, policy stays v3, curve not regenerated and the calibration row still matches. Seed 7: ogre and knight equal pre-056 with no Haste; adult red dragon L11 35 to 43 wins (Haste casts 140 to 47), L17 92 to 99 (200 to 6). L17 matches the prototype exactly; the L11 gap of one win and the L5 shift come from 073's footing rule, which the pre-073 prototype lacked.
 - [Build ranged attacks in close combat](closed/077-build-ranged-attacks-in-close-combat.md): the engine gives a ranged attack roll (`Attack::is_ranged`: a range and no reach, or a thrown weapon at a target the attacker isn't engaged with) Disadvantage while an enemy engaged with the attacker sees it and can act, and the attack event names `(Disadvantage: ranged attack in close combat)`. `disposition_with` takes the attack and a `Within` footing (`Held`, `HeldAnd(id)`, `Nobody`) in place of its bool and extra sources; the policy drops `Footing::ranged_in_melee` and shares the engine's `can_act`. Engine 0.1.14, policy stays v3, curve not regenerated and the calibration row still matches. Seed 7: level 5, 11 and 17 cells for knight, ogre, adult red dragon and scout are equal but for ogre L11 rounds (1.18 to 1.19); low-level cells move slightly (knight L1 21 to 23 wins).
 - [Build teleport subject](closed/078-build-teleport-subject.md): a teleport moves the creature using it by default and `"subject": "target"` moves each target, with engagements cleared on both sides and a `teleport` event logged; a teleport-only ability plans no target and a `target` teleport scores 0. `subject` isn't serialized when `self`, `POLICY_VERSION` stays 3, the engine is 0.1.15 and the curve isn't regenerated. The audit left `target` unrestricted at load.
+- [Regenerate the baseline for policy v3](closed/074-regenerate-the-baseline-for-policy-v3.md): the curve was regenerated once for engine 0.1.15 and policy v3 and every stale-curve allowance is gone. 23 of 43 dragons read easier (median one level), none harder; the pit fiend moves 2 levels and the lich 3 levels easier.
 
 ## Not yet specified
 
@@ -127,8 +128,4 @@ Both modes ship in phase 1. Everything the engine can't model is labeled agent j
 
 Takeable now, in order:
 
-- Regenerate the baseline for policy v3 (task, AFK); the only regeneration, nothing else blocks it
-
-Blocked:
-
-- Do dragons still read above their CR on the v3 curve (task, AFK), waits on Regenerate the baseline for policy v3; it takes over the dragon fog item, whose reactions half policy v3 now covers
+- Do dragons still read above their CR on the v3 curve (task, AFK); it takes over the dragon fog item, whose reactions half policy v3 now covers

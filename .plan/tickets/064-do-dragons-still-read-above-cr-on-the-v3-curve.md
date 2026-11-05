@@ -4,7 +4,7 @@ title: Do dragons still read above their CR on the v3 curve
 type: task
 mode: AFK
 status: open
-blocked_by: [074]
+blocked_by: []
 claimed: false
 ---
 

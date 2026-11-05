@@ -33,28 +33,12 @@ fn spec(id: &str, levels: Vec<u8>, fights: u32) -> BatchSpec {
     }
 }
 
-/// Ticket 057 bumped the engine, ticket 058 changed the fixture set and ticket
-/// 059 regenerated the standard party, and ticket 063 moved the policy to v3,
-/// all without regenerating the curve.
-/// Ticket 056 regenerates it once and drops this allowance.
-fn stale_beyond_the_engine(reasons: Vec<String>) -> Vec<String> {
-    reasons
-        .into_iter()
-        .filter(|r| {
-            !r.starts_with("the engine is ")
-                && r != "the embedded fixture set changed"
-                && r != "the party differs from the `standard` party the curve was computed against"
-                && r != "the tactics policy is homebrew-bench.tactics v3 and the curve used homebrew-bench.tactics v2"
-        })
-        .collect()
-}
-
 #[test]
 fn committed_curve_matches_the_inputs_it_was_generated_from() {
     let curve = committed();
     let party = batch::standard_party().unwrap();
     let now = baseline::fingerprints_for(&party, &PolicyConstants::default());
-    let stale = stale_beyond_the_engine(curve.stale_reasons(&now));
+    let stale = curve.stale_reasons(&now);
     assert!(stale.is_empty(), "regenerate with `bench baseline generate`: {stale:?}");
     assert_eq!(curve.fixtures.len() + curve.excluded.len(), embedded::FIXTURES.len());
     assert_eq!(serde_json::to_value(&curve.cells).unwrap(), serde_json::to_value(baseline::build_cells(&curve.fixtures)).unwrap());
@@ -67,7 +51,7 @@ fn a_fixture_regenerates_to_its_committed_row() {
     let party = batch::standard_party().unwrap();
     let again = baseline::generate(
         &GenerateSpec {
-            fixtures: vec![fixture("goblin-warrior")],
+            fixtures: vec![fixture("ogre")],
             party_name: "standard".into(),
             party: &party,
             base_seed: curve.base_seed,
@@ -78,7 +62,7 @@ fn a_fixture_regenerates_to_its_committed_row() {
         &|_, _, _| {},
     )
     .unwrap();
-    let committed_row = curve.fixtures.iter().find(|f| f.id == "goblin-warrior").unwrap();
+    let committed_row = curve.fixtures.iter().find(|f| f.id == "ogre").unwrap();
     assert_eq!(serde_json::to_value(&again.fixtures[0]).unwrap(), serde_json::to_value(committed_row).unwrap());
 }
 
@@ -138,8 +122,7 @@ fn a_batch_with_the_curve_states_a_verdict_and_flags_a_changed_party() {
     let report = batch::run(&s).unwrap();
     let comparison = report.summary.comparison.as_ref().unwrap();
     assert!(!comparison.verdict.is_empty() && comparison.basis.starts_with("Basis: "));
-    let stale = stale_beyond_the_engine(comparison.stale.clone());
-    assert!(stale.is_empty(), "{stale:?}");
+    assert!(comparison.stale.is_empty(), "{:?}", comparison.stale);
     assert!(report.html.contains("Claimed-CR verdict") && report.html.contains("Encounter budget at level 2"));
     s.party.get_mut(&2).unwrap().pop();
     let stale = batch::run(&s).unwrap();
