@@ -2689,13 +2689,19 @@ fn break_concentration(
 }
 
 /// True if the combatant holds a condition that incapacitates it.
-pub(crate) fn is_incapacitated_by_condition(c: &Combatant) -> bool {
+fn is_incapacitated_by_condition(c: &Combatant) -> bool {
     c.conditions.iter().any(|x| incapacitates(x.condition))
 }
 
+/// True if the combatant can't hold concentration: it is down or dead, or an
+/// incapacitating condition is on it.
+pub(crate) fn cannot_concentrate(c: &Combatant) -> bool {
+    c.end_state != EndState::Active || is_incapacitated_by_condition(c)
+}
+
 /// Break the concentration of each listed combatant that still concentrates.
-/// `bench override` calls this after it leaves a concentrating creature with an
-/// incapacitating condition, which skips the `Effect::Condition` arm.
+/// `bench override` calls this after it leaves a concentrating creature unable
+/// to concentrate, which skips the engine's own paths.
 pub fn end_concentration(state: &mut EncounterState, ids: &[String]) -> Result<Vec<EngineEvent>, EngineError> {
     let mut stream = Stream::from_state(state.rng.clone());
     let mut events = Vec::new();
