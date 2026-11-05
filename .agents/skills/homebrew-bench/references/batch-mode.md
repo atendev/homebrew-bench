@@ -58,13 +58,13 @@ Defaults are levels `1-20` and 100 fights per level. Narrow with `--levels 5` or
 
 Every fight runs with lighting `unspecified` unless you pass `--lighting <dim_light|bright_light|sunlight>`, and `unspecified` turns no lighting trait on. When the monster has a sunlight or Bright Light trait, run a second batch with `--lighting sunlight` or `--lighting bright_light` and the same seed, and report both. A Dim Light trait is off by default; tell the user to run `--lighting dim_light` to see it. The report's Lighting row and each lighting trait's finding ("Applies in sunlight; on in this run.") say which light the numbers assume.
 
-If the batch errors with unresolved ids, return to step 2 for those ids.
+If the batch errors with unresolved ids, return to step 2 for those ids. If it refuses an ability because "a cast's slot level is below the spell's level", the cast could never be used: raise its `slot_level` to at least the spell's level, or drop it so the spell's own level applies, and revalidate.
 
 ## 4. Report
 
 Present the result from the JSON on stdout, then point to `report_path` for the full HTML report.
 
-1. Lead with anything the numbers leave out: every `findings` entry of kind `skipped`, `ignored`, `assumed` or `agent_clause`, every cast the sampled logs mark `(not in effects file)`, and every `Spell <id> at level <n>: <clause> is not applied` warning, which names what a higher slot does that the engine leaves out. Say plainly that the results may understate or overstate the monster because of them.
+1. Lead with anything the numbers leave out: every `findings` entry of kind `skipped`, `ignored`, `assumed` or `agent_clause`, every cast the sampled logs mark `(not in effects file)`, and every `Spell <id> at level <n>: <clause> is not applied` warning, which names what a higher slot does that the engine leaves out. Also lead with every `<combatant>: <action> failed <n> times (<error>); ...` warning (`failed once` for a single failure): the engine refused that plan in every fight it counts, and the tail says how many of those turns were lost. A monster that loses turns this way reads weaker than it is, and a party member that does makes the monster read stronger. Say plainly that the results may understate or overstate the monster because of them.
 2. The headline: `comparison.verdict`, the claimed CR beside `effective_cr`, and `comparison.basis`. The difficulty bands and effective CR are homebrew-bench calibration against the baseline curve, not SRD numbers. Say so.
 3. A table per level: band, win rate, PC deaths, rounds (median), monster damage per round (median), stalemates, and any level `flags`.
 4. Every warning in `comparison.anomalies`, `comparison.thin_cells` and `comparison.stale`, and the run's `warnings`.

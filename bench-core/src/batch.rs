@@ -108,6 +108,18 @@ pub struct FightResult {
     pub pc_deaths: u32,
     #[serde(skip)]
     pub log: Option<String>,
+    /// Every engine error a plan threw in this fight, in order.
+    #[serde(skip)]
+    pub plan_failures: Vec<PlanFailure>,
+}
+
+/// One plan the engine refused. `lost` is true when nothing ran in its place.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct PlanFailure {
+    pub combatant: String,
+    pub action: String,
+    pub error: String,
+    pub lost: bool,
 }
 
 impl FightResult {
@@ -433,6 +445,7 @@ pub fn run(spec: &BatchSpec) -> Result<BatchReport, BatchError> {
         }
         Some(_) => {}
     }
+    warnings.extend(plan_failure_warnings(&results));
     if spec.fights < DEFAULT_FIGHTS {
         warnings.push(format!("Thin data: {} fights per level, below the 100-fight reference cell.", spec.fights));
     }
@@ -464,6 +477,31 @@ pub fn run(spec: &BatchSpec) -> Result<BatchReport, BatchError> {
     };
     let html = render_html(&summary);
     Ok(BatchReport { summary, html, logs })
+}
+
+/// One warning per distinct (combatant, action, error) a plan threw across the batch,
+/// most frequent first, so a fault that costs turns shows outside sampled logs.
+fn plan_failure_warnings(results: &[FightResult]) -> Vec<String> {
+    let mut tally: BTreeMap<(&str, &str, &str), (u32, u32)> = BTreeMap::new();
+    for f in results.iter().flat_map(|r| &r.plan_failures) {
+        let entry = tally.entry((&f.combatant, &f.action, &f.error)).or_default();
+        entry.0 += 1;
+        entry.1 += u32::from(f.lost);
+    }
+    let mut rows: Vec<_> = tally.into_iter().collect();
+    rows.sort_by_key(|row| std::cmp::Reverse(row.1 .0));
+    rows.into_iter()
+        .map(|((combatant, action, error), (failed, lost))| {
+            let cost = match lost {
+                0 => "a recomputed plan ran instead each time".to_string(),
+                l if l == failed => "the turn was lost each time".to_string(),
+                1 => "1 turn was lost".to_string(),
+                l => format!("{l} turns were lost"),
+            };
+            let times = if failed == 1 { "once".to_string() } else { format!("{failed} times") };
+            format!("{combatant}: {action} failed {times} ({error}); {cost}")
+        })
+        .collect()
 }
 
 /// Play every fight without building a report or logs.
@@ -618,7 +656,8 @@ fn fight(spec: &BatchSpec, constants: &PolicyConstants, level: u8, index: u64, w
         .filter(|c| c.end_state == EndState::Dead || (outcome == Outcome::MonsterWin && c.end_state == EndState::Unconscious))
         .count() as u32;
     log.result(outcome, rounds, monster_damage, pc_deaths, spec);
-    Ok(FightResult { level, index, seed, outcome, rounds, monster_damage, pc_deaths, log: log.finish() })
+    let plan_failures = std::mem::take(&mut log.failures);
+    Ok(FightResult { level, index, seed, outcome, rounds, monster_damage, pc_deaths, log: log.finish(), plan_failures })
 }
 
 fn decided(state: &EncounterState) -> Option<Outcome> {
@@ -652,8 +691,12 @@ fn take_turn(state: &mut EncounterState, actor: &str, constants: &PolicyConstant
                             log.events(state, &events, damage);
                             break;
                         }
-                        Err(e) if attempts < 2 => log.line(format!("  plan failed ({e}); recomputing from the updated state")),
+                        Err(e) if attempts < 2 => {
+                            log.plan_failed(state, &plan, &e, false);
+                            log.line(format!("  plan failed ({e}); recomputing from the updated state"));
+                        }
                         Err(e) => {
+                            log.plan_failed(state, &plan, &e, true);
                             log.line(format!("  plan failed again ({e}); no action taken"));
                             break;
                         }
@@ -730,7 +773,10 @@ fn legendary_window(state: &mut EncounterState, constants: &PolicyConstants, log
             log.line(format!("  {}", plan.log_line()));
             match execute(state, &plan) {
                 Ok(events) => log.events(state, &events, damage),
-                Err(e) => log.line(format!("  legendary action failed ({e})")),
+                Err(e) => {
+                    log.plan_failed(state, &plan, &e, true);
+                    log.line(format!("  legendary action failed ({e})"));
+                }
             }
         }
     }
@@ -738,11 +784,28 @@ fn legendary_window(state: &mut EncounterState, constants: &PolicyConstants, log
 
 struct Log {
     lines: Option<Vec<String>>,
+    failures: Vec<PlanFailure>,
 }
 
 impl Log {
     fn new(enabled: bool) -> Self {
-        Self { lines: enabled.then(Vec::new) }
+        Self { lines: enabled.then(Vec::new), failures: Vec::new() }
+    }
+
+    fn plan_failed(&mut self, state: &EncounterState, plan: &tactics::Plan, error: &engine::EngineError, lost: bool) {
+        let combatant = state.combatants.iter().find(|c| c.id == plan.actor_id);
+        let block = combatant.and_then(|c| state.stat_blocks.iter().find(|s| s.id == c.stat_block_id)).map(|s| &s.stat_block);
+        let action = block
+            .and_then(|b| {
+                b.traits.iter().chain(&b.actions).chain(&b.bonus_actions).chain(&b.reactions).chain(&b.legendary_actions).find(|a| a.id == plan.action_id)
+            })
+            .map_or_else(|| plan.action_id.clone(), |a| a.name.clone());
+        self.failures.push(PlanFailure {
+            combatant: combatant.map_or_else(|| plan.actor_id.clone(), |c| c.name.clone()),
+            action,
+            error: error.to_string(),
+            lost,
+        });
     }
 
     fn line(&mut self, text: String) {
@@ -1415,6 +1478,72 @@ mod tests {
             .warnings
             .iter()
             .all(|w| !w.contains("is not applied")));
+    }
+
+    fn set_damage_dice(entry: &mut AbilityEntry, dice: &str) {
+        let Some(crate::effect::Effect::Attack(attack)) = entry.effects.first_mut() else { panic!("{} is not an attack", entry.id) };
+        attack.damage[0].dice = dice.into();
+        attack.modifier = 30;
+    }
+
+    fn plan_failure_warnings(report: &BatchReport) -> Vec<&String> {
+        report.summary.warnings.iter().filter(|w| w.contains(" failed ") && w.contains(" times (")).collect()
+    }
+
+    fn failure_lines_in_every_fight(s: &BatchSpec) -> usize {
+        s.levels
+            .iter()
+            .flat_map(|&l| (0..s.fights).map(move |i| fight_index(l, i, s.fights)))
+            .map(|index| replay_fight(s, index).unwrap().log.unwrap())
+            .map(|log| log.lines().filter(|l| l.contains("plan failed")).count())
+            .sum()
+    }
+
+    #[test]
+    fn an_action_that_always_errors_warns_once_with_its_count() {
+        let mut ogre = fixture("ogre");
+        ogre.actions.retain(|a| a.id == "greatclub");
+        set_damage_dice(&mut ogre.actions[0], "70");
+        let s = spec(ogre, vec![1], 4);
+        let report = run(&s).unwrap();
+        assert_eq!(report.summary.levels[0].fights, 4);
+        let warnings = plan_failure_warnings(&report);
+        assert_eq!(warnings.len(), 1, "{:?}", report.summary.warnings);
+        let failures = failure_lines_in_every_fight(&s);
+        assert!(failures > 0);
+        assert!(
+            warnings[0].starts_with(&format!("Ogre: Greatclub failed {failures} times (invalid dice expression 70); ")),
+            "{}",
+            warnings[0]
+        );
+    }
+
+    #[test]
+    fn two_errors_on_one_action_give_two_warnings() {
+        let mut ogre = fixture("ogre");
+        set_damage_dice(&mut ogre.actions[0], "70");
+        set_damage_dice(&mut ogre.actions[1], "71");
+        let multiattack: AbilityEntry = serde_json::from_value(serde_json::json!({
+            "id": "multiattack", "name": "Multiattack", "kind": "modeled",
+            "effects": [{"multiattack": {"steps": [{"action": {"action_id": "javelin", "count": 1}}, {"action": {"action_id": "greatclub", "count": 1}}]}}]
+        }))
+        .unwrap();
+        ogre.actions = vec![multiattack, ogre.actions[0].clone(), ogre.actions[1].clone()];
+        ogre.actions[1].kind = AbilityKind::Inert;
+        ogre.actions[2].kind = AbilityKind::Inert;
+        let report = run(&spec(ogre, vec![1, 2, 3], 4)).unwrap();
+        let warnings = plan_failure_warnings(&report);
+        for dice in ["70", "71"] {
+            let wanted = "Ogre: Multiattack failed ";
+            let hits = warnings.iter().filter(|w| w.starts_with(wanted) && w.contains(&format!("(invalid dice expression {dice})"))).count();
+            assert_eq!(hits, 1, "{warnings:?}");
+        }
+    }
+
+    #[test]
+    fn a_clean_batch_has_no_plan_failure_warning() {
+        let report = run(&spec(fixture("ogre"), vec![1, 2], 4)).unwrap();
+        assert_eq!(plan_failure_warnings(&report), Vec::<&String>::new());
     }
 
     #[test]

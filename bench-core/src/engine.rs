@@ -1081,22 +1081,7 @@ fn spend_slot(actor: &Combatant, block: &StatBlock, level: u8) -> Result<(), Eng
 }
 
 fn load_spell_effects() -> Result<&'static HashMap<String, crate::spell::SpellEffect>, EngineError> {
-    static CACHE: std::sync::OnceLock<Result<HashMap<String, crate::spell::SpellEffect>, String>> = std::sync::OnceLock::new();
-    CACHE
-        .get_or_init(|| {
-            let value: serde_json::Value = serde_json::from_str(crate::embedded::spell_effects_json()).map_err(|e| format!("invalid spell effects json: {e}"))?;
-            let mut map = HashMap::new();
-            if let Some(obj) = value.as_object() {
-                for (key, entry_value) in obj {
-                    let spell: crate::spell::SpellEffect = serde_json::from_value(entry_value.clone())
-                        .map_err(|e| format!("spell {key} invalid: {e}"))?;
-                    map.insert(key.clone(), spell);
-                }
-            }
-            Ok(map)
-        })
-        .as_ref()
-        .map_err(|e| EngineError::Invalid(e.clone()))
+    crate::spell::catalog().map_err(|e| EngineError::Invalid(e.to_string()))
 }
 
 /// Batch fights let the remaining attacks of a multiattack move to a living opponent once the

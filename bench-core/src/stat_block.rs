@@ -3,7 +3,7 @@
 use serde::{Deserialize, Deserializer, Serialize};
 use std::collections::HashMap;
 
-use crate::effect::{Effect, Lighting, ReactionTrigger, Usage};
+use crate::effect::{Cast, Effect, Lighting, MultiattackStep, ReactionTrigger, Usage};
 
 /// Ability score names.
 #[derive(
@@ -341,9 +341,43 @@ fn checked_entries<'de, D: Deserializer<'de>>(deserializer: D, reactions: bool) 
         check_trigger(entry, reactions)?;
         for effect in &entry.effects {
             refuse_roll_modifier(entry, effect)?;
+            refuse_cast_below_spell_level(entry, effect)?;
         }
     }
     Ok(entries)
+}
+
+/// A cast whose slot is below its spell's level is never ready, so the policy would
+/// silently never pick it. Spells the effects file lacks are left to the missing-spell warning.
+fn refuse_cast_below_spell_level<E: serde::de::Error>(entry: &AbilityEntry, effect: &Effect) -> Result<(), E> {
+    let Ok(spells) = crate::spell::catalog() else { return Ok(()) };
+    for cast in casts_in(effect) {
+        let (Some(slot), Some(spell)) = (cast.slot_level, spells.get(&cast.spell_id)) else { continue };
+        if slot < spell.level {
+            return Err(E::custom(format!(
+                "{}: a cast's slot level is below the spell's level ({} is level {}, cast with a level {slot} slot)",
+                entry.id, cast.spell_id, spell.level
+            )));
+        }
+    }
+    Ok(())
+}
+
+fn casts_in(effect: &Effect) -> Vec<&Cast> {
+    fn step_casts<'a>(step: &'a MultiattackStep, out: &mut Vec<&'a Cast>) {
+        match step {
+            MultiattackStep::Action { cast, .. } => out.extend(cast),
+            MultiattackStep::Choice { options, .. } => out.extend(options.iter().filter_map(|o| o.cast.as_ref())),
+            MultiattackStep::Alternatives { sets } => sets.iter().flatten().for_each(|s| step_casts(s, out)),
+        }
+    }
+    let mut out = Vec::new();
+    match effect {
+        Effect::Cast(cast) => out.push(cast),
+        Effect::Multiattack(m) => m.steps.iter().for_each(|s| step_casts(s, &mut out)),
+        _ => {}
+    }
+    out
 }
 
 fn check_trigger<E: serde::de::Error>(entry: &AbilityEntry, reaction: bool) -> Result<(), E> {
