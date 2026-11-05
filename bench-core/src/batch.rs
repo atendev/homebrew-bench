@@ -1278,7 +1278,7 @@ pub fn render_html(s: &Summary) -> String {
     h.push_str("      </tbody>\n    </table>\n  </section>\n\n");
 
     h.push_str(&format!(
-        "  <section aria-labelledby=\"method\">\n    <h2 id=\"method\">Method and limitations</h2>\n    <p>Every fight is one {name} against the party at one level, played by the deterministic batch tactics policy for both sides with engine-rolled dice. A fight ends when one side is down or at the round cap. When the monster wins, downed PCs count as deaths. Policy v{} values an effect that raises AC, saving throws or attack rolls by the damage it prevents or adds over two rounds on the ally it helps most, Haste's extra action as one more attack, and a push as the melee it denies, gives teleports and other unscored effects no value, takes Shield or Parry only when it turns a hit into a miss and an Opportunity Attack only when it is worth more than the reaction held back, and agent clauses on any stat block are left out. Engine {}.</p>\n  </section>\n\n",
+        "  <section aria-labelledby=\"method\">\n    <h2 id=\"method\">Method and limitations</h2>\n    <p>Every fight is one {name} against the party at one level, played by the deterministic batch tactics policy for both sides with engine-rolled dice. A fight ends when one side is down or at the round cap. When the monster wins, downed PCs count as deaths. Policy v{} values an effect that raises AC, saving throws or attack rolls by the damage it prevents or adds over two rounds on the ally it helps most, Haste's extra action as one more attack, a push as the melee it denies, and a teleport as the Opportunity Attacks it avoids, gives other unscored effects no value, reads Advantage, Disadvantage and automatic save failures from the same sources the engine rolls with, takes Shield or Parry only when it turns a hit into a miss and an Opportunity Attack only when it is worth more than the reaction held back, and agent clauses on any stat block are left out. Engine {}.</p>\n  </section>\n\n",
         s.policy.version, esc(&s.engine_version)
     ));
     h.push_str("  <footer>\n    <p>This work includes material from the System Reference Document 5.2.1 (\"SRD 5.2.1\") by Wizards of the Coast LLC, available at <a href=\"https://www.dndbeyond.com/srd\">https://www.dndbeyond.com/srd</a>. The SRD 5.2.1 is licensed under the <a href=\"https://creativecommons.org/licenses/by/4.0/legalcode\">Creative Commons Attribution 4.0 International License</a>. The SRD-derived material is modified here by reformatting and restructuring into a report. The difficulty bands and results above are Homebrew Bench analysis, not SRD tables.</p>\n  </footer>\n</main>\n</body>\n</html>\n");
@@ -1419,7 +1419,7 @@ mod tests {
         assert!(all.contains("    knight: Parry (") || all.contains("    knight: holds its reaction ("), "no Parry window was decided");
         let html = run(&s).unwrap().html;
         assert!(html.contains("takes Shield or Parry only when it turns a hit into a miss"));
-        assert!(html.contains("Haste's extra action as one more attack, and a push as the melee it denies, gives teleports and other unscored effects no value"));
+        assert!(html.contains("Haste's extra action as one more attack, a push as the melee it denies, and a teleport as the Opportunity Attacks it avoids, gives other unscored effects no value, reads Advantage, Disadvantage and automatic save failures from the same sources the engine rolls with"));
         assert!(!html.contains("gives buffs"));
     }
 
