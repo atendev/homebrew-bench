@@ -229,7 +229,7 @@ pub fn choose(state: &EncounterState, actor_id: &str, section: Section, constant
             candidates.push(plan);
         }
     }
-    pick_best(abilities, candidates)
+    pick_best(block, abilities, candidates)
 }
 
 /// Defensive fallback for a turn where [`choose`] found no action plan.
@@ -270,8 +270,8 @@ pub fn decide_reaction(state: &EncounterState, window: &ReactionWindow, constant
 /// Highest score wins; ties keep stat-block order. A limited-use plan must beat
 /// the best at-will plan, and healing a living ally must beat the best attack
 /// or control plan. Revival is exempt and competes on score alone.
-fn pick_best(abilities: &[AbilityEntry], candidates: Vec<Plan>) -> Option<Plan> {
-    let limited = |id: &str| abilities.iter().find(|a| a.id == id).is_some_and(is_limited);
+fn pick_best(block: &StatBlock, abilities: &[AbilityEntry], candidates: Vec<Plan>) -> Option<Plan> {
+    let limited = |id: &str| abilities.iter().find(|a| a.id == id).is_some_and(|a| is_limited(block, a));
     let heal = |p: &Plan| p.reason.starts_with("heals");
     let best_at_will = candidates.iter().filter(|p| !limited(&p.action_id)).map(|p| p.score).fold(f64::NEG_INFINITY, f64::max);
     let best_offense = candidates.iter().filter(|p| !heal(p) && !p.reason.starts_with("revives")).map(|p| p.score).fold(0.0, f64::max);
@@ -648,7 +648,7 @@ impl<'a> Ctx<'a> {
     }
 
     fn plan_for(&self, actor: &Combatant, block: &StatBlock, ability: &AbilityEntry, section: Section) -> Option<Plan> {
-        let resource = usage_word(ability);
+        let resource = usage_word(block, ability);
         if self.breaks_own_concentration(actor, block, ability) {
             return None;
         }
@@ -657,10 +657,10 @@ impl<'a> Ctx<'a> {
         }
         let (modifiers, only_modifiers) = top_modifiers(block, &ability.effects, 0);
         if !modifiers.is_empty() && only_modifiers {
-            return self.modifier_plan(actor, ability, section, resource, &modifiers);
+            return self.modifier_plan(actor, block, ability, section, resource, &modifiers);
         }
         if only_self_teleports(block, &ability.effects, 0) {
-            return Some(self.teleport_plan(actor, ability, section, resource));
+            return Some(self.teleport_plan(actor, block, ability, section, resource));
         }
         let own = self.bearer_value(&BuffOutlook::new(actor), actor, modifiers.iter().filter(|m| m.bearer == ModifierBearer::Actor));
         if let Some((area, effect)) = area_of(block, &ability.effects) {
@@ -711,7 +711,7 @@ impl<'a> Ctx<'a> {
             let kill = if value.damage >= hit_points(target) { self.threat(target) } else { 0.0 };
             let survival = kill - penalty + value.survival + own.survival;
             let w = &self.constants.weights;
-            let cost = if is_limited(ability) { 1.0 } else { 0.0 };
+            let cost = if is_limited(block, ability) { 1.0 } else { 0.0 };
             let score = w.expected_damage * (value.damage + own.damage) + w.control * value.control + w.survival * survival - w.resource_cost * cost;
             let mut reason = format!(
                 "top-priority target {} (threat {:.1}), expected damage {:.1}",
@@ -752,10 +752,10 @@ impl<'a> Ctx<'a> {
 
     /// A plan for an ability whose effects are all teleports of the actor. It targets nobody and
     /// is worth the Opportunity Attacks the actor avoids.
-    fn teleport_plan(&self, actor: &Combatant, ability: &AbilityEntry, section: Section, resource: Option<String>) -> Plan {
+    fn teleport_plan(&self, actor: &Combatant, block: &StatBlock, ability: &AbilityEntry, section: Section, resource: Option<String>) -> Plan {
         let avoided = self.teleport_value(actor, Footing::default());
         let w = &self.constants.weights;
-        let cost = if is_limited(ability) { 1.0 } else { 0.0 };
+        let cost = if is_limited(block, ability) { 1.0 } else { 0.0 };
         let mut reason = "teleports".to_string();
         if avoided > 0.0 {
             reason.push_str(&format!(" clear of {avoided:.1} opportunity damage"));
@@ -780,7 +780,7 @@ impl<'a> Ctx<'a> {
     /// A plan for an ability whose effects are all timed modifiers. `self` modifiers are valued
     /// on the actor; `target` ones on the actor or a living ally, whichever scores best (ties to
     /// the actor, then the lower id), and the plan targets that bearer.
-    fn modifier_plan(&self, actor: &Combatant, ability: &AbilityEntry, section: Section, resource: Option<String>, modifiers: &[TimedModifier]) -> Option<Plan> {
+    fn modifier_plan(&self, actor: &Combatant, block: &StatBlock, ability: &AbilityEntry, section: Section, resource: Option<String>, modifiers: &[TimedModifier]) -> Option<Plan> {
         let targeted = modifiers.iter().any(|m| m.bearer == ModifierBearer::Target);
         let mut bearers = vec![actor];
         if targeted {
@@ -791,7 +791,7 @@ impl<'a> Ctx<'a> {
         let outlook = BuffOutlook::new(actor);
         let own = self.bearer_value(&outlook, actor, modifiers.iter().filter(|m| m.bearer == ModifierBearer::Actor));
         let w = &self.constants.weights;
-        let cost = if is_limited(ability) { 1.0 } else { 0.0 };
+        let cost = if is_limited(block, ability) { 1.0 } else { 0.0 };
         let mut best: Option<(f64, &Combatant, BearerValue)> = None;
         for bearer in bearers {
             let mut value = self.bearer_value(&outlook, bearer, modifiers.iter().filter(|m| m.bearer == ModifierBearer::Target));
@@ -1063,7 +1063,7 @@ impl<'a> Ctx<'a> {
         let w = &self.constants.weights;
         let survival = -harm_damage;
         let score = w.expected_damage * value.damage + w.control * value.control + w.survival * survival
-            - w.resource_cost * if is_limited(ability) { 1.0 } else { 0.0 };
+            - w.resource_cost * if is_limited(block, ability) { 1.0 } else { 0.0 };
         Some(Plan {
             actor_id: actor.id.clone(),
             section,
@@ -1481,7 +1481,7 @@ impl<'a> Ctx<'a> {
         let cheapest = offered
             .iter()
             .filter(|(_, _, n)| *n > 0 && total < ac + n)
-            .min_by_key(|(i, r, _)| (u8::from(is_limited(r)), slot_level(r), *i));
+            .min_by_key(|(i, r, _)| (u8::from(is_limited(block, r)), slot_level(block, r), *i));
         if let Some((_, r, n)) = cheapest {
             return (ReactionAnswer::Take(r.id.clone()), format!("{reactor}: {} ({total} vs AC {ac}+{n} turns the hit into a miss)", r.name));
         }
@@ -1538,9 +1538,19 @@ fn is_consumable(block: &StatBlock, ability: &AbilityEntry) -> bool {
     block.gear.contains(&ability.id) && matches!(ability.usage, Some(Usage::PerDay { .. } | Usage::PerRest { .. }))
 }
 
-fn is_limited(ability: &AbilityEntry) -> bool {
-    let leveled_cast = ability.effects.iter().any(|e| matches!(e, Effect::Cast(c) if c.slot_level.unwrap_or(0) > 0));
-    leveled_cast || !matches!(ability.usage, None | Some(Usage::AtWill))
+fn is_limited(block: &StatBlock, ability: &AbilityEntry) -> bool {
+    slot_level(block, ability) > 0 || !matches!(ability.usage, None | Some(Usage::AtWill))
+}
+
+/// The slot a cast uses: its named slot level, or, when it names none and the caster has
+/// spell slots, the spell's own level, as the engine's `cast_level` and `spend_slot` read it.
+fn cast_slot(block: &StatBlock, cast: &crate::effect::Cast) -> Option<u8> {
+    let level = match cast.slot_level {
+        Some(level) => level,
+        None if block.spell_slots.is_some() => crate::spell::catalog().ok()?.get(&cast.spell_id)?.level,
+        None => 0,
+    };
+    (level > 0).then_some(level)
 }
 
 /// The AC bonus n a hit-trigger reaction gives: its `armor_class` timed
@@ -1565,21 +1575,21 @@ pub(crate) fn ac_bonus(block: &StatBlock, reaction: &AbilityEntry) -> i32 {
     walk(block, &reaction.effects, 0)
 }
 
-fn slot_level(ability: &AbilityEntry) -> u8 {
+fn slot_level(block: &StatBlock, ability: &AbilityEntry) -> u8 {
     ability
         .effects
         .iter()
         .filter_map(|e| match e {
-            Effect::Cast(c) => c.slot_level,
+            Effect::Cast(c) => cast_slot(block, c),
             _ => None,
         })
         .max()
         .unwrap_or(0)
 }
 
-fn usage_word(ability: &AbilityEntry) -> Option<String> {
+fn usage_word(block: &StatBlock, ability: &AbilityEntry) -> Option<String> {
     let slot = ability.effects.iter().find_map(|e| match e {
-        Effect::Cast(c) => c.slot_level.filter(|l| *l > 0).map(|l| format!("level {l} slot")),
+        Effect::Cast(c) => cast_slot(block, c).map(|l| format!("level {l} slot")),
         _ => None,
     });
     let usage = match &ability.usage {
@@ -2060,6 +2070,29 @@ mod tests {
         state.combatants[1].end_state = EndState::Unconscious;
         let plan = choose_action(&state, "b");
         assert!(plan.reason.starts_with("revives"), "{}", plan.reason);
+    }
+
+    #[test]
+    fn a_slotless_leveled_cast_uses_a_slot_only_when_the_caster_has_slots() {
+        let cast = |spell: &str, slot_level: Option<u8>| AbilityEntry {
+            effects: vec![Effect::Cast(crate::effect::Cast { spell_id: spell.into(), slot_level, upcast: false })],
+            ..melee("cast", 0, "1d1")
+        };
+        let mut pc = block("cleric", 20, 10);
+        pc.spell_slots = Some(vec![2]);
+        let monster = block("fey", 20, 10);
+        let cure = cast("cure-wounds", None);
+        assert!(is_limited(&pc, &cure));
+        assert_eq!(slot_level(&pc, &cure), 1);
+        assert_eq!(usage_word(&pc, &cure).as_deref(), Some("level 1 slot"));
+        assert!(!is_limited(&monster, &cure));
+        assert_eq!(usage_word(&monster, &cure), None);
+        let bolt = cast("fire-bolt", None);
+        assert!(!is_limited(&pc, &bolt));
+        assert_eq!(usage_word(&pc, &bolt), None);
+        let upcast = cast("guiding-bolt", Some(2));
+        assert!(is_limited(&monster, &upcast));
+        assert_eq!(usage_word(&monster, &upcast).as_deref(), Some("level 2 slot"));
     }
 
     #[test]
@@ -2746,7 +2779,8 @@ mod tests {
         let haste = party_block("caster", 5).actions.into_iter().find(|a| a.id == "haste").unwrap();
         let constants = PolicyConstants::default();
         let ctx = ctx(&state, &constants);
-        let plan = ctx.modifier_plan(ctx.combatant("caster").unwrap(), &haste, Section::Action, None, &haste_modifiers()).unwrap();
+        let caster = ctx.combatant("caster").unwrap();
+        let plan = ctx.modifier_plan(caster, ctx.block(caster).unwrap(), &haste, Section::Action, None, &haste_modifiers()).unwrap();
         assert_eq!(plan.targets, ["striker"]);
         assert!(plan.reason.ends_with(&format!(", extra action 7.0, {:.1} of 2.0 rounds at keep {k:.2}, lethargy -{cost:.1})", 1.0 + k)), "{}", plan.reason);
     }
