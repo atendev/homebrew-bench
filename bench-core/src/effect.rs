@@ -14,7 +14,9 @@ pub enum ReactionTrigger {
     HitByAttackRoll { attack: AttackFilter },
 }
 
-/// Which attack rolls a hit trigger answers. A melee attack is one with no range.
+/// Which attack rolls a hit trigger answers. A melee attack is one with no range, so a thrown
+/// weapon matches `Ranged`. The close-combat rule reads `Attack::is_ranged_only` instead, which
+/// leaves thrown weapons out; the two readings differ on purpose.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum AttackFilter {
@@ -179,6 +181,15 @@ pub struct Attack {
     pub damage: Vec<Damage>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub on_hit: Vec<Effect>,
+}
+
+impl Attack {
+    /// The attack roll is a ranged attack for the close-combat rule (PHB p. 25): it has a range
+    /// and no reach. A thrown weapon has both, and within reach it is made as a melee attack.
+    /// `AttackFilter::Ranged` reads `range` alone on purpose, so a hit trigger answers thrown hits.
+    pub fn is_ranged_only(&self) -> bool {
+        self.range.is_some() && self.reach.is_none()
+    }
 }
 
 /// Saving-throw effect with its success semantics.

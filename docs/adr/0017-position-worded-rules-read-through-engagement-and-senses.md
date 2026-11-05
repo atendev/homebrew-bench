@@ -6,6 +6,7 @@ Several 2024 condition rules depend on where creatures stand or what they can se
 - **Sight is one rule, with no ranges.** An observer sees a combatant unless that combatant is Invisible and the observer has neither Blindsight nor Truesight, or the observer is Blinded and has no Blindsight. Every sense reaches every band. Line of sight is otherwise assumed. Invisible attack effects, Frightened's line-of-sight clause and Opportunity Attack eligibility (amending ADR 0015) all use it.
 - **"The grappler" and "the source of fear" are the condition's `source`.** A Grappled or Frightened condition without one applies against every target, as the rule would with no named source.
 - **A combatant at 0 HP that is down has the Unconscious condition, and Unconscious includes Prone, for attack rolls.** The engine reads both at roll time and stores neither in `conditions`.
+- **Ranged attacks in close combat read both rules.** Added in ticket 077. A ranged attack roll has Disadvantage when an enemy is within 5 feet of the attacker (engaged, recorded on either side), sees it by the sight rule, and can act. An enemy is a combatant on another side. One that is dead, down or has Incapacitated or a condition that includes it (Paralyzed, Petrified, Stunned, Unconscious) doesn't count. An attack with a range and no reach is ranged here; a thrown weapon with both is made as a melee attack. A hit trigger's `ranged` filter still reads the range alone.
 
 ## Considered options
 

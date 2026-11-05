@@ -8,7 +8,7 @@ use std::collections::HashMap;
 use serde::{Deserialize, Serialize};
 
 use crate::effect::{
-    recharge_minimum, Duration, Effect, ExtraActionUse, Lighting, ModifierBearer, ModifierChange, ModifierTarget, ReactionTrigger, RollDisposition, Usage,
+    recharge_minimum, Attack, Duration, Effect, ExtraActionUse, Lighting, ModifierBearer, ModifierChange, ModifierTarget, ReactionTrigger, RollDisposition, Usage,
 };
 use crate::encounter::{
     ActionEconomy, ActiveModifier, Combatant, ConditionInstance, EndState, EncounterState,
@@ -496,8 +496,12 @@ fn resolve_effect(
                 let target_index = index_of(state, target_id)?;
                 let target = state.combatants[target_index].clone();
                 let actor = state.combatants[index_of(state, actor_id)?].clone();
-                let advantage = disposition(state, &actor, &target);
-                let note = disposition_note(advantage, lighting_sources(state, &actor, Roll::Attack));
+                let advantage = disposition(state, &actor, &target, &attack);
+                let mut sources = lighting_sources(state, &actor, Roll::Attack);
+                if in_close_combat(state, &actor, &attack, Within::Held) {
+                    sources.push((RollDisposition::Disadvantage, CLOSE_COMBAT.into()));
+                }
+                let note = disposition_note(advantage, sources);
                 let d20a = stream.roll_die(20);
                 let d20a = player_roll(state, actor_id, 20, d20a);
                 let d20b = stream.roll_die(20);
@@ -2322,23 +2326,39 @@ fn adjust_damage(state: &EncounterState, target: &Combatant, amount: i32, damage
     else { amount }
 }
 
-/// Roll disposition for an attack roll from every source (PHB Appendix C, read through ADR 0017):
-/// the actor's and target's conditions, Invisible on either side as sight allows, the actor's timed
-/// modifiers, and lighting roll modifiers on its traits.
-pub(crate) fn disposition(state: &EncounterState, actor: &Combatant, target: &Combatant) -> RollDisposition {
-    disposition_with(state, actor, target, within_5_feet(actor, target), [])
+/// Roll disposition for an attack roll with `attack` from every source (PHB Appendix C and ch. 1,
+/// read through ADR 0017): the actor's and target's conditions, Invisible on either side as sight
+/// allows, a ranged attack in close combat, the actor's timed modifiers, and lighting roll
+/// modifiers on its traits. "Within 5 feet" is the actor's engagement as the state holds it.
+pub(crate) fn disposition(state: &EncounterState, actor: &Combatant, target: &Combatant, attack: &Attack) -> RollDisposition {
+    disposition_with(state, actor, target, attack, Within::Held)
 }
 
-/// `disposition` with "within 5 feet" given instead of read from engagement, and `extra` sources
-/// combined under the same rule. The batch policy scores a plan this way: `within` is where the
-/// plan leaves the actor, and `extra` carries the policy's own close-combat Disadvantage.
-pub(crate) fn disposition_with(
-    state: &EncounterState,
-    actor: &Combatant,
-    target: &Combatant,
-    within: bool,
-    extra: impl IntoIterator<Item = RollDisposition>,
-) -> RollDisposition {
+/// Who is within 5 feet of an attacker when it rolls (ADR 0017: engagement, never range bands).
+/// The batch policy scores a plan from where the plan leaves the attacker.
+#[derive(Debug, Clone, Copy)]
+pub(crate) enum Within<'a> {
+    /// Engagement as the state holds it, recorded on either side.
+    Held,
+    /// Engagement as held, plus the combatant with this id (the attacker moves in to engage it).
+    HeldAnd(&'a str),
+    /// Nobody: the attacker steps out of every engagement first.
+    Nobody,
+}
+
+impl Within<'_> {
+    fn reaches(self, actor: &Combatant, other: &Combatant) -> bool {
+        match self {
+            Within::Held => within_5_feet(actor, other),
+            Within::HeldAnd(id) => other.id == id || within_5_feet(actor, other),
+            Within::Nobody => false,
+        }
+    }
+}
+
+/// `disposition` with "within 5 feet" read from `within` instead of the state's engagement, for
+/// both the target's Prone and the close-combat rule.
+pub(crate) fn disposition_with(state: &EncounterState, actor: &Combatant, target: &Combatant, attack: &Attack, within: Within) -> RollDisposition {
     use RollDisposition::{Advantage, Disadvantage};
     let has = |c: &Combatant, f: fn(Condition) -> bool| c.conditions.iter().any(|i| f(i.condition));
     let grappled_away = actor
@@ -2357,18 +2377,31 @@ pub(crate) fn disposition_with(
         (grappled_away || frightened, Disadvantage),
         (has(target, |c| matches!(c, Condition::Blinded | Condition::Paralyzed | Condition::Petrified | Condition::Restrained | Condition::Stunned)), Advantage),
         (counts_as_unconscious(target), Advantage),
-        (counts_as_prone(target), if within { Advantage } else { Disadvantage }),
+        (counts_as_prone(target), if within.reaches(actor, target) { Advantage } else { Disadvantage }),
         (!sees(state, actor, target), Disadvantage),
         (!sees(state, target, actor), Advantage),
+        (in_close_combat(state, actor, attack, within), Disadvantage),
     ];
     combined_disposition(
         conditions
             .into_iter()
             .filter_map(|(applies, d)| applies.then_some(d))
             .chain(modifier_dispositions(state, actor, ModifierTarget::AttackRolls))
-            .chain(lighting_modifiers(state, actor, Roll::Attack).into_iter().map(|(d, _)| d))
-            .chain(extra),
+            .chain(lighting_modifiers(state, actor, Roll::Attack).into_iter().map(|(d, _)| d)),
     )
+}
+
+const CLOSE_COMBAT: &str = "ranged attack in close combat";
+
+/// "Ranged Attacks in Close Combat" (PHB ch. 1, p. 25): a ranged attack roll has Disadvantage while
+/// an enemy within 5 feet of the attacker can see it and isn't Incapacitated. An enemy is a
+/// combatant on another side; a dead or downed one can't act, so it never counts.
+fn in_close_combat(state: &EncounterState, actor: &Combatant, attack: &Attack, within: Within) -> bool {
+    attack.is_ranged_only()
+        && state
+            .combatants
+            .iter()
+            .any(|e| e.side_id != actor.side_id && within.reaches(actor, e) && can_act(e) && sees(state, e, actor))
 }
 
 /// "Within 5 feet" (ADR 0017): either combatant holds the other in its engagement list.
@@ -2678,7 +2711,8 @@ fn roll_dice(state: &mut EncounterState, stream: &mut Stream, owner: &str, expre
     Ok(total)
 }
 
-fn can_act(c: &Combatant) -> bool {
+/// The combatant is neither dead nor down and has no condition in `STOPS_ACTING`.
+pub(crate) fn can_act(c: &Combatant) -> bool {
     c.end_state == EndState::Active && !c.conditions.iter().any(|x| incapacitates(x.condition))
 }
 
@@ -3098,7 +3132,7 @@ mod tests {
             vec![test_stat_block("fighter", "Fighter", 20, 16), test_stat_block("goblin", "Goblin", 7, 15)],
             vec![fighter, goblin],
         );
-        let d = disposition(&state, &state.combatants[0], &state.combatants[1]);
+        let d = disposition(&state, &state.combatants[0], &state.combatants[1], &sword());
         assert_eq!(d, RollDisposition::Disadvantage);
     }
 
@@ -3162,7 +3196,7 @@ mod tests {
             vec![test_stat_block("fighter", "Fighter", 20, 16), test_stat_block("goblin", "Goblin", 7, 15)],
             vec![fighter, goblin],
         );
-        assert_eq!(disposition(&state, &state.combatants[0], &state.combatants[1]), RollDisposition::Normal);
+        assert_eq!(disposition(&state, &state.combatants[0], &state.combatants[1], &sword()), RollDisposition::Normal);
     }
 
     #[test]
@@ -3173,7 +3207,7 @@ mod tests {
             vec![test_stat_block("fighter", "Fighter", 20, 16), test_stat_block("goblin", "Goblin", 7, 15)],
             vec![fighter, goblin],
         );
-        assert_eq!(disposition(&state, &state.combatants[0], &state.combatants[1]), RollDisposition::Advantage);
+        assert_eq!(disposition(&state, &state.combatants[0], &state.combatants[1], &sword()), RollDisposition::Advantage);
     }
 
     #[test]
@@ -3204,7 +3238,7 @@ mod tests {
             ends_on_damage: false,
             on_end: vec![],
         });
-        assert_eq!(disposition(&state, &state.combatants[0], &state.combatants[1]), RollDisposition::Normal);
+        assert_eq!(disposition(&state, &state.combatants[0], &state.combatants[1], &sword()), RollDisposition::Normal);
     }
 
     #[test]
@@ -4757,7 +4791,7 @@ mod tests {
 
     fn attack_disposition(monster: &str, lighting: crate::effect::Lighting) -> RollDisposition {
         let state = lit(fixture_block(monster), lighting);
-        disposition(&state, &state.combatants[0], &state.combatants[1])
+        disposition(&state, &state.combatants[0], &state.combatants[1], &sword())
     }
 
     #[test]
@@ -5720,7 +5754,7 @@ mod tests {
 
     fn duel_disposition(setup: impl FnOnce(&mut Vec<StatBlock>, &mut Vec<Combatant>)) -> RollDisposition {
         let state = duel(setup);
-        disposition(&state, &state.combatants[0], &state.combatants[1])
+        disposition(&state, &state.combatants[0], &state.combatants[1], &sword())
     }
 
     fn engage_duel(combatants: &mut [Combatant]) {
@@ -5829,6 +5863,143 @@ mod tests {
             let state = duel(|_, c| c[1].end_state = down);
             assert!(state.combatants[1].conditions.is_empty(), "nothing is pushed into conditions");
         }
+    }
+
+    fn bare_attack(reach: Option<u32>, range: Option<(u32, u32)>) -> crate::effect::Attack {
+        crate::effect::Attack { modifier: 0, reach, range, target_count: 1, damage: vec![], on_hit: vec![] }
+    }
+
+    fn bow() -> crate::effect::Attack {
+        bare_attack(None, Some((80, 320)))
+    }
+
+    fn sword() -> crate::effect::Attack {
+        bare_attack(Some(5), None)
+    }
+
+    /// The fighter shoots the goblin with `attack`.
+    fn shot_disposition(attack: &crate::effect::Attack, setup: impl FnOnce(&mut Vec<StatBlock>, &mut Vec<Combatant>)) -> RollDisposition {
+        let state = duel(setup);
+        disposition(&state, &state.combatants[0], &state.combatants[1], attack)
+    }
+
+    #[test]
+    fn an_engaged_bow_shot_has_disadvantage_and_a_thrown_or_melee_weapon_does_not() {
+        assert_eq!(shot_disposition(&bow(), |_, c| engage_duel(c)), RollDisposition::Disadvantage);
+        assert_eq!(shot_disposition(&bare_attack(Some(5), Some((20, 60))), |_, c| engage_duel(c)), RollDisposition::Normal);
+        assert_eq!(shot_disposition(&sword(), |_, c| engage_duel(c)), RollDisposition::Normal);
+    }
+
+    #[test]
+    fn a_shot_from_the_near_band_rolls_straight() {
+        let near = |c: &mut Vec<Combatant>| {
+            c[0].ranges.insert("goblin".into(), RangeBand::Near);
+            c[1].ranges.insert("fighter".into(), RangeBand::Near);
+        };
+        assert_eq!(shot_disposition(&bow(), |_, c| near(c)), RollDisposition::Normal);
+    }
+
+    #[test]
+    fn engagement_recorded_only_on_the_enemy_counts_for_close_combat() {
+        assert_eq!(shot_disposition(&bow(), |_, c| c[1].engagement.push("fighter".into())), RollDisposition::Disadvantage);
+    }
+
+    #[test]
+    fn an_engaged_enemy_that_cannot_act_gives_no_close_combat_disadvantage() {
+        for condition in [Condition::Incapacitated, Condition::Paralyzed, Condition::Stunned, Condition::Unconscious, Condition::Petrified] {
+            // Each of these also gives Advantage against the goblin when it is the target, so the
+            // shot goes at a second enemy, the ogre, from an archer engaged only with the goblin.
+            let state = duel(|b, c| {
+                b.push(test_stat_block("ogre", "Ogre", 30, 11));
+                c.push(test_combatant("ogre", "ogre", 30, "enemy"));
+                engage_duel(c);
+                c[1].conditions.push(sourced(condition, None));
+            });
+            assert_eq!(disposition(&state, &state.combatants[0], &state.combatants[2], &bow()), RollDisposition::Normal, "{condition:?}");
+        }
+        for end in [EndState::Unconscious, EndState::Stable, EndState::Dead] {
+            let state = duel(|b, c| {
+                b.push(test_stat_block("ogre", "Ogre", 30, 11));
+                c.push(test_combatant("ogre", "ogre", 30, "enemy"));
+                engage_duel(c);
+                c[1].end_state = end;
+            });
+            assert_eq!(disposition(&state, &state.combatants[0], &state.combatants[2], &bow()), RollDisposition::Normal, "{end:?}");
+        }
+    }
+
+    #[test]
+    fn an_engaged_enemy_that_cannot_see_the_archer_gives_no_close_combat_disadvantage() {
+        let invisible = |c: &mut Vec<Combatant>| c[0].conditions.push(sourced(Condition::Invisible, None));
+        // An unseen archer keeps Invisible's Advantage and takes no close-combat Disadvantage.
+        // A goblin with Truesight sees it: Advantage goes and the close-combat source applies.
+        assert_eq!(shot_disposition(&bow(), |_, c| { engage_duel(c); invisible(c); }), RollDisposition::Advantage);
+        assert_eq!(shot_disposition(&bow(), |b, c| { b[1].senses.truesight = Some(60); engage_duel(c); invisible(c); }), RollDisposition::Disadvantage);
+        let blinded = duel(|b, c| {
+            b.push(test_stat_block("ogre", "Ogre", 30, 11));
+            c.push(test_combatant("ogre", "ogre", 30, "enemy"));
+            engage_duel(c);
+            c[1].conditions.push(sourced(Condition::Blinded, None));
+        });
+        assert_eq!(disposition(&blinded, &blinded.combatants[0], &blinded.combatants[2], &bow()), RollDisposition::Normal);
+    }
+
+    #[test]
+    fn an_engaged_ally_gives_no_close_combat_disadvantage() {
+        let d = shot_disposition(&bow(), |b, c| {
+            b.push(test_stat_block("squire", "Squire", 10, 12));
+            c.push(test_combatant("squire", "squire", 10, "ally"));
+            c[0].engagement.push("squire".into());
+        });
+        assert_eq!(d, RollDisposition::Normal);
+    }
+
+    #[test]
+    fn two_engaged_enemies_give_one_disadvantage_that_advantage_cancels() {
+        let two = |b: &mut Vec<StatBlock>, c: &mut Vec<Combatant>| {
+            b.push(test_stat_block("ogre", "Ogre", 30, 11));
+            c.push(test_combatant("ogre", "ogre", 30, "enemy"));
+            engage_duel(c);
+            c[2].engagement.push("fighter".into());
+        };
+        assert_eq!(shot_disposition(&bow(), two), RollDisposition::Disadvantage);
+        assert_eq!(
+            shot_disposition(&bow(), |b, c| {
+                two(b, c);
+                c[1].conditions.push(sourced(Condition::Restrained, None));
+            }),
+            RollDisposition::Normal
+        );
+    }
+
+    #[test]
+    fn disposition_with_reads_close_combat_from_where_the_attacker_is_left() {
+        let state = duel(|b, c| {
+            b.push(test_stat_block("ogre", "Ogre", 30, 11));
+            c.push(test_combatant("ogre", "ogre", 30, "enemy"));
+            engage_duel(c);
+        });
+        let (archer, ogre) = (&state.combatants[0], &state.combatants[2]);
+        assert_eq!(disposition_with(&state, archer, ogre, &bow(), Within::Held), RollDisposition::Disadvantage);
+        assert_eq!(disposition_with(&state, archer, ogre, &bow(), Within::Nobody), RollDisposition::Normal);
+        let alone = duel(|b, c| {
+            b.push(test_stat_block("ogre", "Ogre", 30, 11));
+            c.push(test_combatant("ogre", "ogre", 30, "enemy"));
+        });
+        let (archer, ogre) = (&alone.combatants[0], &alone.combatants[2]);
+        assert_eq!(disposition_with(&alone, archer, ogre, &bow(), Within::Held), RollDisposition::Normal);
+        assert_eq!(disposition_with(&alone, archer, ogre, &bow(), Within::HeldAnd("ogre")), RollDisposition::Disadvantage);
+    }
+
+    #[test]
+    fn a_close_combat_shot_names_its_source_on_the_attack_event() {
+        let mut state = duel(|b, c| {
+            b[0].actions.push(ability("bow", vec![Effect::Attack(bow())], None));
+            engage_duel(c);
+        });
+        let resp = step(&mut state, StepRequest::Action { actor_id: "fighter".into(), action_id: "bow".into(), target_ids: vec!["goblin".into()], slot_level: None, extra: false }).unwrap();
+        let attack = resp.events.iter().find(|e| e.kind == "attack").expect("attack event");
+        assert!(attack.message.ends_with("(Disadvantage: ranged attack in close combat)"), "{}", attack.message);
     }
 
     /// A one-damage bite (1d1) the goblin rolls against the fighter, on the first seed whose
@@ -6193,7 +6364,7 @@ mod tests {
     fn an_attack_note_is_empty_when_lighting_is_cancelled() {
         let mut state = lit(fixture_block("kobold-warrior"), crate::effect::Lighting::Sunlight);
         state.combatants[1].conditions.push(sourced(Condition::Blinded, None));
-        assert_eq!(disposition(&state, &state.combatants[0], &state.combatants[1]), RollDisposition::Normal);
+        assert_eq!(disposition(&state, &state.combatants[0], &state.combatants[1], &sword()), RollDisposition::Normal);
         let effect = stat_block(&state, &state.combatants[0]).unwrap().actions[0].effects[0].clone();
         let mut events = vec![];
         resolve_effect(&mut state, &mut Stream::from_seed(3), "kobold-warrior", effect, &["fighter".into()], &mut events).unwrap();

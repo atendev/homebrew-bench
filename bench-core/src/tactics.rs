@@ -11,7 +11,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::effect::{Area, AttackFilter, Duration, Effect, ExtraActionUse, ModifierBearer, ModifierChange, ModifierTarget, MultiattackStep, ReactionTrigger, RollDisposition, TimedModifier, Usage};
 use crate::encounter::{Combatant, EncounterState, EndState, RangeBand};
-use crate::engine;
+use crate::engine::{self, can_act, Within};
 use crate::reaction::{ReactionAnswer, ReactionWindow, WindowTrigger};
 use crate::stat_block::{AbilityEntry, Condition, StatBlock};
 
@@ -333,14 +333,12 @@ impl Value {
     }
 }
 
-/// Where a plan leaves the actor when it acts: attack dispositions read "within 5 feet" of the
-/// target from it, and a teleport reads which engagements it escapes.
+/// Where a plan leaves the actor when it acts: attack dispositions read who is within 5 feet of
+/// the actor from it (the target's Prone and the engine's close-combat rule), and a teleport reads
+/// which engagements it escapes.
 #[derive(Debug, Clone, Copy, Default)]
 struct Footing {
     moves: Moves,
-    /// A foe is engaged when the actor shoots, so ranged attacks take the policy's close-combat
-    /// Disadvantage. The engine doesn't apply it.
-    ranged_in_melee: bool,
 }
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
@@ -355,7 +353,7 @@ enum Moves {
 }
 
 impl Footing {
-    const STEPPED_OUT: Footing = Footing { moves: Moves::Out, ranged_in_melee: false };
+    const STEPPED_OUT: Footing = Footing { moves: Moves::Out };
 }
 
 /// Which rolls an incoming-damage sum counts: attack rolls through a filter, saving throws
@@ -687,7 +685,7 @@ impl<'a> Ctx<'a> {
                 .opponents(actor)
                 .filter(|o| o.end_state == EndState::Active && self.band(actor, o) == RangeBand::Engaged)
                 .collect();
-            let footing = Footing { moves: if movement.is_empty() { Moves::Stays } else { Moves::In }, ranged_in_melee: !engaged_foes.is_empty() && ranged };
+            let footing = Footing { moves: if movement.is_empty() { Moves::Stays } else { Moves::In } };
             let (mut value, mut picks) = self.ability_value(actor, block, ability, target, 0, footing);
             if ranged && !melee && !engaged_foes.is_empty() && section != Section::Legendary {
                 let cost = 5 * engaged_foes.len() as u32;
@@ -1082,12 +1080,11 @@ impl<'a> Ctx<'a> {
             Effect::Attack(attack) => {
                 let ac = target_block.armor_class.first().map_or(10, |a| a.value);
                 let within = match footing.moves {
-                    Moves::Stays => self.band(actor, target) == RangeBand::Engaged,
-                    Moves::In => true,
-                    Moves::Out => false,
+                    Moves::Stays => Within::Held,
+                    Moves::In => Within::HeldAnd(&target.id),
+                    Moves::Out => Within::Nobody,
                 };
-                let close_combat = footing.ranged_in_melee && attack.range.is_some() && attack.reach.is_none();
-                let disposition = engine::disposition_with(self.state, actor, target, within, close_combat.then_some(RollDisposition::Disadvantage));
+                let disposition = engine::disposition_with(self.state, actor, target, attack, within);
                 let base = (f64::from(21 - (ac - attack.modifier)) / 20.0).clamp(0.05, 0.95);
                 let (p_hit, p_crit) = match disposition {
                     RollDisposition::Advantage => (1.0 - (1.0 - base).powi(2), 1.0 - 0.95f64.powi(2)),
@@ -1483,10 +1480,6 @@ impl<'a> Ctx<'a> {
         }
         hold(format!("{}, expected {:.1} <= reserve {:.1}{drops}", pick.attack_id, pick.value, decision.reserve))
     }
-}
-
-fn can_act(c: &Combatant) -> bool {
-    c.end_state == EndState::Active && !c.conditions.iter().any(|x| engine::STOPS_ACTING.contains(&x.condition))
 }
 
 /// Rounds of benefit over a horizon of `h` rounds when each round holds with chance `keep`:
@@ -2817,6 +2810,46 @@ mod tests {
         assert_eq!(plan.movement.len(), 1, "{}", plan.reason);
         // Moving in puts the knife within 5 feet: Advantage, 0.91 × 4.5 plus 0.0975 × 4.5.
         assert!((plan.expected_damage - 4.53375).abs() < 1e-9, "{}", plan.expected_damage);
+    }
+
+    #[test]
+    fn an_engaged_archer_scores_its_shot_at_disadvantage_and_stays_when_stepping_out_does_not_pay() {
+        let plan = choose_action(&skirmish(), "archer");
+        assert!(plan.movement.is_empty(), "{}", plan.reason);
+        // Disadvantage at +5 against AC 12: 0.7² × 7 plus 0.0025 × 7. Stepping out would score
+        // 5.25 less a 3.375 Opportunity Attack.
+        assert!((plan.expected_damage - 3.4475).abs() < 1e-9, "{}", plan.expected_damage);
+    }
+
+    #[test]
+    fn an_archer_engaged_only_with_an_incapacitated_brute_shoots_straight_without_stepping_out() {
+        let mut state = skirmish();
+        afflict(&mut state, "brute", Condition::Incapacitated);
+        let plan = choose_action(&state, "archer");
+        assert!(plan.movement.is_empty(), "{}", plan.reason);
+        // Straight at +5 against AC 12: 0.7 × 7 plus 0.05 × 7.
+        assert!((plan.expected_damage - 5.25).abs() < 1e-9, "{}", plan.expected_damage);
+    }
+
+    #[test]
+    fn a_shot_reads_close_combat_from_where_the_plan_leaves_the_archer() {
+        let shot = |state: &EncounterState, moves: Moves| {
+            let constants = PolicyConstants::default();
+            let ctx = ctx(state, &constants);
+            let archer = ctx.combatant("archer").unwrap();
+            let bow = ranged("bow", 5, "2d6").effects.remove(0);
+            ctx.effect_value(archer, ctx.block(archer).unwrap(), &bow, ctx.combatant("brute").unwrap(), 0, Footing { moves }).0.damage
+        };
+        // Straight: 0.7 × 7 plus 0.05 × 7. Disadvantage: 0.7² × 7 plus 0.0025 × 7.
+        let (straight, disadvantage) = (5.25, 3.4475);
+        let engaged = skirmish();
+        assert!((shot(&engaged, Moves::Stays) - disadvantage).abs() < 1e-9);
+        assert!((shot(&engaged, Moves::Out) - straight).abs() < 1e-9);
+        let mut apart = skirmish();
+        apart.combatants.iter_mut().for_each(|c| c.engagement.clear());
+        apart.combatants.iter_mut().for_each(|c| c.ranges.values_mut().for_each(|b| *b = RangeBand::Near));
+        assert!((shot(&apart, Moves::Stays) - straight).abs() < 1e-9);
+        assert!((shot(&apart, Moves::In) - disadvantage).abs() < 1e-9);
     }
 
     #[test]
