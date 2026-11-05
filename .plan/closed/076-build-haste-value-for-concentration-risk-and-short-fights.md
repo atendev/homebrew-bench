@@ -114,4 +114,4 @@ Against 075's prototype: level 17 matches exactly (99/1/114.28/2.94, 6 casts), l
 
 Note: the reason prints rounds and horizon to one decimal, so a horizon cut to 1.95 reads `2.0 of 2.0 rounds at keep 1.00`. That follows the spec's format.
 
-No new tickets or fog. With 076 closed, [Build ranged attacks in close combat](../tickets/077-build-ranged-attacks-in-close-combat.md) is takeable.
+No new tickets or fog. With 076 closed, [Build ranged attacks in close combat](../closed/077-build-ranged-attacks-in-close-combat.md) is takeable.
