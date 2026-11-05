@@ -3,9 +3,9 @@ id: 078
 title: Build teleport subject
 type: task
 mode: AFK
-status: open
+status: closed
 blocked_by: [077]
-claimed: true
+claimed: false
 ---
 
 ## Question
@@ -63,3 +63,10 @@ Versions and baseline:
 - Measure before closing: master against the branch, seed 7, 100 fights, for adult red dragon at 11 and 17 (expect identical) and the scratch teleporter at two levels.
 
 ## Resolution
+
+`Teleport.subject` is `self` (the default) or `target`, left out of the JSON when `self`, so older stat blocks, snapshots and histories load and re-serialize unchanged (a snapshot round-trip test covers it). The engine resolves a teleport on its subject, clears its engagements on both sides, leaves range bands alone, and logs `<id> teleports up to N feet`. A top-level `target` teleport with no target is refused. The policy plans an ability whose effects are all `self` teleports, reached through a cast too, with no targets, scored as the Opportunity Attacks avoided; a `target` teleport scores 0 and its value is a new fog line. A test checks the credited value equals what the engine frees. `POLICY_VERSION` stays 3, the workspace is 0.1.15, the curve is not regenerated, and ADR 0005 and 0012, the batch and live references and `CHANGELOG.md` say so.
+
+Seed 7, 100 fights, master against the branch: adult red dragon at levels 11 and 17 and a scratch blink dog with a modeled Teleport at levels 2 and 5 are identical. With a weakened bite at level 5 the scratch blinker teleports on the branch and the log shows it.
+
+Audit: haiku did not approve in two rounds. Round 1 problems (casts bypassing the new plan, a misplaced doc comment, no snapshot test, no fog line) were fixed. Round 2 left: `target` is checked only at runtime, not restricted at load to the positions ADR 0005 names, so under a Multiattack with a target it moves that target; no engine test for a self teleport in a Cast or `use_action`; the refusal message doesn't name the ability; a self teleport under a per-target `on_hit` logs once per target. The user chose to commit and merge as it stands. Requirements report: `.plan/reports/078-requirements.md`. No implementation report was written. No shell guard held a skill edit; one held test edit was approved and run.
+
