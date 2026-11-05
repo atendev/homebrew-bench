@@ -347,12 +347,19 @@ fn checked_entries<'de, D: Deserializer<'de>>(deserializer: D, reactions: bool) 
     Ok(entries)
 }
 
-/// A cast whose slot is below its spell's level is never ready, so the policy would
-/// silently never pick it. Spells the effects file lacks are left to the missing-spell warning.
+/// A cast whose slot is below its spell's level, or a cantrip cast that names any slot, is
+/// never ready, so the policy would silently never pick it. Spells the effects file lacks are
+/// left to the missing-spell warning.
 fn refuse_cast_below_spell_level<E: serde::de::Error>(entry: &AbilityEntry) -> Result<(), E> {
     let (Ok(spells), Ok(value)) = (crate::spell::catalog(), serde_json::to_value(&entry.effects)) else { return Ok(()) };
     for cast in crate::effect::casts_in(&value) {
         let (Some(slot), Some(spell)) = (cast.slot_level, spells.get(&cast.spell_id)) else { continue };
+        if spell.level == 0 {
+            return Err(E::custom(format!(
+                "{}: a cantrip's cast names a slot level ({} is a cantrip and takes no spell slot)",
+                entry.id, cast.spell_id
+            )));
+        }
         if slot < spell.level {
             return Err(E::custom(format!(
                 "{}: a cast's slot level is below the spell's level ({} is level {}, cast with a level {slot} slot)",
@@ -431,6 +438,21 @@ mod tests {
         block = serde_json::from_str(&text).unwrap();
         let err = serde_json::from_value::<StatBlock>(block).unwrap_err().to_string();
         assert!(err.starts_with("multiattack: a cast's slot level is below the spell's level (acid-arrow is level 2"), "{err}");
+    }
+
+    #[test]
+    fn a_cantrip_cast_with_a_slot_level_fails_at_load() {
+        let block = |slot: serde_json::Value| {
+            let mut block: serde_json::Value = serde_json::from_str(crate::embedded::fixture_json("adult-black-dragon").unwrap()).unwrap();
+            let bolt = serde_json::json!({"id": "bolt", "name": "Bolt", "effects": [{"cast": {"spell_id": "fire-bolt", "slot_level": slot, "upcast": false}}]});
+            block["actions"].as_array_mut().unwrap().push(bolt);
+            block
+        };
+        assert!(serde_json::from_value::<StatBlock>(block(serde_json::Value::Null)).is_ok());
+        for slot in [0, 1] {
+            let err = serde_json::from_value::<StatBlock>(block(slot.into())).unwrap_err().to_string();
+            assert!(err.starts_with("bolt: a cantrip's cast names a slot level (fire-bolt is a cantrip"), "{err}");
+        }
     }
 
     #[test]
