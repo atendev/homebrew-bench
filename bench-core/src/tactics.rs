@@ -381,6 +381,20 @@ struct BearerValue {
     notes: Vec<String>,
 }
 
+/// What a buff's value reads from its caster alone, computed at most once per plan however many
+/// bearers it is weighed on: the rounds the fight has left and the caster's keep chance.
+struct BuffOutlook<'c> {
+    actor: &'c Combatant,
+    rounds_left: std::cell::OnceCell<f64>,
+    keep: std::cell::OnceCell<f64>,
+}
+
+impl<'c> BuffOutlook<'c> {
+    fn new(actor: &'c Combatant) -> Self {
+        BuffOutlook { actor, rounds_left: std::cell::OnceCell::new(), keep: std::cell::OnceCell::new() }
+    }
+}
+
 impl BearerValue {
     fn add(&mut self, other: &BearerValue) {
         self.damage += other.damage;
@@ -647,7 +661,7 @@ impl<'a> Ctx<'a> {
         if !modifiers.is_empty() && only_modifiers {
             return self.modifier_plan(actor, ability, section, resource, &modifiers);
         }
-        let own = self.bearer_value(actor, actor, modifiers.iter().filter(|m| m.bearer == ModifierBearer::Actor));
+        let own = self.bearer_value(&BuffOutlook::new(actor), actor, modifiers.iter().filter(|m| m.bearer == ModifierBearer::Actor));
         if let Some((area, effect)) = area_of(block, &ability.effects) {
             return self.area_plan(actor, block, ability, section, resource, &area, &effect, false);
         }
@@ -746,12 +760,13 @@ impl<'a> Ctx<'a> {
             allies.sort_by(|a, b| a.id.cmp(&b.id));
             bearers.extend(allies);
         }
-        let own = self.bearer_value(actor, actor, modifiers.iter().filter(|m| m.bearer == ModifierBearer::Actor));
+        let outlook = BuffOutlook::new(actor);
+        let own = self.bearer_value(&outlook, actor, modifiers.iter().filter(|m| m.bearer == ModifierBearer::Actor));
         let w = &self.constants.weights;
         let cost = if is_limited(ability) { 1.0 } else { 0.0 };
         let mut best: Option<(f64, &Combatant, BearerValue)> = None;
         for bearer in bearers {
-            let mut value = self.bearer_value(actor, bearer, modifiers.iter().filter(|m| m.bearer == ModifierBearer::Target));
+            let mut value = self.bearer_value(&outlook, bearer, modifiers.iter().filter(|m| m.bearer == ModifierBearer::Target));
             value.add(&own);
             let score = w.expected_damage * value.damage + w.survival * value.survival - w.resource_cost * cost;
             if best.as_ref().map_or(true, |(b, _, _)| score > b + 1e-9) {
@@ -791,10 +806,9 @@ impl<'a> Ctx<'a> {
     /// chance the actor keeps concentration. A concentration modifier whose `on_end` stops the
     /// bearer acting costs its threat times the chance concentration breaks in the horizon. A
     /// modifier scores 0 on a bearer that already has one from the same `source_ability`.
-    fn bearer_value<'m>(&self, actor: &Combatant, bearer: &Combatant, modifiers: impl Iterator<Item = &'m TimedModifier>) -> BearerValue {
+    fn bearer_value<'m>(&self, outlook: &BuffOutlook, bearer: &Combatant, modifiers: impl Iterator<Item = &'m TimedModifier>) -> BearerValue {
+        let actor = outlook.actor;
         let mut out = BearerValue::default();
-        let mut rounds_left: Option<f64> = None;
-        let mut keep: Option<f64> = None;
         for m in modifiers {
             let held = m.source_ability.as_deref().is_some_and(|ability| {
                 self.state.active_modifiers.iter().any(|a| a.bearer() == Some(bearer.id.as_str()) && a.source_ability.as_deref() == Some(ability))
@@ -803,14 +817,14 @@ impl<'a> Ctx<'a> {
             if held || cap == 0.0 {
                 continue;
             }
-            let h = cap.min(*rounds_left.get_or_insert_with(|| self.rounds_left(actor)));
+            let h = cap.min(*outlook.rounds_left.get_or_init(|| self.rounds_left(actor)));
             let concentration = matches!(m.duration, Duration::Concentration);
-            let k = if concentration { *keep.get_or_insert_with(|| self.concentration_keep(actor)) } else { 1.0 };
+            let k = if concentration { *outlook.keep.get_or_init(|| self.concentration_keep(actor)) } else { 1.0 };
             let rounds = weighted_rounds(h, k, self.acts_before_opponents(actor, bearer));
             if (k < 1.0 || h < cap) && out.horizon.is_none() {
                 out.horizon = Some((rounds, h, k));
             }
-            let lethargic = m.on_end.iter().any(|e| matches!(e, Effect::Condition(c) if STOPS_ACTING.contains(&c.condition)));
+            let lethargic = m.on_end.iter().any(|e| matches!(e, Effect::Condition(c) if engine::STOPS_ACTING.contains(&c.condition)));
             if concentration && lethargic && can_act(bearer) {
                 let cost = self.threat(bearer) * (1.0 - k.powf(h));
                 out.damage -= cost;
@@ -1471,11 +1485,8 @@ impl<'a> Ctx<'a> {
     }
 }
 
-/// Conditions under which a creature takes no actions.
-const STOPS_ACTING: [Condition; 5] = [Condition::Incapacitated, Condition::Paralyzed, Condition::Petrified, Condition::Stunned, Condition::Unconscious];
-
 fn can_act(c: &Combatant) -> bool {
-    c.end_state == EndState::Active && !c.conditions.iter().any(|x| STOPS_ACTING.contains(&x.condition))
+    c.end_state == EndState::Active && !c.conditions.iter().any(|x| engine::STOPS_ACTING.contains(&x.condition))
 }
 
 /// Rounds of benefit over a horizon of `h` rounds when each round holds with chance `keep`:
@@ -2648,7 +2659,7 @@ mod tests {
     fn value_on(state: &EncounterState, bearer: &str, modifiers: &[TimedModifier]) -> BearerValue {
         let constants = PolicyConstants::default();
         let ctx = ctx(state, &constants);
-        ctx.bearer_value(ctx.combatant("caster").unwrap(), ctx.combatant(bearer).unwrap(), modifiers.iter())
+        ctx.bearer_value(&BuffOutlook::new(ctx.combatant("caster").unwrap()), ctx.combatant(bearer).unwrap(), modifiers.iter())
     }
 
     const SWORD: f64 = 7.0;
