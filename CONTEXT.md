@@ -85,7 +85,7 @@ Advantage or Disadvantage that a trait gives its own creature on one kind of rol
 _Avoid_: Modifier (that is timed), passive buff
 
 **Lighting**:
-The light one encounter takes place in, one value for every combatant: unspecified, Dim Light, Bright Light or sunlight. Sunlight is also Bright Light. Unspecified is the default and turns on no lighting trait, so a trait keyed to any light applies only when the user names that light. Darkness is not a lighting value yet; the agent handles it.
+The light one encounter takes place in, one value for every combatant: unspecified, Darkness, Dim Light, Bright Light or sunlight. Sunlight is also Bright Light. A trait keyed to Dim Light also applies in Darkness, so it fits the usual "Dim Light or Darkness" wording; a trait that works only in Dim Light is left to the agent. Unspecified is the default and turns on no lighting trait, so a trait keyed to any light applies only when the user names that light. In Darkness, a creature without Darkvision, Blindsight or Truesight sees no one. A party carrying torches fights in Dim Light or Bright Light, not Darkness. Magical Darkness is not a lighting value; the agent handles it.
 _Avoid_: Normal light, illumination, ambient light
 
 **Agent judgment**:
