@@ -110,10 +110,15 @@
   ],
   "bonus_actions": [
     {
-      "default_resolution": "skipped",
+      "agent_clauses": [
+        "The vampire may take the Dash action instead of Disengage."
+      ],
       "desc": "The vampire takes the Dash or Disengage action.",
+      "effects": [
+        "disengage"
+      ],
       "id": "deathless-agility",
-      "kind": "unmodeled",
+      "kind": "partly_modeled",
       "name": "Deathless Agility"
     }
   ],

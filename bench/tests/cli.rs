@@ -116,6 +116,20 @@ fn undo_then_reissue_gets_the_same_dice_and_replay_matches() {
 }
 
 #[test]
+fn nimble_escape_disengages_as_a_bonus_action_with_no_target() {
+    let bench = Bench::new();
+    let start = bench.start(&[]);
+    assert_eq!(start["digest"]["active_turn"], "goblin-warrior");
+    let out = bench.ok(&["action", "goblin-warrior", "nimble-escape"]);
+    assert_eq!(out["events"][0]["line"], "goblin-warrior uses Nimble Escape to Disengage");
+    let goblin = out["digest"]["combatants"].as_array().unwrap().iter().find(|c| c["id"] == "goblin-warrior").unwrap();
+    assert_eq!(goblin["action_economy"]["bonus_action_used"], true);
+    assert_eq!(goblin["action_economy"]["action_used"], false);
+    let replay = bench.ok(&["replay"]);
+    assert_eq!(replay["matches"], true, "{replay:#}");
+}
+
+#[test]
 fn hand_edited_state_is_refused() {
     let bench = Bench::new();
     bench.start(&[]);

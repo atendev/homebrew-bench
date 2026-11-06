@@ -310,6 +310,10 @@ fn resolve_action(
         events.push(event("extra_action", format!("{actor_id} uses its extra action"), actor_id, actor_id));
     }
     for effect in effects {
+        if matches!(effect, Effect::Disengage) {
+            events.push(set_disengaged(state, actor_id, Some(&action.name))?);
+            continue;
+        }
         resolve_effect(state, &mut stream, actor_id, effect, target_ids, &mut events)?;
         if state.pending.is_some() {
             break;
@@ -394,6 +398,16 @@ fn disengage(state: &mut EncounterState, actor_id: &str, extra: bool) -> Result<
     economy.action_used = true;
     economy.disengaged = true;
     Ok(vec![event("disengage", format!("{actor_id} takes the Disengage action"), actor_id, actor_id)])
+}
+
+fn set_disengaged(state: &mut EncounterState, actor_id: &str, by: Option<&str>) -> Result<EngineEvent, EngineError> {
+    let i = index_of(state, actor_id)?;
+    state.combatants[i].action_economy.disengaged = true;
+    let message = match by {
+        Some(name) => format!("{actor_id} uses {name} to Disengage"),
+        None => format!("{actor_id} disengages"),
+    };
+    Ok(event("disengage", message, actor_id, actor_id))
 }
 
 fn extra_action_grant(state: &EncounterState, actor_id: &str) -> Option<Vec<ExtraActionUse>> {
@@ -714,6 +728,7 @@ fn resolve_effect(
             cast_spell(state, stream, actor_id, &cast, target_ids, events)?;
         }
         Effect::RollModifier(_) | Effect::NoProvoke => {}
+        Effect::Disengage => events.push(set_disengaged(state, actor_id, None)?),
         Effect::Area(area) => {
             events.push(event("area", format!("{} creates an area effect", actor_id), actor_id, actor_id));
             let count = area.target_count.map_or(target_ids.len(), |n| n.max(1) as usize);
@@ -4497,6 +4512,31 @@ mod tests {
         state.combatants[0].action_economy = ActionEconomy::default();
         state.combatants[0].end_state = EndState::Dead;
         assert!(step_events(&mut state, StepRequest::Disengage { actor_id: "a".into(), extra: false }).is_err());
+    }
+
+    fn nimble_escape() -> crate::stat_block::AbilityEntry {
+        crate::stat_block::AbilityEntry {
+            id: "nimble-escape".into(),
+            name: "Nimble Escape".into(),
+            effects: vec![Effect::Disengage],
+            ..no_provoke_trait()
+        }
+    }
+
+    #[test]
+    fn a_bonus_disengage_needs_no_target_and_leaves_the_action_unspent() {
+        let mut state = provoking_encounter(0);
+        state.stat_blocks.iter_mut().find(|s| s.id == "a").unwrap().stat_block.bonus_actions.push(nimble_escape());
+        let request = || StepRequest::Action { actor_id: "a".into(), action_id: "nimble-escape".into(), target_ids: vec![], slot_level: None, extra: false };
+        let events = step_events(&mut state, request()).unwrap();
+        let messages: Vec<&str> = events.iter().map(|e| e.message.as_str()).collect();
+        assert_eq!(messages, ["a uses Nimble Escape to Disengage"]);
+        assert_eq!(events[0].kind, "disengage");
+        let economy = &state.combatants[0].action_economy;
+        assert!(economy.disengaged && economy.bonus_action_used && !economy.action_used);
+        let err = move_combatant(&mut state, "a", None, RangeBand::Far, 35, &[oa("b", None)], &[]).unwrap_err();
+        assert!(err.to_string().contains("a has disengaged"), "{err}");
+        assert!(step_events(&mut state, request()).unwrap_err().to_string().contains("bonus action already used"));
     }
 
     #[test]

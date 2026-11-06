@@ -92,10 +92,15 @@
   ],
   "bonus_actions": [
     {
-      "default_resolution": "skipped",
+      "agent_clauses": [
+        "The golem also takes the Dash action."
+      ],
       "desc": "The golem takes the Dash and Disengage actions.",
+      "effects": [
+        "disengage"
+      ],
       "id": "hasten",
-      "kind": "unmodeled",
+      "kind": "partly_modeled",
       "name": "Hasten",
       "usage": {
         "recharge": {

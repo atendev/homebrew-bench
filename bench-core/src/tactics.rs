@@ -18,7 +18,7 @@ use crate::stat_block::{AbilityEntry, Condition, StatBlock};
 /// Stable policy identifier written into logs, reports and fingerprints.
 pub const POLICY_ID: &str = "homebrew-bench.tactics";
 /// Policy version. Bump it whenever scoring changes, so baselines go stale.
-pub const POLICY_VERSION: u32 = 3;
+pub const POLICY_VERSION: u32 = 4;
 
 /// Value of one AC point against one round of incoming attack-roll damage. A
 /// d20 lands in an n-point band 5n% of the time, near 0.1n of the expected
@@ -146,6 +146,19 @@ pub struct Plan {
     pub reason: String,
     pub resource: Option<String>,
     pub area: Option<String>,
+    /// The Disengage taken before the plan's move, so stepping out provokes nothing.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub disengage: Option<DisengageBy>,
+}
+
+/// What spends a Disengage before an action plan steps out of engagement.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum DisengageBy {
+    /// A bonus action whose effects include `disengage` (Nimble Escape, Cunning Action).
+    Bonus(String),
+    /// An extra action that allows Disengage (Haste).
+    Extra,
 }
 
 impl Plan {
@@ -199,9 +212,9 @@ impl Fallback {
 
 /// Best plan for `actor_id` in `section`, or `None` when nothing legal scores above zero.
 pub fn choose(state: &EncounterState, actor_id: &str, section: Section, constants: &PolicyConstants) -> Option<Plan> {
-    let ctx = Ctx { state, constants, threat_nesting: std::cell::Cell::new(0) };
+    let ctx = Ctx::new(state, constants, Some(section));
     let actor = ctx.combatant(actor_id)?;
-    if !can_act(actor) {
+    if !can_act(actor) || (section == Section::Bonus && actor.action_economy.bonus_action_used) {
         return None;
     }
     let block = ctx.block(actor)?;
@@ -234,7 +247,7 @@ pub fn choose(state: &EncounterState, actor_id: &str, section: Section, constant
 
 /// Defensive fallback for a turn where [`choose`] found no action plan.
 pub fn fallback(state: &EncounterState, actor_id: &str, constants: &PolicyConstants) -> Fallback {
-    let ctx = Ctx { state, constants, threat_nesting: std::cell::Cell::new(0) };
+    let ctx = Ctx::new(state, constants, None);
     let mut out = Fallback { actor_id: actor_id.into(), movement: vec![], reason: "no ability is ready and in reach".into() };
     let Some(actor) = ctx.combatant(actor_id) else { return out };
     let Some(target) = ctx.ranked_opponents(actor, None).into_iter().next() else {
@@ -260,7 +273,7 @@ pub fn fallback(state: &EncounterState, actor_id: &str, constants: &PolicyConsta
 /// is taken only when it turns the hit into a miss; an Opportunity Attack only
 /// when its value beats the reactor's reaction reserve.
 pub fn decide_reaction(state: &EncounterState, window: &ReactionWindow, constants: &PolicyConstants) -> (ReactionAnswer, String) {
-    let ctx = Ctx { state, constants, threat_nesting: std::cell::Cell::new(0) };
+    let ctx = Ctx::new(state, constants, None);
     match &window.trigger {
         WindowTrigger::Hit { total, ac, critical, .. } => ctx.decide_hit(window, *total, *ac, *critical),
         WindowTrigger::Opportunity { mover_id } => ctx.decide_opportunity(window, mover_id),
@@ -293,6 +306,9 @@ struct Ctx<'a> {
     /// How many `threat` calls are open. A control effect values itself by the
     /// target's threat, so two combatants with control effects would recurse forever.
     threat_nesting: std::cell::Cell<u8>,
+    /// The part of the turn being planned. Only an action plan may Disengage first.
+    section: Option<Section>,
+    disengages: std::cell::RefCell<std::collections::HashMap<String, Option<(DisengageBy, f64)>>>,
 }
 
 /// Open nesting levels past which a control effect, an Opportunity Attack, the
@@ -430,6 +446,50 @@ enum AreaClass {
 }
 
 impl<'a> Ctx<'a> {
+    fn new(state: &'a EncounterState, constants: &'a PolicyConstants, section: Option<Section>) -> Self {
+        Ctx { state, constants, threat_nesting: std::cell::Cell::new(0), section, disengages: Default::default() }
+    }
+
+    /// The cheapest ready Disengage an action plan could take before stepping out, and its cost
+    /// in score units: the best other bonus plan plus a limited bonus Disengage's resource cost,
+    /// or the best extra-action plan. Both plans are scored on the state before the action.
+    /// At equal cost the extra action goes first.
+    fn disengage_option(&self, actor: &Combatant) -> Option<(DisengageBy, f64)> {
+        if self.section != Some(Section::Action) {
+            return None;
+        }
+        if let Some(known) = self.disengages.borrow().get(&actor.id) {
+            return known.clone();
+        }
+        let best = |section| choose(self.state, &actor.id, section, self.constants).map_or(0.0, |p| p.score.max(0.0));
+        let extra = engine::extra_action_uses(self.state, &actor.id)
+            .filter(|uses| uses.is_empty() || uses.contains(&ExtraActionUse::Disengage))
+            .map(|_| (DisengageBy::Extra, best(Section::Extra)));
+        let bonus = self.block(actor).filter(|_| !actor.action_economy.bonus_action_used).and_then(|block| {
+            let resource = |a: &AbilityEntry| if is_limited(block, a) { self.constants.weights.resource_cost } else { 0.0 };
+            let ability = block
+                .bonus_actions
+                .iter()
+                .filter(|a| a.effects.iter().any(|e| matches!(e, Effect::Disengage)) && engine::ability_ready(self.state, &actor.id, a))
+                .fold(None::<&AbilityEntry>, |cheapest, a| match cheapest {
+                    Some(c) if resource(c) <= resource(a) => Some(c),
+                    _ => Some(a),
+                })?;
+            Some((DisengageBy::Bonus(ability.id.clone()), best(Section::Bonus) + resource(ability)))
+        });
+        let option = match (extra, bonus) {
+            (Some(e), Some(b)) => Some(if b.1 < e.1 { b } else { e }),
+            (e, b) => e.or(b),
+        };
+        self.disengages.borrow_mut().insert(actor.id.clone(), option.clone());
+        option
+    }
+
+    /// The ability that granted the actor's extra action, such as `haste`.
+    fn extra_action_source(&self, actor: &Combatant) -> Option<String> {
+        self.state.modifiers_on(&actor.id).filter(|m| matches!(m.target, ModifierTarget::ExtraAction { .. })).find_map(|m| m.source_ability.clone())
+    }
+
     fn combatant(&self, id: &str) -> Option<&'a Combatant> {
         self.state.combatants.iter().find(|c| c.id == id)
     }
@@ -649,7 +709,7 @@ impl<'a> Ctx<'a> {
 
     fn plan_for(&self, actor: &Combatant, block: &StatBlock, ability: &AbilityEntry, section: Section) -> Option<Plan> {
         let resource = usage_word(block, ability);
-        if self.breaks_own_concentration(actor, block, ability) {
+        if self.breaks_own_concentration(actor, block, ability) || only_disengages(&ability.effects) {
             return None;
         }
         if self.heals(block, &ability.effects) {
@@ -677,6 +737,7 @@ impl<'a> Ctx<'a> {
             let band = self.band(actor, target);
             let mut movement = Vec::new();
             let mut penalty = 0.0;
+            let mut disengaged: Option<(DisengageBy, f64, f64)> = None;
             if melee && band != RangeBand::Engaged {
                 let cost = band_cost(band, RangeBand::Engaged);
                 if self.movement_left(actor) < cost || section == Section::Legendary {
@@ -695,10 +756,16 @@ impl<'a> Ctx<'a> {
                 if self.movement_left(actor) >= cost {
                     let (stepped, stepped_picks) = self.ability_value(actor, block, ability, target, 0, Footing::STEPPED_OUT);
                     let oa = self.step_out_penalty(actor, &engaged_foes);
-                    if stepped.worth() - oa > value.worth() {
+                    let w = &self.constants.weights;
+                    let disengage = if oa > 0.0 { self.disengage_option(actor).filter(|(_, cost)| *cost < w.survival * oa) } else { None };
+                    let paid = disengage.as_ref().map_or(oa, |(_, cost)| cost / w.survival);
+                    if stepped.worth() - paid > value.worth() {
                         value = stepped;
                         picks = stepped_picks;
-                        penalty = oa;
+                        match disengage {
+                            Some((by, cost)) => disengaged = Some((by, oa, cost)),
+                            None => penalty = oa,
+                        }
                         let left = self.movement_left(actor);
                         movement = engaged_foes
                             .iter()
@@ -712,7 +779,8 @@ impl<'a> Ctx<'a> {
             let survival = kill - penalty + value.survival + own.survival;
             let w = &self.constants.weights;
             let cost = if is_limited(block, ability) { 1.0 } else { 0.0 };
-            let score = w.expected_damage * (value.damage + own.damage) + w.control * value.control + w.survival * survival - w.resource_cost * cost;
+            let disengage_cost = disengaged.as_ref().map_or(0.0, |d| d.2);
+            let score = w.expected_damage * (value.damage + own.damage) + w.control * value.control + w.survival * survival - w.resource_cost * cost - disengage_cost;
             let mut reason = format!(
                 "top-priority target {} (threat {:.1}), expected damage {:.1}",
                 target.id,
@@ -727,6 +795,13 @@ impl<'a> Ctx<'a> {
             }
             if penalty > 0.0 {
                 reason.push_str(&format!(", steps out of melee despite {penalty:.1} opportunity damage"));
+            }
+            if let Some((by, avoided, _)) = &disengaged {
+                let name = match by {
+                    DisengageBy::Bonus(id) => id.clone(),
+                    DisengageBy::Extra => self.extra_action_source(actor).map_or_else(|| "its extra action".into(), |source| format!("{source}'s extra action")),
+                };
+                reason.push_str(&format!(", steps out of melee, {name} avoids {avoided:.1} opportunity damage"));
             }
             if value.survival > 0.0 {
                 reason.push_str(&format!(", teleports clear of {:.1} opportunity damage", value.survival));
@@ -745,6 +820,7 @@ impl<'a> Ctx<'a> {
                 reason,
                 resource,
                 area: None,
+                disengage: disengaged.map(|d| d.0),
             });
         }
         None
@@ -774,6 +850,7 @@ impl<'a> Ctx<'a> {
             reason,
             resource,
             area: None,
+            disengage: None,
         }
     }
 
@@ -826,6 +903,7 @@ impl<'a> Ctx<'a> {
             reason: format!("{} on {} ({})", ability.id, bearer.id, notes.join(", ")),
             resource,
             area: None,
+            disengage: None,
         })
     }
 
@@ -942,6 +1020,7 @@ impl<'a> Ctx<'a> {
                     reason: format!("revives downed {} (expected {:.1} per round over two rounds)", ally.id, contribution),
                     resource,
                     area: None,
+                    disengage: None,
                 });
             }
         }
@@ -974,6 +1053,7 @@ impl<'a> Ctx<'a> {
             reason: format!("heals {} below {:.0}% HP and likely downed before its next turn, restoring {restored:.1}", ally.id, self.constants.heal_threshold * 100.0),
             resource,
             area: None,
+            disengage: None,
         })
     }
 
@@ -1078,6 +1158,7 @@ impl<'a> Ctx<'a> {
             reason: format!("area effect, expected damage {:.1}, control {:.1}, ally harm {harm_damage:.1}", value.damage, value.control),
             resource,
             area: Some(area_note),
+            disengage: None,
         })
     }
 
@@ -1183,7 +1264,7 @@ impl<'a> Ctx<'a> {
             }
             Effect::Teleport(teleport) if teleport.subject == TeleportSubject::Actor => Value { survival: self.teleport_value(actor, footing), ..Default::default() },
             Effect::Teleport(_) => Value::default(),
-            Effect::TempHp(_) | Effect::TimedModifier(_) | Effect::RollModifier(_) | Effect::NoProvoke => Value::default(),
+            Effect::TempHp(_) | Effect::TimedModifier(_) | Effect::RollModifier(_) | Effect::NoProvoke | Effect::Disengage => Value::default(),
         };
         (value, vec![])
     }
@@ -1208,7 +1289,8 @@ impl<'a> Ctx<'a> {
 
     /// A teleport's value (ADR 0012): the Opportunity Attacks the actor avoids by teleporting
     /// rather than walking out of the engagements the plan leaves it in, priced by the step-out
-    /// penalty. Nothing when the plan already stepped out or nothing is engaged.
+    /// penalty, and no more than a ready Disengage would cost. Nothing when the plan already
+    /// stepped out or nothing is engaged.
     fn teleport_value(&self, actor: &Combatant, footing: Footing) -> f64 {
         if footing.moves == Moves::Out {
             return 0.0;
@@ -1220,7 +1302,12 @@ impl<'a> Ctx<'a> {
         if engaged.is_empty() {
             return 0.0;
         }
-        self.step_out_penalty(actor, &engaged)
+        let avoided = self.step_out_penalty(actor, &engaged);
+        let w = &self.constants.weights;
+        match self.disengage_option(actor) {
+            Some((_, cost)) if w.survival > 0.0 => avoided.min(cost / w.survival),
+            _ => avoided,
+        }
     }
 
     /// Share of the target's threat a push denies (ADR 0012): 1.0 for a push of 35 feet or more
@@ -1807,6 +1894,11 @@ fn ability_word(ability: crate::stat_block::Ability) -> String {
     serde_json::to_value(ability).ok().and_then(|v| v.as_str().map(str::to_string)).unwrap_or_default()
 }
 
+/// A Nimble Escape-style ability: it does nothing but Disengage, so it is never planned alone.
+fn only_disengages(effects: &[Effect]) -> bool {
+    !effects.is_empty() && effects.iter().all(|e| matches!(e, Effect::Disengage))
+}
+
 /// True when every effect, read through a cast's bound effects, teleports the creature using
 /// the ability.
 fn only_self_teleports(block: &StatBlock, effects: &[Effect], depth: u8) -> bool {
@@ -2232,7 +2324,7 @@ mod tests {
     }
 
     fn ctx<'a>(state: &'a EncounterState, constants: &'a PolicyConstants) -> Ctx<'a> {
-        Ctx { state, constants, threat_nesting: std::cell::Cell::new(0) }
+        Ctx::new(state, constants, Some(Section::Action))
     }
 
     fn penalty(state: &EncounterState) -> f64 {
@@ -2295,6 +2387,113 @@ mod tests {
             setup(&mut state);
             assert_eq!(penalty(&state), 0.0, "setup {i}");
         }
+    }
+
+    fn nimble_escape() -> AbilityEntry {
+        entry(serde_json::json!({"id": "nimble-escape", "name": "Nimble Escape", "kind": "partly_modeled", "effects": ["disengage"]}))
+    }
+
+    /// The skirmish archer with a 4d10 bow, so it steps out to shoot, and Nimble Escape.
+    fn escaping_archer() -> EncounterState {
+        let mut state = skirmish();
+        snapshot(&mut state, "archer").actions = vec![ranged("bow", 5, "4d10")];
+        snapshot(&mut state, "archer").bonus_actions.push(nimble_escape());
+        state
+    }
+
+    fn extra_action_only(state: &mut EncounterState, only: Vec<ExtraActionUse>) {
+        state.active_modifiers = hasted_by("x", "archer");
+        for m in &mut state.active_modifiers {
+            if let ModifierTarget::ExtraAction { only: uses } = &mut m.target {
+                *uses = only.clone();
+            }
+        }
+    }
+
+    #[test]
+    fn a_free_bonus_disengage_steps_out_without_the_penalty() {
+        let state = escaping_archer();
+        let avoided = penalty(&state);
+        assert!(avoided > 0.0);
+        assert!(choose(&state, "archer", Section::Bonus, &PolicyConstants::default()).is_none(), "never a standalone Disengage");
+        let plan = choose_action(&state, "archer");
+        assert_eq!(plan.disengage, Some(DisengageBy::Bonus("nimble-escape".into())));
+        assert_eq!(plan.movement.len(), 1, "{}", plan.reason);
+        assert!(plan.reason.contains(&format!("steps out of melee, nimble-escape avoids {avoided:.1} opportunity damage")), "{}", plan.reason);
+        assert!(!plan.reason.contains("despite"), "{}", plan.reason);
+        assert!(plan.survival.abs() < 1e-9, "{}", plan.survival);
+    }
+
+    #[test]
+    fn a_disengage_that_gives_up_a_better_bonus_plan_is_not_taken() {
+        let mut state = escaping_archer();
+        snapshot(&mut state, "archer").bonus_actions.push(melee("hidden-blade", 9, "8d6"));
+        let plan = choose_action(&state, "archer");
+        assert_eq!(plan.disengage, None);
+        assert!(plan.reason.contains("despite"), "{}", plan.reason);
+    }
+
+    #[test]
+    fn an_extra_action_disengage_goes_first_at_equal_cost() {
+        let mut state = escaping_archer();
+        extra_action_only(&mut state, vec![ExtraActionUse::Disengage]);
+        let plan = choose_action(&state, "archer");
+        assert_eq!(plan.disengage, Some(DisengageBy::Extra));
+        assert!(plan.reason.contains("steps out of melee, haste's extra action avoids"), "{}", plan.reason);
+        extra_action_only(&mut state, vec![ExtraActionUse::OneAttack, ExtraActionUse::Disengage]);
+        let plan = choose_action(&state, "archer");
+        assert_eq!(plan.disengage, Some(DisengageBy::Bonus("nimble-escape".into())), "the extra action would shoot");
+        snapshot(&mut state, "archer").bonus_actions.clear();
+        let plan = choose_action(&state, "archer");
+        assert_eq!(plan.disengage, None, "the extra shot is worth more than the attacks it avoids: {}", plan.reason);
+    }
+
+    #[test]
+    fn a_recharge_disengage_counts_its_resource_cost() {
+        let mut state = escaping_archer();
+        let hasten = &mut snapshot(&mut state, "archer").bonus_actions[0];
+        hasten.id = "hasten".into();
+        hasten.usage = Some(Usage::Recharge { dice: "5-6".into(), group: None });
+        let avoided = penalty(&state);
+        let mut constants = PolicyConstants::default();
+        constants.weights.resource_cost = avoided + 1.0;
+        let plan = choose(&state, "archer", Section::Action, &constants).unwrap();
+        assert_eq!(plan.disengage, None, "{}", plan.reason);
+        constants.weights.resource_cost = avoided / 2.0;
+        let plan = choose(&state, "archer", Section::Action, &constants).unwrap();
+        assert_eq!(plan.disengage, Some(DisengageBy::Bonus("hasten".into())), "{}", plan.reason);
+        let plain = {
+            let mut s = state.clone();
+            snapshot(&mut s, "archer").bonus_actions.clear();
+            choose(&s, "archer", Section::Action, &constants).unwrap()
+        };
+        assert!((plan.score - plain.score - avoided / 2.0).abs() < 1e-9, "{} vs {}", plan.score, plain.score);
+        snapshot(&mut state, "archer").bonus_actions.push(nimble_escape());
+        let plan = choose(&state, "archer", Section::Action, &constants).unwrap();
+        assert_eq!(plan.disengage, Some(DisengageBy::Bonus("nimble-escape".into())));
+        assert!((plan.score - plain.score - avoided).abs() < 1e-9, "an at-will Disengage listed after a recharge one costs nothing: {} vs {}", plan.score, plain.score);
+    }
+
+    #[test]
+    fn after_a_spent_disengage_the_recompute_steps_out_for_free() {
+        let mut state = escaping_archer();
+        state.combatants[0].action_economy.disengaged = true;
+        state.combatants[0].action_economy.bonus_action_used = true;
+        assert!(choose(&state, "archer", Section::Bonus, &PolicyConstants::default()).is_none());
+        let plan = choose_action(&state, "archer");
+        assert_eq!(plan.disengage, None);
+        assert_eq!(plan.movement.len(), 1, "{}", plan.reason);
+        assert!(!plan.reason.contains("opportunity damage"), "{}", plan.reason);
+        assert!(plan.survival.abs() < 1e-9);
+    }
+
+    #[test]
+    fn a_free_disengage_caps_what_a_teleport_avoids() {
+        let mut state = skirmish();
+        snapshot(&mut state, "archer").actions = vec![misty_step()];
+        assert!(teleport_value(&state) > 0.0);
+        snapshot(&mut state, "archer").bonus_actions.push(nimble_escape());
+        assert_eq!(teleport_value(&state), 0.0);
     }
 
     #[test]
@@ -2431,11 +2630,11 @@ mod tests {
     }
 
     #[test]
-    fn the_fingerprint_carries_policy_version_3() {
-        assert_eq!(POLICY_VERSION, 3);
+    fn the_fingerprint_carries_policy_version_4() {
+        assert_eq!(POLICY_VERSION, 4);
         let constants = PolicyConstants::default();
-        let v2 = crate::encounter::tamper_hash(&serde_json::json!({ "id": POLICY_ID, "version": 2, "constants": constants }));
-        assert_ne!(fingerprint(&constants), v2);
+        let v3 = crate::encounter::tamper_hash(&serde_json::json!({ "id": POLICY_ID, "version": 3, "constants": constants }));
+        assert_ne!(fingerprint(&constants), v3);
     }
 
     fn shove(feet: u32, direction: &str) -> Effect {

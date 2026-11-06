@@ -113,12 +113,14 @@ Both modes ship in phase 1. Everything the engine can't model is labeled agent j
 - [Refuse duplicate combatant ids in the override path](closed/088-refuse-duplicate-combatant-ids-in-override.md): an override that leaves an id in `combatants` more often than before (a repeated list entry, or `combatants.<index>` set to a copy) is refused whole, naming the id and `bench add`. A duplicate the override didn't create doesn't block it. ADR 0006 and the live-mode reference say so. Engine 0.1.23, policy stays v3, the curve differs only in `engine_version`. The audit found that `start` can collide ids itself, now ticket 089.
 - [Refuse colliding combatant ids at start](closed/089-refuse-colliding-combatant-ids-at-start.md): `start` no longer refuses or collides. A repeated stat block's `-<n>` skips ids that stat blocks used once already hold, as `bench add` already did: `goblin` twice and `goblin-2` start as `goblin-1`, `goblin-3`, `goblin-2`. `add` and batch were checked and can't collide. Replay starts from the saved initial state, so recorded encounters keep their ids. Engine 0.1.24, policy stays v3, the curve differs only in `engine_version`.
 - [Bonus-action Disengage](closed/090-bonus-action-disengage.md): a new `disengage` effect on Nimble Escape, Cunning Action, Deathless Agility and Hasten (11 fixtures, Hide and Dash left as agent clauses, Prowl unmodeled), run in live mode as `bench action <actor> <ability>`. Policy v4 takes a Disengage only to step out without provoking, from the bonus action or an extra action that allows it, at the lower of the avoided penalty and the plan it gives up. The curve is regenerated. Only the assassin should change, since goblins never leave melee. To be built in ticket 099.
+- [Build bonus-action Disengage](closed/099-build-bonus-action-disengage.md): the `disengage` effect on 11 fixtures runs as `bench action <actor> <ability>` with no target. Policy v4 has an action plan that steps out Disengage first with the cheapest ready bonus or extra action when it costs less than the attacks it avoids, and batch commits it before the move. Engine 0.1.25, and the curve was regenerated. The assassin and the vampire familiar (whose dagger is thrown) move; the other nine play as before.
 
 ## Not yet specified
 
 - Dash as a movement budget: what a doubled move is worth with range bands, for Cunning Action, Deathless Agility and Hasten ([Bonus-action Disengage](closed/090-bonus-action-disengage.md)).
 - Hide: a hidden state from the Hide action, beside how creatures see Invisible ones (ticket 095).
 - Prowl: a move without provoking as one bonus action. It may fall out of Dash.
+- Failed-plan logs: when a batch plan fails after its moves, those moves and their Opportunity Attacks are neither logged nor counted in monster damage. Only a spent Disengage is logged ([Build bonus-action Disengage](closed/099-build-bonus-action-disengage.md)).
 - Hit-and-run: a melee creature attacks, then disengages and steps away. It needs a value for distance that range bands lack, and it is the goblins' real edge at the table.
 
 ## Out of scope
@@ -133,7 +135,6 @@ Both modes ship in phase 1. Everything the engine can't model is labeled agent j
 
 ## Frontier
 
-- [099 Build bonus-action Disengage](tickets/099-build-bonus-action-disengage.md): task, AFK.
 - [091 Darkness and Darkvision](tickets/091-darkness-and-darkvision.md): grilling, HITL.
 - [092 Reaction triggers beyond leaving reach and attack rolls](tickets/092-reaction-triggers-beyond-reach-and-attack-rolls.md): grilling, HITL.
 - [093 Dice-valued roll bonuses](tickets/093-dice-valued-roll-bonuses.md): grilling, HITL.

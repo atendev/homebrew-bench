@@ -77,10 +77,15 @@
   ],
   "bonus_actions": [
     {
-      "default_resolution": "skipped",
+      "agent_clauses": [
+        "The goblin may take the Hide action instead of Disengage."
+      ],
       "desc": "The goblin takes the Disengage or Hide action.",
+      "effects": [
+        "disengage"
+      ],
       "id": "nimble-escape",
-      "kind": "unmodeled",
+      "kind": "partly_modeled",
       "name": "Nimble Escape"
     }
   ],
