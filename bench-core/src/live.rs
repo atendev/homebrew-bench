@@ -636,7 +636,20 @@ fn apply(state: &mut EncounterState, cmd: &Command) -> Result<Applied, LiveError
                 LogLine::same(format!("END encounter ended by agent judgment: {reason}")),
             ))
         }
-        Command::Override { path, value, reason, rule, standing } => {
+        Command::Override { path, value, reason, rule, standing } => atomically(state, |state| {
+            let removed: Vec<String> = if path.split('.').next() == Some("combatants") {
+                let mut dry_run = state.clone();
+                override_path::apply(&mut dry_run, path, value.clone()).map_err(LiveError::Invalid)?;
+                state
+                    .combatants
+                    .iter()
+                    .filter(|c| !dry_run.combatants.iter().any(|d| d.id == c.id))
+                    .map(|c| c.id.clone())
+                    .collect()
+            } else {
+                Vec::new()
+            };
+            let mut concentration_events = engine::end_concentration_on_leaving(state, &removed)?;
             let before: Vec<(String, bool, Option<String>)> = state
                 .combatants
                 .iter()
@@ -650,7 +663,7 @@ fn apply(state: &mut EncounterState, cmd: &Command) -> Result<Applied, LiveError
                 .filter(|c| before.iter().find(|(id, ..)| id == &c.id).map_or(true, |(_, unable, held)| !unable || held != &c.concentration))
                 .map(|c| c.id.clone())
                 .collect();
-            let concentration_events = engine::end_concentration(state, &dropped)?;
+            concentration_events.extend(engine::end_concentration(state, &dropped)?);
             let mut tag = rule_tag(rule);
             state.standing_assumptions.retain(|a| &a.path != path);
             if *standing {
@@ -677,7 +690,7 @@ fn apply(state: &mut EncounterState, cmd: &Command) -> Result<Applied, LiveError
                 applied.items.push((event, line));
             }
             Ok(applied)
-        }
+        }),
         Command::Roll { expression, reason, rule } => {
             let mut stream = Stream::from_state(state.rng.clone());
             let (total, faces) = roll_expression(&mut stream, expression)?;
@@ -703,7 +716,7 @@ fn apply(state: &mut EncounterState, cmd: &Command) -> Result<Applied, LiveError
             }
             add_combatant(state, stat_block, side_id, *band, engaged_with.as_deref(), None)
         }
-        Command::Remove { id, reason } => remove_combatant(state, id, reason),
+        Command::Remove { id, reason } => atomically(state, |state| remove_combatant(state, id, reason)),
         Command::Undo => Err(LiveError::Invalid("undo is not replayable as a single step".into())),
     }
 }
@@ -1094,6 +1107,16 @@ fn add_combatant(
     Ok(applied)
 }
 
+fn atomically(
+    state: &mut EncounterState,
+    f: impl FnOnce(&mut EncounterState) -> Result<Applied, LiveError>,
+) -> Result<Applied, LiveError> {
+    let mut next = state.clone();
+    let applied = f(&mut next)?;
+    *state = next;
+    Ok(applied)
+}
+
 fn remove_combatant(state: &mut EncounterState, id: &str, reason: &str) -> Result<Applied, LiveError> {
     if !state.combatants.iter().any(|c| c.id == id) {
         return Err(LiveError::NotFound(format!("combatant {id} not found")));
@@ -1102,6 +1125,10 @@ fn remove_combatant(state: &mut EncounterState, id: &str, reason: &str) -> Resul
     if state.active_turn.as_deref() == Some(id) && state.initiative_order.len() > 1 {
         let turn = run_engine(state, Held { engine_fills_rest: true, ..Held::new(StepRequest::end_turn()) })?;
         applied.items.extend(turn.items);
+    }
+    for event in engine::end_concentration_on_leaving(state, &[id.to_string()])? {
+        let line = event_line(state, &event).tagged(&assumption_tag(state, &event));
+        applied.items.push((event, line));
     }
     state.combatants.retain(|c| c.id != id);
     state.initiative_order.retain(|c| c != id);
@@ -1972,6 +1999,125 @@ mod tests {
         let index = by_index.combatants.iter().position(|c| c.id == "goblin-warrior").unwrap();
         set(&mut by_index, &format!("combatants.{index}.conditions"), serde_json::json!(["stunned"])).unwrap();
         assert_eq!(goblin(&by_index), None, "the combatants.<index> path");
+    }
+
+    #[test]
+    fn removal_ending_concentration() {
+        let override_cmd = |path: &str, value: Option<Value>| Command::Override { path: path.into(), value, reason: "t".into(), rule: None, standing: false };
+        let holding = || {
+            let mut state = start(spec(PcDice::Engine)).unwrap().0;
+            execute(&mut state, override_cmd("goblin-warrior.concentration", Some(Value::from("haste")))).unwrap();
+            execute(
+                &mut state,
+                override_cmd(
+                    "standard-striker-03.conditions",
+                    Some(serde_json::json!([{"condition": "blinded", "duration": "concentration", "source": "goblin-warrior"}])),
+                ),
+            )
+            .unwrap();
+            execute(
+                &mut state,
+                override_cmd(
+                    "active_modifiers",
+                    Some(serde_json::json!([{
+                        "target": {"extra_action": {"only": ["one_attack"]}},
+                        "change": "none",
+                        "remaining": "concentration",
+                        "source": "goblin-warrior",
+                        "bearer": "standard-striker-03",
+                        "on_end": [{"condition": {"condition": "incapacitated", "duration": "until_end_of_next_turn", "source_ability": "haste-lethargy"}}]
+                    }])),
+                ),
+            )
+            .unwrap();
+            state
+        };
+        let striker = |state: &EncounterState| {
+            let c = state.combatants.iter().find(|c| c.id == "standard-striker-03").unwrap();
+            c.conditions.iter().map(|x| x.condition).collect::<Vec<_>>()
+        };
+        let held = |state: &EncounterState| state.active_modifiers.iter().any(|m| m.source.as_deref() == Some("goblin-warrior"));
+        let lethargy = vec![crate::stat_block::Condition::Incapacitated];
+        let clear = |state: &mut EncounterState, path: &str| execute(state, override_cmd(path, None));
+
+        let before = holding();
+        assert_eq!(striker(&before), vec![crate::stat_block::Condition::Blinded]);
+        assert!(held(&before));
+
+        let mut removed = holding();
+        let outcome = execute(&mut removed, Command::Remove { id: "goblin-warrior".into(), reason: "flees".into() }).unwrap();
+        assert_eq!(striker(&removed), lethargy, "bench remove ends the held condition and fires the modifier's on_end");
+        assert!(!held(&removed), "bench remove ends the held modifier");
+        let lines = lines_of(&outcome);
+        assert_eq!(lines.first().map(String::as_str), Some("REMOVE goblin-warrior (reason: flees)"), "{lines:?}");
+        assert!(lines.iter().any(|l| l == "goblin-warrior loses concentration"), "{lines:?}");
+        assert!(replay(&removed).matches, "bench remove replays");
+        execute(&mut removed, Command::Undo).unwrap();
+        assert_eq!(striker(&removed), vec![crate::stat_block::Condition::Blinded], "undo restores what it held");
+        assert!(held(&removed));
+        assert_eq!(removed.combatants.iter().find(|c| c.id == "goblin-warrior").unwrap().concentration, Some("haste".into()));
+
+        let mut by_id = holding();
+        let outcome = clear(&mut by_id, "combatants.goblin-warrior").unwrap();
+        assert!(!by_id.combatants.iter().any(|c| c.id == "goblin-warrior"));
+        assert_eq!(striker(&by_id), lethargy, "clearing combatants.<id> ends what it held");
+        assert!(!held(&by_id));
+        assert!(lines_of(&outcome).iter().any(|l| l == "goblin-warrior loses concentration"), "{:?}", lines_of(&outcome));
+        assert!(replay(&by_id).matches, "clearing combatants.<id> replays");
+
+        let mut by_index = holding();
+        let index = by_index.combatants.iter().position(|c| c.id == "goblin-warrior").unwrap();
+        clear(&mut by_index, &format!("combatants.{index}")).unwrap();
+        assert!(!by_index.combatants.iter().any(|c| c.id == "goblin-warrior"));
+        assert_eq!(striker(&by_index), lethargy, "clearing combatants.<index> ends what it held");
+        assert!(replay(&by_index).matches);
+        execute(&mut by_index, Command::Undo).unwrap();
+        assert_eq!(striker(&by_index), vec![crate::stat_block::Condition::Blinded], "undo of an override removal restores what it held");
+        assert!(held(&by_index));
+
+        for remove in [true, false] {
+            let mut cleared = holding();
+            execute(&mut cleared, override_cmd("goblin-warrior.concentration", None)).unwrap();
+            assert!(held(&cleared), "clearing the field alone leaves what it held");
+            let outcome = if remove {
+                execute(&mut cleared, Command::Remove { id: "goblin-warrior".into(), reason: "flees".into() }).unwrap()
+            } else {
+                clear(&mut cleared, "combatants.goblin-warrior").unwrap()
+            };
+            assert_eq!(striker(&cleared), lethargy, "remove {remove}: a creature that leaves ends what it held");
+            assert!(!held(&cleared), "remove {remove}");
+            let lines = lines_of(&outcome);
+            assert!(lines.iter().any(|l| l == "goblin-warrior leaves; the effects it held by concentration end"), "{lines:?}");
+            assert!(!lines.iter().any(|l| l == "goblin-warrior loses concentration"), "{lines:?}");
+            assert!(replay(&cleared).matches, "remove {remove}");
+        }
+
+        let mut replaced = holding();
+        let others: Vec<Value> = replaced
+            .combatants
+            .iter()
+            .filter(|c| c.id != "goblin-warrior")
+            .map(|c| serde_json::to_value(c).unwrap())
+            .collect();
+        execute(&mut replaced, override_cmd("combatants", Some(Value::Array(others)))).unwrap();
+        assert!(!held(&replaced), "replacing combatants without it ends what it held");
+
+        let mut other = holding();
+        let striker_index = other.combatants.iter().position(|c| c.id == "standard-striker-03").unwrap();
+        let outcome = clear(&mut other, &format!("combatants.{striker_index}.conditions")).unwrap();
+        assert_eq!(other.combatants.iter().find(|c| c.id == "goblin-warrior").unwrap().concentration, Some("haste".into()), "an override that removes nobody leaves it");
+        assert!(held(&other));
+        assert!(!lines_of(&outcome).iter().any(|l| l.contains("loses concentration")));
+
+        let mut failed = holding();
+        let snapshot = serde_json::to_value(&failed).unwrap();
+        assert!(execute(&mut failed, override_cmd("combatants.goblin-warrior.hp", Some(Value::from("many")))).is_err());
+        assert_eq!(serde_json::to_value(&failed).unwrap(), snapshot, "a refused override changes nothing");
+
+        let mut plain = start(spec(PcDice::Engine)).unwrap().0;
+        execute(&mut plain, Command::Remove { id: "goblin-warrior".into(), reason: "flees".into() }).unwrap();
+        clear(&mut plain, "combatants.standard-striker-03").unwrap();
+        assert!(replay(&plain).matches, "removing a creature that isn't concentrating replays");
     }
 
     #[test]
