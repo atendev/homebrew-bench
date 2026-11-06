@@ -111,6 +111,7 @@ Both modes ship in phase 1. Everything the engine can't model is labeled agent j
 - [Adding a combatant by override](closed/086-adding-a-combatant-by-override.md): graduated from the 085-audit fog item. Reproduced on 0.1.21: a `combatants` override with a new id succeeds, but the creature gets no initiative, never acts and logs no ADD line. Decision: refuse it, error naming `bench add`, matching ADR 0006. Build is ticket 087.
 - [Refuse added ids in the override path](closed/087-refuse-added-ids-in-override.md): an override whose result holds a combatant id the encounter didn't have (a new or renamed `combatants` list entry, or a `combatants.<index>` entry with a new id) is refused whole with an error naming `bench add`. ADR 0006 and the live-mode reference say so. Engine 0.1.22, policy stays v3, the curve differs only in `engine_version`. The audit found that duplicated ids still pass, now ticket 088.
 - [Refuse duplicate combatant ids in the override path](closed/088-refuse-duplicate-combatant-ids-in-override.md): an override that leaves an id in `combatants` more often than before (a repeated list entry, or `combatants.<index>` set to a copy) is refused whole, naming the id and `bench add`. A duplicate the override didn't create doesn't block it. ADR 0006 and the live-mode reference say so. Engine 0.1.23, policy stays v3, the curve differs only in `engine_version`. The audit found that `start` can collide ids itself, now ticket 089.
+- [Refuse colliding combatant ids at start](closed/089-refuse-colliding-combatant-ids-at-start.md): `start` no longer refuses or collides. A repeated stat block's `-<n>` skips ids that stat blocks used once already hold, as `bench add` already did: `goblin` twice and `goblin-2` start as `goblin-1`, `goblin-3`, `goblin-2`. `add` and batch were checked and can't collide. Replay starts from the saved initial state, so recorded encounters keep their ids. Engine 0.1.24, policy stays v3, the curve differs only in `engine_version`.
 
 ## Not yet specified
 
@@ -136,4 +137,4 @@ Both modes ship in phase 1. Everything the engine can't model is labeled agent j
 
 ## Frontier
 
-- [089 Refuse colliding combatant ids at start](tickets/089-refuse-colliding-combatant-ids-at-start.md): task, AFK.
+- No open tickets. The next ones graduate from Not yet specified.

@@ -6,7 +6,7 @@
 //! `replay` re-execute the history from the initial snapshot, so the state is
 //! always a fold over the commands that made it.
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -288,6 +288,7 @@ pub fn start(spec: StartSpec) -> Result<(EncounterState, Outcome), LiveError> {
         *counts.entry(entrant.stat_block.id.clone()).or_default() += 1;
         add_snapshot(&mut snapshots, &entrant.stat_block)?;
     }
+    let mut taken: HashSet<String> = counts.iter().filter(|(_, &n)| n == 1).map(|(id, _)| id.clone()).collect();
     let mut seen: HashMap<String, usize> = HashMap::new();
     let mut sides: Vec<Side> = Vec::new();
     let mut combatants = Vec::new();
@@ -297,10 +298,15 @@ pub fn start(spec: StartSpec) -> Result<(EncounterState, Outcome), LiveError> {
             return Err(LiveError::Invalid("starting bands are near or far; engage with `bench move`".into()));
         }
         let block = &entrant.stat_block;
-        let n = seen.entry(block.id.clone()).or_default();
-        *n += 1;
         let (id, name) = if counts[&block.id] > 1 {
-            (format!("{}-{n}", block.id), format!("{} {n}", block.name))
+            let n = seen.entry(block.id.clone()).or_default();
+            *n += 1;
+            while taken.contains(&format!("{}-{n}", block.id)) {
+                *n += 1;
+            }
+            let id = format!("{}-{n}", block.id);
+            taken.insert(id.clone());
+            (id, format!("{} {n}", block.name))
         } else {
             (block.id.clone(), block.name.clone())
         };
@@ -2284,6 +2290,31 @@ mod tests {
         state.combatants.push(copy);
         execute(&mut state, override_cmd("combatants.goblin-warrior.hp", Some(Value::from(5)))).unwrap();
         assert_eq!(state.combatants.iter().find(|c| c.id == "goblin-warrior").unwrap().hp, 5, "a duplicate the override didn't make doesn't block it");
+    }
+
+    #[test]
+    fn start_suffixes_past_ids_already_taken() {
+        let goblin = block("fixtures/goblin-warrior.json");
+        let mut second = goblin.clone();
+        second.id = "goblin-warrior-2".into();
+        second.name = "Goblin Boss".into();
+        let monster = |stat_block: StatBlock| Entrant { stat_block, side: "monsters".into(), band: RangeBand::Near };
+        let mut spec = spec(PcDice::Engine);
+        spec.entrants.truncate(1);
+        spec.entrants.extend([monster(goblin.clone()), monster(second), monster(goblin)]);
+        let (state, _) = start(spec).unwrap();
+        let ids: Vec<(&str, &str)> = state.combatants.iter().map(|c| (c.id.as_str(), c.name.as_str())).collect();
+        assert_eq!(
+            ids,
+            [
+                ("standard-striker-03", "Standard Striker (Level 3)"),
+                ("goblin-warrior-1", "Goblin Warrior 1"),
+                ("goblin-warrior-2", "Goblin Boss"),
+                ("goblin-warrior-3", "Goblin Warrior 3"),
+            ]
+        );
+        assert_eq!(state.initiative_order.len(), 4);
+        assert_eq!(state.combatants[0].ranges.len(), 3);
     }
 
     #[test]

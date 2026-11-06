@@ -16,7 +16,7 @@ You are the DM for one encounter. The user controls the party and declares each 
    bench start pc-a.json pc-b.json monsters=wyvern-hatchling.json@far --pc-dice ask --seed <n>
    ```
 
-   The side defaults to `party` for stat blocks with a `class` and `monsters` otherwise; prefix `party=` or `monsters=` to set it.
+   The side defaults to `party` for stat blocks with a `class` and `monsters` otherwise; prefix `party=` or `monsters=` to set it. A combatant's id is its stat block id, except that a stat block used more than once gets `-1`, `-2` and so on, skipping any number another stat block's id already holds: two `goblin` entrants and one `goblin-2` start as `goblin-1`, `goblin-3` and `goblin-2`. Read the ids from the digest rather than guessing them.
 4. **Roll PC initiative.** In ask mode, `bench start` returns `ok` with `pending` set to a d20 prompt for each PC's initiative, and the encounter stays at round 0. Ask the user for each face and answer with `bench respond <face>`, one prompt at a time, until `pending` is empty.
 
 Done when `pending` is empty, `digest.active_turn` names a combatant, and you have told the user the initiative order.
