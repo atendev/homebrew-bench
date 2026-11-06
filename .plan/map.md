@@ -110,6 +110,7 @@ Both modes ship in phase 1. Everything the engine can't model is labeled agent j
 - [ADR 0006 and override removal](closed/085-adr-0006-and-override-removal.md): graduated from the 084-audit fog item. ADR 0006 now accepts override removal: same cleanup as `bench remove`, logged as OVERRIDE, refused for the active-turn creature and while a prompt is pending. Docs only, engine stays 0.1.21. Adding a combatant by override went to fog.
 - [Adding a combatant by override](closed/086-adding-a-combatant-by-override.md): graduated from the 085-audit fog item. Reproduced on 0.1.21: a `combatants` override with a new id succeeds, but the creature gets no initiative, never acts and logs no ADD line. Decision: refuse it, error naming `bench add`, matching ADR 0006. Build is ticket 087.
 - [Refuse added ids in the override path](closed/087-refuse-added-ids-in-override.md): an override whose result holds a combatant id the encounter didn't have (a new or renamed `combatants` list entry, or a `combatants.<index>` entry with a new id) is refused whole with an error naming `bench add`. ADR 0006 and the live-mode reference say so. Engine 0.1.22, policy stays v3, the curve differs only in `engine_version`. The audit found that duplicated ids still pass, now ticket 088.
+- [Refuse duplicate combatant ids in the override path](closed/088-refuse-duplicate-combatant-ids-in-override.md): an override that leaves an id in `combatants` more often than before (a repeated list entry, or `combatants.<index>` set to a copy) is refused whole, naming the id and `bench add`. A duplicate the override didn't create doesn't block it. ADR 0006 and the live-mode reference say so. Engine 0.1.23, policy stays v3, the curve differs only in `engine_version`. The audit found that `start` can collide ids itself, now ticket 089.
 
 ## Not yet specified
 
@@ -135,4 +136,4 @@ Both modes ship in phase 1. Everything the engine can't model is labeled agent j
 
 ## Frontier
 
-- [088 Refuse duplicate combatant ids in the override path](tickets/088-refuse-duplicate-combatant-ids-in-override.md): task, AFK.
+- [089 Refuse colliding combatant ids at start](tickets/089-refuse-colliding-combatant-ids-at-start.md): task, AFK.
