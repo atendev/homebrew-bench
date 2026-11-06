@@ -346,8 +346,6 @@ fn findings(monster: &StatBlock, resolutions: &BTreeMap<String, String>, lightin
                 DefaultResolution::Neutral => ("neutral", "SRD default: no combat effect.".into()),
                 DefaultResolution::BaseForm => ("base_form", "SRD default: the monster stays in its stat-block form.".into()),
             }
-        } else if a.is_no_provoke() {
-            ("skipped", "Not modeled in phase 1; results may understate or overstate the monster.".into())
         } else if a.kind == AbilityKind::Inert {
             ("inert", "No combat effect in this encounter.".into())
         } else if !a.agent_clauses.is_empty() {
@@ -711,11 +709,13 @@ fn take_turn(state: &mut EncounterState, actor: &str, constants: &PolicyConstant
                             ran = true;
                             break;
                         }
-                        Err(e) if attempts < 2 => {
+                        Err((spent, e)) if attempts < 2 => {
+                            log.events(state, &spent, damage);
                             log.plan_failed(state, &plan, &e, during);
                             log.line(format!("  plan failed ({e}); recomputing from the updated state"));
                         }
-                        Err(e) => {
+                        Err((spent, e)) => {
+                            log.events(state, &spent, damage);
                             log.plan_failed(state, &plan, &e, during);
                             log.line(format!("  plan failed again ({e}); no action taken"));
                             break;
@@ -742,9 +742,27 @@ fn take_turn(state: &mut EncounterState, actor: &str, constants: &PolicyConstant
     }
 }
 
-fn execute(state: &mut EncounterState, plan: &tactics::Plan) -> Result<Vec<EngineEvent>, engine::EngineError> {
+/// Run a plan. On failure, the error comes back with the events of a Disengage the plan already
+/// spent, so the log shows it.
+fn execute(state: &mut EncounterState, plan: &tactics::Plan) -> Result<Vec<EngineEvent>, (Vec<EngineEvent>, engine::EngineError)> {
     state.reactions.fault = None;
-    let mut events = Vec::new();
+    let mut spent = Vec::new();
+    if let Some(by) = &plan.disengage {
+        let actor_id = plan.actor_id.clone();
+        let request = match by {
+            tactics::DisengageBy::Bonus(id) => StepRequest::Action { actor_id, action_id: id.clone(), target_ids: vec![], slot_level: None, extra: false },
+            tactics::DisengageBy::Extra => StepRequest::Disengage { actor_id, extra: true },
+        };
+        spent = engine::step_events(state, request).map_err(|e| (vec![], e))?;
+    }
+    let mut events = spent.clone();
+    if let Err(e) = execute_steps(state, plan, &mut events) {
+        return Err((spent, e));
+    }
+    Ok(events)
+}
+
+fn execute_steps(state: &mut EncounterState, plan: &tactics::Plan, events: &mut Vec<EngineEvent>) -> Result<(), engine::EngineError> {
     for m in &plan.movement {
         let left = m.feet;
         events.extend(engine::step_events(
@@ -768,7 +786,7 @@ fn execute(state: &mut EncounterState, plan: &tactics::Plan) -> Result<Vec<Engin
     };
     state.player_dice.picks.clear();
     events.extend(result?);
-    Ok(events)
+    Ok(())
 }
 
 /// Finish the active turn, open the legendary window, then start the next
@@ -797,7 +815,7 @@ fn legendary_window(state: &mut EncounterState, constants: &PolicyConstants, log
             log.line(format!("  {}", plan.log_line()));
             match execute(state, &plan) {
                 Ok(events) => log.events(state, &events, damage),
-                Err(e) => {
+                Err((_, e)) => {
                     log.plan_failed(state, &plan, &e, "legendary action");
                     if let Some(f) = log.failures.last_mut() {
                         f.lost = true;
@@ -904,7 +922,7 @@ impl Log {
         ));
         self.line(format!("  Monster damage per round: {:.1}.", f64::from(damage) / f64::from(rounds.max(1))));
         self.line(format!("  PC deaths: {deaths}."));
-        for a in all_abilities(&spec.monster).filter(|a| a.default_resolution == Some(DefaultResolution::Skipped) || a.is_no_provoke()) {
+        for a in all_abilities(&spec.monster).filter(|a| a.default_resolution == Some(DefaultResolution::Skipped)) {
             self.line(format!("  Skipped mechanic warning: {} may change this result.", a.name));
         }
     }
@@ -1278,7 +1296,7 @@ pub fn render_html(s: &Summary) -> String {
     h.push_str("      </tbody>\n    </table>\n  </section>\n\n");
 
     h.push_str(&format!(
-        "  <section aria-labelledby=\"method\">\n    <h2 id=\"method\">Method and limitations</h2>\n    <p>Every fight is one {name} against the party at one level, played by the deterministic batch tactics policy for both sides with engine-rolled dice. A fight ends when one side is down or at the round cap. When the monster wins, downed PCs count as deaths. Policy v{} values an effect that raises AC, saving throws or attack rolls by the damage it prevents or adds over up to two rounds, no more than the fight is expected to last, weighted by the chance the caster keeps concentration, on the ally it helps most, Haste's extra action as one more attack less a lost turn when lethargy is likely, a push as the melee it denies, and a teleport as the Opportunity Attacks it avoids, gives other unscored effects no value, reads Advantage, Disadvantage and automatic save failures from the same sources the engine rolls with, takes Shield or Parry only when it turns a hit into a miss and an Opportunity Attack only when it is worth more than the reaction held back, and agent clauses on any stat block are left out. Engine {}.</p>\n  </section>\n\n",
+        "  <section aria-labelledby=\"method\">\n    <h2 id=\"method\">Method and limitations</h2>\n    <p>Every fight is one {name} against the party at one level, played by the deterministic batch tactics policy for both sides with engine-rolled dice. A fight ends when one side is down or at the round cap. When the monster wins, downed PCs count as deaths. Policy v{} values an effect that raises AC, saving throws or attack rolls by the damage it prevents or adds over up to two rounds, no more than the fight is expected to last, weighted by the chance the caster keeps concentration, on the ally it helps most, Haste's extra action as one more attack less a lost turn when lethargy is likely, a push as the melee it denies, and a teleport as the Opportunity Attacks it avoids, spends a Disengage only to step out of melee without provoking, gives other unscored effects no value, reads Advantage, Disadvantage and automatic save failures from the same sources the engine rolls with, takes Shield or Parry only when it turns a hit into a miss and an Opportunity Attack only when it is worth more than the reaction held back, and agent clauses on any stat block are left out. Engine {}.</p>\n  </section>\n\n",
         s.policy.version, esc(&s.engine_version)
     ));
     h.push_str("  <footer>\n    <p>This work includes material from the System Reference Document 5.2.1 (\"SRD 5.2.1\") by Wizards of the Coast LLC, available at <a href=\"https://www.dndbeyond.com/srd\">https://www.dndbeyond.com/srd</a>. The SRD 5.2.1 is licensed under the <a href=\"https://creativecommons.org/licenses/by/4.0/legalcode\">Creative Commons Attribution 4.0 International License</a>. The SRD-derived material is modified here by reformatting and restructuring into a report. The difficulty bands and results above are Homebrew Bench analysis, not SRD tables.</p>\n  </footer>\n</main>\n</body>\n</html>\n");
@@ -1415,12 +1433,12 @@ mod tests {
         let again: Vec<String> = (0..4).map(|i| replay_fight(&s, fight_index(1, i, 4)).unwrap().log.unwrap()).collect();
         assert_eq!(logs, again);
         let all = logs.join("\n");
-        assert!(all.contains("Policy: homebrew-bench.tactics v3 ("));
+        assert!(all.contains("Policy: homebrew-bench.tactics v4 ("));
         assert!(all.contains("    knight: Parry (") || all.contains("    knight: holds its reaction ("), "no Parry window was decided");
         let html = run(&s).unwrap().html;
         assert!(html.contains("takes Shield or Parry only when it turns a hit into a miss"));
         assert!(html.contains("over up to two rounds, no more than the fight is expected to last, weighted by the chance the caster keeps concentration, on the ally it helps most, "));
-        assert!(html.contains("Haste's extra action as one more attack less a lost turn when lethargy is likely, a push as the melee it denies, and a teleport as the Opportunity Attacks it avoids, gives other unscored effects no value, reads Advantage, Disadvantage and automatic save failures from the same sources the engine rolls with"));
+        assert!(html.contains("Haste's extra action as one more attack less a lost turn when lethargy is likely, a push as the melee it denies, and a teleport as the Opportunity Attacks it avoids, spends a Disengage only to step out of melee without provoking, gives other unscored effects no value, reads Advantage, Disadvantage and automatic save failures from the same sources the engine rolls with"));
         assert!(!html.contains("gives buffs"));
     }
 
@@ -1782,6 +1800,90 @@ mod tests {
         let report = run(&spec(monster, vec![1], 1)).unwrap();
         assert!(report.summary.warnings.iter().any(|w| w.contains("Odd Aura")));
         assert!(report.html.contains("Skipped mechanic"));
+    }
+
+    #[test]
+    fn no_provoke_and_disengage_abilities_are_not_called_unmodeled() {
+        let mut monster = fixture("goblin-warrior");
+        monster.traits.push(AbilityEntry {
+            id: "flyby".into(),
+            name: "Flyby".into(),
+            desc: None,
+            kind: AbilityKind::Modeled,
+            effects: vec![crate::effect::Effect::NoProvoke],
+            agent_clauses: vec![],
+            default_resolution: None,
+            usage: None,
+            trigger: None,
+        });
+        let mut s = spec(monster, vec![1], 1);
+        s.assumptions = baseline::ignoring_unresolved(&s.monster).1;
+        let report = run(&s).unwrap();
+        let kind = |id: &str| report.summary.findings.iter().find(|f| f.ability_id == id).map(|f| f.kind.as_str());
+        assert_eq!((kind("flyby"), kind("nimble-escape")), (None, Some("ignored")));
+        assert!(!report.summary.warnings.iter().any(|w| w.contains("Flyby") || w.contains("Nimble Escape")), "{:?}", report.summary.warnings);
+        let log = replay_fight(&s, fight_index(1, 0, 1)).unwrap().log.unwrap();
+        assert!(!log.contains("Skipped mechanic warning"), "{log}");
+    }
+
+    /// An assassin engaged with a level 5 defender on its own turn.
+    fn engaged_assassin() -> EncounterState {
+        let mut assassin = fixture("assassin");
+        assassin.bonus_actions.iter_mut().for_each(|a| a.agent_clauses.clear());
+        let defender = standard_party().unwrap()[&5][0].clone();
+        let entrants = vec![
+            Entrant { stat_block: assassin, side: MONSTER_SIDE.into(), band: RangeBand::Near },
+            Entrant { stat_block: defender, side: PARTY_SIDE.into(), band: RangeBand::Near },
+        ];
+        let start = StartSpec {
+            id: "t".into(),
+            origin_directory: String::new(),
+            entrants,
+            seed: 1,
+            surprised: vec![],
+            individual_initiative: true,
+            pc_dice: PcDice::Engine,
+            lighting: Lighting::Unspecified,
+            reaction_windows: true,
+        };
+        let (mut state, _) = live::start(start).unwrap();
+        state.reactions.decider = ReactionDecider::Policy(PolicyConstants::default());
+        let ids: Vec<String> = state.combatants.iter().map(|c| c.id.clone()).collect();
+        for (a, b) in [(0, 1), (1, 0)] {
+            state.combatants[a].engagement.push(ids[b].clone());
+            state.combatants[a].ranges.insert(ids[b].clone(), RangeBand::Engaged);
+        }
+        state.active_turn = Some(ids[0].clone());
+        state
+    }
+
+    #[test]
+    fn the_assassin_disengages_with_cunning_action_before_it_steps_out() {
+        let mut state = engaged_assassin();
+        let constants = PolicyConstants::default();
+        let plan = tactics::choose(&state, "assassin", Section::Action, &constants).unwrap();
+        assert_eq!(plan.disengage, Some(tactics::DisengageBy::Bonus("cunning-action".into())), "{}", plan.reason);
+        assert!(plan.reason.contains("steps out of melee, cunning-action avoids"), "{}", plan.reason);
+        let events = execute(&mut state, &plan).unwrap();
+        assert_eq!(events[0].message, "assassin uses Cunning Action to Disengage");
+        assert!(events.iter().all(|e| e.kind != "opportunity_attack" && e.kind != "reaction_window"), "{events:?}");
+        assert!(tactics::choose(&state, "assassin", Section::Bonus, &constants).is_none(), "the bonus action is spent");
+    }
+
+    #[test]
+    fn a_disengage_spent_before_a_failed_plan_leaves_a_free_step_out() {
+        let mut state = engaged_assassin();
+        let constants = PolicyConstants::default();
+        let mut plan = tactics::choose(&state, "assassin", Section::Action, &constants).unwrap();
+        plan.movement.iter_mut().for_each(|m| m.feet = 0);
+        let (spent, _) = execute(&mut state, &plan).unwrap_err();
+        assert_eq!(spent.iter().map(|e| e.message.as_str()).collect::<Vec<_>>(), ["assassin uses Cunning Action to Disengage"], "the failed plan still reports the Disengage it spent");
+        let economy = &state.combatants[0].action_economy;
+        assert!(economy.disengaged && economy.bonus_action_used);
+        let retry = tactics::choose(&state, "assassin", Section::Action, &constants).unwrap();
+        assert_eq!(retry.disengage, None);
+        assert!(!retry.movement.is_empty() && !retry.reason.contains("opportunity damage"), "{}", retry.reason);
+        assert!(execute(&mut state, &retry).is_ok());
     }
 
     #[test]

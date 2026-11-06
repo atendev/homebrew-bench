@@ -131,10 +131,15 @@
   ],
   "bonus_actions": [
     {
-      "default_resolution": "skipped",
+      "agent_clauses": [
+        "The assassin may take the Dash or Hide action instead of Disengage."
+      ],
       "desc": "The assassin takes the Dash, Disengage, or Hide action.",
+      "effects": [
+        "disengage"
+      ],
       "id": "cunning-action",
-      "kind": "unmodeled",
+      "kind": "partly_modeled",
       "name": "Cunning Action"
     }
   ],

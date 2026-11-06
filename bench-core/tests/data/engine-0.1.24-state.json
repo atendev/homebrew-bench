@@ -1,0 +1,829 @@
+{
+  "id": "goblin-warrior-1",
+  "engine_version": "0.1.24",
+  "origin_directory": "/home/aten/Documents/Github/homebrew-bench/target/work0124",
+  "stat_blocks": [
+    {
+      "id": "standard-striker-03",
+      "stat_block": {
+        "id": "standard-striker-03",
+        "name": "Standard Striker (Level 3)",
+        "source": "homebrew-bench standard party",
+        "schema_version": "1",
+        "size": "medium",
+        "type": "humanoid",
+        "alignment": "unaligned",
+        "armor_class": [
+          {
+            "value": 15,
+            "source": "studded leather"
+          }
+        ],
+        "hit_points": {
+          "average": 28,
+          "dice": "3d10+6"
+        },
+        "speeds": {
+          "walk": {
+            "feet": 30
+          }
+        },
+        "ability_scores": {
+          "strength": 10,
+          "dexterity": 16,
+          "constitution": 14,
+          "intelligence": 10,
+          "wisdom": 14,
+          "charisma": 8
+        },
+        "saving_throws": {
+          "dex": 5,
+          "int": 2
+        },
+        "skills": {
+          "stealth": 5,
+          "perception": 4
+        },
+        "initiative": 3,
+        "proficiency_bonus": 2,
+        "senses": {
+          "passive_perception": 14
+        },
+        "languages": [
+          "Common"
+        ],
+        "actions": [
+          {
+            "id": "longbow",
+            "name": "Longbow",
+            "desc": "Ranged weapon attack, +7 to hit.",
+            "kind": "modeled",
+            "effects": [
+              {
+                "attack": {
+                  "modifier": 7,
+                  "reach": null,
+                  "range": [
+                    150,
+                    600
+                  ],
+                  "target_count": 1,
+                  "damage": [
+                    {
+                      "dice": "1d8",
+                      "type": "piercing",
+                      "modifier": 3,
+                      "magical": false
+                    },
+                    {
+                      "dice": "2d6",
+                      "type": "piercing",
+                      "modifier": 0,
+                      "magical": false
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "id": "shortsword",
+            "name": "Shortsword",
+            "desc": "Melee weapon attack, +5 to hit.",
+            "kind": "modeled",
+            "effects": [
+              {
+                "attack": {
+                  "modifier": 5,
+                  "reach": 5,
+                  "range": null,
+                  "target_count": 1,
+                  "damage": [
+                    {
+                      "dice": "1d6",
+                      "type": "piercing",
+                      "modifier": 3,
+                      "magical": false
+                    },
+                    {
+                      "dice": "2d6",
+                      "type": "piercing",
+                      "modifier": 0,
+                      "magical": false
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        ],
+        "legendary_uses_per_round": 0,
+        "class": "Striker",
+        "level": 3,
+        "dying": true,
+        "death_saves": {
+          "successes": 0,
+          "failures": 0
+        },
+        "gear": [
+          "studded leather",
+          "longbow",
+          "shortsword"
+        ],
+        "notes": [
+          "Approximates a ranged skirmisher with precision damage (rogue or ranger). A calibration role, not class fidelity. One attack per action: the precision dice stand in for a once-per-turn bonus and apply to every hit, so there is no extra-attack progression.",
+          "No magic items; gear exists only as numbers in this stat block."
+        ]
+      },
+      "hash": "f275a28bf66ce7bbde867feb1b35b08d"
+    },
+    {
+      "id": "goblin-warrior",
+      "stat_block": {
+        "id": "goblin-warrior",
+        "name": "Goblin Warrior",
+        "source": "srd-5.2.1",
+        "schema_version": "1",
+        "size": "small",
+        "type": "fey",
+        "alignment": "chaotic neutral",
+        "armor_class": [
+          {
+            "value": 15,
+            "source": "Leather Armor, Shield"
+          }
+        ],
+        "hit_points": {
+          "average": 10,
+          "dice": "3d6"
+        },
+        "speeds": {
+          "walk": {
+            "feet": 30
+          }
+        },
+        "ability_scores": {
+          "strength": 8,
+          "dexterity": 15,
+          "constitution": 10,
+          "intelligence": 10,
+          "wisdom": 8,
+          "charisma": 8
+        },
+        "skills": {
+          "stealth": 6
+        },
+        "initiative": 2,
+        "proficiency_bonus": 2,
+        "senses": {
+          "darkvision": 60,
+          "passive_perception": 9
+        },
+        "languages": [
+          "Common",
+          "Goblin"
+        ],
+        "challenge_rating": 0.25,
+        "xp": 50,
+        "actions": [
+          {
+            "id": "scimitar",
+            "name": "Scimitar",
+            "desc": "Melee Attack Roll: +4, reach 5 ft. Hit: 5 (1d6 + 2) Slashing damage, plus 2 (1d4) Slashing damage if the attack roll had Advantage.",
+            "kind": "partly_modeled",
+            "effects": [
+              {
+                "attack": {
+                  "modifier": 4,
+                  "reach": 5,
+                  "range": null,
+                  "target_count": 1,
+                  "damage": [
+                    {
+                      "dice": "1d6",
+                      "type": "slashing",
+                      "modifier": 2,
+                      "magical": false
+                    }
+                  ]
+                }
+              }
+            ],
+            "agent_clauses": [
+              "Conditional damage, not modeled: plus 2 (1d4) Slashing damage if the attack roll had Advantage."
+            ]
+          },
+          {
+            "id": "shortbow",
+            "name": "Shortbow",
+            "desc": "Ranged Attack Roll: +4, range 80/320 ft. Hit: 5 (1d6 + 2) Piercing damage, plus 2 (1d4) Piercing damage if the attack roll had Advantage.",
+            "kind": "partly_modeled",
+            "effects": [
+              {
+                "attack": {
+                  "modifier": 4,
+                  "reach": null,
+                  "range": [
+                    80,
+                    320
+                  ],
+                  "target_count": 1,
+                  "damage": [
+                    {
+                      "dice": "1d6",
+                      "type": "piercing",
+                      "modifier": 2,
+                      "magical": false
+                    }
+                  ]
+                }
+              }
+            ],
+            "agent_clauses": [
+              "Conditional damage, not modeled: plus 2 (1d4) Piercing damage if the attack roll had Advantage."
+            ]
+          }
+        ],
+        "bonus_actions": [
+          {
+            "id": "nimble-escape",
+            "name": "Nimble Escape",
+            "desc": "The goblin takes the Disengage or Hide action.",
+            "kind": "unmodeled",
+            "default_resolution": "skipped"
+          }
+        ],
+        "legendary_uses_per_round": 0,
+        "dying": false,
+        "death_saves": {
+          "successes": 0,
+          "failures": 0
+        }
+      },
+      "hash": "a48c897a7d1b73d587597aee54fa05f6"
+    }
+  ],
+  "sides": [
+    {
+      "id": "party",
+      "name": "Party"
+    },
+    {
+      "id": "monsters",
+      "name": "Monsters"
+    }
+  ],
+  "combatants": [
+    {
+      "id": "standard-striker-03",
+      "stat_block_id": "standard-striker-03",
+      "name": "Standard Striker (Level 3)",
+      "side_id": "party",
+      "hp": 22,
+      "temp_hp": 0,
+      "max_hp": 28,
+      "conditions": [],
+      "concentration": null,
+      "resources": {},
+      "action_economy": {
+        "action_used": false,
+        "bonus_action_used": false,
+        "reaction_used": false,
+        "movement_used_feet": 0
+      },
+      "engagement": [
+        "goblin-warrior"
+      ],
+      "ranges": {
+        "goblin-warrior": "engaged"
+      },
+      "end_state": "active",
+      "death_saves": {
+        "successes": 0,
+        "failures": 0
+      }
+    },
+    {
+      "id": "goblin-warrior",
+      "stat_block_id": "goblin-warrior",
+      "name": "Goblin Warrior",
+      "side_id": "monsters",
+      "hp": 10,
+      "temp_hp": 0,
+      "max_hp": 10,
+      "conditions": [],
+      "concentration": null,
+      "resources": {},
+      "action_economy": {
+        "action_used": true,
+        "bonus_action_used": true,
+        "reaction_used": false,
+        "movement_used_feet": 5
+      },
+      "engagement": [
+        "standard-striker-03"
+      ],
+      "ranges": {
+        "standard-striker-03": "engaged"
+      },
+      "end_state": "active",
+      "death_saves": {
+        "successes": 0,
+        "failures": 0
+      }
+    }
+  ],
+  "round": 1,
+  "initiative_order": [
+    "goblin-warrior",
+    "standard-striker-03"
+  ],
+  "active_turn": "standard-striker-03",
+  "command_history": [
+    {
+      "name": "action",
+      "args": {
+        "action": "nimble-escape",
+        "actor": "goblin-warrior",
+        "command": "action",
+        "targets": []
+      },
+      "state_hash": "1379e86ea08c01312571b19f5513a147"
+    },
+    {
+      "name": "move",
+      "args": {
+        "actor": "goblin-warrior",
+        "band": "engaged",
+        "command": "move",
+        "feet": null,
+        "target": "standard-striker-03"
+      },
+      "state_hash": "ce08a1805865054465111daee65dd490"
+    },
+    {
+      "name": "action",
+      "args": {
+        "action": "scimitar",
+        "actor": "goblin-warrior",
+        "command": "action",
+        "targets": [
+          "standard-striker-03"
+        ]
+      },
+      "state_hash": "a4d2b0a3bf56f85f0305cf6a2a0e32c4"
+    },
+    {
+      "name": "end-turn",
+      "args": {
+        "command": "end_turn"
+      },
+      "state_hash": "50682b82859a7e8ac22334b09a49fdb7"
+    }
+  ],
+  "rng": {
+    "algorithm": "chacha8",
+    "initial_seed": 11,
+    "cursor": 6
+  },
+  "initiative_rolls": {
+    "standard-striker-03": 8,
+    "goblin-warrior": 8
+  },
+  "settings": {
+    "pc_dice": "engine",
+    "reaction_windows": true
+  },
+  "initial_snapshot": {
+    "id": "goblin-warrior-1",
+    "engine_version": "0.1.24",
+    "origin_directory": "/home/aten/Documents/Github/homebrew-bench/target/work0124",
+    "stat_blocks": [
+      {
+        "id": "standard-striker-03",
+        "stat_block": {
+          "id": "standard-striker-03",
+          "name": "Standard Striker (Level 3)",
+          "source": "homebrew-bench standard party",
+          "schema_version": "1",
+          "size": "medium",
+          "type": "humanoid",
+          "alignment": "unaligned",
+          "armor_class": [
+            {
+              "value": 15,
+              "source": "studded leather"
+            }
+          ],
+          "hit_points": {
+            "average": 28,
+            "dice": "3d10+6"
+          },
+          "speeds": {
+            "walk": {
+              "feet": 30
+            }
+          },
+          "ability_scores": {
+            "strength": 10,
+            "dexterity": 16,
+            "constitution": 14,
+            "intelligence": 10,
+            "wisdom": 14,
+            "charisma": 8
+          },
+          "saving_throws": {
+            "int": 2,
+            "dex": 5
+          },
+          "skills": {
+            "perception": 4,
+            "stealth": 5
+          },
+          "initiative": 3,
+          "proficiency_bonus": 2,
+          "senses": {
+            "passive_perception": 14
+          },
+          "languages": [
+            "Common"
+          ],
+          "actions": [
+            {
+              "id": "longbow",
+              "name": "Longbow",
+              "desc": "Ranged weapon attack, +7 to hit.",
+              "kind": "modeled",
+              "effects": [
+                {
+                  "attack": {
+                    "modifier": 7,
+                    "reach": null,
+                    "range": [
+                      150,
+                      600
+                    ],
+                    "target_count": 1,
+                    "damage": [
+                      {
+                        "dice": "1d8",
+                        "type": "piercing",
+                        "modifier": 3,
+                        "magical": false
+                      },
+                      {
+                        "dice": "2d6",
+                        "type": "piercing",
+                        "modifier": 0,
+                        "magical": false
+                      }
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "id": "shortsword",
+              "name": "Shortsword",
+              "desc": "Melee weapon attack, +5 to hit.",
+              "kind": "modeled",
+              "effects": [
+                {
+                  "attack": {
+                    "modifier": 5,
+                    "reach": 5,
+                    "range": null,
+                    "target_count": 1,
+                    "damage": [
+                      {
+                        "dice": "1d6",
+                        "type": "piercing",
+                        "modifier": 3,
+                        "magical": false
+                      },
+                      {
+                        "dice": "2d6",
+                        "type": "piercing",
+                        "modifier": 0,
+                        "magical": false
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          ],
+          "legendary_uses_per_round": 0,
+          "class": "Striker",
+          "level": 3,
+          "dying": true,
+          "death_saves": {
+            "successes": 0,
+            "failures": 0
+          },
+          "gear": [
+            "studded leather",
+            "longbow",
+            "shortsword"
+          ],
+          "notes": [
+            "Approximates a ranged skirmisher with precision damage (rogue or ranger). A calibration role, not class fidelity. One attack per action: the precision dice stand in for a once-per-turn bonus and apply to every hit, so there is no extra-attack progression.",
+            "No magic items; gear exists only as numbers in this stat block."
+          ]
+        },
+        "hash": "f275a28bf66ce7bbde867feb1b35b08d"
+      },
+      {
+        "id": "goblin-warrior",
+        "stat_block": {
+          "id": "goblin-warrior",
+          "name": "Goblin Warrior",
+          "source": "srd-5.2.1",
+          "schema_version": "1",
+          "size": "small",
+          "type": "fey",
+          "alignment": "chaotic neutral",
+          "armor_class": [
+            {
+              "value": 15,
+              "source": "Leather Armor, Shield"
+            }
+          ],
+          "hit_points": {
+            "average": 10,
+            "dice": "3d6"
+          },
+          "speeds": {
+            "walk": {
+              "feet": 30
+            }
+          },
+          "ability_scores": {
+            "strength": 8,
+            "dexterity": 15,
+            "constitution": 10,
+            "intelligence": 10,
+            "wisdom": 8,
+            "charisma": 8
+          },
+          "skills": {
+            "stealth": 6
+          },
+          "initiative": 2,
+          "proficiency_bonus": 2,
+          "senses": {
+            "darkvision": 60,
+            "passive_perception": 9
+          },
+          "languages": [
+            "Common",
+            "Goblin"
+          ],
+          "challenge_rating": 0.25,
+          "xp": 50,
+          "actions": [
+            {
+              "id": "scimitar",
+              "name": "Scimitar",
+              "desc": "Melee Attack Roll: +4, reach 5 ft. Hit: 5 (1d6 + 2) Slashing damage, plus 2 (1d4) Slashing damage if the attack roll had Advantage.",
+              "kind": "partly_modeled",
+              "effects": [
+                {
+                  "attack": {
+                    "modifier": 4,
+                    "reach": 5,
+                    "range": null,
+                    "target_count": 1,
+                    "damage": [
+                      {
+                        "dice": "1d6",
+                        "type": "slashing",
+                        "modifier": 2,
+                        "magical": false
+                      }
+                    ]
+                  }
+                }
+              ],
+              "agent_clauses": [
+                "Conditional damage, not modeled: plus 2 (1d4) Slashing damage if the attack roll had Advantage."
+              ]
+            },
+            {
+              "id": "shortbow",
+              "name": "Shortbow",
+              "desc": "Ranged Attack Roll: +4, range 80/320 ft. Hit: 5 (1d6 + 2) Piercing damage, plus 2 (1d4) Piercing damage if the attack roll had Advantage.",
+              "kind": "partly_modeled",
+              "effects": [
+                {
+                  "attack": {
+                    "modifier": 4,
+                    "reach": null,
+                    "range": [
+                      80,
+                      320
+                    ],
+                    "target_count": 1,
+                    "damage": [
+                      {
+                        "dice": "1d6",
+                        "type": "piercing",
+                        "modifier": 2,
+                        "magical": false
+                      }
+                    ]
+                  }
+                }
+              ],
+              "agent_clauses": [
+                "Conditional damage, not modeled: plus 2 (1d4) Piercing damage if the attack roll had Advantage."
+              ]
+            }
+          ],
+          "bonus_actions": [
+            {
+              "id": "nimble-escape",
+              "name": "Nimble Escape",
+              "desc": "The goblin takes the Disengage or Hide action.",
+              "kind": "unmodeled",
+              "default_resolution": "skipped"
+            }
+          ],
+          "legendary_uses_per_round": 0,
+          "dying": false,
+          "death_saves": {
+            "successes": 0,
+            "failures": 0
+          }
+        },
+        "hash": "a48c897a7d1b73d587597aee54fa05f6"
+      }
+    ],
+    "sides": [
+      {
+        "id": "party",
+        "name": "Party"
+      },
+      {
+        "id": "monsters",
+        "name": "Monsters"
+      }
+    ],
+    "combatants": [
+      {
+        "id": "standard-striker-03",
+        "stat_block_id": "standard-striker-03",
+        "name": "Standard Striker (Level 3)",
+        "side_id": "party",
+        "hp": 28,
+        "temp_hp": 0,
+        "max_hp": 28,
+        "conditions": [],
+        "concentration": null,
+        "resources": {},
+        "action_economy": {
+          "action_used": false,
+          "bonus_action_used": false,
+          "reaction_used": false,
+          "movement_used_feet": 0
+        },
+        "engagement": [],
+        "ranges": {
+          "goblin-warrior": "near"
+        },
+        "end_state": "active",
+        "death_saves": {
+          "successes": 0,
+          "failures": 0
+        }
+      },
+      {
+        "id": "goblin-warrior",
+        "stat_block_id": "goblin-warrior",
+        "name": "Goblin Warrior",
+        "side_id": "monsters",
+        "hp": 10,
+        "temp_hp": 0,
+        "max_hp": 10,
+        "conditions": [],
+        "concentration": null,
+        "resources": {},
+        "action_economy": {
+          "action_used": false,
+          "bonus_action_used": false,
+          "reaction_used": false,
+          "movement_used_feet": 0
+        },
+        "engagement": [],
+        "ranges": {
+          "standard-striker-03": "near"
+        },
+        "end_state": "active",
+        "death_saves": {
+          "successes": 0,
+          "failures": 0
+        }
+      }
+    ],
+    "round": 1,
+    "initiative_order": [
+      "goblin-warrior",
+      "standard-striker-03"
+    ],
+    "active_turn": "goblin-warrior",
+    "rng": {
+      "algorithm": "chacha8",
+      "initial_seed": 11,
+      "cursor": 2
+    },
+    "initiative_rolls": {
+      "goblin-warrior": 8,
+      "standard-striker-03": 8
+    },
+    "settings": {
+      "pc_dice": "engine",
+      "reaction_windows": true
+    },
+    "tamper_hash": ""
+  },
+  "log": [
+    {
+      "index": 0,
+      "command": "start",
+      "round": 0,
+      "lines": [
+        {
+          "text": "START encounter goblin-warrior-1 (seed 11, pc dice engine, lighting unspecified, engine 0.1.24)",
+          "public": {
+            "kind": "replaced",
+            "text": "START encounter goblin-warrior-1 (pc dice engine, lighting unspecified, engine 0.1.24)"
+          }
+        },
+        {
+          "text": "standard-striker-03 (Standard Striker (Level 3)) on party, near, 28/28 HP"
+        },
+        {
+          "text": "goblin-warrior (Goblin Warrior) on monsters, near"
+        },
+        {
+          "text": "goblin-warrior rolled 8"
+        },
+        {
+          "text": "standard-striker-03 rolled 8"
+        }
+      ],
+      "state_hash": "b5a9eb4f2021848070fa3e75ef1ebc75"
+    },
+    {
+      "index": 1,
+      "command": "action",
+      "round": 1,
+      "turn": "goblin-warrior",
+      "lines": [],
+      "state_hash": "1379e86ea08c01312571b19f5513a147"
+    },
+    {
+      "index": 2,
+      "command": "move",
+      "round": 1,
+      "turn": "goblin-warrior",
+      "lines": [
+        {
+          "text": "goblin-warrior moves to engaged"
+        }
+      ],
+      "state_hash": "ce08a1805865054465111daee65dd490"
+    },
+    {
+      "index": 3,
+      "command": "action",
+      "round": 1,
+      "turn": "goblin-warrior",
+      "lines": [
+        {
+          "text": "Goblin Warrior attacks Standard Striker (Level 3): 24 vs AC 15 (hit) [d20 20]"
+        },
+        {
+          "text": "standard-striker-03 takes 6 damage"
+        }
+      ],
+      "state_hash": "a4d2b0a3bf56f85f0305cf6a2a0e32c4"
+    },
+    {
+      "index": 4,
+      "command": "end-turn",
+      "round": 1,
+      "turn": "goblin-warrior",
+      "lines": [
+        {
+          "text": "goblin-warrior ends its turn"
+        },
+        {
+          "text": "standard-striker-03 starts its turn"
+        }
+      ],
+      "state_hash": "50682b82859a7e8ac22334b09a49fdb7"
+    }
+  ],
+  "tamper_hash": "348b52fcd3513fcce3a141edd556ca79"
+}

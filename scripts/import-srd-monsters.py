@@ -20,7 +20,10 @@ Blocking entries are classes a (structured field contradicts prose), b (structur
 missing or not representable in the closed vocabulary) and c (contradicts an SRD ruleset
 table). The script exits 1 while any blocking entry is open. A correction that matches
 nothing upstream aborts the run. Prose is read only to detect mismatches, never to produce data,
-with four exceptions upstream has no field for: the exact Flyby/Agile sentence becomes no_provoke,
+with five exceptions upstream has no field for: the exact Flyby/Agile sentence becomes no_provoke,
+a bonus action that "takes the ... Disengage ... action" (Nimble Escape, Cunning Action,
+Deathless Agility, Hasten) becomes disengage with its other actions as an agent clause and a
+review note,
 "can't take this action again until the start of its next turn" becomes
 cooldown_until_next_turn with a review note, the three sunlight and Bright Light sentences
 become lighting roll modifiers with a review note, and the Parry sentence ("is hit by a melee
@@ -182,6 +185,20 @@ LIGHTING_SENTENCES = [
 PARRY = re.compile(r"^Trigger: The ([\w -]+) is hit by a melee attack roll while holding a weapon\. "
                    r"Response: The \1 adds (\d+) to its AC against that attack, possibly causing it to miss\.(?: (.+))?$")
 NO_PROVOKE = re.compile(r"^The [\w -]+ doesn.t provoke an Opportunity Attack when it (?:flies|moves) out of an enemy.s reach\.$")
+DISENGAGE = re.compile(r"^The ([\w -]+) takes the (Dash, Disengage, or Hide|Disengage or Hide|Dash or Disengage) action\.$")
+DISENGAGE_AND_DASH = re.compile(r"^The ([\w -]+) takes the Dash and Disengage actions\.$")
+
+
+def disengage_sentence(desc):
+    """The effect and agent clause for a bonus action that takes the Disengage action, or None."""
+    m = DISENGAGE.match(desc)
+    if m:
+        others = [o for o in re.split(r", or |, | or ", m.group(2)) if o != "Disengage"]
+        return ["disengage"], [f"The {m.group(1)} may take the {' or '.join(others)} action instead of Disengage."]
+    m = DISENGAGE_AND_DASH.match(desc)
+    if m:
+        return ["disengage"], [f"The {m.group(1)} also takes the Dash action."]
+    return None
 
 class Review:
     def __init__(self):
@@ -616,6 +633,10 @@ class Converter:
             effects = [effect] if effect else []
         if section == "traits" and NO_PROVOKE.search(desc):
             effects = ["no_provoke"]
+        disengage = disengage_sentence(desc) if section == "bonus_actions" else None
+        if disengage:
+            effects, clauses = disengage
+            self.rec("d", base, "Disengage pattern: disengage effect from the prose; the other actions are an agent clause")
         parry = PARRY.match(desc) if section == "reactions" else None
         if parry:
             entry["trigger"] = {"hit_by_attack_roll": {"attack": "melee"}}

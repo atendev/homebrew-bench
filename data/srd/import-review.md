@@ -363,7 +363,8 @@ None.
 - `assassin` `actions.light-crossbow`: classified modeled
 - `assassin` `actions.multiattack`: classified modeled
 - `assassin` `actions.shortsword`: classified partly_modeled
-- `assassin` `bonus_actions.cunning-action`: classified unmodeled (default skipped)
+- `assassin` `bonus_actions.cunning-action`: Disengage pattern: disengage effect from the prose; the other actions are an agent clause
+- `assassin` `bonus_actions.cunning-action`: classified partly_modeled
 - `assassin` `traits.evasion`: classified unmodeled (default skipped)
 - `awakened-shrub` `actions.rake`: classified modeled
 - `awakened-shrub` `actions.rake.damage`: correction applied: Upstream omits structured damage array for flat 1 Slashing damage. [awakened-shrub actions.rake.desc: "Melee Attack Roll: +1, reach 5 ft. Hit: 1 Slashing damage."]
@@ -497,7 +498,8 @@ None.
 - `chuul` `traits.sense-magic`: classified unmodeled (default skipped)
 - `clay-golem` `actions.multiattack`: classified modeled
 - `clay-golem` `actions.slam`: classified partly_modeled
-- `clay-golem` `bonus_actions.hasten`: classified unmodeled (default skipped)
+- `clay-golem` `bonus_actions.hasten`: Disengage pattern: disengage effect from the prose; the other actions are an agent clause
+- `clay-golem` `bonus_actions.hasten`: classified partly_modeled
 - `clay-golem` `traits.acid-absorption`: classified unmodeled (default skipped)
 - `clay-golem` `traits.berserk`: classified unmodeled (default skipped)
 - `clay-golem` `traits.immutable-form`: classified unmodeled (default skipped)
@@ -800,13 +802,16 @@ None.
 - `goblin-boss` `actions.multiattack`: classified modeled
 - `goblin-boss` `actions.scimitar`: classified partly_modeled
 - `goblin-boss` `actions.shortbow`: classified partly_modeled
-- `goblin-boss` `bonus_actions.nimble-escape`: classified unmodeled (default skipped)
+- `goblin-boss` `bonus_actions.nimble-escape`: Disengage pattern: disengage effect from the prose; the other actions are an agent clause
+- `goblin-boss` `bonus_actions.nimble-escape`: classified partly_modeled
 - `goblin-boss` `reactions.redirect-attack`: classified unmodeled (default skipped)
 - `goblin-minion` `actions.dagger`: classified modeled
-- `goblin-minion` `bonus_actions.nimble-escape`: classified unmodeled (default skipped)
+- `goblin-minion` `bonus_actions.nimble-escape`: Disengage pattern: disengage effect from the prose; the other actions are an agent clause
+- `goblin-minion` `bonus_actions.nimble-escape`: classified partly_modeled
 - `goblin-warrior` `actions.scimitar`: classified partly_modeled
 - `goblin-warrior` `actions.shortbow`: classified partly_modeled
-- `goblin-warrior` `bonus_actions.nimble-escape`: classified unmodeled (default skipped)
+- `goblin-warrior` `bonus_actions.nimble-escape`: Disengage pattern: disengage effect from the prose; the other actions are an agent clause
+- `goblin-warrior` `bonus_actions.nimble-escape`: classified partly_modeled
 - `gold-dragon-wyrmling` `actions.fire-breath`: classified modeled
 - `gold-dragon-wyrmling` `actions.fire-breath.usage`: correction applied: Link Fire Breath to the shared breath_weapons recharge group with Weakening Breath. [SRD 5.2.1 (Gold Dragon Wyrmling: Breath Weapons (Recharge 5-6))]
 - `gold-dragon-wyrmling` `actions.multiattack`: classified modeled
@@ -1126,7 +1131,8 @@ None.
 - `owlbear` `actions.multiattack`: classified modeled
 - `owlbear` `actions.rend`: classified modeled
 - `panther` `actions.rend`: classified modeled
-- `panther` `bonus_actions.nimble-escape`: classified unmodeled (default skipped)
+- `panther` `bonus_actions.nimble-escape`: Disengage pattern: disengage effect from the prose; the other actions are an agent clause
+- `panther` `bonus_actions.nimble-escape`: classified partly_modeled
 - `pegasus` `actions.hooves`: classified modeled
 - `phase-spider` `actions.bite`: classified partly_modeled
 - `phase-spider` `actions.multiattack`: classified modeled
@@ -1247,7 +1253,8 @@ None.
 - `rust-monster` `traits.iron-scent`: classified unmodeled (default skipped)
 - `saber-toothed-tiger` `actions.multiattack`: classified modeled
 - `saber-toothed-tiger` `actions.rend`: classified modeled
-- `saber-toothed-tiger` `bonus_actions.nimble-escape`: classified unmodeled (default skipped)
+- `saber-toothed-tiger` `bonus_actions.nimble-escape`: Disengage pattern: disengage effect from the prose; the other actions are an agent clause
+- `saber-toothed-tiger` `bonus_actions.nimble-escape`: classified partly_modeled
 - `saber-toothed-tiger` `traits.running-leap`: classified unmodeled (default skipped)
 - `sahuagin-warrior` `actions.claw`: classified modeled
 - `sahuagin-warrior` `actions.multiattack`: classified modeled
@@ -1370,7 +1377,8 @@ None.
 - `sprite` `actions.needle-sword`: classified modeled
 - `spy` `actions.hand-crossbow`: classified modeled
 - `spy` `actions.shortsword`: classified modeled
-- `spy` `bonus_actions.cunning-action`: classified unmodeled (default skipped)
+- `spy` `bonus_actions.cunning-action`: Disengage pattern: disengage effect from the prose; the other actions are an agent clause
+- `spy` `bonus_actions.cunning-action`: classified partly_modeled
 - `steam-mephit` `actions.claw`: classified modeled
 - `steam-mephit` `actions.steam-breath`: classified partly_modeled
 - `steam-mephit` `traits.blurred-form`: classified unmodeled (default skipped)
@@ -1435,7 +1443,8 @@ None.
 - `tarrasque` `traits.reflective-carapace`: classified unmodeled (default skipped)
 - `tarrasque` `traits.siege-monster`: classified unmodeled (default skipped)
 - `tiger` `actions.rend`: classified partly_modeled
-- `tiger` `bonus_actions.nimble-escape`: classified unmodeled (default skipped)
+- `tiger` `bonus_actions.nimble-escape`: Disengage pattern: disengage effect from the prose; the other actions are an agent clause
+- `tiger` `bonus_actions.nimble-escape`: classified partly_modeled
 - `tough` `actions.heavy-crossbow`: classified modeled
 - `tough` `actions.mace`: classified modeled
 - `tough` `traits.pack-tactics`: classified unmodeled (default skipped)
@@ -1492,7 +1501,8 @@ None.
 - `vampire-bat` `traits.vampire-weakness`: classified unmodeled (default skipped)
 - `vampire-familiar` `actions.multiattack`: classified modeled
 - `vampire-familiar` `actions.umbral-dagger`: classified partly_modeled
-- `vampire-familiar` `bonus_actions.deathless-agility`: classified unmodeled (default skipped)
+- `vampire-familiar` `bonus_actions.deathless-agility`: Disengage pattern: disengage effect from the prose; the other actions are an agent clause
+- `vampire-familiar` `bonus_actions.deathless-agility`: classified partly_modeled
 - `vampire-familiar` `traits.vampiric-connection`: classified unmodeled (default skipped)
 - `vampire-mist` `bonus_actions.charm`: classified unmodeled (default skipped)
 - `vampire-mist` `bonus_actions.charm`: spellcasting is not modeled; spells are absent from the stat block effects
@@ -1514,7 +1524,8 @@ None.
 - `vampire-spawn` `actions.bite`: classified partly_modeled
 - `vampire-spawn` `actions.claw`: classified partly_modeled
 - `vampire-spawn` `actions.multiattack`: classified modeled
-- `vampire-spawn` `bonus_actions.deathless-agility`: classified unmodeled (default skipped)
+- `vampire-spawn` `bonus_actions.deathless-agility`: Disengage pattern: disengage effect from the prose; the other actions are an agent clause
+- `vampire-spawn` `bonus_actions.deathless-agility`: classified partly_modeled
 - `vampire-spawn` `traits.forbiddance`: classified unmodeled (default skipped)
 - `vampire-spawn` `traits.running-water`: classified unmodeled (default skipped)
 - `vampire-spawn` `traits.spider-climb`: classified unmodeled (default skipped)

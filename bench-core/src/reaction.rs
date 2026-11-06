@@ -2,7 +2,7 @@
 //!
 //! The engine lists the windows a trigger opens and asks the encounter's
 //! [`ReactionDecider`] about each one. Live mode answers from the user's or the
-//! agent's `bench respond`, and batch lets the tactics policy (v3) decide.
+//! agent's `bench respond`, and batch lets the tactics policy decide.
 
 use std::collections::VecDeque;
 

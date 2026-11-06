@@ -542,6 +542,9 @@ pub enum Effect {
     Area(AreaEffect),
     /// The creature never provokes an Opportunity Attack by moving (Flyby, Agile).
     NoProvoke,
+    /// The creature takes the Disengage step as part of this ability (Nimble Escape,
+    /// Cunning Action): its moves provoke no Opportunity Attack until its turn ends.
+    Disengage,
 }
 
 impl Effect {

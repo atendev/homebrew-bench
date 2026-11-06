@@ -2795,6 +2795,21 @@ mod tests {
     }
 
     #[test]
+    fn an_engine_0_1_24_goblin_refolds_with_its_unmodeled_nimble_escape() {
+        let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/data/engine-0.1.24-state.json");
+        let state = crate::store::load(&path, crate::store::VersionCheck::Require).expect("an engine 0.1.24 state loads");
+        crate::store::check(&state, &path).unwrap();
+        assert_eq!(state.engine_version, "0.1.24");
+        let names: Vec<&str> = state.command_history.iter().map(|r| r.name.as_str()).collect();
+        assert_eq!(names, ["action", "move", "action", "end-turn"]);
+        let goblin = state.stat_blocks.iter().find(|s| s.id == "goblin-warrior").unwrap();
+        assert!(goblin.stat_block.bonus_actions[0].effects.is_empty(), "the save holds the old unmodeled Nimble Escape");
+        assert!(!crate::log::render(&state.log).contains("Disengage"));
+        let report = replay(&state);
+        assert!(report.matches, "{report:?}");
+    }
+
+    #[test]
     fn a_hasted_striker_spends_its_extra_action_with_extra() {
         const STRIKER: &str = "standard-striker-03";
         let mut spec = reaction_spec(&[(CASTER_FILE, PARTY_SIDE), ("fixtures/ogre.json", "monsters")], 1, PcDice::Engine);

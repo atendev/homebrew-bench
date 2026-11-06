@@ -2260,7 +2260,14 @@
       "class": "d",
       "path": "bonus_actions.cunning-action",
       "status": "open",
-      "summary": "classified unmodeled (default skipped)"
+      "summary": "Disengage pattern: disengage effect from the prose; the other actions are an agent clause"
+    },
+    {
+      "monster": "assassin",
+      "class": "d",
+      "path": "bonus_actions.cunning-action",
+      "status": "open",
+      "summary": "classified partly_modeled"
     },
     {
       "monster": "assassin",
@@ -3226,7 +3233,14 @@
       "class": "d",
       "path": "bonus_actions.hasten",
       "status": "open",
-      "summary": "classified unmodeled (default skipped)"
+      "summary": "Disengage pattern: disengage effect from the prose; the other actions are an agent clause"
+    },
+    {
+      "monster": "clay-golem",
+      "class": "d",
+      "path": "bonus_actions.hasten",
+      "status": "open",
+      "summary": "classified partly_modeled"
     },
     {
       "monster": "clay-golem",
@@ -5389,7 +5403,14 @@
       "class": "d",
       "path": "bonus_actions.nimble-escape",
       "status": "open",
-      "summary": "classified unmodeled (default skipped)"
+      "summary": "Disengage pattern: disengage effect from the prose; the other actions are an agent clause"
+    },
+    {
+      "monster": "goblin-boss",
+      "class": "d",
+      "path": "bonus_actions.nimble-escape",
+      "status": "open",
+      "summary": "classified partly_modeled"
     },
     {
       "monster": "goblin-boss",
@@ -5410,7 +5431,14 @@
       "class": "d",
       "path": "bonus_actions.nimble-escape",
       "status": "open",
-      "summary": "classified unmodeled (default skipped)"
+      "summary": "Disengage pattern: disengage effect from the prose; the other actions are an agent clause"
+    },
+    {
+      "monster": "goblin-minion",
+      "class": "d",
+      "path": "bonus_actions.nimble-escape",
+      "status": "open",
+      "summary": "classified partly_modeled"
     },
     {
       "monster": "goblin-warrior",
@@ -5431,7 +5459,14 @@
       "class": "d",
       "path": "bonus_actions.nimble-escape",
       "status": "open",
-      "summary": "classified unmodeled (default skipped)"
+      "summary": "Disengage pattern: disengage effect from the prose; the other actions are an agent clause"
+    },
+    {
+      "monster": "goblin-warrior",
+      "class": "d",
+      "path": "bonus_actions.nimble-escape",
+      "status": "open",
+      "summary": "classified partly_modeled"
     },
     {
       "monster": "gold-dragon-wyrmling",
@@ -7734,7 +7769,14 @@
       "class": "d",
       "path": "bonus_actions.nimble-escape",
       "status": "open",
-      "summary": "classified unmodeled (default skipped)"
+      "summary": "Disengage pattern: disengage effect from the prose; the other actions are an agent clause"
+    },
+    {
+      "monster": "panther",
+      "class": "d",
+      "path": "bonus_actions.nimble-escape",
+      "status": "open",
+      "summary": "classified partly_modeled"
     },
     {
       "monster": "pegasus",
@@ -8602,7 +8644,14 @@
       "class": "d",
       "path": "bonus_actions.nimble-escape",
       "status": "open",
-      "summary": "classified unmodeled (default skipped)"
+      "summary": "Disengage pattern: disengage effect from the prose; the other actions are an agent clause"
+    },
+    {
+      "monster": "saber-toothed-tiger",
+      "class": "d",
+      "path": "bonus_actions.nimble-escape",
+      "status": "open",
+      "summary": "classified partly_modeled"
     },
     {
       "monster": "saber-toothed-tiger",
@@ -9484,7 +9533,14 @@
       "class": "d",
       "path": "bonus_actions.cunning-action",
       "status": "open",
-      "summary": "classified unmodeled (default skipped)"
+      "summary": "Disengage pattern: disengage effect from the prose; the other actions are an agent clause"
+    },
+    {
+      "monster": "spy",
+      "class": "d",
+      "path": "bonus_actions.cunning-action",
+      "status": "open",
+      "summary": "classified partly_modeled"
     },
     {
       "monster": "steam-mephit",
@@ -9939,7 +9995,14 @@
       "class": "d",
       "path": "bonus_actions.nimble-escape",
       "status": "open",
-      "summary": "classified unmodeled (default skipped)"
+      "summary": "Disengage pattern: disengage effect from the prose; the other actions are an agent clause"
+    },
+    {
+      "monster": "tiger",
+      "class": "d",
+      "path": "bonus_actions.nimble-escape",
+      "status": "open",
+      "summary": "classified partly_modeled"
     },
     {
       "monster": "tough",
@@ -10338,7 +10401,14 @@
       "class": "d",
       "path": "bonus_actions.deathless-agility",
       "status": "open",
-      "summary": "classified unmodeled (default skipped)"
+      "summary": "Disengage pattern: disengage effect from the prose; the other actions are an agent clause"
+    },
+    {
+      "monster": "vampire-familiar",
+      "class": "d",
+      "path": "bonus_actions.deathless-agility",
+      "status": "open",
+      "summary": "classified partly_modeled"
     },
     {
       "monster": "vampire-familiar",
@@ -10492,7 +10562,14 @@
       "class": "d",
       "path": "bonus_actions.deathless-agility",
       "status": "open",
-      "summary": "classified unmodeled (default skipped)"
+      "summary": "Disengage pattern: disengage effect from the prose; the other actions are an agent clause"
+    },
+    {
+      "monster": "vampire-spawn",
+      "class": "d",
+      "path": "bonus_actions.deathless-agility",
+      "status": "open",
+      "summary": "classified partly_modeled"
     },
     {
       "monster": "vampire-spawn",
