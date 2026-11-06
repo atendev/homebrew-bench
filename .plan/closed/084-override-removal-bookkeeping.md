@@ -3,9 +3,9 @@ id: 084
 title: Override removal bookkeeping
 type: task
 mode: AFK
-status: open
+status: closed
 blocked_by: []
-claimed: true
+claimed: false
 ---
 
 ## Question
@@ -18,4 +18,10 @@ Consult `tdd` and `code-review`. Look at `remove_combatant` and the override pat
 
 ## Resolution
 
-<Filled in at close.>
+Override removal runs the same cleanup as `bench remove`, through a shared `forget_combatant`: the creature leaves `initiative_order`, `initiative_rolls`, `active_turn`, and other creatures' engagements and ranges. All three forms work: `combatants.<id>`, `combatants.<index>`, and a new `combatants` list.
+
+The override now applies first. Each creature it dropped is put back for a moment from a pre-apply snapshot so `engine::end_concentration_on_leaving` can end what it held, and is then removed and forgotten. This fixes a 0.1.20 bug: the bearers' entries in a new `combatants` list used to put back the conditions the leaving creature's spell held.
+
+Two override removals are refused atomically. Dropping the creature that holds the active turn returns `Invalid` with a pointer to `bench remove`, which ends the turn first. Removing anyone while a prompt is pending returns `Pending`, as `bench remove` already did. Ending the turn inside the override was tried and dropped: in the list form it overwrote survivor state, and it ran turns for creatures removed alongside.
+
+Engine 0.1.21, policy stays v3, the curve differs only in `engine_version`. Three haiku audit rounds; the third approved.
