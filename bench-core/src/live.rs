@@ -637,25 +637,31 @@ fn apply(state: &mut EncounterState, cmd: &Command) -> Result<Applied, LiveError
             ))
         }
         Command::Override { path, value, reason, rule, standing } => atomically(state, |state| {
-            let removed: Vec<String> = if path.split('.').next() == Some("combatants") {
-                let mut dry_run = state.clone();
-                override_path::apply(&mut dry_run, path, value.clone()).map_err(LiveError::Invalid)?;
-                state
-                    .combatants
-                    .iter()
-                    .filter(|c| !dry_run.combatants.iter().any(|d| d.id == c.id))
-                    .map(|c| c.id.clone())
-                    .collect()
-            } else {
-                Vec::new()
-            };
-            let mut concentration_events = engine::end_concentration_on_leaving(state, &removed)?;
-            let before: Vec<(String, bool, Option<String>)> = state
-                .combatants
+            let previous = state.combatants.clone();
+            let before: Vec<(String, bool, Option<String>)> = previous
                 .iter()
                 .map(|c| (c.id.clone(), engine::cannot_concentrate(c), c.concentration.clone()))
                 .collect();
             let target = override_path::apply(state, path, value.clone()).map_err(LiveError::Invalid)?;
+            let removed: Vec<&Combatant> = previous.iter().filter(|c| !state.combatants.iter().any(|d| d.id == c.id)).collect();
+            if let (Some(prompt), Some(first)) = (&state.pending, removed.first()) {
+                return Err(LiveError::Pending(format!(
+                    "answer the pending prompt `{}` with `bench respond` before removing {}: {}",
+                    prompt.id, first.id, prompt.message
+                )));
+            }
+            if let Some(active) = state.active_turn.as_deref().filter(|a| removed.iter().any(|c| c.id == *a)) {
+                return Err(LiveError::Invalid(format!(
+                    "{active} holds the active turn; use `bench remove {active}`, which ends the turn first"
+                )));
+            }
+            let mut concentration_events = Vec::new();
+            for leaving in &removed {
+                state.combatants.push((*leaving).clone());
+                concentration_events.extend(engine::end_concentration_on_leaving(state, std::slice::from_ref(&leaving.id))?);
+                state.combatants.retain(|c| c.id != leaving.id);
+                forget_combatant(state, &leaving.id);
+            }
             let dropped: Vec<String> = state
                 .combatants
                 .iter()
@@ -1131,6 +1137,11 @@ fn remove_combatant(state: &mut EncounterState, id: &str, reason: &str) -> Resul
         applied.items.push((event, line));
     }
     state.combatants.retain(|c| c.id != id);
+    forget_combatant(state, id);
+    Ok(applied)
+}
+
+fn forget_combatant(state: &mut EncounterState, id: &str) {
     state.initiative_order.retain(|c| c != id);
     state.initiative_rolls.remove(id);
     for c in &mut state.combatants {
@@ -1140,7 +1151,6 @@ fn remove_combatant(state: &mut EncounterState, id: &str, reason: &str) -> Resul
     if state.active_turn.as_deref() == Some(id) {
         state.active_turn = None;
     }
-    Ok(applied)
 }
 
 fn add_snapshot(snapshots: &mut Vec<StatBlockSnapshot>, block: &StatBlock) -> Result<(), LiveError> {
@@ -2099,8 +2109,12 @@ mod tests {
             .filter(|c| c.id != "goblin-warrior")
             .map(|c| serde_json::to_value(c).unwrap())
             .collect();
-        execute(&mut replaced, override_cmd("combatants", Some(Value::Array(others)))).unwrap();
+        let outcome = execute(&mut replaced, override_cmd("combatants", Some(Value::Array(others)))).unwrap();
+        assert!(!replaced.combatants.iter().any(|c| c.id == "goblin-warrior"));
+        assert_eq!(striker(&replaced), lethargy, "replacing combatants without it ends the condition it held on the bearer");
         assert!(!held(&replaced), "replacing combatants without it ends what it held");
+        assert!(lines_of(&outcome).iter().any(|l| l == "goblin-warrior loses concentration"), "{:?}", lines_of(&outcome));
+        assert!(replay(&replaced).matches, "replacing combatants replays");
 
         let mut other = holding();
         let striker_index = other.combatants.iter().position(|c| c.id == "standard-striker-03").unwrap();
@@ -2116,8 +2130,72 @@ mod tests {
 
         let mut plain = start(spec(PcDice::Engine)).unwrap().0;
         execute(&mut plain, Command::Remove { id: "goblin-warrior".into(), reason: "flees".into() }).unwrap();
-        clear(&mut plain, "combatants.standard-striker-03").unwrap();
-        assert!(replay(&plain).matches, "removing a creature that isn't concentrating replays");
+        assert!(replay(&plain).matches, "bench remove of a creature that isn't concentrating replays");
+        let mut plain = start(spec(PcDice::Engine)).unwrap().0;
+        clear(&mut plain, "combatants.goblin-warrior").unwrap();
+        assert!(replay(&plain).matches, "an override removal of a creature that isn't concentrating replays");
+    }
+
+    #[test]
+    fn override_removal_cleans_up_the_encounter() {
+        let override_cmd = |path: &str, value: Option<Value>| Command::Override { path: path.into(), value, reason: "t".into(), rule: None, standing: false };
+        let mentions = |state: &EncounterState, id: &str| {
+            state.initiative_order.iter().any(|c| c == id)
+                || state.initiative_rolls.contains_key(id)
+                || state.active_turn.as_deref() == Some(id)
+                || state.combatants.iter().any(|c| c.engagement.iter().any(|e| e == id) || c.ranges.contains_key(id))
+        };
+        for form in ["id", "index", "list"] {
+            let mut state = start(spec(PcDice::Engine)).unwrap().0;
+            let victim = state.initiative_order.iter().find(|id| Some(id.as_str()) != state.active_turn.as_deref()).cloned().unwrap();
+            let other = state.combatants.iter().find(|c| c.id != victim).unwrap().id.clone();
+            state.combatants.iter_mut().find(|c| c.id == other).unwrap().engagement.push(victim.clone());
+            state.combatants.iter_mut().find(|c| c.id == other).unwrap().ranges.insert(victim.clone(), RangeBand::Near);
+            let before = state.active_turn.clone();
+            let remove = match form {
+                "id" => override_cmd(&format!("combatants.{victim}"), None),
+                "index" => override_cmd(&format!("combatants.{}", state.combatants.iter().position(|c| c.id == victim).unwrap()), None),
+                _ => {
+                    let rest: Vec<Value> = state.combatants.iter().filter(|c| c.id != victim).map(|c| serde_json::to_value(c).unwrap()).collect();
+                    override_cmd("combatants", Some(Value::Array(rest)))
+                }
+            };
+            execute(&mut state, remove).unwrap();
+            assert!(!state.combatants.iter().any(|c| c.id == victim));
+            assert!(!mentions(&state, &victim), "{form}: nothing keeps `{victim}`");
+            assert_eq!(state.active_turn, before, "{form}: the active turn stays");
+            assert!(replay(&state).matches, "{form} replays");
+            execute(&mut state, Command::Undo).unwrap();
+            assert!(state.combatants.iter().any(|c| c.id == victim) && state.initiative_order.contains(&victim), "{form}: undo restores it");
+        }
+
+        for form in ["id", "index", "list"] {
+            let mut state = start(spec(PcDice::Engine)).unwrap().0;
+            let active = state.active_turn.clone().unwrap();
+            let remove = match form {
+                "id" => override_cmd(&format!("combatants.{active}"), None),
+                "index" => override_cmd(&format!("combatants.{}", state.combatants.iter().position(|c| c.id == active).unwrap()), None),
+                _ => {
+                    let rest: Vec<Value> = state.combatants.iter().filter(|c| c.id != active).map(|c| serde_json::to_value(c).unwrap()).collect();
+                    override_cmd("combatants", Some(Value::Array(rest)))
+                }
+            };
+            let snapshot = serde_json::to_value(&state).unwrap();
+            let err = execute(&mut state, remove).unwrap_err();
+            assert!(matches!(err, LiveError::Invalid(ref m) if m.contains("bench remove")), "{form}: {err:?}");
+            assert_eq!(serde_json::to_value(&state).unwrap(), snapshot, "{form}: a refused override changes nothing");
+            execute(&mut state, Command::Remove { id: active.clone(), reason: "t".into() }).unwrap();
+            assert!(!mentions(&state, &active), "{form}");
+        }
+
+        let mut prompted = start(spec(PcDice::Ask)).unwrap().0;
+        assert!(prompted.pending.is_some());
+        let snapshot = serde_json::to_value(&prompted).unwrap();
+        let err = execute(&mut prompted, override_cmd("combatants.goblin-warrior", None)).unwrap_err();
+        assert!(matches!(err, LiveError::Pending(ref m) if m.contains("bench respond")), "{err:?}");
+        assert_eq!(serde_json::to_value(&prompted).unwrap(), snapshot, "a refused override changes nothing");
+        execute(&mut prompted, override_cmd("goblin-warrior.hp", Some(Value::from(3)))).unwrap();
+        assert!(prompted.pending.is_some(), "an override that removes nobody still works while a prompt is pending");
     }
 
     #[test]
