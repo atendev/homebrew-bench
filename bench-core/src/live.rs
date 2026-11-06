@@ -643,6 +643,16 @@ fn apply(state: &mut EncounterState, cmd: &Command) -> Result<Applied, LiveError
                 .map(|c| (c.id.clone(), engine::cannot_concentrate(c), c.concentration.clone()))
                 .collect();
             let target = override_path::apply(state, path, value.clone()).map_err(LiveError::Invalid)?;
+            let count = |list: &[Combatant], id: &str| list.iter().filter(|c| c.id == id).count();
+            if let Some(twice) = state.combatants.iter().find(|c| {
+                let now = count(&state.combatants, &c.id);
+                now > 1 && now > count(&previous, &c.id)
+            }) {
+                return Err(LiveError::Invalid(format!(
+                    "{} is in combatants twice; each combatant needs its own id, so use `bench add` for another one",
+                    twice.id
+                )));
+            }
             if let Some(added) = state.combatants.iter().find(|c| !previous.iter().any(|p| p.id == c.id)) {
                 return Err(LiveError::Invalid(format!(
                     "{} is not in the encounter; an override can't add a combatant, use `bench add`, which rolls its initiative",
@@ -2241,6 +2251,39 @@ mod tests {
         execute(&mut state, override_cmd("combatants.goblin-warrior.hp", Some(Value::from(3)))).unwrap();
         assert_eq!(state.combatants.iter().find(|c| c.id == "goblin-warrior").unwrap().hp, 3);
         assert!(replay(&state).matches);
+    }
+
+    #[test]
+    fn override_refuses_duplicate_ids() {
+        let override_cmd = |path: &str, value: Option<Value>| Command::Override { path: path.into(), value, reason: "t".into(), rule: None, standing: false };
+        for form in ["list", "index"] {
+            let mut state = start(spec(PcDice::Engine)).unwrap().0;
+            let goblin = state.combatants.iter().position(|c| c.id == "goblin-warrior").unwrap();
+            let other = (goblin + 1) % state.combatants.len();
+            let duplicate = match form {
+                "list" => {
+                    let mut all: Vec<Value> = state.combatants.iter().map(|c| serde_json::to_value(c).unwrap()).collect();
+                    all.push(all[goblin].clone());
+                    override_cmd("combatants", Some(Value::Array(all)))
+                }
+                _ => override_cmd(&format!("combatants.{other}"), Some(serde_json::to_value(&state.combatants[goblin]).unwrap())),
+            };
+            let snapshot = serde_json::to_value(&state).unwrap();
+            let err = execute(&mut state, duplicate).unwrap_err();
+            assert!(matches!(err, LiveError::Invalid(ref m) if m.contains("goblin-warrior") && m.contains("twice")), "{form}: {err:?}");
+            assert_eq!(serde_json::to_value(&state).unwrap(), snapshot, "{form}: a refused override changes nothing");
+        }
+
+        let mut state = start(spec(PcDice::Engine)).unwrap().0;
+        let same: Vec<Value> = state.combatants.iter().map(|c| serde_json::to_value(c).unwrap()).collect();
+        execute(&mut state, override_cmd("combatants", Some(Value::Array(same)))).unwrap();
+        execute(&mut state, override_cmd("combatants.goblin-warrior.hp", Some(Value::from(3)))).unwrap();
+        assert_eq!(state.combatants.iter().find(|c| c.id == "goblin-warrior").unwrap().hp, 3);
+
+        let copy = state.combatants.iter().find(|c| c.id == "goblin-warrior").unwrap().clone();
+        state.combatants.push(copy);
+        execute(&mut state, override_cmd("combatants.goblin-warrior.hp", Some(Value::from(5)))).unwrap();
+        assert_eq!(state.combatants.iter().find(|c| c.id == "goblin-warrior").unwrap().hp, 5, "a duplicate the override didn't make doesn't block it");
     }
 
     #[test]
