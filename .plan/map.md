@@ -109,6 +109,7 @@ Both modes ship in phase 1. Everything the engine can't model is labeled agent j
 - [Override removal bookkeeping](closed/084-override-removal-bookkeeping.md): graduated from the 083-audit fog item. Override removal (by id, by index, or with a new `combatants` list) cleans up as `bench remove` does, through a shared `forget_combatant`. It ends held concentration after the override applies, which fixes the list form. It is refused when it drops the active-turn creature or while a prompt is pending. Engine 0.1.21, policy stays v3, the curve differs only in `engine_version`.
 - [ADR 0006 and override removal](closed/085-adr-0006-and-override-removal.md): graduated from the 084-audit fog item. ADR 0006 now accepts override removal: same cleanup as `bench remove`, logged as OVERRIDE, refused for the active-turn creature and while a prompt is pending. Docs only, engine stays 0.1.21. Adding a combatant by override went to fog.
 - [Adding a combatant by override](closed/086-adding-a-combatant-by-override.md): graduated from the 085-audit fog item. Reproduced on 0.1.21: a `combatants` override with a new id succeeds, but the creature gets no initiative, never acts and logs no ADD line. Decision: refuse it, error naming `bench add`, matching ADR 0006. Build is ticket 087.
+- [Refuse added ids in the override path](closed/087-refuse-added-ids-in-override.md): an override whose result holds a combatant id the encounter didn't have (a new or renamed `combatants` list entry, or a `combatants.<index>` entry with a new id) is refused whole with an error naming `bench add`. ADR 0006 and the live-mode reference say so. Engine 0.1.22, policy stays v3, the curve differs only in `engine_version`. The audit found that duplicated ids still pass, now ticket 088.
 
 ## Not yet specified
 
@@ -134,4 +135,4 @@ Both modes ship in phase 1. Everything the engine can't model is labeled agent j
 
 ## Frontier
 
-- [087 Refuse added ids in the override path](tickets/087-refuse-added-ids-in-override.md): task, AFK.
+- [088 Refuse duplicate combatant ids in the override path](tickets/088-refuse-duplicate-combatant-ids-in-override.md): task, AFK.

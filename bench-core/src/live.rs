@@ -643,6 +643,12 @@ fn apply(state: &mut EncounterState, cmd: &Command) -> Result<Applied, LiveError
                 .map(|c| (c.id.clone(), engine::cannot_concentrate(c), c.concentration.clone()))
                 .collect();
             let target = override_path::apply(state, path, value.clone()).map_err(LiveError::Invalid)?;
+            if let Some(added) = state.combatants.iter().find(|c| !previous.iter().any(|p| p.id == c.id)) {
+                return Err(LiveError::Invalid(format!(
+                    "{} is not in the encounter; an override can't add a combatant, use `bench add`, which rolls its initiative",
+                    added.id
+                )));
+            }
             let removed: Vec<&Combatant> = previous.iter().filter(|c| !state.combatants.iter().any(|d| d.id == c.id)).collect();
             if let (Some(prompt), Some(first)) = (&state.pending, removed.first()) {
                 return Err(LiveError::Pending(format!(
@@ -2196,6 +2202,45 @@ mod tests {
         assert_eq!(serde_json::to_value(&prompted).unwrap(), snapshot, "a refused override changes nothing");
         execute(&mut prompted, override_cmd("goblin-warrior.hp", Some(Value::from(3)))).unwrap();
         assert!(prompted.pending.is_some(), "an override that removes nobody still works while a prompt is pending");
+    }
+
+    #[test]
+    fn override_refuses_added_ids() {
+        let override_cmd = |path: &str, value: Option<Value>| Command::Override { path: path.into(), value, reason: "t".into(), rule: None, standing: false };
+        for form in ["list", "rename", "index"] {
+            let mut state = start(spec(PcDice::Engine)).unwrap().0;
+            let add = match form {
+                "list" => {
+                    let mut all: Vec<Value> = state.combatants.iter().map(|c| serde_json::to_value(c).unwrap()).collect();
+                    let mut copy = all[0].clone();
+                    copy["id"] = Value::from("goblin-copy");
+                    all.push(copy);
+                    override_cmd("combatants", Some(Value::Array(all)))
+                }
+                "index" => {
+                    let mut entry = serde_json::to_value(&state.combatants[0]).unwrap();
+                    entry["id"] = Value::from("goblin-copy");
+                    override_cmd("combatants.0", Some(entry))
+                }
+                _ => {
+                    let mut all: Vec<Value> = state.combatants.iter().map(|c| serde_json::to_value(c).unwrap()).collect();
+                    let goblin = all.iter_mut().find(|c| c["id"] == "goblin-warrior").unwrap();
+                    goblin["id"] = Value::from("goblin-copy");
+                    override_cmd("combatants", Some(Value::Array(all)))
+                }
+            };
+            let snapshot = serde_json::to_value(&state).unwrap();
+            let err = execute(&mut state, add).unwrap_err();
+            assert!(matches!(err, LiveError::Invalid(ref m) if m.contains("goblin-copy") && m.contains("bench add")), "{form}: {err:?}");
+            assert_eq!(serde_json::to_value(&state).unwrap(), snapshot, "{form}: a refused override changes nothing");
+        }
+
+        let mut state = start(spec(PcDice::Engine)).unwrap().0;
+        let same: Vec<Value> = state.combatants.iter().map(|c| serde_json::to_value(c).unwrap()).collect();
+        execute(&mut state, override_cmd("combatants", Some(Value::Array(same)))).unwrap();
+        execute(&mut state, override_cmd("combatants.goblin-warrior.hp", Some(Value::from(3)))).unwrap();
+        assert_eq!(state.combatants.iter().find(|c| c.id == "goblin-warrior").unwrap().hp, 3);
+        assert!(replay(&state).matches);
     }
 
     #[test]
