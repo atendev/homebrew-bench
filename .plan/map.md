@@ -15,6 +15,7 @@ Both modes ship in phase 1. Everything the engine can't model is labeled agent j
 - Build phase override: all 24 phase-1 design tickets and 14 ADRs (`docs/adr/0001` through `0014`) are closed. This map now carries execution in place through `task` tickets (`025` through `034`) that deliver the working Rust workspace, reference datasets, `bench` CLI, agent skill, and release installers.
 - Existing material: `data/srd/2024/` holds pinned SRD 5.2.1 JSON and schemas, `data/srd/corrections.json` holds the 77 audited upstream corrections, `data/party/standard-spells.json` holds the standard party spell list, `docs/prototypes/report-format.html` holds the batch report prototype, and `scripts/` holds import and survey tooling.
 - The map was reset on 2026-10-24. Earlier decisions were discarded on purpose and live only in git history (commit 9120650).
+- When a ticket is committed and its branch is ready to merge, ask with the AskUserQuestion tool (options Merge and Don't merge) instead of a question in the final message, so the thread waits on input rather than reading as done.
 - The three research tickets (SRD ability survey, CR and encounter guidance, agent skill locations) ran on 2026-10-27 and are closed; findings live in `docs/research/`.
 
 ## Decisions so far
