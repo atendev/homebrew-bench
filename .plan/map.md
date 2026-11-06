@@ -108,6 +108,7 @@ Both modes ship in phase 1. Everything the engine can't model is labeled agent j
 - [Removal ends concentration](closed/083-removal-ends-concentration.md): graduated from the 082-audit fog item. `bench remove` and an override that drops a creature from `combatants` end what it holds by concentration before it leaves, through `engine::end_concentration_on_leaving`, even when its `concentration` field was already cleared. Override and remove are atomic. Engine 0.1.20, policy stays v3, the curve differs only in `engine_version`.
 - [Override removal bookkeeping](closed/084-override-removal-bookkeeping.md): graduated from the 083-audit fog item. Override removal (by id, by index, or with a new `combatants` list) cleans up as `bench remove` does, through a shared `forget_combatant`. It ends held concentration after the override applies, which fixes the list form. It is refused when it drops the active-turn creature or while a prompt is pending. Engine 0.1.21, policy stays v3, the curve differs only in `engine_version`.
 - [ADR 0006 and override removal](closed/085-adr-0006-and-override-removal.md): graduated from the 084-audit fog item. ADR 0006 now accepts override removal: same cleanup as `bench remove`, logged as OVERRIDE, refused for the active-turn creature and while a prompt is pending. Docs only, engine stays 0.1.21. Adding a combatant by override went to fog.
+- [Adding a combatant by override](closed/086-adding-a-combatant-by-override.md): graduated from the 085-audit fog item. Reproduced on 0.1.21: a `combatants` override with a new id succeeds, but the creature gets no initiative, never acts and logs no ADD line. Decision: refuse it, error naming `bench add`, matching ADR 0006. Build is ticket 087.
 
 ## Not yet specified
 
@@ -133,4 +134,4 @@ Both modes ship in phase 1. Everything the engine can't model is labeled agent j
 
 ## Frontier
 
-- [086 Adding a combatant by override](tickets/086-adding-a-combatant-by-override.md): grilling, HITL.
+- [087 Refuse added ids in the override path](tickets/087-refuse-added-ids-in-override.md): task, AFK.
