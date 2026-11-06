@@ -112,10 +112,14 @@ Both modes ship in phase 1. Everything the engine can't model is labeled agent j
 - [Refuse added ids in the override path](closed/087-refuse-added-ids-in-override.md): an override whose result holds a combatant id the encounter didn't have (a new or renamed `combatants` list entry, or a `combatants.<index>` entry with a new id) is refused whole with an error naming `bench add`. ADR 0006 and the live-mode reference say so. Engine 0.1.22, policy stays v3, the curve differs only in `engine_version`. The audit found that duplicated ids still pass, now ticket 088.
 - [Refuse duplicate combatant ids in the override path](closed/088-refuse-duplicate-combatant-ids-in-override.md): an override that leaves an id in `combatants` more often than before (a repeated list entry, or `combatants.<index>` set to a copy) is refused whole, naming the id and `bench add`. A duplicate the override didn't create doesn't block it. ADR 0006 and the live-mode reference say so. Engine 0.1.23, policy stays v3, the curve differs only in `engine_version`. The audit found that `start` can collide ids itself, now ticket 089.
 - [Refuse colliding combatant ids at start](closed/089-refuse-colliding-combatant-ids-at-start.md): `start` no longer refuses or collides. A repeated stat block's `-<n>` skips ids that stat blocks used once already hold, as `bench add` already did: `goblin` twice and `goblin-2` start as `goblin-1`, `goblin-3`, `goblin-2`. `add` and batch were checked and can't collide. Replay starts from the saved initial state, so recorded encounters keep their ids. Engine 0.1.24, policy stays v3, the curve differs only in `engine_version`.
+- [Bonus-action Disengage](closed/090-bonus-action-disengage.md): a new `disengage` effect on Nimble Escape, Cunning Action, Deathless Agility and Hasten (11 fixtures, Hide and Dash left as agent clauses, Prowl unmodeled), run in live mode as `bench action <actor> <ability>`. Policy v4 takes a Disengage only to step out without provoking, from the bonus action or an extra action that allows it, at the lower of the avoided penalty and the plan it gives up. The curve is regenerated. Only the assassin should change, since goblins never leave melee. To be built in ticket 099.
 
 ## Not yet specified
 
-Nothing is in the fog right now. Tickets 090 through 098 took the last nine items.
+- Dash as a movement budget: what a doubled move is worth with range bands, for Cunning Action, Deathless Agility and Hasten ([Bonus-action Disengage](closed/090-bonus-action-disengage.md)).
+- Hide: a hidden state from the Hide action, beside how creatures see Invisible ones (ticket 095).
+- Prowl: a move without provoking as one bonus action. It may fall out of Dash.
+- Hit-and-run: a melee creature attacks, then disengages and steps away. It needs a value for distance that range bands lack, and it is the goblins' real edge at the table.
 
 ## Out of scope
 
@@ -129,12 +133,12 @@ Nothing is in the fog right now. Tickets 090 through 098 took the last nine item
 
 ## Frontier
 
-- [090 Bonus-action Disengage](tickets/090-bonus-action-disengage.md): grilling, HITL.
+- [099 Build bonus-action Disengage](tickets/099-build-bonus-action-disengage.md): task, AFK.
 - [091 Darkness and Darkvision](tickets/091-darkness-and-darkvision.md): grilling, HITL.
 - [092 Reaction triggers beyond leaving reach and attack rolls](tickets/092-reaction-triggers-beyond-reach-and-attack-rolls.md): grilling, HITL.
 - [093 Dice-valued roll bonuses](tickets/093-dice-valued-roll-bonuses.md): grilling, HITL.
-- [094 Batch value of debuffs](tickets/094-batch-value-of-debuffs.md): grilling, HITL. May share a v4 policy with 097.
+- [094 Batch value of debuffs](tickets/094-batch-value-of-debuffs.md): grilling, HITL. May share a v5 policy with 097.
 - [095 Seeing Invisible creatures by spell or trait](tickets/095-seeing-invisible-creatures.md): grilling, HITL.
 - [096 Plan-failure warnings split per level](tickets/096-plan-failure-warnings-split-per-level.md): grilling, HITL.
-- [097 Batch value of a target teleport](tickets/097-batch-value-of-a-target-teleport.md): grilling, HITL. May share a v4 policy with 094.
+- [097 Batch value of a target teleport](tickets/097-batch-value-of-a-target-teleport.md): grilling, HITL. May share a v5 policy with 094.
 - [098 Stale concentration in old saves](tickets/098-stale-concentration-in-old-saves.md): grilling, HITL.

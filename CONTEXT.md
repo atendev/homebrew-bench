@@ -76,6 +76,10 @@ _Avoid_: Owner, holder (a legendary action holder is a different thing), recipie
 A second action on each of a combatant's turns, granted by a modifier and limited to the uses it lists, such as Haste's one attack or Disengage. It is separate from the combatant's own action and from a bonus action.
 _Avoid_: Bonus action (a different thing), additional attack
 
+**Bonus action**:
+The one bonus action a combatant may take on its turn, only through an ability that grants one, such as Healing Word or Nimble Escape. It is separate from its action and from an extra action.
+_Avoid_: Swift action, minor action
+
 **Roll modifier**:
 Advantage or Disadvantage that a trait gives its own creature on one kind of roll while a stated circumstance holds, such as Sunlight Sensitivity in sunlight. It is always on while the circumstance holds, with no duration. Lighting is the only circumstance the engine reads.
 _Avoid_: Modifier (that is timed), passive buff
@@ -173,7 +177,7 @@ The gap between the end of one creature's turn and the start of the next, when o
 _Avoid_: Legendary phase, off-turn action
 
 **Disengage**:
-The standard action that spends the actor's action and sets a flag until its turn ends. Its moves provoke no Opportunity Attack. Flyby and Agile give the same effect permanently as the `no_provoke` trait effect.
+The step that sets a flag until the actor's turn ends, taken as its action, as a bonus action when an ability such as Nimble Escape grants one, or as an extra action that allows it. Its moves provoke no Opportunity Attack. Flyby and Agile give the same effect permanently, as a trait.
 _Avoid_: Withdraw
 
 **Reactor**:
