@@ -120,7 +120,6 @@ Both modes ship in phase 1. Everything the engine can't model is labeled agent j
 - Plan-failure warnings split per level. Batch keys a failure on the combatant's name and the error text, so one fault in a standard-party PC repeats once per party level, and errors that name a combatant id split further. Open: whether to key on the stat block's archetype and strip ids from the text. Found by ticket 070.
 - Batch value of a `target` teleport. A teleport with `"subject": "target"` moves an opponent away and policy v3 scores it 0, as ticket 045 left pulls. It is close to a push to far, so it may reuse the push factors. Open: how engagement clearing without a band change should be valued, and whether it needs a v4 policy ([Build teleport subject](closed/078-build-teleport-subject.md)).
 - Stale concentration in old saves. A pre-0.1.18 save can hold a down or incapacitated creature with a stale concentration, and an override aimed at it with the same value leaves it. Open: whether loading or any override should sweep it, given the replay-divergence risk the 082 audit raised. Found by the 082 audit; the removal half was built in [Removal ends concentration](closed/083-removal-ends-concentration.md).
-- Adding a combatant by override. ADR 0006 says adding a combatant is not an override and `bench add` is the way, but the 085 audit read `override_path.rs` and `live.rs` and found that setting a `combatants` list with a new id is not refused: the creature gets no initiative and no ADD line. Not yet reproduced. Open: whether to refuse added ids in the override path or accept and roll initiative. Found by the 085 audit; the removal half was settled in [ADR 0006 and override removal](closed/085-adr-0006-and-override-removal.md).
 
 ## Out of scope
 
@@ -134,4 +133,4 @@ Both modes ship in phase 1. Everything the engine can't model is labeled agent j
 
 ## Frontier
 
-No ticket is takeable now. The next session turns one item from Not yet specified into a ticket.
+- [086 Adding a combatant by override](tickets/086-adding-a-combatant-by-override.md): grilling, HITL.
