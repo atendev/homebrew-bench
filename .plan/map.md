@@ -115,6 +115,7 @@ Both modes ship in phase 1. Everything the engine can't model is labeled agent j
 - [Bonus-action Disengage](closed/090-bonus-action-disengage.md): a new `disengage` effect on Nimble Escape, Cunning Action, Deathless Agility and Hasten (11 fixtures, Hide and Dash left as agent clauses, Prowl unmodeled), run in live mode as `bench action <actor> <ability>`. Policy v4 takes a Disengage only to step out without provoking, from the bonus action or an extra action that allows it, at the lower of the avoided penalty and the plan it gives up. The curve is regenerated. Only the assassin should change, since goblins never leave melee. To be built in ticket 099.
 - [Build bonus-action Disengage](closed/099-build-bonus-action-disengage.md): the `disengage` effect on 11 fixtures runs as `bench action <actor> <ability>` with no target. Policy v4 has an action plan that steps out Disengage first with the cheapest ready bonus or extra action when it costs less than the attacks it avoids, and batch commits it before the move. Engine 0.1.25, and the curve was regenerated. The assassin and the vampire familiar (whose dagger is thrown) move; the other nine play as before.
 - [Darkness and Darkvision](closed/091-darkness-and-darkvision.md): `darkness` becomes a fifth lighting value, read through ADR 0017's sight rule and never stored: under it a creature without Darkvision, Blindsight or Truesight sees no one, which reaches attacks, Frightened, ranged attacks in close combat and Opportunity Attacks. Nonmagical only. The standard party has no light in it. Darkness meets a `dim_light` key. No automatic second batch run, but a hint when sight is uneven. Workspace patch, policy stays v4, curve not regenerated. ADR 0017 and `CONTEXT.md` updated. To be built in ticket 100.
+- [Reaction triggers beyond leaving reach and attack rolls](closed/092-reaction-triggers-beyond-reach-and-attack-rolls.md): a trigger is modeled only when an importable reaction needs it and it moves batch numbers. Only the spell-cast trigger passes, for Protective Magic's Counterspell, and it goes to grilling in ticket 101. The pre-roll, damage, move-within, check-or-save and turn-start triggers stay agent judgment. "Within N feet" reads as engaged for 5 feet or less and as any combatant beyond (ADR 0017). Reflexive Antennae and Protective Magic's Shield move onto the existing hit trigger in ticket 102. No code.
 
 ## Not yet specified
 
@@ -123,6 +124,8 @@ Both modes ship in phase 1. Everything the engine can't model is labeled agent j
 - Prowl: a move without provoking as one bonus action. It may fall out of Dash.
 - Failed-plan logs: when a batch plan fails after its moves, those moves and their Opportunity Attacks are neither logged nor counted in monster damage. Only a spent Disengage is logged ([Build bonus-action Disengage](closed/099-build-bonus-action-disengage.md)).
 - Hit-and-run: a melee creature attacks, then disengages and steps away. It needs a value for distance that range bands lack, and it is the goblins' real edge at the table.
+- Pre-roll reactions: a reaction to an attack roll made against the creature before the hit is known, such as Redirect Attack's swap and retarget or a homebrew "impose Disadvantage on the attack" ([Reaction triggers beyond leaving reach and attack rolls](closed/092-reaction-triggers-beyond-reach-and-attack-rolls.md)).
+- Turn-start reactions: a trigger for a creature starting its turn near the reactor, with an immunity after a successful save, as in the Chain Devil's Unnerving Gaze ([Reaction triggers beyond leaving reach and attack rolls](closed/092-reaction-triggers-beyond-reach-and-attack-rolls.md)).
 - Sight-gated targeting: spells and abilities that target "a creature you can see" don't read sight, for darkness or Invisible ([Darkness and Darkvision](closed/091-darkness-and-darkvision.md)).
 
 ## Out of scope
@@ -137,7 +140,6 @@ Both modes ship in phase 1. Everything the engine can't model is labeled agent j
 
 ## Frontier
 
-- [092 Reaction triggers beyond leaving reach and attack rolls](tickets/092-reaction-triggers-beyond-reach-and-attack-rolls.md): grilling, HITL.
 - [093 Dice-valued roll bonuses](tickets/093-dice-valued-roll-bonuses.md): grilling, HITL.
 - [094 Batch value of debuffs](tickets/094-batch-value-of-debuffs.md): grilling, HITL. May share a v5 policy with 097.
 - [095 Seeing Invisible creatures by spell or trait](tickets/095-seeing-invisible-creatures.md): grilling, HITL.
@@ -145,3 +147,5 @@ Both modes ship in phase 1. Everything the engine can't model is labeled agent j
 - [097 Batch value of a target teleport](tickets/097-batch-value-of-a-target-teleport.md): grilling, HITL. May share a v5 policy with 094.
 - [098 Stale concentration in old saves](tickets/098-stale-concentration-in-old-saves.md): grilling, HITL.
 - [100 Build darkness](tickets/100-build-darkness.md): task, AFK.
+- [101 Counterspell and the spell-cast trigger](tickets/101-counterspell-and-the-spell-cast-trigger.md): grilling, HITL.
+- [102 Hit-triggered Reflexive Antennae and Protective Magic](tickets/102-hit-triggered-reflexive-antennae-and-protective-magic.md): task, AFK.
