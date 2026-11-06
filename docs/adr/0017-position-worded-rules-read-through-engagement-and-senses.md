@@ -8,6 +8,7 @@ Several 2024 condition rules depend on where creatures stand or what they can se
 - **A combatant at 0 HP that is down has the Unconscious condition, and Unconscious includes Prone, for attack rolls.** The engine reads both at roll time and stores neither in `conditions`.
 - **Ranged attacks in close combat read both rules.** Added in ticket 077. A ranged attack roll has Disadvantage when an enemy is within 5 feet of the attacker (engaged, recorded on either side), sees it by the sight rule, and can act. An enemy is a combatant on another side. One that is dead, down or has Incapacitated or a condition that includes it (Paralyzed, Petrified, Stunned, Unconscious) doesn't count. An attack with a range and no reach is always ranged here. A thrown weapon has both: it is a melee attack against a target the attacker is engaged with and a ranged attack against any other. A hit trigger's `ranged` filter still reads the range alone.
 - **Darkness is one more reason not to see.** Decided in ticket 091. When the encounter's lighting is `darkness`, an observer with no Darkvision, Blindsight or Truesight sees no one. Every rule that reads sight follows it: attack rolls, Frightened, ranged attacks in close combat and Opportunity Attacks. Two combatants that can't see each other attack with Advantage and Disadvantage, which cancel. Nothing is stored in `conditions`. This darkness is nonmagical. Magical Darkness, which Darkvision can't see through, is nearly always a local area, so it stays the agent's call. Spell and ability targeting that says "a creature you can see" doesn't read sight yet, for darkness or Invisible.
+- **"Within N feet" past 5 feet means anywhere in the encounter.** Decided in ticket 092 for reaction triggers. A distance of 5 feet or less reads as engaged, as above. A longer one reaches every combatant, because range bands have no fixed width, so no distance can be read from them.
 
 ## Considered options
 
@@ -20,5 +21,5 @@ Several 2024 condition rules depend on where creatures stand or what they can se
 ## Consequences
 
 - A reach attacker 10 feet from a Prone target reads as within 5 feet. The agent overrides when it matters.
-- Future position-worded rules (the "creature moving within N feet" reaction trigger, Darkness) should start from these readings.
+- Future position-worded rules should start from these readings. No reaction trigger reads the "within N feet" reading yet.
 - The batch tactics policy must read the same sources, or it scores attacks the engine rolls differently. Ticket 056 does that under policy v3.
