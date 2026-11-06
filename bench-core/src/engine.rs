@@ -2678,14 +2678,45 @@ fn break_concentration(
     let i = index_of(state, target_id)?;
     if state.combatants[i].concentration.take().is_some() {
         events.push(event("concentration", format!("{target_id} loses concentration"), target_id, target_id));
-        let held = |d: &Duration, source: &Option<String>| matches!(d, Duration::Concentration) && source.as_deref() == Some(target_id);
-        for c in &mut state.combatants {
-            c.conditions.retain(|x| !held(&x.duration, &x.source));
-        }
-        let ended = take_modifiers(state, |m| held(&m.remaining, &m.source));
-        fire_on_end(state, stream, ended, events)?;
+        end_held(state, stream, target_id, events)?;
     }
     Ok(())
+}
+
+fn end_held(state: &mut EncounterState, stream: &mut Stream, source_id: &str, events: &mut Vec<EngineEvent>) -> Result<(), EngineError> {
+    let held = |d: &Duration, source: &Option<String>| matches!(d, Duration::Concentration) && source.as_deref() == Some(source_id);
+    for c in &mut state.combatants {
+        c.conditions.retain(|x| !held(&x.duration, &x.source));
+    }
+    let ended = take_modifiers(state, |m| held(&m.remaining, &m.source));
+    fire_on_end(state, stream, ended, events)
+}
+
+fn holds_by_concentration(state: &EncounterState, source_id: &str) -> bool {
+    let held = |d: &Duration, source: &Option<String>| matches!(d, Duration::Concentration) && source.as_deref() == Some(source_id);
+    state.combatants.iter().any(|c| c.conditions.iter().any(|x| held(&x.duration, &x.source)))
+        || state.active_modifiers.iter().any(|m| held(&m.remaining, &m.source))
+}
+
+/// End everything each listed combatant holds before it leaves the encounter:
+/// its concentration, logged as `<id> loses concentration`, and any
+/// concentration-duration condition or modifier it is still the source of,
+/// logged as `<id> leaves; the effects it held by concentration end` when its
+/// concentration was already cleared.
+pub fn end_concentration_on_leaving(state: &mut EncounterState, ids: &[String]) -> Result<Vec<EngineEvent>, EngineError> {
+    let mut stream = Stream::from_state(state.rng.clone());
+    let mut events = Vec::new();
+    for id in ids {
+        let i = index_of(state, id)?;
+        if state.combatants[i].concentration.is_some() {
+            break_concentration(state, &mut stream, id, &mut events)?;
+        } else if holds_by_concentration(state, id) {
+            events.push(event("concentration", format!("{id} leaves; the effects it held by concentration end"), id, id));
+            end_held(state, &mut stream, id, &mut events)?;
+        }
+    }
+    state.rng = stream.state();
+    Ok(events)
 }
 
 /// True if the combatant holds a condition that incapacitates it.
