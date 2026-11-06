@@ -115,15 +115,7 @@ Both modes ship in phase 1. Everything the engine can't model is labeled agent j
 
 ## Not yet specified
 
-- Bonus-action Disengage. Nimble Escape (8 fixtures, goblins among them) and Cunning Action import as unmodeled and skipped. Under policy v3 those creatures pay Opportunity Attacks they would avoid at a table, so they read a little weaker. Open: whether Nimble Escape imports as a bonus action that runs the Disengage step, and when the policy should spend it ([Batch policy takes reactions](closed/046-batch-policy-takes-reactions.md)).
-- Darkness and Darkvision. An encounter-wide `darkness` lighting value, read against each creature's Darkvision, Blindsight and Truesight, would need no positions: a creature that can't see in it is Blinded. Sense range doesn't count: ADR 0017 treats every sense as reaching every band. Open: how the standard party sees (it has no Darkvision and carries no light), how a homebrew "Dim Light or Darkness" trait maps, and whether the batch report needs a second run in darkness ([Encounter lighting setting](closed/049-encounter-lighting-setting.md)).
-- Reaction triggers beyond leaving reach and being hit by an attack roll. ADR 0005 lists four more: an attack roll made against the creature, taking damage or becoming Bloodied, a creature moving within N feet, and a creature making a check or save. There is also the dormant spell-cast trigger. Nothing modeled uses them yet, so the agent handles them. The open questions: which homebrew reactions would need them, and how "within N feet" reads without positions ([Live reaction windows](closed/047-live-reaction-windows.md)).
-- Dice-valued roll bonuses. Bless, Bane and a homebrew "allies add 1d4 to attack rolls" aura need a modifier that adds a die, and `ModifierChange` has only flat values. The standard party casts none of them. Open: whether the change takes a dice string, how the policy values it, and whether a die counts toward Advantage-style stacking ([Haste extra action and ally-targeted buffs](closed/055-haste-extra-action-and-ally-targeted-buffs.md)).
-- Batch value of debuffs. Once modifiers land on their target, a homebrew "the target has Disadvantage on attack rolls" rider or Slow's -2 AC lands on an opponent, and policy v3 scores it 0 because ticket 045 valued buffs only. Monsters built around debuffs read weaker in batch than they play. Open: whether a debuff mirrors the buff formula (the target's threat or incoming damage it changes) and whether that needs a v4 policy ([Haste extra action and ally-targeted buffs](closed/055-haste-extra-action-and-ally-targeted-buffs.md)).
-- Seeing Invisible creatures by spell or trait. See Invisibility and homebrew "sees invisible creatures" traits have no effect in the vocabulary, so ADR 0017's sight rule counts only Blindsight and Truesight and the agent overrides the rest. Open: whether it is a trait effect, a timed modifier, or both, and whether the standard party ever casts it ([Align attack-roll condition sources](closed/067-align-attack-roll-condition-sources-with-2024-rules.md)).
-- Plan-failure warnings split per level. Batch keys a failure on the combatant's name and the error text, so one fault in a standard-party PC repeats once per party level, and errors that name a combatant id split further. Open: whether to key on the stat block's archetype and strip ids from the text. Found by ticket 070.
-- Batch value of a `target` teleport. A teleport with `"subject": "target"` moves an opponent away and policy v3 scores it 0, as ticket 045 left pulls. It is close to a push to far, so it may reuse the push factors. Open: how engagement clearing without a band change should be valued, and whether it needs a v4 policy ([Build teleport subject](closed/078-build-teleport-subject.md)).
-- Stale concentration in old saves. A pre-0.1.18 save can hold a down or incapacitated creature with a stale concentration, and an override aimed at it with the same value leaves it. Open: whether loading or any override should sweep it, given the replay-divergence risk the 082 audit raised. Found by the 082 audit; the removal half was built in [Removal ends concentration](closed/083-removal-ends-concentration.md).
+Nothing is in the fog right now. Tickets 090 through 098 took the last nine items.
 
 ## Out of scope
 
@@ -137,4 +129,12 @@ Both modes ship in phase 1. Everything the engine can't model is labeled agent j
 
 ## Frontier
 
-- No open tickets. The next ones graduate from Not yet specified.
+- [090 Bonus-action Disengage](tickets/090-bonus-action-disengage.md): grilling, HITL.
+- [091 Darkness and Darkvision](tickets/091-darkness-and-darkvision.md): grilling, HITL.
+- [092 Reaction triggers beyond leaving reach and attack rolls](tickets/092-reaction-triggers-beyond-reach-and-attack-rolls.md): grilling, HITL.
+- [093 Dice-valued roll bonuses](tickets/093-dice-valued-roll-bonuses.md): grilling, HITL.
+- [094 Batch value of debuffs](tickets/094-batch-value-of-debuffs.md): grilling, HITL. May share a v4 policy with 097.
+- [095 Seeing Invisible creatures by spell or trait](tickets/095-seeing-invisible-creatures.md): grilling, HITL.
+- [096 Plan-failure warnings split per level](tickets/096-plan-failure-warnings-split-per-level.md): grilling, HITL.
+- [097 Batch value of a target teleport](tickets/097-batch-value-of-a-target-teleport.md): grilling, HITL. May share a v4 policy with 094.
+- [098 Stale concentration in old saves](tickets/098-stale-concentration-in-old-saves.md): grilling, HITL.
