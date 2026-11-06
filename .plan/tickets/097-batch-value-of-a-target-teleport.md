@@ -15,8 +15,8 @@ A teleport with `"subject": "target"` moves an opponent away and policy v3 score
 ## Notes
 
 - Source: [Build teleport subject](../closed/078-build-teleport-subject.md).
-- Related: [094](094-batch-value-of-debuffs.md) may share the same policy bump.
-- A policy change regenerates the baseline curve once. Decide whether 094 and 097 ship in one version after v4.
+- Related: [094](../closed/094-batch-value-of-debuffs.md) kept policy v4 because no curve input scores its terms. This ticket decides its own version by the same rule.
+- A policy change regenerates the baseline curve once. 094 kept v4, so this ticket bumps the version only if its own scoring moves a baseline cell.
 - Skills: `grilling`, `domain-modeling`. If the answer is code, the build is a follow-up `task` ticket.
 
 ## Resolution
