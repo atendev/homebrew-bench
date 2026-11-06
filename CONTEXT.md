@@ -65,7 +65,7 @@ A cast whose cast level is above the spell's own level. Scaling rules in the spe
 _Avoid_: Overcast, higher-level casting
 
 **Modifier**:
-A timed change a modeled ability puts on a combatant's stats or rolls, such as halved Speed, no Reactions, or Disadvantage on Strength checks. It ends on a duration, a successful save, the end of its source's concentration, or, for some, when its bearer takes damage. When one spell puts its modifier on the same bearer more than once, only the most potent applies, or the most recent if they are equal; the others apply again when it ends. A modifier can grant an extra action, and can leave effects on its bearer when it ends, as Haste's lethargy does. Conditions are separate: the ruleset defines them.
+A timed change a modeled ability puts on a combatant's stats or rolls, such as halved Speed, no Reactions, or Disadvantage on Strength checks. It ends on a duration, a successful save, the end of its source's concentration, or, for some, when its bearer takes damage. When one spell puts its modifier on the same bearer more than once, only the most potent applies, or the most recent if they are equal; the others apply again when it ends. A modifier can grant an extra action, and can leave effects on its bearer when it ends, as Haste's lethargy does. A modifier can add or subtract a die on attack rolls or saving throws, as Bless and Bane do; the bearer rolls the die, and it is a bonus, not Advantage or Disadvantage, so Bless and Bane on one creature both apply. Conditions are separate: the ruleset defines them.
 _Avoid_: Buff, debuff, status
 
 **Bearer**:

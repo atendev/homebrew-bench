@@ -116,6 +116,7 @@ Both modes ship in phase 1. Everything the engine can't model is labeled agent j
 - [Build bonus-action Disengage](closed/099-build-bonus-action-disengage.md): the `disengage` effect on 11 fixtures runs as `bench action <actor> <ability>` with no target. Policy v4 has an action plan that steps out Disengage first with the cheapest ready bonus or extra action when it costs less than the attacks it avoids, and batch commits it before the move. Engine 0.1.25, and the curve was regenerated. The assassin and the vampire familiar (whose dagger is thrown) move; the other nine play as before.
 - [Darkness and Darkvision](closed/091-darkness-and-darkvision.md): `darkness` becomes a fifth lighting value, read through ADR 0017's sight rule and never stored: under it a creature without Darkvision, Blindsight or Truesight sees no one, which reaches attacks, Frightened, ranged attacks in close combat and Opportunity Attacks. Nonmagical only. The standard party has no light in it. Darkness meets a `dim_light` key. No automatic second batch run, but a hint when sight is uneven. Workspace patch, policy stays v4, curve not regenerated. ADR 0017 and `CONTEXT.md` updated. To be built in ticket 100.
 - [Reaction triggers beyond leaving reach and attack rolls](closed/092-reaction-triggers-beyond-reach-and-attack-rolls.md): a trigger is modeled only when an importable reaction needs it and it moves batch numbers. Only the spell-cast trigger passes, for Protective Magic's Counterspell, and it goes to grilling in ticket 101. The pre-roll, damage, move-within, check-or-save and turn-start triggers stay agent judgment. "Within N feet" reads as engaged for 5 feet or less and as any combatant beyond (ADR 0017). Reflexive Antennae and Protective Magic's Shield move onto the existing hit trigger in ticket 102. No code.
+- [Dice-valued roll bonuses](closed/093-dice-valued-roll-bonuses.md): `ModifierChange` gains `add_dice` and `subtract_dice` (`NdM`), only on attack rolls and saves. The bearer rolls the die after the d20s on every engine-rolled attack and save, death saves included for dice. A die is a bonus, not Advantage, so Bless and Bane both roll, and its potency is its mean. The policy reads the mean as a flat bonus and gains a save-bonus score (`SAVE_POINT_VALUE` 0.05, positive only). Bless and Bane join the effects file, auras stay agent judgment, schema 1 and policy v4 hold. `CONTEXT.md` and ADR 0005 updated. Settles Bane's representation for ticket 094. To be built in ticket 103.
 
 ## Not yet specified
 
@@ -126,6 +127,7 @@ Both modes ship in phase 1. Everything the engine can't model is labeled agent j
 - Hit-and-run: a melee creature attacks, then disengages and steps away. It needs a value for distance that range bands lack, and it is the goblins' real edge at the table.
 - Pre-roll reactions: a reaction to an attack roll made against the creature before the hit is known, such as Redirect Attack's swap and retarget or a homebrew "impose Disadvantage on the attack" ([Reaction triggers beyond leaving reach and attack rolls](closed/092-reaction-triggers-beyond-reach-and-attack-rolls.md)).
 - Turn-start reactions: a trigger for a creature starting its turn near the reactor, with an immunity after a successful save, as in the Chain Devil's Unnerving Gaze ([Reaction triggers beyond leaving reach and attack rolls](closed/092-reaction-triggers-beyond-reach-and-attack-rolls.md)).
+- Flat save bonuses on death saves: the rules apply a flat no-ability save bonus to death saves, but the engine doesn't, because reading them would change refolds of encounters saved since 0.1.6. It needs a recorded-version gate like `settings.reaction_windows` ([Dice-valued roll bonuses](closed/093-dice-valued-roll-bonuses.md)).
 - Sight-gated targeting: spells and abilities that target "a creature you can see" don't read sight, for darkness or Invisible ([Darkness and Darkvision](closed/091-darkness-and-darkvision.md)).
 
 ## Out of scope
@@ -140,8 +142,7 @@ Both modes ship in phase 1. Everything the engine can't model is labeled agent j
 
 ## Frontier
 
-- [093 Dice-valued roll bonuses](tickets/093-dice-valued-roll-bonuses.md): grilling, HITL.
-- [094 Batch value of debuffs](tickets/094-batch-value-of-debuffs.md): grilling, HITL. May share a v5 policy with 097.
+- [094 Batch value of debuffs](tickets/094-batch-value-of-debuffs.md): grilling, HITL. May share a v5 policy with 097. Bane's die is `subtract_dice` (ticket 093).
 - [095 Seeing Invisible creatures by spell or trait](tickets/095-seeing-invisible-creatures.md): grilling, HITL.
 - [096 Plan-failure warnings split per level](tickets/096-plan-failure-warnings-split-per-level.md): grilling, HITL.
 - [097 Batch value of a target teleport](tickets/097-batch-value-of-a-target-teleport.md): grilling, HITL. May share a v5 policy with 094.
@@ -149,3 +150,4 @@ Both modes ship in phase 1. Everything the engine can't model is labeled agent j
 - [100 Build darkness](tickets/100-build-darkness.md): task, AFK.
 - [101 Counterspell and the spell-cast trigger](tickets/101-counterspell-and-the-spell-cast-trigger.md): grilling, HITL.
 - [102 Hit-triggered Reflexive Antennae and Protective Magic](tickets/102-hit-triggered-reflexive-antennae-and-protective-magic.md): task, AFK.
+- [103 Build dice-valued roll bonuses](tickets/103-build-dice-valued-roll-bonuses.md): task, AFK.
