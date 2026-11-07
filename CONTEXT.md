@@ -41,8 +41,12 @@ Two combatants are engaged when they are in melee with each other. The engine tr
 _Avoid_: Adjacent, in contact
 
 **Sees**:
-One combatant sees another unless the other is Invisible and the first has neither Blindsight nor Truesight, or the first is Blinded and has no Blindsight. Sense ranges don't count, and line of sight is otherwise assumed. Invisible's attack effects, the Frightened condition and Opportunity Attacks all use this.
+One combatant sees another unless the other is Invisible and the first has no Blindsight, Truesight or See Invisible, or the first is Blinded and has no Blindsight. Sense ranges don't count, and line of sight is otherwise assumed. Invisible's attack effects, the Frightened condition and Opportunity Attacks all use this.
 _Avoid_: Line of sight, visible to
+
+**See Invisible**:
+Seeing Invisible creatures as if they weren't Invisible, from a trait or from the See Invisibility spell. It doesn't help a Blinded creature or one in Darkness. Truesight already includes it.
+_Avoid_: See invisibility (for the capability), invisible sight
 
 **Downed**:
 A party member at 0 Hit Points that is dying or stable. For attack rolls it has the Unconscious condition, and so the Prone condition, without either being listed on it.
