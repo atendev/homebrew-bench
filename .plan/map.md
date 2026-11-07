@@ -118,11 +118,13 @@ Both modes ship in phase 1. Everything the engine can't model is labeled agent j
 - [Reaction triggers beyond leaving reach and attack rolls](closed/092-reaction-triggers-beyond-reach-and-attack-rolls.md): a trigger is modeled only when an importable reaction needs it and it moves batch numbers. Only the spell-cast trigger passes, for Protective Magic's Counterspell, and it goes to grilling in ticket 101. The pre-roll, damage, move-within, check-or-save and turn-start triggers stay agent judgment. "Within N feet" reads as engaged for 5 feet or less and as any combatant beyond (ADR 0017). Reflexive Antennae and Protective Magic's Shield move onto the existing hit trigger in ticket 102. No code.
 - [Dice-valued roll bonuses](closed/093-dice-valued-roll-bonuses.md): `ModifierChange` gains `add_dice` and `subtract_dice` (`NdM`), only on attack rolls and saves. The bearer rolls the die after the d20s on every engine-rolled attack and save, death saves included for dice. A die is a bonus, not Advantage, so Bless and Bane both roll, and its potency is its mean. The policy reads the mean as a flat bonus and gains a save-bonus score (`SAVE_POINT_VALUE` 0.05, positive only). Bless and Bane join the effects file, auras stay agent judgment, schema 1 and policy v4 hold. `CONTEXT.md` and ADR 0005 updated. Settles Bane's representation for ticket 094. To be built in ticket 103.
 - [Batch value of debuffs](closed/094-batch-value-of-debuffs.md): a modifier on an opponent mirrors the buff terms over the same horizon and keep with `f = 0`. AC and save penalties and save Disadvantage count as damage, attack penalties and attack Disadvantage (5 points) as control, and each change counts only on the side it serves. Riders score through `bearer_value` scaled by the hit or failure chance, and `modifier_plan` may pick an opponent. Speed and Reactions stay 0 and conditions stay one-shot. Policy stays v4 because no curve input scores, and 097 decides its own version. ADR 0012 updated. To be built in ticket 104, after 103.
+- [Seeing Invisible creatures by spell or trait](closed/095-seeing-invisible-creatures.md): See Invisible joins ADR 0017's sight rule beside Blindsight and Truesight, as a `see_invisible` trait effect and a `see_invisible` timed modifier (change `none`). See Invisibility enters the effects file as a 1-hour self modifier. It reveals Invisible only: Blinded and Darkness still block it. The party doesn't cast it, both carriers score 0, schema 1 and policy v4 hold, and there is no new event text. No SRD monster has it or is Invisible in batch, so batch numbers don't move. ADR 0017 and `CONTEXT.md` updated. To be built in ticket 105, after 100.
 
 ## Not yet specified
 
 - Dash as a movement budget: what a doubled move is worth with range bands, for Cunning Action, Deathless Agility and Hasten ([Bonus-action Disengage](closed/090-bonus-action-disengage.md)).
-- Hide: a hidden state from the Hide action, beside how creatures see Invisible ones (ticket 095).
+- Hide: a hidden state from the Hide action, beside how creatures see Invisible ones ([Seeing Invisible creatures by spell or trait](closed/095-seeing-invisible-creatures.md)).
+- Invisible monsters in batch: no carrier puts Invisible on a monster in batch (self-cast Invisibility and the invisible stalker's trait are unmodeled), and nobody has decided whether the party answers it with See Invisibility or Faerie Fire or the report only shows the swing ([Seeing Invisible creatures by spell or trait](closed/095-seeing-invisible-creatures.md)).
 - Prowl: a move without provoking as one bonus action. It may fall out of Dash.
 - Failed-plan logs: when a batch plan fails after its moves, those moves and their Opportunity Attacks are neither logged nor counted in monster damage. Only a spent Disengage is logged ([Build bonus-action Disengage](closed/099-build-bonus-action-disengage.md)).
 - Hit-and-run: a melee creature attacks, then disengages and steps away. It needs a value for distance that range bands lack, and it is the goblins' real edge at the table.
@@ -132,7 +134,7 @@ Both modes ship in phase 1. Everything the engine can't model is labeled agent j
 - Sight-gated targeting: spells and abilities that target "a creature you can see" don't read sight, for darkness or Invisible ([Darkness and Darkvision](closed/091-darkness-and-darkvision.md)).
 - Conditions against modifiers: a condition scores once with no horizon, while a modifier with the same effect scores over the buff horizon, so Poisoned (0.25 × threat once) reads below a Disadvantage-on-attacks modifier (0.5 × threat per round). Moving conditions onto the horizon moves baseline cells and needs v5 ([Batch value of debuffs](closed/094-batch-value-of-debuffs.md)).
 - Downed bearers and the recast guard: a concentration modifier on a bearer that has dropped still blocks a new concentration cast, for Haste on an ally and for a modifier on an opponent. Changing it changes Haste play on curve inputs ([Batch value of debuffs](closed/094-batch-value-of-debuffs.md)).
-- Unscored modifiers: Speed, Reactions, damage-roll and ability-check modifiers score 0 on either side. Reactions, which would deny Opportunity Attacks and Shield, is the first to price ([Batch value of debuffs](closed/094-batch-value-of-debuffs.md)).
+- Unscored modifiers: Speed, Reactions, See Invisible, damage-roll and ability-check modifiers score 0 on either side. Reactions, which would deny Opportunity Attacks and Shield, is the first to price ([Batch value of debuffs](closed/094-batch-value-of-debuffs.md)).
 
 ## Out of scope
 
@@ -146,11 +148,10 @@ Both modes ship in phase 1. Everything the engine can't model is labeled agent j
 
 ## Frontier
 
-- [095 Seeing Invisible creatures by spell or trait](tickets/095-seeing-invisible-creatures.md): grilling, HITL.
 - [096 Plan-failure warnings split per level](tickets/096-plan-failure-warnings-split-per-level.md): grilling, HITL.
 - [097 Batch value of a target teleport](tickets/097-batch-value-of-a-target-teleport.md): grilling, HITL. Decides its own policy version; 094 kept v4.
 - [098 Stale concentration in old saves](tickets/098-stale-concentration-in-old-saves.md): grilling, HITL.
-- [100 Build darkness](tickets/100-build-darkness.md): task, AFK.
+- [100 Build darkness](tickets/100-build-darkness.md): task, AFK. Unblocks [105 Build See Invisible](tickets/105-build-see-invisible.md).
 - [101 Counterspell and the spell-cast trigger](tickets/101-counterspell-and-the-spell-cast-trigger.md): grilling, HITL.
 - [102 Hit-triggered Reflexive Antennae and Protective Magic](tickets/102-hit-triggered-reflexive-antennae-and-protective-magic.md): task, AFK.
 - [103 Build dice-valued roll bonuses](tickets/103-build-dice-valued-roll-bonuses.md): task, AFK. Unblocks [104 Build batch value of modifiers on an opponent](tickets/104-build-modifiers-on-an-opponent.md).
