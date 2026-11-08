@@ -654,6 +654,7 @@ fn fight(spec: &BatchSpec, constants: &PolicyConstants, level: u8, index: u64, w
         pc_dice: PcDice::Engine,
         lighting: spec.lighting,
         reaction_windows: true,
+        spell_cast_windows: true,
     })
     .map_err(|e| BatchError::Invalid(e.to_string()))?;
     state.reactions.decider = ReactionDecider::Policy(constants.clone());
@@ -1867,6 +1868,7 @@ mod tests {
             pc_dice: PcDice::Engine,
             lighting: Lighting::Unspecified,
             reaction_windows: true,
+            spell_cast_windows: true,
         };
         let (mut state, _) = live::start(start).unwrap();
         state.reactions.decider = ReactionDecider::Policy(PolicyConstants::default());
@@ -1944,6 +1946,7 @@ mod tests {
             pc_dice: PcDice::Engine,
             lighting: Lighting::Unspecified,
             reaction_windows: false,
+            spell_cast_windows: false,
         })
         .unwrap();
         let ogre = state.combatants.iter().find(|c| c.side_id != PARTY_SIDE).unwrap().id.clone();

@@ -415,11 +415,16 @@
   },
   "counterspell": {
     "agent_clauses": [
-      "Reaction to interrupt a spell being cast within 60 feet; the caster makes a Constitution save.",
-      "On a failed save, the spell dissipates with no effect and the slot is not expended."
+      "Reaction to interrupt a spell being cast within 60 feet; the engine reads the range as any combatant and does not check sight."
     ],
     "concentration": false,
-    "effects": [],
+    "effects": [
+      {
+        "counter_spell": {
+          "dc": 0
+        }
+      }
+    ],
     "id": "counterspell",
     "level": 3,
     "name": "Counterspell",

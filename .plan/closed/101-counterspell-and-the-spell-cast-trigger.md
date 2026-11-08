@@ -34,4 +34,4 @@ Resolved on 2026-11-08 in an auto-mode grilling run by `wayfinder-runner`: a sub
 - **Protective Magic.** It splits into a Shield entry and a Counterspell entry sharing a `group` key added to `per_day` usage.
 - **Party and gate.** The party caster gets no Counterspell. A new `settings.spell_cast_windows` gate keeps old saves unchanged, with engine and policy version bumps.
 
-Build tickets: [Build the spell-cast window and counter_spell effect](../tickets/110-build-the-spell-cast-window-and-counter-spell-effect.md) and [Build batch Counterspell and the Protective Magic split](../tickets/111-build-batch-counterspell-and-the-protective-magic-split.md).
+Build tickets: [Build the spell-cast window and counter_spell effect](../closed/110-build-the-spell-cast-window-and-counter-spell-effect.md) and [Build batch Counterspell and the Protective Magic split](../tickets/111-build-batch-counterspell-and-the-protective-magic-split.md).

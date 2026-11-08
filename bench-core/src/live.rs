@@ -225,6 +225,8 @@ pub struct StartSpec {
     pub lighting: Lighting,
     /// Open reaction windows (ADR 0018). `bench start` sets it; batch leaves it off.
     pub reaction_windows: bool,
+    /// Open spell-cast windows (ADR 0019).
+    pub spell_cast_windows: bool,
 }
 
 /// Result of `bench replay`.
@@ -355,7 +357,7 @@ pub fn start(spec: StartSpec) -> Result<(EncounterState, Outcome), LiveError> {
         pending: None,
         rng: RngState::new(spec.seed),
         initiative_rolls: HashMap::new(),
-        settings: EncounterSettings { pc_dice: spec.pc_dice, lighting: spec.lighting, reaction_windows: spec.reaction_windows },
+        settings: EncounterSettings { pc_dice: spec.pc_dice, lighting: spec.lighting, reaction_windows: spec.reaction_windows, spell_cast_windows: spec.spell_cast_windows },
         ended: None,
         initial_snapshot: None,
         log: vec![],
@@ -795,7 +797,7 @@ fn run_engine(state: &mut EncounterState, held: Held) -> Result<Applied, LiveErr
         trial.pending = None;
     }
     trial.player_dice = PlayerDice { faces: held.faces.clone().into(), engine_fills_rest: held.engine_fills_rest, ..Default::default() };
-    trial.reactions = Reactions { decider: ReactionDecider::Queued(held.answers.clone().into()), waiting: None, fault: None };
+    trial.reactions = Reactions { decider: ReactionDecider::Queued(held.answers.clone().into()), ..Default::default() };
     let response = engine::step(&mut trial, held.request.clone())?;
     if let Some(window) = trial.reactions.waiting.take() {
         return Ok(reaction_prompt(state, held, window));
@@ -836,6 +838,11 @@ fn reaction_prompt(state: &mut EncounterState, held: Held, window: ReactionWindo
             "{}: hit by {attacker_id} (attack {total} vs AC {ac}{}), take {}?",
             window.reactor_id,
             if *critical { ", critical hit" } else { "" },
+            options.join(" or ")
+        ),
+        WindowTrigger::SpellCast { caster_id, spell_id, level } => format!(
+            "{}: {caster_id} is casting {spell_id} (level {level}), take {}?",
+            window.reactor_id,
             options.join(" or ")
         ),
     };
@@ -938,7 +945,7 @@ fn respond_reaction(
             ReactionAnswer::Pass => declined.push(window.reactor_id.clone()),
         },
         (WindowTrigger::Opportunity { .. }, _) => return Err(LiveError::Invalid("an Opportunity Attack prompt must hold a move".into())),
-        (WindowTrigger::Hit { .. }, _) => held.answers.push(answer.clone()),
+        (WindowTrigger::Hit { .. } | WindowTrigger::SpellCast { .. }, _) => held.answers.push(answer.clone()),
     }
     held.answered += 1;
     state.pending = None;
@@ -1335,6 +1342,7 @@ mod tests {
             pc_dice,
             lighting: Lighting::Unspecified,
             reaction_windows: true,
+            spell_cast_windows: true,
         }
     }
 
@@ -2849,5 +2857,54 @@ mod tests {
         let striker = state.combatants.iter().find(|c| c.id == STRIKER).unwrap();
         assert!(striker.engagement.contains(&"ogre".to_string()));
         assert_eq!(remaining_speed(&state, STRIKER).unwrap(), 25);
+    }
+
+    #[test]
+    fn a_spell_cast_window_holds_the_cast_and_undo_and_replay_cover_it() {
+        let mut spec = reaction_spec(&[(CASTER_FILE, PARTY_SIDE), ("fixtures/knight.json", "monsters")], 1, PcDice::Engine);
+        let mut knight = spec.entrants[1].stat_block.clone();
+        knight.spell_slots = Some(vec![0, 0, 3, 0, 0, 0, 0, 0, 0]);
+        knight.spellcasting = Some(crate::stat_block::Spellcasting { ability: crate::stat_block::Ability::Int, save_dc: 40, attack_bonus: 0 });
+        knight.reactions.push(
+            serde_json::from_value(serde_json::json!({
+                "id": "counterspell", "name": "Counterspell", "kind": "modeled",
+                "effects": [{"cast": {"spell_id": "counterspell", "slot_level": 3, "upcast": false}}],
+                "trigger": {"spell_cast": {"caster": "enemy"}}
+            }))
+            .unwrap(),
+        );
+        spec.entrants[1].stat_block = knight;
+        let (mut state, _) = start(spec).unwrap();
+        while state.active_turn.as_deref() != Some(CASTER) {
+            execute(&mut state, Command::end_turn()).unwrap();
+        }
+        let before = state.clone();
+        execute(&mut state, swing(CASTER, "magic-missile", "knight")).unwrap();
+        let prompt = state.pending.clone().expect("spell-cast window");
+        assert_eq!(prompt.kind, "reaction");
+        assert_eq!(prompt.actor_id, "knight");
+        assert!(prompt.message.contains("standard-caster-05 is casting magic-missile (level 1)"), "{}", prompt.message);
+        assert!(!state.combatants.iter().any(|c| c.resources.contains_key(&format!("{CASTER}:slot:1"))));
+        let taken = execute(&mut state, take("counterspell")).unwrap();
+        let text = lines(&taken).join("\n");
+        assert!(text.contains("PROMPT") && text.contains("answered: takes Counterspell"), "{text}");
+        assert!(text.contains("REACTION knight: Counterspell (cast by standard-caster-05)"), "{text}");
+        assert!(text.contains("is countered by knight (slot not expended)"), "{text}");
+        assert!(state.pending.is_none());
+        assert!(!state.combatants.iter().find(|c| c.id == CASTER).unwrap().resources.contains_key(&format!("{CASTER}:slot:1")));
+        assert!(replay(&state).matches);
+        execute(&mut state, Command::Undo).unwrap();
+        assert_eq!(state.pending.as_ref().map(|p| p.kind.as_str()), Some("reaction"), "undo returns to the open window");
+        assert_eq!(state.round, before.round);
+        assert!(replay(&state).matches);
+        execute(&mut state, decline()).unwrap();
+        assert!(state.pending.is_none());
+        assert!(state.combatants.iter().find(|c| c.id == CASTER).unwrap().resources.contains_key(&format!("{CASTER}:slot:1")));
+    }
+
+    #[test]
+    fn an_old_state_leaves_spell_cast_windows_off() {
+        let (_, state) = old_state();
+        assert!(!state.settings.spell_cast_windows);
     }
 }

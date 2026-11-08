@@ -8,7 +8,7 @@ use std::collections::HashMap;
 use serde::{Deserialize, Serialize};
 
 use crate::effect::{
-    recharge_minimum, Attack, Duration, Effect, ExtraActionUse, Lighting, ModifierBearer, ModifierChange, ModifierTarget, ReactionTrigger, RollDisposition, TeleportSubject, Usage,
+    recharge_minimum, Attack, Duration, Effect, ExtraActionUse, Lighting, ModifierBearer, ModifierChange, ModifierTarget, ReactionTrigger, SpellCaster, RollDisposition, TeleportSubject, Usage,
 };
 use crate::encounter::{
     ActionEconomy, ActiveModifier, Combatant, ConditionInstance, EndState, EncounterState,
@@ -309,16 +309,23 @@ fn resolve_action(
     if extra {
         events.push(event("extra_action", format!("{actor_id} uses its extra action"), actor_id, actor_id));
     }
+    let was_reacting = state.reactions.reacting;
+    state.reactions.reacting |= section == ActionSection::Reaction;
     for effect in effects {
         if matches!(effect, Effect::Disengage) {
             events.push(set_disengaged(state, actor_id, Some(&action.name))?);
             continue;
         }
-        resolve_effect(state, &mut stream, actor_id, effect, target_ids, &mut events)?;
+        let resolved = resolve_effect(state, &mut stream, actor_id, effect, target_ids, &mut events);
+        if resolved.is_err() {
+            state.reactions.reacting = was_reacting;
+        }
+        resolved?;
         if state.pending.is_some() {
             break;
         }
     }
+    state.reactions.reacting = was_reacting;
     state.rng = stream.state();
     let economy = &mut state.combatants[actor_index].action_economy;
     match section {
@@ -728,6 +735,15 @@ fn resolve_effect(
             cast_spell(state, stream, actor_id, &cast, target_ids, events)?;
         }
         Effect::RollModifier(_) | Effect::NoProvoke | Effect::SeeInvisible => {}
+        Effect::CounterSpell(counter) => {
+            for target_id in target_ids {
+                if !save_succeeds(state, stream, actor_id, target_id, Ability::Con, counter.dc, events)? {
+                    let spell = state.reactions.casting.clone().unwrap_or_else(|| "the spell".into());
+                    events.push(event("spell_countered", format!("{target_id}'s {spell} is countered by {actor_id} (slot not expended)"), actor_id, target_id));
+                    state.reactions.countered = true;
+                }
+            }
+        }
         Effect::Disengage => events.push(set_disengaged(state, actor_id, None)?),
         Effect::Area(area) => {
             events.push(event("area", format!("{} creates an area effect", actor_id), actor_id, actor_id));
@@ -739,6 +755,41 @@ fn resolve_effect(
     Ok(())
 }
 
+/// One saving throw by `target_id` against `dc`, logged as a `save` event.
+fn save_succeeds(
+    state: &mut EncounterState,
+    stream: &mut Stream,
+    actor_id: &str,
+    target_id: &str,
+    ability: Ability,
+    dc: i32,
+    events: &mut Vec<EngineEvent>,
+) -> Result<bool, EngineError> {
+    let target = state.combatants[index_of(state, target_id)?].clone();
+    let block = stat_block(state, &target)?;
+    let modifier = block.saving_throws.get(&ability).copied()
+        .unwrap_or_else(|| block.ability_scores.modifier(ability))
+        + save_modifier(state, &target, ability);
+    if let Some(message) = automatic_save_failure(&target, ability) {
+        events.push(event("save", message, actor_id, target_id));
+        return Ok(false);
+    }
+    let (roll, note) = save_d20(state, stream, target_id, ability)?;
+    let success = roll as i32 + modifier >= dc;
+    let marked = state.player_dice.all_entered_since(target_id);
+    events.push(EngineEvent {
+        kind: "save".into(),
+        message: format!("{target_id} {} the save{note}", if success { "passes" } else { "fails" }),
+        actor_id: Some(actor_id.into()),
+        target_id: Some(target_id.into()),
+        roll: Some(roll),
+        total: Some(roll as i32 + modifier),
+        damage: None,
+        player_dice: marked,
+    });
+    Ok(success)
+}
+
 fn resolve_save(
     state: &mut EncounterState,
     stream: &mut Stream,
@@ -748,29 +799,7 @@ fn resolve_save(
     events: &mut Vec<EngineEvent>,
 ) -> Result<(), EngineError> {
     let target = state.combatants[index_of(state, target_id)?].clone();
-    let block = stat_block(state, &target)?;
-    let modifier = block.saving_throws.get(&save.ability).copied()
-        .unwrap_or_else(|| block.ability_scores.modifier(save.ability))
-        + save_modifier(state, &target, save.ability);
-    let success = if let Some(message) = automatic_save_failure(&target, save.ability) {
-        events.push(event("save", message, actor_id, target_id));
-        false
-    } else {
-        let (roll, note) = save_d20(state, stream, target_id, save.ability)?;
-        let success = roll as i32 + modifier >= save.dc;
-        let marked = state.player_dice.all_entered_since(target_id);
-        events.push(EngineEvent {
-            kind: "save".into(),
-            message: format!("{target_id} {} the save{note}", if success { "passes" } else { "fails" }),
-            actor_id: Some(actor_id.into()),
-            target_id: Some(target_id.into()),
-            roll: Some(roll),
-            total: Some(roll as i32 + modifier),
-            damage: None,
-            player_dice: marked,
-        });
-        success
-    };
+    let success = save_succeeds(state, stream, actor_id, target_id, save.ability, save.dc, events)?;
     if !success {
         for effect in &save.on_failure {
             resolve_effect(state, stream, actor_id, effect.clone(), &[target_id.to_string()], events)?;
@@ -908,6 +937,9 @@ fn cast_spell(
     let level = cast_level(&spell, cast)?;
     let effects = scaled_effects(&spell, level)?;
     let i = index_of(state, actor_id)?;
+    if spell.level > 0 && state.settings.spell_cast_windows && !state.reactions.reacting && spell_cast_countered(state, stream, i, spell_id, level, events)? {
+        return Ok(());
+    }
     let ctx = {
         let block = stat_block(state, &state.combatants[i])?;
         spend_slot(&state.combatants[i], block, level)?;
@@ -950,6 +982,89 @@ fn cast_spell(
         resolve_effect(state, stream, actor_id, effect, target_ids, events)?;
     }
     Ok(())
+}
+
+/// Hold a leveled cast by `caster` for each enemy's spell-cast window, in initiative order
+/// (ADR 0019), and say whether a counter cancelled it. A taken counter that fails its save
+/// leaves the cast live and the later reactors are still asked. A window that waits ends the
+/// run, which the caller discards.
+fn spell_cast_countered(
+    state: &mut EncounterState,
+    stream: &mut Stream,
+    caster: usize,
+    spell_id: &str,
+    level: u8,
+    events: &mut Vec<EngineEvent>,
+) -> Result<bool, EngineError> {
+    let caster_id = state.combatants[caster].id.clone();
+    for window in spell_cast_windows(state, caster, spell_id, level) {
+        let reactor_id = window.reactor_id.clone();
+        let id = match ask(state, window.clone(), events) {
+            Some(ReactionAnswer::Take(id)) => id,
+            Some(ReactionAnswer::Pass) => continue,
+            None => return Ok(true),
+        };
+        let name = window
+            .option(&id)
+            .ok_or_else(|| EngineError::Invalid(format!("{reactor_id} has no reaction {id} for this cast")))?
+            .name
+            .clone();
+        events.push(event("reaction", format!("REACTION {reactor_id}: {name} (cast by {caster_id})"), &reactor_id, &caster_id));
+        state.rng = stream.state();
+        state.reactions.casting = Some(spell_id.to_string());
+        state.reactions.countered = false;
+        let resolved = resolve_action(state, &reactor_id, &id, std::slice::from_ref(&caster_id), None, false);
+        state.reactions.casting = None;
+        events.extend(blame_reaction(state, &reactor_id, &id, resolved)?);
+        *stream = Stream::from_state(state.rng.clone());
+        if !state.player_dice.missing.is_empty() {
+            // The counter's save waits on a player's die: hold the cast like a waiting window.
+            return Ok(true);
+        }
+        let countered = std::mem::take(&mut state.reactions.countered);
+        let clauses = stat_block(state, &state.combatants[index_of(state, &reactor_id)?])?
+            .reactions
+            .iter()
+            .find(|a| a.id == id)
+            .map(|a| a.agent_clauses.clone())
+            .unwrap_or_default();
+        for clause in clauses {
+            events.push(event("agent_clause", format!("{reactor_id} {name}, agent clause: {clause}"), &reactor_id, &caster_id));
+        }
+        if countered {
+            return Ok(true);
+        }
+    }
+    Ok(false)
+}
+
+/// The windows a leveled cast opens: one per enemy of the caster that can react and has a
+/// ready reaction with a spell-cast trigger, in initiative order. Sight is not read.
+fn spell_cast_windows(state: &EncounterState, caster: usize, spell_id: &str, level: u8) -> Vec<ReactionWindow> {
+    let caster = &state.combatants[caster];
+    let rank = |id: &str| state.initiative_order.iter().position(|x| x == id).unwrap_or(usize::MAX);
+    let mut windows: Vec<ReactionWindow> = state
+        .combatants
+        .iter()
+        .filter(|r| r.side_id != caster.side_id && can_react(state, r).is_ok())
+        .filter_map(|r| {
+            let options: Vec<ReactionOption> = stat_block(state, r)
+                .ok()?
+                .reactions
+                .iter()
+                .filter(|a| matches!(a.trigger, Some(ReactionTrigger::SpellCast { caster: SpellCaster::Enemy })))
+                .filter(|a| ability_ready(state, &r.id, a))
+                .map(|a| ReactionOption { id: a.id.clone(), name: a.name.clone() })
+                .collect();
+            (!options.is_empty()).then(|| ReactionWindow {
+                reactor_id: r.id.clone(),
+                trigger: WindowTrigger::SpellCast { caster_id: caster.id.clone(), spell_id: spell_id.to_string(), level },
+                options,
+            })
+        })
+        .collect();
+    windows.sort_by_key(|w| rank(&w.reactor_id));
+    windows
 }
 
 /// The level a cast resolves at: its slot level, or the spell's own level when it names none.
@@ -1272,6 +1387,12 @@ fn bind_effect(effect: Effect, ctx: &CastContext, cantrip_damage: bool) -> Effec
             }
             scale(&mut st.damage);
             Effect::SavingThrow(st)
+        }
+        Effect::CounterSpell(mut counter) => {
+            if counter.dc == 0 {
+                counter.dc = ctx.save_dc;
+            }
+            Effect::CounterSpell(counter)
         }
         Effect::Heal(mut h) => {
             if h.spellcasting_modifier {
@@ -6705,5 +6826,144 @@ mod tests {
         assert_eq!(serde_json::to_string(&effect).unwrap(), old);
         let target: Effect = serde_json::from_str(r#"{"teleport": {"range": 30, "destination": "away", "subject": "target"}}"#).unwrap();
         assert!(serde_json::to_string(&target).unwrap().contains(r#""subject":"target""#));
+    }
+
+    fn counterer(id: &str, save_dc: i32) -> StatBlock {
+        let mut block = slotted_caster("fireball", Some(3));
+        block.id = id.into();
+        block.spellcasting.as_mut().unwrap().save_dc = save_dc;
+        let mut entry = ability("counterspell", vec![Effect::Cast(cast("counterspell", Some(3)))], None);
+        entry.name = "Counterspell".into();
+        entry.trigger = Some(ReactionTrigger::SpellCast { caster: SpellCaster::Enemy });
+        block.reactions.push(entry);
+        block
+    }
+
+    fn counter_encounter(counter_dc: i32, gate: bool) -> EncounterState {
+        let mut state = test_encounter(
+            vec![slotted_caster("fireball", Some(3)), counterer("warlock", counter_dc), test_stat_block("other", "Other", 60, 12)],
+            vec![test_combatant("mage", "mage", 30, "enemy"), test_combatant("warlock", "warlock", 30, "ally"), test_combatant("other", "other", 60, "ally")],
+        );
+        state.settings.spell_cast_windows = gate;
+        state
+    }
+
+    fn kinds(events: &[EngineEvent]) -> Vec<&str> {
+        events.iter().map(|e| e.kind.as_str()).collect()
+    }
+
+    #[test]
+    fn an_enemys_leveled_cast_holds_on_a_window_before_its_slot() {
+        let mut state = answering(&counter_encounter(40, true), vec![]);
+        act(&mut state, "mage", "fireball", &["other"]).unwrap();
+        let window = state.reactions.waiting.clone().expect("window");
+        assert_eq!(window.reactor_id, "warlock");
+        assert_eq!(window.options, vec![ReactionOption { id: "counterspell".into(), name: "Counterspell".into() }]);
+        assert_eq!(window.trigger, WindowTrigger::SpellCast { caster_id: "mage".into(), spell_id: "fireball".into(), level: 3 });
+        assert!(!state.combatants[0].resources.contains_key("mage:slot:3"));
+    }
+
+    #[test]
+    fn a_counter_that_lands_cancels_the_cast_and_keeps_the_slot() {
+        let mut state = answering(&counter_encounter(40, true), vec![ReactionAnswer::Take("counterspell".into())]);
+        let events = act(&mut state, "mage", "fireball", &["other"]).unwrap();
+        assert_eq!(
+            kinds(&events).into_iter().filter(|k| *k != "cast").collect::<Vec<_>>(),
+            vec!["reaction", "save", "spell_countered"]
+        );
+        assert!(events.iter().any(|e| e.message == "REACTION warlock: Counterspell (cast by mage)"));
+        assert!(events.last().unwrap().message.contains("mage's fireball is countered by warlock (slot not expended)"));
+        assert!(!state.combatants[0].resources.contains_key("mage:slot:3"));
+        assert!(state.combatants[0].action_economy.action_used);
+        assert_eq!(state.combatants[2].hp, 60);
+        let warlock = &state.combatants[1];
+        assert!(warlock.action_economy.reaction_used);
+        assert_eq!(warlock.resources["warlock:slot:3"], 1);
+        assert!(state.reactions.waiting.is_none());
+    }
+
+    #[test]
+    fn a_declined_window_lets_the_cast_resolve() {
+        let mut state = answering(&counter_encounter(40, true), vec![ReactionAnswer::Pass]);
+        let events = act(&mut state, "mage", "fireball", &["other"]).unwrap();
+        assert!(kinds(&events).contains(&"cast"));
+        assert!(!kinds(&events).contains(&"spell_countered"));
+        assert_eq!(state.combatants[0].resources["mage:slot:3"], 1);
+        assert!(!state.combatants[1].action_economy.reaction_used);
+    }
+
+    #[test]
+    fn a_counter_whose_save_is_passed_leaves_the_cast_live_and_spends_the_reaction() {
+        let mut state = answering(&counter_encounter(-100, true), vec![ReactionAnswer::Take("counterspell".into())]);
+        let events = act(&mut state, "mage", "fireball", &["other"]).unwrap();
+        assert!(!kinds(&events).contains(&"spell_countered"));
+        assert_eq!(state.combatants[0].resources["mage:slot:3"], 1);
+        assert!(state.combatants[1].action_economy.reaction_used);
+    }
+
+    #[test]
+    fn the_first_counter_that_lands_ends_the_cast_for_later_reactors() {
+        let mut state = counter_encounter(40, true);
+        state.combatants.push(test_combatant("warlock2", "warlock2", 30, "ally"));
+        state.stat_blocks.push(state.stat_blocks[1].clone());
+        state.stat_blocks[3].id = "warlock2".into();
+        state.stat_blocks[3].stat_block.id = "warlock2".into();
+        let mut state = answering(&state, vec![ReactionAnswer::Take("counterspell".into())]);
+        let events = act(&mut state, "mage", "fireball", &["other"]).unwrap();
+        assert!(kinds(&events).contains(&"spell_countered"));
+        assert!(state.reactions.waiting.is_none());
+        assert!(!state.combatants[3].action_economy.reaction_used);
+    }
+
+    #[test]
+    fn the_gate_cantrips_allies_and_reaction_casts_open_no_window() {
+        let mut off = answering(&counter_encounter(40, false), vec![]);
+        act(&mut off, "mage", "fireball", &["other"]).unwrap();
+        assert!(off.reactions.waiting.is_none());
+        assert_eq!(off.combatants[0].resources["mage:slot:3"], 1);
+
+        let mut cantrip_block = slotted_caster("fire-bolt", None);
+        cantrip_block.id = "mage".into();
+        let mut cantrip = counter_encounter(40, true);
+        cantrip.stat_blocks[0].stat_block = cantrip_block;
+        let mut cantrip = answering(&cantrip, vec![]);
+        act(&mut cantrip, "mage", "fire-bolt", &["other"]).unwrap();
+        assert!(cantrip.reactions.waiting.is_none());
+
+        let mut ally = counter_encounter(40, true);
+        ally.combatants[0].side_id = "ally".into();
+        let mut ally = answering(&ally, vec![]);
+        act(&mut ally, "mage", "fireball", &["other"]).unwrap();
+        assert!(ally.reactions.waiting.is_none());
+
+        let mut both = counter_encounter(40, true);
+        let counter = both.stat_blocks[1].stat_block.reactions[0].clone();
+        both.stat_blocks[0].stat_block.reactions.push(counter);
+        let mut both = answering(&both, vec![ReactionAnswer::Take("counterspell".into())]);
+        act(&mut both, "mage", "fireball", &["other"]).unwrap();
+        assert!(both.reactions.waiting.is_none(), "the counter's own cast opens no window");
+    }
+
+    #[test]
+    fn a_reactor_that_cannot_react_or_has_no_usage_left_gets_no_window() {
+        let mut spent = counter_encounter(40, true);
+        spent.combatants[1].action_economy.reaction_used = true;
+        let mut spent = answering(&spent, vec![]);
+        act(&mut spent, "mage", "fireball", &["other"]).unwrap();
+        assert!(spent.reactions.waiting.is_none());
+        let mut no_slot = counter_encounter(40, true);
+        no_slot.combatants[1].resources.insert("warlock:slot:3".into(), 3);
+        let mut no_slot = answering(&no_slot, vec![]);
+        act(&mut no_slot, "mage", "fireball", &["other"]).unwrap();
+        assert!(no_slot.reactions.waiting.is_none());
+    }
+
+    #[test]
+    fn the_spell_cast_trigger_belongs_on_a_reaction_and_counter_spell_binds_the_cast_dc() {
+        let on_action = r#"{"id":"x","name":"X","kind":"modeled","trigger":{"spell_cast":{"caster":"enemy"}}}"#;
+        let entry: crate::stat_block::AbilityEntry = serde_json::from_str(on_action).unwrap();
+        assert_eq!(entry.trigger, Some(ReactionTrigger::SpellCast { caster: SpellCaster::Enemy }));
+        let (effects, _) = bound_cast_effects(&counterer("warlock", 19), &cast("counterspell", Some(3))).unwrap();
+        assert!(matches!(&effects[0], Effect::CounterSpell(c) if c.dc == 19));
     }
 }

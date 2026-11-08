@@ -277,6 +277,8 @@ pub fn decide_reaction(state: &EncounterState, window: &ReactionWindow, constant
     match &window.trigger {
         WindowTrigger::Hit { total, ac, critical, .. } => ctx.decide_hit(window, *total, *ac, *critical),
         WindowTrigger::Opportunity { mover_id } => ctx.decide_opportunity(window, mover_id),
+        // Batch lets casts through until the policy prices counters; see ReactionDecider::decide.
+        WindowTrigger::SpellCast { .. } => (ReactionAnswer::Pass, "casts go uncountered".into()),
     }
 }
 
@@ -1264,7 +1266,7 @@ impl<'a> Ctx<'a> {
             }
             Effect::Teleport(teleport) if teleport.subject == TeleportSubject::Actor => Value { survival: self.teleport_value(actor, footing), ..Default::default() },
             Effect::Teleport(_) => Value::default(),
-            Effect::TempHp(_) | Effect::TimedModifier(_) | Effect::RollModifier(_) | Effect::NoProvoke | Effect::SeeInvisible | Effect::Disengage => Value::default(),
+            Effect::TempHp(_) | Effect::TimedModifier(_) | Effect::RollModifier(_) | Effect::NoProvoke | Effect::SeeInvisible | Effect::Disengage | Effect::CounterSpell(_) => Value::default(),
         };
         (value, vec![])
     }
@@ -1429,7 +1431,10 @@ impl<'a> Ctx<'a> {
             block
                 .reactions
                 .iter()
-                .filter_map(|r| r.trigger.map(|ReactionTrigger::HitByAttackRoll { attack }| (r, attack)))
+                .filter_map(|r| match r.trigger {
+                    Some(ReactionTrigger::HitByAttackRoll { attack }) => Some((r, attack)),
+                    _ => None,
+                })
                 .filter(|(r, _)| engine::ability_ready(self.state, &reactor.id, r))
                 .map(|(r, filter)| {
                     let n = ac_bonus(block, r);
