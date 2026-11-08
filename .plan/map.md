@@ -123,6 +123,7 @@ Both modes ship in phase 1. Everything the engine can't model is labeled agent j
 - [Plan-failure warnings split per level](closed/096-plan-failure-warnings-split-per-level.md): reproduced on 0.1.25, one broken striker Longbow at levels 3-5 gave three rows. A party member's failures now key on its role (shared match with `group_party`, name fallback when its id names no role or two members share one, and those still repeat per level), ids in the error text become the same labels, and role-keyed rows list their levels: `Striker (levels 3-5): Longbow failed 22 times ...`. The monster keeps its name. Logs, numbers and versions don't change. To be built in ticket 106.
 - [Batch value of a target teleport](closed/097-batch-value-of-a-target-teleport.md): a `target` teleport clears engagements and leaves bands alone, so it scores as the short case of a push whatever its range: `threat(target) × 0.25` as control, the 0.25 of a short push. It scores 0 on a target with no engagement or on one with any attack that doesn't need engagement. Freed allies add nothing. Policy stays v4 because no curve input carries it, and ADR 0012 is updated. To be built in ticket 107. The `Engaged` range entry a teleport leaves behind, which lets `bench move` walk back in for 0 feet, is ticket 108.
 - [Stale concentration in old saves](closed/098-stale-concentration-in-old-saves.md): no sweep on load or on any override, because an unrecorded sweep fails the tamper and replay hashes and a global scan changes old refolds. The real range is saves from before 0.1.19, and before 0.1.10 by ordinary play, which includes the public v0.1.0. No committed fixture holds one. No code: the live-mode reference now gives the repair, an override to a different value on the creature that can't concentrate, or `bench remove`, and `--clear` stays field-only as documented. Decided in auto mode.
+- [Build See Invisible](closed/105-build-see-invisible.md): a `see_invisible` trait effect or timed modifier lets its observer see Invisible creatures through `unseen_reason`, and Blinded and Darkness still block it. See Invisibility is a self modifier stored as `permanent` instead of the ticket's `{"hours": 1}`, because an `hours` duration loses 1 at the end of every creature's turn and would end with the caster's turn; an agent clause states the 1-hour length. Both carriers score 0. Engine 0.1.27, policy stays v4, and the regenerated curve moved only its engine version. The tick is [109 Durations longer than a round](tickets/109-durations-longer-than-a-round.md).
 
 ## Not yet specified
 
@@ -152,10 +153,10 @@ Both modes ship in phase 1. Everything the engine can't model is labeled agent j
 
 ## Frontier
 
-- [105 Build See Invisible](tickets/105-build-see-invisible.md): now unblocked.
 - [101 Counterspell and the spell-cast trigger](tickets/101-counterspell-and-the-spell-cast-trigger.md): grilling, HITL.
 - [102 Hit-triggered Reflexive Antennae and Protective Magic](tickets/102-hit-triggered-reflexive-antennae-and-protective-magic.md): task, AFK.
 - [103 Build dice-valued roll bonuses](tickets/103-build-dice-valued-roll-bonuses.md): task, AFK. Unblocks [104 Build batch value of modifiers on an opponent](tickets/104-build-modifiers-on-an-opponent.md).
 - [106 Build plan-failure warnings by role](tickets/106-build-plan-failure-warnings-by-role.md): task, AFK.
 - [107 Build target teleport scoring](tickets/107-build-target-teleport-scoring.md): task, AFK.
 - [108 Leftover Engaged range after a teleport](tickets/108-leftover-engaged-range-after-a-teleport.md): grilling, HITL.
+- [109 Durations longer than a round](tickets/109-durations-longer-than-a-round.md): grilling, HITL.

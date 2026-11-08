@@ -389,16 +389,19 @@ fn refuse_roll_modifier<E: serde::de::Error>(entry: &AbilityEntry, effect: &Effe
 }
 
 impl StatBlock {
+    fn abilities(&self) -> impl Iterator<Item = &AbilityEntry> {
+        self.traits.iter().chain(&self.actions).chain(&self.bonus_actions).chain(&self.reactions).chain(&self.legendary_actions)
+    }
+
     /// The first ability, in any list, that stops this creature provoking
     /// Opportunity Attacks.
     pub fn no_provoke_ability(&self) -> Option<&AbilityEntry> {
-        self.traits
-            .iter()
-            .chain(&self.actions)
-            .chain(&self.bonus_actions)
-            .chain(&self.reactions)
-            .chain(&self.legendary_actions)
-            .find(|a| a.is_no_provoke())
+        self.abilities().find(|a| a.is_no_provoke())
+    }
+
+    /// Whether an ability, in any list, lets this creature see Invisible creatures.
+    pub fn has_see_invisible(&self) -> bool {
+        self.abilities().any(|a| a.effects.iter().any(|e| matches!(e, crate::effect::Effect::SeeInvisible)))
     }
 }
 
