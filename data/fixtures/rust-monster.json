@@ -91,11 +91,26 @@
   "proficiency_bonus": 2,
   "reactions": [
     {
+      "agent_clauses": [
+        "Antennae is not modeled: the agent resolves its Dexterity save and the penalty to the metal object."
+      ],
       "default_resolution": "skipped",
       "desc": "Trigger: An attack roll hits the rust monster. Response: The rust monster uses Antennae.",
+      "effects": [
+        {
+          "use_action": {
+            "action_id": "antennae"
+          }
+        }
+      ],
       "id": "reflexive-antennae",
-      "kind": "unmodeled",
-      "name": "Reflexive Antennae"
+      "kind": "partly_modeled",
+      "name": "Reflexive Antennae",
+      "trigger": {
+        "hit_by_attack_roll": {
+          "attack": "any"
+        }
+      }
     }
   ],
   "schema_version": "1",

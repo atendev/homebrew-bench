@@ -356,7 +356,8 @@ None.
 - `archmage` `bonus_actions.misty-step`: classified unmodeled (default skipped)
 - `archmage` `bonus_actions.misty-step`: spellcasting is not modeled; spells are absent from the stat block effects
 - `archmage` `bonus_actions.misty-step.desc`: correction applied: The Archmage's Misty Step names 'the mage', the stat block it derives from; every other Archmage ability says 'the archmage'. The 2024 Monster Manual prints the same slip. [archmage bonus_actions.misty-step.desc: "The mage casts Misty Step, using the same spellcasting ability as Spellcasting." (MM 2024 p. 202)]
-- `archmage` `reactions.protective-magic`: classified unmodeled (default skipped)
+- `archmage` `reactions.protective-magic`: Protective Magic pattern: hit trigger and a cast of Shield from the prose; Counterspell is an agent clause
+- `archmage` `reactions.protective-magic`: classified partly_modeled
 - `archmage` `reactions.protective-magic`: spellcasting is not modeled; spells are absent from the stat block effects
 - `archmage` `traits.magic-resistance`: classified unmodeled (default skipped)
 - `archmage` `xp`: correction applied: CR 12 XP is 8,400 in the Experience Points by Challenge Rating table; the Archmage stat block prints 8,000. [SRD 5.2.1 p. 256 (Experience Points by Challenge Rating)]
@@ -990,7 +991,8 @@ None.
 - `lich` `legendary_actions.frightening-gaze`: spellcasting is not modeled; spells are absent from the stat block effects
 - `lich` `legendary_actions.frightening-gaze.usage`: set to cooldown_until_next_turn from the prose
 - `lich` `legendary_uses_per_round`: set to SRD default 3; upstream omits the count
-- `lich` `reactions.protective-magic`: classified unmodeled (default skipped)
+- `lich` `reactions.protective-magic`: Protective Magic pattern: hit trigger and a cast of Shield from the prose; Counterspell is an agent clause
+- `lich` `reactions.protective-magic`: classified partly_modeled
 - `lich` `reactions.protective-magic`: spellcasting is not modeled; spells are absent from the stat block effects
 - `lich` `traits.legendary-resistance`: classified unmodeled (default skipped)
 - `lich` `traits.spirit-jar`: classified unmodeled (default skipped)
@@ -1008,7 +1010,8 @@ None.
 - `mage` `actions.spellcasting`: spellcasting is not modeled; spells are absent from the stat block effects
 - `mage` `bonus_actions.misty-step`: classified unmodeled (default skipped)
 - `mage` `bonus_actions.misty-step`: spellcasting is not modeled; spells are absent from the stat block effects
-- `mage` `reactions.protective-magic`: classified unmodeled (default skipped)
+- `mage` `reactions.protective-magic`: Protective Magic pattern: hit trigger and a cast of Shield from the prose; Counterspell is an agent clause
+- `mage` `reactions.protective-magic`: classified partly_modeled
 - `mage` `reactions.protective-magic`: spellcasting is not modeled; spells are absent from the stat block effects
 - `magma-mephit` `actions.claw`: classified modeled
 - `magma-mephit` `actions.fire-breath`: classified modeled
@@ -1249,7 +1252,8 @@ None.
 - `rust-monster` `actions.bite`: classified modeled
 - `rust-monster` `actions.destroy-metal`: classified unmodeled (default skipped)
 - `rust-monster` `actions.multiattack`: classified modeled
-- `rust-monster` `reactions.reflexive-antennae`: classified unmodeled (default skipped)
+- `rust-monster` `reactions.reflexive-antennae`: Reflexive Antennae pattern: hit trigger and use_action from the prose; the unmodeled Antennae is an agent clause
+- `rust-monster` `reactions.reflexive-antennae`: classified partly_modeled (default skipped)
 - `rust-monster` `traits.iron-scent`: classified unmodeled (default skipped)
 - `saber-toothed-tiger` `actions.multiattack`: classified modeled
 - `saber-toothed-tiger` `actions.rend`: classified modeled

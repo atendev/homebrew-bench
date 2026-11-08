@@ -3,7 +3,7 @@ id: 102
 title: Hit-triggered Reflexive Antennae and Protective Magic
 type: task
 mode: AFK
-status: open
+status: closed
 blocked_by: []
 claimed: false
 ---
@@ -25,4 +25,12 @@ Import the Rust Monster's Reflexive Antennae, and the Shield use of Protective M
 
 ## Resolution
 
-<Filled in at close.>
+Built. The importer has two new prose patterns beside Parry, and the fixtures, import review and curve are regenerated. Engine 0.1.29, policy stays v4. No engine code changed, because `cast_spell` reads the spell effects file and never a Spellcasting list. Two engine tests and two fixture tests cover it.
+
+**Protective Magic.** The Mage, Archmage and Lich carry the hit trigger with `attack: any` and a `cast` of Shield with no slot level. Usage is unchanged: 3/day, none on the Lich. The Counterspell use is an agent clause with no `default_resolution`, as Riposte's is, so `bench batch` on those three now needs `--assume abilities.protective-magic=ignored` until ticket 111 splits the entry.
+
+**Reflexive Antennae.** It carries the hit trigger and a `use_action` of `antennae`, as the ticket says. It imports as `partly_modeled` with an agent clause and keeps `default_resolution: skipped`, because the Antennae action has no effects. The auditor raised this. It opens a window in live mode and moves no batch number, against the ticket's expectation that all four fixtures change.
+
+**Curve.** The Mage moves in 15 cells, the Archmage in 19 and the Lich in 19. The Mage is harder: the party wins 66 of 100 at level 3, down from 85.
+
+The decision report is [102-implementation](../reports/102-implementation.md).
