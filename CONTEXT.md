@@ -169,8 +169,12 @@ A pending prompt that offers one combatant a chance to use a reaction, such as S
 _Avoid_: Interrupt
 
 **Reaction trigger**:
-The event named on a reaction that lets the engine open a reaction window for it. Two triggers open windows: a creature leaving the reactor's reach, which offers the Opportunity Attack every creature has, and being hit by an attack roll, which offers reactions such as Shield and Parry. A reaction with any other trigger is agent judgment.
+The event named on a reaction that lets the engine open a reaction window for it. Three triggers open windows: a creature leaving the reactor's reach, which offers the Opportunity Attack every creature has; being hit by an attack roll, which offers reactions such as Shield and Parry; and an enemy casting a leveled spell, which offers Counterspell and holds the cast (ADR 0019). A reaction with any other trigger is agent judgment.
 _Avoid_: Reaction condition, hook
+
+**Countered cast**:
+A leveled spell cast that a Counterspell cancelled after the caster failed a Constitution save. The caster's action stays spent and the spell slot is not expended, but a per-day or innate usage is.
+_Avoid_: Fizzle, interrupted spell
 
 **Reaction reserve**:
 What a combatant gives up when it spends its reaction on an Opportunity Attack: the chance to turn a later hit into a miss with Shield or Parry before its next turn. The batch tactics policy makes an Opportunity Attack only when the attack is worth more than the reserve. A combatant with no reaction for hits has no reserve.
