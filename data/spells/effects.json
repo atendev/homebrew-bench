@@ -1906,6 +1906,32 @@
     ],
     "source": "SRD 5.2.1"
   },
+  "see-invisibility": {
+    "agent_clauses": [
+      "You can see into the Ethereal Plane, and creatures and objects there appear ghostly.",
+      "The spell lasts 1 hour. The engine holds it for the whole encounter."
+    ],
+    "concentration": false,
+    "effects": [
+      {
+        "timed_modifier": {
+          "bearer": "self",
+          "change": "none",
+          "duration": {
+            "permanent": null
+          },
+          "source_ability": "see-invisibility",
+          "target": {
+            "see_invisible": null
+          }
+        }
+      }
+    ],
+    "id": "see-invisibility",
+    "level": 2,
+    "name": "See Invisibility",
+    "source": "SRD 5.2.1"
+  },
   "shatter": {
     "concentration": false,
     "effects": [

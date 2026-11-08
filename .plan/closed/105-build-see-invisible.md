@@ -3,7 +3,7 @@ id: 105
 title: Build See Invisible
 type: task
 mode: AFK
-status: open
+status: closed
 blocked_by: [100]
 claimed: false
 ---
@@ -26,4 +26,8 @@ Build the See Invisible capability decided in [Seeing Invisible creatures by spe
 
 ## Resolution
 
-<Filled in at close.>
+Built in auto mode on 2026-11-08 as the notes say, with one change.
+
+**See Invisibility is stored as `permanent`, not `{"hours": 1}`.** `decrement_durations` subtracts 1 from `hours` at the end of every creature's turn, and a test with `{"hours": 1}` showed the modifier gone after the caster's own turn. Fixing the tick would change Charm Person and Sunburst and the replay hashes of any save holding such a duration, so it is its own question: [109 Durations longer than a round](109-durations-longer-than-a-round.md). An hour outlasts an encounter, so `permanent` plays correctly, and an agent clause states the 1-hour length. This changes the 1-hour duration recorded in [Seeing Invisible creatures by spell or trait](095-seeing-invisible-creatures.md) only in how it is stored.
+
+`unseen_reason` reads the observer's `see_invisible` trait effect (from any ability list, as `no_provoke` is read) or a `see_invisible` modifier on it. Blinded and Darkness still block it. Both carriers score 0, the schema stays 1, and there is no new event text. Engine 0.1.27, policy stays v4. The curve was regenerated to a temporary file and differed only in `engine_version`, so that line was edited.

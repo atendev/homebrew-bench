@@ -727,7 +727,7 @@ fn resolve_effect(
             events.push(event("cast", format!("{} casts {}", actor_id, cast.spell_id), actor_id, actor_id));
             cast_spell(state, stream, actor_id, &cast, target_ids, events)?;
         }
-        Effect::RollModifier(_) | Effect::NoProvoke => {}
+        Effect::RollModifier(_) | Effect::NoProvoke | Effect::SeeInvisible => {}
         Effect::Disengage => events.push(set_disengaged(state, actor_id, None)?),
         Effect::Area(area) => {
             events.push(event("area", format!("{} creates an area effect", actor_id), actor_id, actor_id));
@@ -2434,7 +2434,7 @@ fn within_5_feet(a: &Combatant, b: &Combatant) -> bool {
 }
 
 /// The one sight rule (ADR 0017): `observer` sees `observed` unless `observed` is Invisible and
-/// `observer` has neither Blindsight nor Truesight, `observer` is Blinded without Blindsight, or the
+/// `observer` has no Blindsight, Truesight or See Invisible, `observer` is Blinded without Blindsight, or the
 /// lighting is `darkness` and `observer` has no Darkvision, Blindsight or Truesight. Sense ranges are
 /// ignored and Tremorsense doesn't see. Each refusal names one reason, in that order.
 fn sees(state: &EncounterState, observer: &Combatant, observed: &Combatant) -> bool {
@@ -2443,11 +2443,13 @@ fn sees(state: &EncounterState, observer: &Combatant, observed: &Combatant) -> b
 
 fn unseen_reason(state: &EncounterState, observer: &Combatant, observed: &Combatant) -> Option<String> {
     let has = |c: &Combatant, condition: Condition| c.conditions.iter().any(|x| x.condition == condition);
-    let senses = stat_block(state, observer).ok().map(|b| &b.senses);
+    let block = stat_block(state, observer).ok();
+    let senses = block.map(|b| &b.senses);
     let blindsight = senses.is_some_and(|s| s.blindsight.is_some());
     let truesight = senses.is_some_and(|s| s.truesight.is_some());
     let darkvision = senses.is_some_and(|s| s.darkvision.is_some());
-    if has(observed, Condition::Invisible) && !blindsight && !truesight {
+    let see_invisible = || block.is_some_and(StatBlock::has_see_invisible) || state.modifiers_on(&observer.id).any(|m| m.target == ModifierTarget::SeeInvisible);
+    if has(observed, Condition::Invisible) && !blindsight && !truesight && !see_invisible() {
         return Some(format!("{} cannot see {}, who is invisible", observer.id, observed.id));
     }
     if has(observer, Condition::Blinded) && !blindsight {
@@ -6005,6 +6007,66 @@ mod tests {
         assert_eq!(duel_disposition(|_, c| target_invisible(c)), RollDisposition::Disadvantage);
         assert_eq!(duel_disposition(|b, c| { b[0].senses.blindsight = Some(10); target_invisible(c); }), RollDisposition::Normal);
         assert_eq!(duel_disposition(|b, c| { b[0].senses.tremorsense = Some(60); target_invisible(c); }), RollDisposition::Disadvantage);
+    }
+
+    fn sees_invisible_trait(block: &mut StatBlock) {
+        block.traits.push(crate::stat_block::AbilityEntry { effects: vec![Effect::SeeInvisible], ..no_provoke_trait() });
+    }
+
+    fn see_invisibility(state: &mut EncounterState, bearer: &str) {
+        state.active_modifiers.push(borne(bearer, bearer, Some("see-invisibility"), ModifierTarget::SeeInvisible, ModifierChange::None));
+    }
+
+    #[test]
+    fn see_invisible_counts_from_a_trait_or_a_modifier_on_the_observer() {
+        let attacker_invisible = |c: &mut Vec<Combatant>| c[0].conditions.push(sourced(Condition::Invisible, None));
+        assert_eq!(duel_disposition(|b, c| { sees_invisible_trait(&mut b[1]); attacker_invisible(c); }), RollDisposition::Normal);
+
+        let mut cast = duel(|_, c| attacker_invisible(c));
+        see_invisibility(&mut cast, "goblin");
+        assert_eq!(disposition(&cast, &cast.combatants[0], &cast.combatants[1], &sword()), RollDisposition::Normal);
+
+        let mut wrong_bearer = duel(|_, c| attacker_invisible(c));
+        see_invisibility(&mut wrong_bearer, "fighter");
+        assert_eq!(disposition(&wrong_bearer, &wrong_bearer.combatants[0], &wrong_bearer.combatants[1], &sword()), RollDisposition::Advantage);
+    }
+
+    #[test]
+    fn see_invisible_helps_neither_a_blinded_observer_nor_one_in_darkness() {
+        let blinded = duel(|b, c| {
+            sees_invisible_trait(&mut b[0]);
+            c[0].conditions.push(sourced(Condition::Blinded, None));
+        });
+        assert_eq!(unseen_reason(&blinded, &blinded.combatants[0], &blinded.combatants[1]).as_deref(), Some("fighter is blinded and cannot see goblin"));
+
+        let mut dark = duel(|b, c| {
+            sees_invisible_trait(&mut b[0]);
+            c[1].conditions.push(sourced(Condition::Invisible, None));
+        });
+        assert_eq!(unseen_reason(&dark, &dark.combatants[0], &dark.combatants[1]), None);
+        dark.settings.lighting = Lighting::Darkness;
+        assert_eq!(unseen_reason(&dark, &dark.combatants[0], &dark.combatants[1]).as_deref(), Some("fighter cannot see goblin in darkness"));
+    }
+
+    #[test]
+    fn see_invisibility_is_cast_on_the_caster_without_concentration_and_held_for_the_encounter() {
+        let mut state = duel(|_, c| c[1].conditions.push(sourced(Condition::Invisible, None)));
+        state.active_turn = Some("fighter".into());
+        let cast = Effect::Cast(crate::effect::Cast { spell_id: "see-invisibility".into(), slot_level: None, upcast: false });
+        resolve_effect(&mut state, &mut Stream::from_state(RngState::new(1)), "fighter", cast, &[], &mut vec![]).unwrap();
+        assert!(state.combatants[0].concentration.is_none());
+        assert!(sees(&state, &state.combatants[0], &state.combatants[1]));
+        finish_turn(&mut state).unwrap();
+        assert!(sees(&state, &state.combatants[0], &state.combatants[1]), "held as permanent, because a timed duration ticks once per creature's turn");
+    }
+
+    #[test]
+    fn see_invisible_makes_opportunity_attacks_on_an_invisible_mover_eligible() {
+        let mut cast = provoking_encounter(0);
+        cast.combatants[0].conditions.push(sourced(Condition::Invisible, None));
+        assert!(!opportunity_eligible(&cast, "b", "a"));
+        see_invisibility(&mut cast, "b");
+        assert!(opportunity_eligible(&cast, "b", "a"));
     }
 
     #[test]

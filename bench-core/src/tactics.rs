@@ -1264,7 +1264,7 @@ impl<'a> Ctx<'a> {
             }
             Effect::Teleport(teleport) if teleport.subject == TeleportSubject::Actor => Value { survival: self.teleport_value(actor, footing), ..Default::default() },
             Effect::Teleport(_) => Value::default(),
-            Effect::TempHp(_) | Effect::TimedModifier(_) | Effect::RollModifier(_) | Effect::NoProvoke | Effect::Disengage => Value::default(),
+            Effect::TempHp(_) | Effect::TimedModifier(_) | Effect::RollModifier(_) | Effect::NoProvoke | Effect::SeeInvisible | Effect::Disengage => Value::default(),
         };
         (value, vec![])
     }
@@ -2982,6 +2982,18 @@ mod tests {
         let plan = ctx.modifier_plan(caster, ctx.block(caster).unwrap(), &haste, Section::Action, None, &haste_modifiers()).unwrap();
         assert_eq!(plan.targets, ["striker"]);
         assert!(plan.reason.ends_with(&format!(", extra action 7.0, {:.1} of 2.0 rounds at keep {k:.2}, lethargy -{cost:.1})", 1.0 + k)), "{}", plan.reason);
+    }
+
+    #[test]
+    fn a_see_invisible_modifier_scores_nothing() {
+        let state = haste_fight(25, 300);
+        let mut modifier = haste_modifiers().remove(0);
+        modifier.target = ModifierTarget::SeeInvisible;
+        modifier.change = ModifierChange::None;
+        modifier.duration = crate::effect::Duration::Permanent;
+        modifier.on_end = vec![];
+        let value = value_on(&state, "striker", &[modifier]);
+        assert_eq!((value.damage, value.survival), (0.0, 0.0), "{value:?}");
     }
 
     #[test]
