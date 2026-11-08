@@ -632,6 +632,22 @@ mod tests {
     }
 
     #[test]
+    fn a_spell_cast_trigger_loads_on_a_reaction_and_is_refused_elsewhere() {
+        let counter = || {
+            serde_json::json!({
+                "id": "counterspell", "name": "Counterspell", "kind": "modeled",
+                "trigger": {"spell_cast": {"caster": "enemy"}},
+                "effects": [{"counter_spell": {"dc": 0}}]
+            })
+        };
+        let block = kobold_with(|v| v["reactions"] = serde_json::json!([counter()])).unwrap();
+        assert_eq!(block.reactions[0].trigger, Some(ReactionTrigger::SpellCast { caster: crate::effect::SpellCaster::Enemy }));
+        assert_eq!(serde_json::to_value(&block.reactions[0]).unwrap()["trigger"], counter()["trigger"]);
+        let err = kobold_with(|v| v["actions"] = serde_json::json!([counter()])).expect_err("refused");
+        assert!(err.contains("a trigger belongs on a reaction"), "{err}");
+    }
+
+    #[test]
     fn a_triggering_attack_duration_without_a_hit_trigger_is_refused_at_load() {
         let untriggered = || {
             let mut p = parry();

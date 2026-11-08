@@ -19,6 +19,8 @@ pub enum WindowTrigger {
     Opportunity { mover_id: String },
     /// The reactor was hit by an attack roll. `ac` is its AC before any reaction.
     Hit { attacker_id: String, total: i32, ac: i32, critical: bool },
+    /// An enemy of the reactor is casting a leveled spell, held before its slot is spent.
+    SpellCast { caster_id: String, spell_id: String, level: u8 },
 }
 
 /// One reaction a window offers: a reaction entry for a hit, or an attack
@@ -83,6 +85,10 @@ impl ReactionDecider {
     pub fn decide(&mut self, state: &EncounterState, window: &ReactionWindow) -> Decision {
         match self {
             ReactionDecider::PassAll => Decision::Answer { answer: ReactionAnswer::Pass, reason: None },
+            // Until the batch policy prices counters, batch lets every cast through unlogged.
+            ReactionDecider::Policy(_) if matches!(window.trigger, WindowTrigger::SpellCast { .. }) => {
+                Decision::Answer { answer: ReactionAnswer::Pass, reason: None }
+            }
             ReactionDecider::Policy(constants) => {
                 let (answer, reason) = crate::tactics::decide_reaction(state, window, constants);
                 Decision::Answer { answer, reason: Some(reason) }
@@ -103,6 +109,12 @@ pub struct Reactions {
     /// The reaction whose resolution raised the request's error, when one did. The
     /// error text is unchanged; this says whose ability it came from.
     pub fault: Option<ReactionFault>,
+    /// A reaction is resolving, so a cast it makes opens no spell-cast window (ADR 0019).
+    pub reacting: bool,
+    /// The spell a spell-cast window is holding, named in the `spell_countered` event.
+    pub casting: Option<String>,
+    /// A `counter_spell` effect cancelled the held cast.
+    pub countered: bool,
 }
 
 /// A reaction that failed while another creature's request resolved.

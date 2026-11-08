@@ -3,7 +3,7 @@ id: 110
 title: Build the spell-cast window and counter_spell effect
 type: task
 mode: AFK
-status: open
+status: closed
 blocked_by: [101]
 claimed: false
 ---
@@ -25,4 +25,13 @@ Build the engine half of [Counterspell and the spell-cast trigger](../closed/101
 
 ## Resolution
 
-<Filled in at close.>
+Built in auto mode on 2026-11-08 as the notes say, with these choices.
+
+- **Where the window sits.** `cast_spell` asks the spell-cast windows after the cast level is known and before the slot is counted, so a countered cast never expends it. The caster's action and any per-day usage are spent earlier, in `resolve_action`, and stay spent. A window that waits, or a counter whose save waits on a player's die, ends the run so the caller discards it and prompts, as ADR 0018 does for hits.
+- **No window for a reaction cast.** `Reactions.reacting` is set while `resolve_action` runs a reaction, so Counterspell and Shield open no window.
+- **The effect.** `counter_spell` is a struct variant with a `dc` (0 takes the reactor's spell save DC, bound like a saving throw's DC). It rolls the caster's Constitution save through a new `save_succeeds` helper that `resolve_save` now shares, and a failure logs `spell_countered` and sets `Reactions.countered`.
+- **Batch.** Batch sets the gate, and the policy passes every spell-cast window without a reason, so logs and numbers don't change until ticket 111. The curve differs only in its engine version.
+- **Data.** Counterspell in the effects file carries `counter_spell` and drops the save and slot clauses. The fixtures still hold Counterspell as an agent clause.
+- **Live.** A window message reads `<reactor>: <caster> is casting <spell> (level <n>), take <id>?`, and an answer joins the queued answers as a hit answer does. The skill's live-mode reaction step and ADR 0005 are updated.
+
+Engine 0.1.28, policy stays v4.

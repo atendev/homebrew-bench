@@ -12,6 +12,17 @@ use crate::stat_block::{Ability, Condition, DamageType};
 pub enum ReactionTrigger {
     /// The creature is hit by an attack roll the filter matches (Shield, Parry).
     HitByAttackRoll { attack: AttackFilter },
+    /// A leveled spell is about to be cast (Counterspell). The cast is held before its slot,
+    /// usage and effects resolve (ADR 0019).
+    SpellCast { caster: SpellCaster },
+}
+
+/// Whose casts a spell-cast trigger answers.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, schemars::JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum SpellCaster {
+    /// A creature on another side than the reactor.
+    Enemy,
 }
 
 /// Which attack rolls a hit trigger answers. A melee attack is one with no range, so a thrown
@@ -553,6 +564,17 @@ pub enum Effect {
     /// The creature takes the Disengage step as part of this ability (Nimble Escape,
     /// Cunning Action): its moves provoke no Opportunity Attack until its turn ends.
     Disengage,
+    /// The target, a creature casting a spell, makes a Constitution save against `dc`; on a
+    /// failure the cast is cancelled and its slot is not expended (Counterspell). A `dc` of 0
+    /// takes the caster's spell save DC.
+    CounterSpell(CounterSpell),
+}
+
+/// The `counter_spell` effect.
+#[derive(Debug, Clone, Serialize, Deserialize, schemars::JsonSchema)]
+pub struct CounterSpell {
+    #[serde(default)]
+    pub dc: i32,
 }
 
 impl Effect {

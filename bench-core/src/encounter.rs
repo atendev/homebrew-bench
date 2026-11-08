@@ -203,6 +203,11 @@ pub struct EncounterSettings {
     /// their histories refold as recorded.
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub reaction_windows: bool,
+    /// The engine opens a window for each leveled cast by an enemy (ADR 0019). `bench start`
+    /// and batch encounters set it; encounters saved before it existed leave it off, because
+    /// `undo` and `replay` drop the prompts a window would add.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub spell_cast_windows: bool,
 }
 
 /// Record of an encounter ended early through `bench end`.
