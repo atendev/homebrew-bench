@@ -98,11 +98,27 @@
   "proficiency_bonus": 3,
   "reactions": [
     {
-      "default_resolution": "skipped",
+      "agent_clauses": [
+        "The mage may instead cast Counterspell when a creature casts a spell; that use is agent judgment."
+      ],
       "desc": "The mage casts Counterspell or Shield in response to the spell’s trigger, using the same spellcasting ability as Spellcasting.",
+      "effects": [
+        {
+          "cast": {
+            "slot_level": null,
+            "spell_id": "shield",
+            "upcast": false
+          }
+        }
+      ],
       "id": "protective-magic",
-      "kind": "unmodeled",
+      "kind": "partly_modeled",
       "name": "Protective Magic",
+      "trigger": {
+        "hit_by_attack_roll": {
+          "attack": "any"
+        }
+      },
       "usage": {
         "per_day": {
           "uses": 3

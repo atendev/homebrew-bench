@@ -20,7 +20,7 @@ Blocking entries are classes a (structured field contradicts prose), b (structur
 missing or not representable in the closed vocabulary) and c (contradicts an SRD ruleset
 table). The script exits 1 while any blocking entry is open. A correction that matches
 nothing upstream aborts the run. Prose is read only to detect mismatches, never to produce data,
-with five exceptions upstream has no field for: the exact Flyby/Agile sentence becomes no_provoke,
+with seven exceptions upstream has no field for: the exact Flyby/Agile sentence becomes no_provoke,
 a bonus action that "takes the ... Disengage ... action" (Nimble Escape, Cunning Action,
 Deathless Agility, Hasten) becomes disengage with its other actions as an agent clause and a
 review note,
@@ -28,7 +28,11 @@ review note,
 cooldown_until_next_turn with a review note, the three sunlight and Bright Light sentences
 become lighting roll modifiers with a review note, and the Parry sentence ("is hit by a melee
 attack roll while holding a weapon ... adds N to its AC against that attack") becomes a hit
-trigger with a triggering_attack AC modifier and a review note. See ADR 0008.
+trigger with a triggering_attack AC modifier and a review note, the Reflexive Antennae sentence
+("An attack roll hits the ... Response: The ... uses Antennae") becomes a hit trigger with a
+use_action, an agent clause for the unmodeled Antennae, the skipped default and a review note, and the Protective Magic sentence ("casts Counterspell or Shield in response
+to the spell's trigger") becomes a hit trigger with a cast of Shield, its Counterspell use an
+agent clause and a review note. See ADR 0008.
 """
 
 import json
@@ -184,6 +188,9 @@ LIGHTING_SENTENCES = [
 ]
 PARRY = re.compile(r"^Trigger: The ([\w -]+) is hit by a melee attack roll while holding a weapon\. "
                    r"Response: The \1 adds (\d+) to its AC against that attack, possibly causing it to miss\.(?: (.+))?$")
+REFLEXIVE_ANTENNAE = re.compile(r"^Trigger: An attack roll hits the ([\w -]+)\. Response: The \1 uses Antennae\.$")
+PROTECTIVE_MAGIC = re.compile(r"^The ([\w -]+) casts Counterspell or Shield in response to the spell.s trigger, "
+                              r"using the same spellcasting ability as Spellcasting\.$")
 NO_PROVOKE = re.compile(r"^The [\w -]+ doesn.t provoke an Opportunity Attack when it (?:flies|moves) out of an enemy.s reach\.$")
 DISENGAGE = re.compile(r"^The ([\w -]+) takes the (Dash, Disengage, or Hide|Disengage or Hide|Dash or Disengage) action\.$")
 DISENGAGE_AND_DASH = re.compile(r"^The ([\w -]+) takes the Dash and Disengage actions\.$")
@@ -644,17 +651,29 @@ class Converter:
                                            "duration": "triggering_attack", "bearer": "self"}}]
             clauses = [parry.group(3)] if parry.group(3) else []
             self.rec("d", base, "Parry pattern: hit trigger and AC modifier from the prose; holding a weapon is assumed")
-        lit = False
+        keep_default = False
+        if section == "reactions" and REFLEXIVE_ANTENNAE.match(desc) and "antennae" in action_ids:
+            entry["trigger"] = {"hit_by_attack_roll": {"attack": "any"}}
+            effects = [{"use_action": {"action_id": "antennae"}}]
+            clauses = ["Antennae is not modeled: the agent resolves its Dexterity save and the penalty to the metal object."]
+            keep_default = True
+            self.rec("d", base, "Reflexive Antennae pattern: hit trigger and use_action from the prose; the unmodeled Antennae is an agent clause")
+        protective = PROTECTIVE_MAGIC.match(desc) if section == "reactions" else None
+        if protective:
+            entry["trigger"] = {"hit_by_attack_roll": {"attack": "any"}}
+            effects = [{"cast": {"spell_id": "shield", "slot_level": None, "upcast": False}}]
+            clauses = [f"The {protective.group(1)} may instead cast Counterspell when a creature casts a spell; that use is agent judgment."]
+            self.rec("d", base, "Protective Magic pattern: hit trigger and a cast of Shield from the prose; Counterspell is an agent clause")
         if section == "traits":
             lit_effects, rest = lighting_modifiers(desc)
             if lit_effects:
-                effects, clauses, lit = lit_effects, rest, True
+                effects, clauses, keep_default = lit_effects, rest, True
                 self.rec("d", base, "lighting roll modifier from the prose")
         usage = self.usage(raw, base)
         if usage:
             entry["usage"] = usage
         if effects:
-            if not (lit and clauses):
+            if not (keep_default and clauses):
                 entry.pop("default_resolution")
             entry["effects"] = effects
             entry["kind"] = "partly_modeled" if clauses else "modeled"

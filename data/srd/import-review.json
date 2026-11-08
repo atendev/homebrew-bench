@@ -2211,7 +2211,14 @@
       "class": "d",
       "path": "reactions.protective-magic",
       "status": "open",
-      "summary": "classified unmodeled (default skipped)"
+      "summary": "Protective Magic pattern: hit trigger and a cast of Shield from the prose; Counterspell is an agent clause"
+    },
+    {
+      "monster": "archmage",
+      "class": "d",
+      "path": "reactions.protective-magic",
+      "status": "open",
+      "summary": "classified partly_modeled"
     },
     {
       "monster": "archmage",
@@ -6740,7 +6747,14 @@
       "class": "d",
       "path": "reactions.protective-magic",
       "status": "open",
-      "summary": "classified unmodeled (default skipped)"
+      "summary": "Protective Magic pattern: hit trigger and a cast of Shield from the prose; Counterspell is an agent clause"
+    },
+    {
+      "monster": "lich",
+      "class": "d",
+      "path": "reactions.protective-magic",
+      "status": "open",
+      "summary": "classified partly_modeled"
     },
     {
       "monster": "lich",
@@ -6873,7 +6887,14 @@
       "class": "d",
       "path": "reactions.protective-magic",
       "status": "open",
-      "summary": "classified unmodeled (default skipped)"
+      "summary": "Protective Magic pattern: hit trigger and a cast of Shield from the prose; Counterspell is an agent clause"
+    },
+    {
+      "monster": "mage",
+      "class": "d",
+      "path": "reactions.protective-magic",
+      "status": "open",
+      "summary": "classified partly_modeled"
     },
     {
       "monster": "mage",
@@ -8616,7 +8637,14 @@
       "class": "d",
       "path": "reactions.reflexive-antennae",
       "status": "open",
-      "summary": "classified unmodeled (default skipped)"
+      "summary": "Reflexive Antennae pattern: hit trigger and use_action from the prose; the unmodeled Antennae is an agent clause"
+    },
+    {
+      "monster": "rust-monster",
+      "class": "d",
+      "path": "reactions.reflexive-antennae",
+      "status": "open",
+      "summary": "classified partly_modeled (default skipped)"
     },
     {
       "monster": "rust-monster",

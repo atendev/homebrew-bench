@@ -20,8 +20,8 @@ ADR 0004 says live mode pauses on a pending prompt when a reaction changes an ac
 
 ## Consequences
 
-- Parry (7 SRD fixtures) and the pirate captain's Riposte import as a hit trigger with a `triggering_attack` AC modifier. Riposte's extra attack stays an agent clause, and holding a weapon is assumed. The party generator writes the trigger on Shield. The mummy lord's Whirlwind of Sand stays skipped. The stone giant's Deflect Missile gets no trigger and stays mis-modeled: its damage reduction is dropped and its save fires without the trigger.
+- Parry (7 SRD fixtures) and the pirate captain's Riposte import as a hit trigger with a `triggering_attack` AC modifier. Riposte's extra attack stays an agent clause, and holding a weapon is assumed. The party generator writes the trigger on Shield. The Rust Monster's Reflexive Antennae imports on the hit trigger with a `use_action`, and the Protective Magic of the Mage, Archmage and Lich with a cast of Shield, its Counterspell use an agent clause until ADR 0019's split. The mummy lord's Whirlwind of Sand stays skipped. The stone giant's Deflect Missile gets no trigger and stays mis-modeled: its damage reduction is dropped and its save fires without the trigger.
 - `bench action` off-turn still runs a reaction, for triggers the engine doesn't open windows for, such as Shield against Magic Missile.
-- Batch numbers don't change. The fixture-set and party fingerprints do, so the curve reads stale until ticket 056 regenerates it.
+- This ADR's original imports left batch numbers alone, and their fingerprint change left the curve stale until ticket 056 regenerated it. Ticket 102's later imports move the batch numbers of the Mage, Archmage and Lich, and that ticket regenerates the curve.
 - `schema_version` stays 1. `trigger` and `triggering_attack` only add to the vocabulary, and every stat block that loaded before still loads, by the exception ADR 0015 recorded.
 - The engine version moves to 0.1.5 because a live encounter started on it can replay into prompts an older engine never opened.

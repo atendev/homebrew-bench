@@ -208,3 +208,42 @@ fn the_eleven_lighting_traits_import_as_roll_modifiers() {
         assert_eq!(t["agent_clauses"], serde_json::json!(["The vampire takes 20 Radiant damage if it starts its turn in sunlight."]), "{fixture}");
     }
 }
+
+fn reaction(fixture: &str, reaction_id: &str) -> serde_json::Value {
+    let path = Path::new(env!("CARGO_MANIFEST_DIR")).join("../data/fixtures").join(format!("{fixture}.json"));
+    let text = std::fs::read_to_string(&path).expect("readable fixture");
+    let block: serde_json::Value = serde_json::from_str(&text).expect("fixture is JSON");
+    block["reactions"]
+        .as_array()
+        .expect("reactions array")
+        .iter()
+        .find(|r| r["id"] == reaction_id)
+        .unwrap_or_else(|| panic!("{fixture} has no reaction {reaction_id}"))
+        .clone()
+}
+
+#[test]
+fn reflexive_antennae_uses_antennae_when_hit() {
+    let antennae = reaction("rust-monster", "reflexive-antennae");
+    assert_eq!(antennae["trigger"], serde_json::json!({"hit_by_attack_roll": {"attack": "any"}}));
+    assert_eq!(antennae["effects"], serde_json::json!([{"use_action": {"action_id": "antennae"}}]));
+    assert_eq!(antennae["kind"], "partly_modeled");
+    assert_eq!(antennae["default_resolution"], "skipped");
+    assert!(antennae["agent_clauses"][0].as_str().unwrap().contains("Antennae is not modeled"));
+}
+
+#[test]
+fn protective_magic_casts_shield_when_hit_and_leaves_counterspell_to_the_agent() {
+    for (fixture, usage) in [
+        ("mage", serde_json::json!({"per_day": {"uses": 3}})),
+        ("archmage", serde_json::json!({"per_day": {"uses": 3}})),
+        ("lich", serde_json::Value::Null),
+    ] {
+        let magic = reaction(fixture, "protective-magic");
+        assert_eq!(magic["trigger"], serde_json::json!({"hit_by_attack_roll": {"attack": "any"}}), "{fixture}");
+        assert_eq!(magic["effects"], serde_json::json!([{"cast": {"spell_id": "shield", "slot_level": null, "upcast": false}}]), "{fixture}");
+        assert_eq!(magic["usage"], usage, "{fixture}");
+        assert_eq!(magic["kind"], "partly_modeled", "{fixture}");
+        assert!(magic["agent_clauses"][0].as_str().unwrap().contains("Counterspell"), "{fixture}");
+    }
+}

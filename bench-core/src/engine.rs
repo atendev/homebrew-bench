@@ -5580,6 +5580,45 @@ mod tests {
         panic!("no seed");
     }
 
+    #[test]
+    fn a_mage_casts_shield_through_protective_magic_when_it_stops_the_hit() {
+        for seed in 1..2000 {
+            let state = windowed(fixture_block("ogre"), fixture_block("mage"), "ally", seed);
+            let ac = fixture_block("mage").armor_class[0].value;
+            let mut probe = state.clone();
+            probe.settings.reaction_windows = false;
+            let (roll, total) = attack_roll(&act(&mut probe, "ogre", "greatclub", &["mage"]).unwrap());
+            if roll == 20 || !(ac..ac + 5).contains(&total) {
+                continue;
+            }
+            let mut state = by_policy(&state);
+            let events = act(&mut state, "ogre", "greatclub", &["mage"]).unwrap();
+            assert_eq!(reasons(&events), vec![format!("mage: Protective Magic ({total} vs AC {ac}+5 turns the hit into a miss)")]);
+            assert!(events.iter().any(|e| e.kind == "attack_rechecked" && e.message.contains("(miss) after Protective Magic")), "{events:?}");
+            assert!(events.iter().any(|e| e.kind == "agent_clause" && e.message.contains("Counterspell")), "{events:?}");
+            assert_eq!(state.combatants[1].resources.get("mage:protective-magic"), Some(&1));
+            assert!(state.combatants[1].action_economy.reaction_used);
+            return;
+        }
+        panic!("no seed");
+    }
+
+    #[test]
+    fn a_mage_out_of_protective_magic_uses_opens_no_hit_window() {
+        for seed in 1..2000 {
+            let mut state = windowed(fixture_block("ogre"), fixture_block("mage"), "ally", seed);
+            state.combatants[1].resources.insert("mage:protective-magic".into(), 3);
+            let mut state = by_policy(&state);
+            let events = act(&mut state, "ogre", "greatclub", &["mage"]).unwrap();
+            if events.iter().any(|e| e.kind == "attack" && e.message.contains("(hit)")) {
+                assert!(reasons(&events).is_empty(), "{events:?}");
+                assert!(!state.combatants[1].action_economy.reaction_used);
+                return;
+            }
+        }
+        panic!("no seed");
+    }
+
     /// `mover` (on its turn) engaged with `reactor`, both from blocks, windows on, the policy deciding.
     fn stepping_out(mover: StatBlock, reactor: StatBlock) -> EncounterState {
         let (m, r) = (mover.id.clone(), reactor.id.clone());
