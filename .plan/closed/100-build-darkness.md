@@ -3,7 +3,7 @@ id: 100
 title: Build darkness
 type: task
 mode: AFK
-status: open
+status: closed
 blocked_by: [091]
 claimed: false
 ---
@@ -27,4 +27,11 @@ Build the decision in [Darkness and Darkvision](../closed/091-darkness-and-darkv
 
 ## Resolution
 
-<Filled in at close.>
+Built on branch `plan/100-build-darkness`. Engine 0.1.26, `POLICY_VERSION` stays 4.
+
+- `Lighting::Darkness` (additive at schema version 1). `meets`: `darkness` meets a `darkness` or `dim_light` key; `dim_light` doesn't meet `darkness`. `--lighting darkness` and the override path take the snake_case spelling.
+- `unseen_reason` checks Invisible, then Blinded, then darkness, so each event names one reason: `<observer> cannot see <observed> in darkness`. Tests cover attacks both ways (a Darkvision monster against the party; two non-seers roll straight), Opportunity Attack eligibility and its refusal text, and a ranged attack in close combat. Frightened reads the same `sees`.
+- Batch: the Lighting row states darkness as the ticket words it. When lighting isn't `darkness` and sight is uneven (or a trait is keyed to `darkness` or `dim_light`), a warning says darkness would change the result and gives the first sample's replay command with `--lighting darkness`.
+- Proof: a regenerated curve differs from the committed one only on `engine_version`, so numbers under `unspecified` are unchanged. The embedded-curve CLI test fails on a stale engine version, so the version line in `data/baseline/curve.json` was edited to 0.1.26, as in commit 4502693.
+- Docs: CHANGELOG line, ADR 0005 (a `dim_light` key now applies under `darkness`), and the live-mode and batch-mode references. In `tactics.rs` nothing else scores sight.
+- Decision report: [100-implementation](../reports/100-implementation.md).

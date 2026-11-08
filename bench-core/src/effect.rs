@@ -136,14 +136,17 @@ pub enum Lighting {
     DimLight,
     BrightLight,
     Sunlight,
+    Darkness,
 }
 
 impl Lighting {
     /// Whether an encounter lit like `self` meets a roll modifier keyed to `required`.
-    /// Sunlight is Bright Light; `unspecified` meets nothing.
+    /// Sunlight is Bright Light, and `darkness` meets a `dim_light` key too (a trait that needs Dim Light
+    /// or worse); `unspecified` meets nothing.
     pub fn meets(self, required: Lighting) -> bool {
         match (self, required) {
             (Lighting::Sunlight, Lighting::BrightLight) => true,
+            (Lighting::Darkness, Lighting::DimLight) => true,
             (Lighting::Unspecified, _) => false,
             _ => self == required,
         }
@@ -161,6 +164,7 @@ impl Lighting {
             Lighting::DimLight => "dim_light",
             Lighting::BrightLight => "bright_light",
             Lighting::Sunlight => "sunlight",
+            Lighting::Darkness => "darkness",
         }
     }
 }
@@ -626,10 +630,10 @@ mod tests {
     }
 
     #[test]
-    fn lighting_meets_its_own_key_and_sunlight_meets_bright_light() {
+    fn lighting_meets_its_own_key_sunlight_meets_bright_light_and_darkness_meets_dim_light() {
         use Lighting::*;
-        let all = [Unspecified, DimLight, BrightLight, Sunlight];
-        let met = [(DimLight, DimLight), (BrightLight, BrightLight), (Sunlight, BrightLight), (Sunlight, Sunlight)];
+        let all = [Unspecified, DimLight, BrightLight, Sunlight, Darkness];
+        let met = [(DimLight, DimLight), (BrightLight, BrightLight), (Sunlight, BrightLight), (Sunlight, Sunlight), (Darkness, Darkness), (Darkness, DimLight)];
         for setting in all {
             for required in all {
                 assert_eq!(setting.meets(required), met.contains(&(setting, required)), "{setting:?} meets {required:?}");
@@ -642,5 +646,6 @@ mod tests {
         assert_eq!(serde_json::from_str::<Lighting>(r#""normal""#).unwrap(), Lighting::Unspecified);
         assert_eq!(serde_json::to_string(&Lighting::Unspecified).unwrap(), r#""unspecified""#);
         assert_eq!(serde_json::from_str::<Lighting>(r#""dim_light""#).unwrap(), Lighting::DimLight);
+        assert_eq!(serde_json::from_str::<Lighting>(r#""darkness""#).unwrap(), Lighting::Darkness);
     }
 }
