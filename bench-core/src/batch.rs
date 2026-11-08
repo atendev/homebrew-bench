@@ -373,6 +373,7 @@ fn light_words(lighting: Lighting) -> &'static str {
         Lighting::DimLight => "Dim Light",
         Lighting::BrightLight => "Bright Light",
         Lighting::Sunlight => "sunlight",
+        Lighting::Darkness => "Darkness",
     }
 }
 
@@ -382,7 +383,20 @@ fn lighting_row(lighting: Lighting) -> &'static str {
         Lighting::DimLight => "dim light",
         Lighting::BrightLight => "bright light",
         Lighting::Sunlight => "sunlight (also Bright Light)",
+        Lighting::Darkness => "darkness (nonmagical), a creature without Darkvision, Blindsight or Truesight sees no one; spell targeting not gated by sight",
     }
+}
+
+/// Whether darkness would change a run's result: the combatants that fought don't all have or all
+/// lack Darkvision, Blindsight or Truesight, or one of them has a roll modifier keyed to `darkness`
+/// or `dim_light`.
+fn sight_is_uneven(spec: &BatchSpec) -> bool {
+    let fighters: Vec<&StatBlock> = std::iter::once(&spec.monster).chain(spec.levels.iter().filter_map(|l| spec.party.get(l)).flatten()).collect();
+    let sees_in_dark = |b: &StatBlock| b.senses.darkvision.is_some() || b.senses.blindsight.is_some() || b.senses.truesight.is_some();
+    let keyed = |b: &&StatBlock| {
+        all_abilities(b).any(|a| a.effects.iter().any(|e| matches!(e, Effect::RollModifier(m) if matches!(m.lighting, Lighting::Darkness | Lighting::DimLight))))
+    };
+    fighters.iter().any(|b| sees_in_dark(b) != sees_in_dark(fighters[0])) || fighters.iter().any(keyed)
 }
 
 /// Run the whole batch.
@@ -450,6 +464,14 @@ pub fn run(spec: &BatchSpec) -> Result<BatchReport, BatchError> {
         Some(_) => {}
     }
     warnings.extend(plan_failure_warnings(&results));
+    if spec.lighting != Lighting::Darkness && sight_is_uneven(spec) {
+        let dark = BatchSpec { lighting: Lighting::Darkness, ..spec.clone() };
+        let index = samples.first().map_or(0, |s| s.index);
+        warnings.push(format!(
+            "Sight is uneven (not every combatant has Darkvision, Blindsight or Truesight, or a trait is keyed to darkness or Dim Light), so darkness would change this result. Replay a sample with `{}`; drop `--fight` to rerun the batch.",
+            replay_command(&dark, index)
+        ));
+    }
     if spec.fights < DEFAULT_FIGHTS {
         warnings.push(format!("Thin data: {} fights per level, below the 100-fight reference cell.", spec.fights));
     }
@@ -1985,6 +2007,33 @@ mod tests {
         s.lighting = lighting;
         s.baseline = Some(baseline::embedded().unwrap().unwrap());
         run(&s).unwrap()
+    }
+
+    #[test]
+    fn darkness_is_stated_and_uneven_sight_adds_a_hint_with_the_replay_command() {
+        let dark = lit_run("ogre", Lighting::Darkness);
+        assert!(dark.html.contains("darkness (nonmagical), a creature without Darkvision, Blindsight or Truesight sees no one; spell targeting not gated by sight (set by"), "{}", dark.html);
+        assert!(dark.logs.iter().all(|(_, log)| log.contains("  lighting = darkness\n")));
+        assert!(dark.summary.samples.iter().all(|s| s.replay.ends_with(" --lighting darkness")));
+        assert!(dark.summary.warnings.iter().all(|w| !w.starts_with("Sight is uneven")));
+        let hint = |report: &BatchReport| report.summary.warnings.iter().find(|w| w.starts_with("Sight is uneven")).cloned();
+        let text = hint(&lit_run("ogre", Lighting::Unspecified)).expect("the ogre has no Darkvision and the standard party does");
+        assert!(text.contains("darkness would change this result") && text.contains("--lighting darkness"), "{text}");
+    }
+
+    #[test]
+    fn even_sight_adds_no_darkness_hint() {
+        let mut s = spec(fixture("ogre"), vec![1], 1);
+        s.assumptions = baseline::ignoring_unresolved(&s.monster).1;
+        let all_blind = |b: &mut StatBlock| b.senses.darkvision = None;
+        all_blind(&mut s.monster);
+        s.party.values_mut().flatten().for_each(|b| {
+            b.senses.darkvision = None;
+            b.senses.blindsight = None;
+            b.senses.truesight = None;
+        });
+        let report = run(&s).unwrap();
+        assert!(report.summary.warnings.iter().all(|w| !w.starts_with("Sight is uneven")), "{:?}", report.summary.warnings);
     }
 
     fn finding<'a>(report: &'a BatchReport, id: &str) -> &'a Finding {

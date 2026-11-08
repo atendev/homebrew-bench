@@ -84,6 +84,7 @@ enum LightingArg {
     DimLight,
     BrightLight,
     Sunlight,
+    Darkness,
 }
 
 impl From<LightingArg> for Lighting {
@@ -93,6 +94,7 @@ impl From<LightingArg> for Lighting {
             LightingArg::DimLight => Lighting::DimLight,
             LightingArg::BrightLight => Lighting::BrightLight,
             LightingArg::Sunlight => Lighting::Sunlight,
+            LightingArg::Darkness => Lighting::Darkness,
         }
     }
 }

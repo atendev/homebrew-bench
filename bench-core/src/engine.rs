@@ -2434,8 +2434,9 @@ fn within_5_feet(a: &Combatant, b: &Combatant) -> bool {
 }
 
 /// The one sight rule (ADR 0017): `observer` sees `observed` unless `observed` is Invisible and
-/// `observer` has neither Blindsight nor Truesight, or `observer` is Blinded without Blindsight.
-/// Sense ranges are ignored and Tremorsense doesn't see.
+/// `observer` has neither Blindsight nor Truesight, `observer` is Blinded without Blindsight, or the
+/// lighting is `darkness` and `observer` has no Darkvision, Blindsight or Truesight. Sense ranges are
+/// ignored and Tremorsense doesn't see. Each refusal names one reason, in that order.
 fn sees(state: &EncounterState, observer: &Combatant, observed: &Combatant) -> bool {
     unseen_reason(state, observer, observed).is_none()
 }
@@ -2445,11 +2446,15 @@ fn unseen_reason(state: &EncounterState, observer: &Combatant, observed: &Combat
     let senses = stat_block(state, observer).ok().map(|b| &b.senses);
     let blindsight = senses.is_some_and(|s| s.blindsight.is_some());
     let truesight = senses.is_some_and(|s| s.truesight.is_some());
+    let darkvision = senses.is_some_and(|s| s.darkvision.is_some());
     if has(observed, Condition::Invisible) && !blindsight && !truesight {
         return Some(format!("{} cannot see {}, who is invisible", observer.id, observed.id));
     }
     if has(observer, Condition::Blinded) && !blindsight {
         return Some(format!("{} is blinded and cannot see {}", observer.id, observed.id));
+    }
+    if state.settings.lighting == Lighting::Darkness && !darkvision && !blindsight && !truesight {
+        return Some(format!("{} cannot see {} in darkness", observer.id, observed.id));
     }
     None
 }
@@ -4926,6 +4931,58 @@ mod tests {
         assert!(sunlit.ends_with("(Disadvantage: Sunlight Sensitivity, sunlight)"), "{sunlit}");
         let plain = dagger(&mut lit(fixture_block("kobold-warrior"), crate::effect::Lighting::Unspecified));
         assert!(!plain.contains("Sunlight"), "{plain}");
+    }
+
+    fn dark(darkvision: bool) -> EncounterState {
+        let mut state = lit(fixture_block("kobold-warrior"), crate::effect::Lighting::Darkness);
+        state.stat_blocks[0].stat_block.senses.darkvision = darkvision.then_some(60);
+        state
+    }
+
+    #[test]
+    fn darkness_blinds_a_creature_without_darkvision_to_everyone() {
+        let state = dark(true);
+        let (monster, fighter) = (&state.combatants[0], &state.combatants[1]);
+        assert!(sees(&state, monster, fighter));
+        assert_eq!(unseen_reason(&state, fighter, monster).unwrap(), "fighter cannot see kobold-warrior in darkness");
+        assert_eq!(disposition(&state, monster, fighter, &sword()), RollDisposition::Advantage);
+        assert_eq!(disposition(&state, fighter, monster, &sword()), RollDisposition::Disadvantage);
+        let blind = dark(false);
+        assert_eq!(disposition(&blind, &blind.combatants[0], &blind.combatants[1], &sword()), RollDisposition::Normal);
+        assert_eq!(disposition(&blind, &blind.combatants[1], &blind.combatants[0], &sword()), RollDisposition::Normal);
+    }
+
+    #[test]
+    fn darkness_names_one_reason_after_invisible_and_blinded() {
+        let mut state = dark(false);
+        let cond = |condition| ConditionInstance { condition, duration: Duration::Rounds(1), source: None, ends_on_damage: false };
+        state.combatants[0].conditions.push(cond(Condition::Invisible));
+        assert!(unseen_reason(&state, &state.combatants[1], &state.combatants[0]).unwrap().ends_with("who is invisible"));
+        state.combatants[1].conditions.push(cond(Condition::Blinded));
+        state.combatants[0].conditions.clear();
+        assert!(unseen_reason(&state, &state.combatants[1], &state.combatants[0]).unwrap().contains("is blinded"));
+        state.combatants[1].conditions.clear();
+        state.stat_blocks[1].stat_block.senses.truesight = Some(30);
+        assert!(sees(&state, &state.combatants[1], &state.combatants[0]));
+    }
+
+    #[test]
+    fn darkness_stops_an_opportunity_attack_from_a_reactor_without_sight() {
+        let mut state = provoking_encounter(0);
+        state.settings.lighting = crate::effect::Lighting::Darkness;
+        let err = opportunity_eligibility(&state, 1, 0).unwrap_err();
+        assert!(matches!(&err, Ineligible::Unseen(why) if why.contains("in darkness")));
+        state.stat_blocks.iter_mut().for_each(|b| b.stat_block.senses.darkvision = Some(60));
+        assert!(opportunity_eligibility(&state, 1, 0).is_ok());
+    }
+
+    #[test]
+    fn darkness_frees_a_ranged_attacker_whose_adjacent_enemy_cannot_see() {
+        let mut state = dark(false);
+        state.combatants[0].engagement.push("fighter".into());
+        assert_eq!(disposition(&state, &state.combatants[0], &state.combatants[1], &bow()), RollDisposition::Normal);
+        state.stat_blocks[1].stat_block.senses.darkvision = Some(60);
+        assert_eq!(disposition(&state, &state.combatants[0], &state.combatants[1], &bow()), RollDisposition::Disadvantage);
     }
 
     fn dex_save() -> crate::effect::SavingThrow {
