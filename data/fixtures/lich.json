@@ -202,9 +202,6 @@
   "proficiency_bonus": 7,
   "reactions": [
     {
-      "agent_clauses": [
-        "The lich may instead cast Counterspell when a creature casts a spell; that use is agent judgment."
-      ],
       "desc": "The lich casts Counterspell or Shield in response to the spell’s trigger, using the same spellcasting ability as Spellcasting.",
       "effects": [
         {
@@ -215,12 +212,32 @@
           }
         }
       ],
-      "id": "protective-magic",
-      "kind": "partly_modeled",
-      "name": "Protective Magic",
+      "id": "protective-magic-shield",
+      "kind": "modeled",
+      "name": "Protective Magic (Shield)",
       "trigger": {
         "hit_by_attack_roll": {
           "attack": "any"
+        }
+      }
+    },
+    {
+      "desc": "The lich casts Counterspell or Shield in response to the spell’s trigger, using the same spellcasting ability as Spellcasting.",
+      "effects": [
+        {
+          "cast": {
+            "slot_level": null,
+            "spell_id": "counterspell",
+            "upcast": false
+          }
+        }
+      ],
+      "id": "protective-magic-counterspell",
+      "kind": "modeled",
+      "name": "Protective Magic (Counterspell)",
+      "trigger": {
+        "spell_cast": {
+          "caster": "enemy"
         }
       }
     }
@@ -248,6 +265,11 @@
     "walk": {
       "feet": 30
     }
+  },
+  "spellcasting": {
+    "ability": "int",
+    "attack_bonus": 12,
+    "save_dc": 20
   },
   "traits": [
     {

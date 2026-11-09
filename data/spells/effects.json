@@ -414,9 +414,6 @@
     "source": "SRD 5.2.1"
   },
   "counterspell": {
-    "agent_clauses": [
-      "Reaction to interrupt a spell being cast within 60 feet; the engine reads the range as any combatant and does not check sight."
-    ],
     "concentration": false,
     "effects": [
       {

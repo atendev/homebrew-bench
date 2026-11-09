@@ -1456,7 +1456,7 @@ mod tests {
         let again: Vec<String> = (0..4).map(|i| replay_fight(&s, fight_index(1, i, 4)).unwrap().log.unwrap()).collect();
         assert_eq!(logs, again);
         let all = logs.join("\n");
-        assert!(all.contains("Policy: homebrew-bench.tactics v4 ("));
+        assert!(all.contains("Policy: homebrew-bench.tactics v5 ("));
         assert!(all.contains("    knight: Parry (") || all.contains("    knight: holds its reaction ("), "no Parry window was decided");
         let html = run(&s).unwrap().html;
         assert!(html.contains("takes Shield or Parry only when it turns a hit into a miss"));
@@ -1751,7 +1751,7 @@ mod tests {
         let mut ogre = fixture("ogre");
         ogre.actions[0].id = "big-club".into();
         ogre.actions[0].name = "Big Club".into();
-        ogre.actions[0].usage = Some(crate::effect::Usage::PerDay { uses: 1 });
+        ogre.actions[0].usage = Some(crate::effect::Usage::PerDay { uses: 1, group: None });
         set_damage_dice(&mut ogre.actions[0], "70");
         set_damage_dice(&mut ogre.actions[1], "71");
         if let Some(crate::effect::Effect::Attack(attack)) = ogre.actions[0].effects.first_mut() {
