@@ -18,7 +18,7 @@ use crate::stat_block::{AbilityEntry, Condition, StatBlock};
 /// Stable policy identifier written into logs, reports and fingerprints.
 pub const POLICY_ID: &str = "homebrew-bench.tactics";
 /// Policy version. Bump it whenever scoring changes, so baselines go stale.
-pub const POLICY_VERSION: u32 = 4;
+pub const POLICY_VERSION: u32 = 5;
 
 /// Value of one AC point against one round of incoming attack-roll damage. A
 /// d20 lands in an n-point band 5n% of the time, near 0.1n of the expected
@@ -271,14 +271,14 @@ pub fn fallback(state: &EncounterState, actor_id: &str, constants: &PolicyConsta
 /// Decide one reaction window for batch, on the state as the engine presents
 /// it. Returns the answer and the reason line the engine logs. A hit reaction
 /// is taken only when it turns the hit into a miss; an Opportunity Attack only
-/// when its value beats the reactor's reaction reserve.
+/// when its value beats the reactor's reaction reserve; a counter only when the
+/// cast's value beats that reserve plus the counter's resource cost.
 pub fn decide_reaction(state: &EncounterState, window: &ReactionWindow, constants: &PolicyConstants) -> (ReactionAnswer, String) {
     let ctx = Ctx::new(state, constants, None);
     match &window.trigger {
         WindowTrigger::Hit { total, ac, critical, .. } => ctx.decide_hit(window, *total, *ac, *critical),
         WindowTrigger::Opportunity { mover_id } => ctx.decide_opportunity(window, mover_id),
-        // Batch lets casts through until the policy prices counters; see ReactionDecider::decide.
-        WindowTrigger::SpellCast { .. } => (ReactionAnswer::Pass, "casts go uncountered".into()),
+        WindowTrigger::SpellCast { caster_id, spell_id, level, target_ids } => ctx.decide_counter(window, caster_id, spell_id, *level, target_ids),
     }
 }
 
@@ -1603,6 +1603,62 @@ impl<'a> Ctx<'a> {
         }
         hold(format!("{}, expected {:.1} <= reserve {:.1}{drops}", pick.attack_id, pick.value, decision.reserve))
     }
+
+    /// ADR 0019: counter when the cast's value beats the reaction reserve plus the counter's
+    /// resource cost, and never a cast worth nothing. The cheapest offered reaction is used.
+    fn decide_counter(&self, window: &ReactionWindow, caster_id: &str, spell_id: &str, level: u8, target_ids: &[String]) -> (ReactionAnswer, String) {
+        let reactor_id = &window.reactor_id;
+        let hold = |why: String| (ReactionAnswer::Pass, format!("{reactor_id}: holds its reaction against {caster_id}'s {spell_id} ({why})"));
+        let (Some(reactor), Some(caster)) = (self.combatant(reactor_id), self.combatant(caster_id)) else {
+            return hold("no such combatant".into());
+        };
+        let Some(block) = self.block(reactor) else { return hold("no stat block".into()) };
+        let cheapest = window
+            .options
+            .iter()
+            .enumerate()
+            .filter_map(|(i, o)| block.reactions.iter().find(|r| r.id == o.id).map(|r| (i, r)))
+            .min_by_key(|(i, r)| (u8::from(is_limited(block, r)), slot_level(block, r), *i));
+        let Some((_, counter)) = cheapest else { return hold("no reaction offered".into()) };
+        let value = self.cast_value(caster, spell_id, level, target_ids);
+        if value <= 0.0 {
+            return hold("no damage, healing or control to deny".into());
+        }
+        let reserve = self.reaction_reserve(reactor);
+        let cost = if is_limited(block, counter) { self.constants.weights.resource_cost } else { 0.0 };
+        if value > reserve + cost {
+            let line = format!("{reactor_id}: {} on {caster_id}'s {spell_id} (expected {value:.1} > reserve {reserve:.1} + cost {cost:.1})", counter.name);
+            return (ReactionAnswer::Take(counter.id.clone()), line);
+        }
+        hold(format!("expected {value:.1} <= reserve {reserve:.1} + cost {cost:.1}"))
+    }
+
+    /// The damage, healing and control a held cast would deliver to its targets, scored as the
+    /// caster's own plans are: damage stops at a target's hit points, healing at its missing
+    /// hit points, and a heal on a downed target is worth what reviving it is.
+    fn cast_value(&self, caster: &Combatant, spell_id: &str, level: u8, target_ids: &[String]) -> f64 {
+        let Some(block) = self.block(caster) else { return 0.0 };
+        let cast = crate::effect::Cast { spell_id: spell_id.to_string(), slot_level: Some(level), upcast: false };
+        let Some((effects, _)) = engine::bound_cast_effects(block, &cast) else { return 0.0 };
+        let w = &self.constants.weights;
+        target_ids
+            .iter()
+            .filter_map(|id| self.combatant(id))
+            .map(|target| {
+                let mut value = Value::default();
+                for effect in &effects {
+                    value.add(self.effect_value(caster, block, effect, target, 0, Footing::default()).0);
+                }
+                let downed = matches!(target.end_state, EndState::Unconscious | EndState::Stable);
+                let healing = match value.heal > 0.0 {
+                    true if downed => 2.0 * self.revived_threat(target),
+                    true => value.heal.min(f64::from(target.max_hp - target.hp)),
+                    false => 0.0,
+                };
+                w.expected_damage * value.damage.min(hit_points(target)) + w.control * value.control + w.survival * healing
+            })
+            .sum()
+    }
 }
 
 /// Rounds of benefit over a horizon of `h` rounds when each round holds with chance `keep`:
@@ -1687,7 +1743,7 @@ fn usage_word(block: &StatBlock, ability: &AbilityEntry) -> Option<String> {
     let usage = match &ability.usage {
         None | Some(Usage::AtWill) => None,
         Some(Usage::Recharge { dice, .. }) => Some(format!("recharge {dice}")),
-        Some(Usage::PerDay { uses }) => Some(format!("{uses}/day")),
+        Some(Usage::PerDay { uses, .. }) => Some(format!("{uses}/day")),
         Some(Usage::PerRest { uses, .. }) => Some(format!("{uses}/rest")),
         Some(Usage::CooldownUntilNextTurn) => Some("cooldown".into()),
     };
@@ -2115,7 +2171,7 @@ mod tests {
         let mut state = duel(["1d8", "1d8"], [20, 20]);
         let ogre = state.stat_blocks.iter_mut().find(|s| s.id == "ogre").unwrap();
         let mut weak = melee("weak-burst", 5, "1d4");
-        weak.usage = Some(Usage::PerDay { uses: 1 });
+        weak.usage = Some(Usage::PerDay { uses: 1, group: None });
         let mut big = melee("big-burst", 5, "6d10");
         big.usage = Some(Usage::Recharge { dice: "5-6".into(), group: None });
         ogre.stat_block.actions.push(weak);
@@ -2621,7 +2677,7 @@ mod tests {
         let brute = snapshot(&mut state, "brute");
         brute.reactions.push(ac_reaction("ward", 5, "any"));
         brute.reactions.push(ac_reaction("parry", 2, "any"));
-        brute.reactions[0].usage = Some(Usage::PerDay { uses: 1 });
+        brute.reactions[0].usage = Some(Usage::PerDay { uses: 1, group: None });
         let hit = |total: i32, critical: bool| ReactionWindow {
             reactor_id: "brute".into(),
             trigger: WindowTrigger::Hit { attacker_id: "archer".into(), total, ac: 12, critical },
@@ -2634,9 +2690,103 @@ mod tests {
         assert_eq!(decide(&hit(13, true)).0, ReactionAnswer::Pass);
     }
 
+    fn counter_window(spell: &str, level: u8, target: &str) -> ReactionWindow {
+        ReactionWindow {
+            reactor_id: "brute".into(),
+            trigger: WindowTrigger::SpellCast { caster_id: "archer".into(), spell_id: spell.into(), level, target_ids: vec![target.into()] },
+            options: vec![crate::reaction::ReactionOption { id: "counter".into(), name: "Counter".into() }],
+        }
+    }
+
+    fn countering() -> EncounterState {
+        let mut state = skirmish();
+        snapshot(&mut state, "brute").reactions.push(entry(serde_json::json!({"id": "counter", "name": "Counter", "kind": "modeled",
+            "trigger": {"spell_cast": {"caster": "enemy"}},
+            "effects": [{"cast": {"spell_id": "counterspell", "slot_level": null, "upcast": false}}]})));
+        state
+    }
+
+    fn combatant<'a>(state: &'a mut EncounterState, id: &str) -> &'a mut Combatant {
+        state.combatants.iter_mut().find(|c| c.id == id).unwrap()
+    }
+
     #[test]
-    fn the_fingerprint_carries_policy_version_4() {
-        assert_eq!(POLICY_VERSION, 4);
+    fn a_counter_stops_at_what_the_cast_can_deal_and_logs_why() {
+        let mut state = countering();
+        combatant(&mut state, "brute").hp = 5;
+        assert_eq!(
+            decide_reaction(&state, &counter_window("fireball", 3, "brute"), &PolicyConstants::default()),
+            (ReactionAnswer::Take("counter".into()), "brute: Counter on archer's fireball (expected 5.0 > reserve 0.0 + cost 0.0)".into())
+        );
+    }
+
+    #[test]
+    fn a_counter_must_beat_the_reserve_and_its_usage_cost() {
+        let mut state = countering();
+        snapshot(&mut state, "brute").reactions[0].usage = Some(Usage::PerDay { uses: 3, group: None });
+        let window = counter_window("fireball", 3, "brute");
+        let mut constants = PolicyConstants::default();
+        constants.weights.resource_cost = 100.0;
+        let (answer, reason) = decide_reaction(&state, &window, &constants);
+        assert_eq!(answer, ReactionAnswer::Pass);
+        assert!(reason.starts_with("brute: holds its reaction against archer's fireball (expected "), "{reason}");
+        assert!(reason.ends_with("<= reserve 0.0 + cost 100.0)"), "{reason}");
+        constants.weights.resource_cost = 1.0;
+        assert_eq!(decide_reaction(&state, &window, &constants).0, ReactionAnswer::Take("counter".into()));
+    }
+
+    #[test]
+    fn a_held_shield_is_the_reserve_a_counter_must_beat() {
+        let mut state = countering();
+        snapshot(&mut state, "brute").reactions.push(ac_reaction("ward", 5, "any"));
+        let held = reserve(&state, "brute");
+        assert!(held > 1.0, "{held}");
+        let window = counter_window("fireball", 3, "brute");
+        let constants = PolicyConstants::default();
+        combatant(&mut state, "brute").hp = 1;
+        assert_eq!(
+            decide_reaction(&state, &window, &constants),
+            (ReactionAnswer::Pass, format!("brute: holds its reaction against archer's fireball (expected 1.0 <= reserve {held:.1} + cost 0.0)"))
+        );
+        combatant(&mut state, "brute").hp = held.ceil() as i32 + 1;
+        let (answer, reason) = decide_reaction(&state, &window, &constants);
+        assert_eq!(answer, ReactionAnswer::Take("counter".into()), "{reason}");
+        assert!(reason.ends_with(&format!("> reserve {held:.1} + cost 0.0)")), "{reason}");
+    }
+
+    #[test]
+    fn a_cast_worth_nothing_is_never_countered() {
+        let state = countering();
+        assert_eq!(
+            decide_reaction(&state, &counter_window("haste", 3, "archer"), &PolicyConstants::default()),
+            (ReactionAnswer::Pass, "brute: holds its reaction against archer's haste (no damage, healing or control to deny)".into())
+        );
+    }
+
+    #[test]
+    fn a_heal_counts_what_it_restores_and_a_revival_counts_the_ally_it_returns() {
+        let mut state = countering();
+        combatant(&mut state, "archer").hp = 18;
+        let reason = decide_reaction(&state, &counter_window("cure-wounds", 1, "archer"), &PolicyConstants::default()).1;
+        assert_eq!(reason, "brute: Counter on archer's cure-wounds (expected 2.0 > reserve 0.0 + cost 0.0)");
+        combatant(&mut state, "archer").hp = 20;
+        assert_eq!(decide_reaction(&state, &counter_window("cure-wounds", 1, "archer"), &PolicyConstants::default()).0, ReactionAnswer::Pass);
+        let archer = combatant(&mut state, "archer");
+        archer.hp = 0;
+        archer.end_state = EndState::Unconscious;
+        let constants = PolicyConstants::default();
+        let expected = {
+            let ctx = ctx(&state, &constants);
+            2.0 * ctx.revived_threat(ctx.combatant("archer").unwrap())
+        };
+        assert!(expected > 0.0);
+        let reason = decide_reaction(&state, &counter_window("cure-wounds", 1, "archer"), &constants).1;
+        assert!(reason.contains(&format!("expected {expected:.1} >")), "{reason}");
+    }
+
+    #[test]
+    fn the_fingerprint_carries_policy_version_5() {
+        assert_eq!(POLICY_VERSION, 5);
         let constants = PolicyConstants::default();
         let v3 = crate::encounter::tamper_hash(&serde_json::json!({ "id": POLICY_ID, "version": 3, "constants": constants }));
         assert_ne!(fingerprint(&constants), v3);

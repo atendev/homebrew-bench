@@ -233,17 +233,25 @@ fn reflexive_antennae_uses_antennae_when_hit() {
 }
 
 #[test]
-fn protective_magic_casts_shield_when_hit_and_leaves_counterspell_to_the_agent() {
-    for (fixture, usage) in [
-        ("mage", serde_json::json!({"per_day": {"uses": 3}})),
-        ("archmage", serde_json::json!({"per_day": {"uses": 3}})),
-        ("lich", serde_json::Value::Null),
+fn protective_magic_splits_into_shield_and_counterspell_on_one_pool() {
+    for (fixture, usage, dc) in [
+        ("mage", serde_json::json!({"per_day": {"group": "protective-magic", "uses": 3}}), 14),
+        ("archmage", serde_json::json!({"per_day": {"group": "protective-magic", "uses": 3}}), 17),
+        ("lich", serde_json::Value::Null, 20),
     ] {
-        let magic = reaction(fixture, "protective-magic");
-        assert_eq!(magic["trigger"], serde_json::json!({"hit_by_attack_roll": {"attack": "any"}}), "{fixture}");
-        assert_eq!(magic["effects"], serde_json::json!([{"cast": {"spell_id": "shield", "slot_level": null, "upcast": false}}]), "{fixture}");
-        assert_eq!(magic["usage"], usage, "{fixture}");
-        assert_eq!(magic["kind"], "partly_modeled", "{fixture}");
-        assert!(magic["agent_clauses"][0].as_str().unwrap().contains("Counterspell"), "{fixture}");
+        let shield = reaction(fixture, "protective-magic-shield");
+        assert_eq!(shield["trigger"], serde_json::json!({"hit_by_attack_roll": {"attack": "any"}}), "{fixture}");
+        assert_eq!(shield["effects"], serde_json::json!([{"cast": {"spell_id": "shield", "slot_level": null, "upcast": false}}]), "{fixture}");
+        let counter = reaction(fixture, "protective-magic-counterspell");
+        assert_eq!(counter["trigger"], serde_json::json!({"spell_cast": {"caster": "enemy"}}), "{fixture}");
+        assert_eq!(counter["effects"], serde_json::json!([{"cast": {"spell_id": "counterspell", "slot_level": null, "upcast": false}}]), "{fixture}");
+        for entry in [&shield, &counter] {
+            assert_eq!(entry["usage"], usage, "{fixture}");
+            assert_eq!(entry["kind"], "modeled", "{fixture}");
+            assert!(entry.get("agent_clauses").is_none(), "{fixture}");
+        }
+        let text = std::fs::read_to_string(format!("{}/../data/fixtures/{fixture}.json", env!("CARGO_MANIFEST_DIR"))).unwrap();
+        let block: serde_json::Value = serde_json::from_str(&text).unwrap();
+        assert_eq!(block["spellcasting"], serde_json::json!({"ability": "int", "attack_bonus": dc - 8, "save_dc": dc}), "{fixture}");
     }
 }

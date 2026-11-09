@@ -840,7 +840,7 @@ fn reaction_prompt(state: &mut EncounterState, held: Held, window: ReactionWindo
             if *critical { ", critical hit" } else { "" },
             options.join(" or ")
         ),
-        WindowTrigger::SpellCast { caster_id, spell_id, level } => format!(
+        WindowTrigger::SpellCast { caster_id, spell_id, level, .. } => format!(
             "{}: {caster_id} is casting {spell_id} (level {level}), take {}?",
             window.reactor_id,
             options.join(" or ")

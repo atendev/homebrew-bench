@@ -467,12 +467,17 @@ pub fn extra_action_allows(uses: &[ExtraActionUse], action: &crate::stat_block::
         || (uses.contains(&ExtraActionUse::OneAttack) && matches!(action.effects.as_slice(), [Effect::Attack(a)] if a.target_count == 1))
 }
 
+/// The resource a usage draws on: its group's pool when it names one, else the ability's own.
+fn usage_key(actor_id: &str, ability_id: &str, usage: &Usage) -> String {
+    match usage {
+        Usage::Recharge { group: Some(group), .. } | Usage::PerDay { group: Some(group), .. } => format!("{actor_id}:{group}"),
+        _ => format!("{actor_id}:{ability_id}"),
+    }
+}
+
 fn spend_usage(state: &mut EncounterState, actor_index: usize, action_id: &str, usage: &Usage) -> Result<(), EngineError> {
     let actor_id = state.combatants[actor_index].id.clone();
-    let key = match usage {
-        Usage::Recharge { group, .. } => format!("{actor_id}:{}", group.as_deref().unwrap_or(action_id)),
-        _ => format!("{actor_id}:{action_id}"),
-    };
+    let key = usage_key(&actor_id, action_id, usage);
     let resources = &mut state.combatants[actor_index].resources;
     match usage {
         Usage::AtWill => {}
@@ -483,7 +488,7 @@ fn spend_usage(state: &mut EncounterState, actor_index: usize, action_id: &str, 
             }
             resources.insert(key, remaining - 1);
         }
-        Usage::PerDay { uses } | Usage::PerRest { uses, .. } => {
+        Usage::PerDay { uses, .. } | Usage::PerRest { uses, .. } => {
             let used = resources.get(&key).copied().unwrap_or(0);
             if used >= *uses as i32 {
                 return Err(EngineError::Illegal(format!("{action_id} has no uses remaining")));
@@ -937,7 +942,7 @@ fn cast_spell(
     let level = cast_level(&spell, cast)?;
     let effects = scaled_effects(&spell, level)?;
     let i = index_of(state, actor_id)?;
-    if spell.level > 0 && state.settings.spell_cast_windows && !state.reactions.reacting && spell_cast_countered(state, stream, i, spell_id, level, events)? {
+    if spell.level > 0 && state.settings.spell_cast_windows && !state.reactions.reacting && spell_cast_countered(state, stream, i, spell_id, level, target_ids, events)? {
         return Ok(());
     }
     let ctx = {
@@ -994,10 +999,11 @@ fn spell_cast_countered(
     caster: usize,
     spell_id: &str,
     level: u8,
+    target_ids: &[String],
     events: &mut Vec<EngineEvent>,
 ) -> Result<bool, EngineError> {
     let caster_id = state.combatants[caster].id.clone();
-    for window in spell_cast_windows(state, caster, spell_id, level) {
+    for window in spell_cast_windows(state, caster, spell_id, level, target_ids) {
         let reactor_id = window.reactor_id.clone();
         let id = match ask(state, window.clone(), events) {
             Some(ReactionAnswer::Take(id)) => id,
@@ -1040,7 +1046,7 @@ fn spell_cast_countered(
 
 /// The windows a leveled cast opens: one per enemy of the caster that can react and has a
 /// ready reaction with a spell-cast trigger, in initiative order. Sight is not read.
-fn spell_cast_windows(state: &EncounterState, caster: usize, spell_id: &str, level: u8) -> Vec<ReactionWindow> {
+fn spell_cast_windows(state: &EncounterState, caster: usize, spell_id: &str, level: u8, target_ids: &[String]) -> Vec<ReactionWindow> {
     let caster = &state.combatants[caster];
     let rank = |id: &str| state.initiative_order.iter().position(|x| x == id).unwrap_or(usize::MAX);
     let mut windows: Vec<ReactionWindow> = state
@@ -1058,7 +1064,7 @@ fn spell_cast_windows(state: &EncounterState, caster: usize, spell_id: &str, lev
                 .collect();
             (!options.is_empty()).then(|| ReactionWindow {
                 reactor_id: r.id.clone(),
-                trigger: WindowTrigger::SpellCast { caster_id: caster.id.clone(), spell_id: spell_id.to_string(), level },
+                trigger: WindowTrigger::SpellCast { caster_id: caster.id.clone(), spell_id: spell_id.to_string(), level, target_ids: target_ids.to_vec() },
                 options,
             })
         })
@@ -1315,16 +1321,11 @@ pub fn ability_ready(state: &EncounterState, actor_id: &str, ability: &crate::st
     let Ok(i) = index_of(state, actor_id) else { return false };
     let actor = &state.combatants[i];
     let Ok(block) = stat_block(state, actor) else { return false };
-    let key = |id: &str| format!("{actor_id}:{id}");
+    let left = |usage: &Usage, unspent: i32| actor.resources.get(&usage_key(actor_id, &ability.id, usage)).copied().unwrap_or(unspent);
     let ready = match &ability.usage {
         None | Some(Usage::AtWill) => true,
-        Some(Usage::Recharge { group, .. }) => {
-            actor.resources.get(&key(group.as_deref().unwrap_or(&ability.id))).copied().unwrap_or(1) > 0
-        }
-        Some(Usage::PerDay { uses }) | Some(Usage::PerRest { uses, .. }) => {
-            actor.resources.get(&key(&ability.id)).copied().unwrap_or(0) < *uses as i32
-        }
-        Some(Usage::CooldownUntilNextTurn) => actor.resources.get(&key(&ability.id)).copied().unwrap_or(1) > 0,
+        Some(usage @ (Usage::Recharge { .. } | Usage::CooldownUntilNextTurn)) => left(usage, 1) > 0,
+        Some(usage @ (Usage::PerDay { uses, .. } | Usage::PerRest { uses, .. })) => left(usage, 0) < *uses as i32,
     };
     ready
         && ability.effects.iter().all(|e| match e {
@@ -4826,7 +4827,7 @@ mod tests {
             },
             weapon("bite", 4, 2, None, None),
             weapon("spit", 4, 2, Some((30, 60)), None),
-            weapon("gore", 4, 2, None, Some(Usage::PerDay { uses: 1 })),
+            weapon("gore", 4, 2, None, Some(Usage::PerDay { uses: 1, group: None })),
         ];
         assert_eq!(opportunity_attack_action(&block, None).unwrap().id, "bite");
         assert_eq!(opportunity_attack_action(&block, Some("gore")).unwrap().id, "gore");
@@ -4840,7 +4841,7 @@ mod tests {
     fn a_named_limited_attack_spends_its_use() {
         let mut state = provoking_encounter(0);
         let snapshot = state.stat_blocks.iter_mut().find(|s| s.id == "b").unwrap();
-        snapshot.stat_block.actions.push(weapon("gore", 100, 0, None, Some(Usage::PerDay { uses: 1 })));
+        snapshot.stat_block.actions.push(weapon("gore", 100, 0, None, Some(Usage::PerDay { uses: 1, group: None })));
         state.combatants[1].resources.insert("b:gore".into(), 1);
         let err = move_combatant(&mut state.clone(), "a", Some("b"), RangeBand::Near, 5, &[oa("b", Some("gore"))], &[]).unwrap_err();
         assert!(err.to_string().contains("no uses remaining"), "{err}");
@@ -4853,7 +4854,7 @@ mod tests {
     fn a_spent_named_attack_fails_before_any_attack_resolves() {
         let mut state = provoking_encounter(0);
         let snapshot = state.stat_blocks.iter_mut().find(|s| s.id == "c").unwrap();
-        snapshot.stat_block.actions.push(weapon("gore", 100, 0, None, Some(Usage::PerDay { uses: 1 })));
+        snapshot.stat_block.actions.push(weapon("gore", 100, 0, None, Some(Usage::PerDay { uses: 1, group: None })));
         state.combatants[2].resources.insert("c:gore".into(), 1);
         let before = serde_json::to_value(&state).unwrap();
         let err = move_combatant(&mut state, "a", None, RangeBand::Far, 35, &[oa("b", None), oa("c", Some("gore"))], &[]).unwrap_err();
@@ -4873,7 +4874,7 @@ mod tests {
         dragon.legendary_actions = vec![
             blast("tail", 1, None),
             blast("wing", 1, Some(Usage::Recharge { dice: "6".into(), group: None })),
-            blast("roar", 1, Some(Usage::PerDay { uses: 1 })),
+            blast("roar", 1, Some(Usage::PerDay { uses: 1, group: None })),
             blast("bite", 1, Some(Usage::CooldownUntilNextTurn)),
         ];
         test_encounter(
@@ -5593,9 +5594,9 @@ mod tests {
             }
             let mut state = by_policy(&state);
             let events = act(&mut state, "ogre", "greatclub", &["mage"]).unwrap();
-            assert_eq!(reasons(&events), vec![format!("mage: Protective Magic ({total} vs AC {ac}+5 turns the hit into a miss)")]);
+            assert_eq!(reasons(&events), vec![format!("mage: Protective Magic (Shield) ({total} vs AC {ac}+5 turns the hit into a miss)")]);
             assert!(events.iter().any(|e| e.kind == "attack_rechecked" && e.message.contains("(miss) after Protective Magic")), "{events:?}");
-            assert!(events.iter().any(|e| e.kind == "agent_clause" && e.message.contains("Counterspell")), "{events:?}");
+            assert!(!events.iter().any(|e| e.kind == "agent_clause"), "{events:?}");
             assert_eq!(state.combatants[1].resources.get("mage:protective-magic"), Some(&1));
             assert!(state.combatants[1].action_economy.reaction_used);
             return;
@@ -6898,7 +6899,7 @@ mod tests {
         let window = state.reactions.waiting.clone().expect("window");
         assert_eq!(window.reactor_id, "warlock");
         assert_eq!(window.options, vec![ReactionOption { id: "counterspell".into(), name: "Counterspell".into() }]);
-        assert_eq!(window.trigger, WindowTrigger::SpellCast { caster_id: "mage".into(), spell_id: "fireball".into(), level: 3 });
+        assert_eq!(window.trigger, WindowTrigger::SpellCast { caster_id: "mage".into(), spell_id: "fireball".into(), level: 3, target_ids: vec!["other".into()] });
         assert!(!state.combatants[0].resources.contains_key("mage:slot:3"));
     }
 
@@ -6995,6 +6996,43 @@ mod tests {
         let mut no_slot = answering(&no_slot, vec![]);
         act(&mut no_slot, "mage", "fireball", &["other"]).unwrap();
         assert!(no_slot.reactions.waiting.is_none());
+    }
+
+    #[test]
+    fn the_batch_policy_counters_and_logs_its_reason() {
+        let mut state = counter_encounter(40, true);
+        state.reactions.decider = crate::reaction::ReactionDecider::Policy(crate::tactics::PolicyConstants::default());
+        let events = act(&mut state, "mage", "fireball", &["other"]).unwrap();
+        assert!(events.iter().any(|e| e.kind == "reaction_reason" && e.message.starts_with("warlock: Counterspell on mage's fireball (expected ")), "{events:?}");
+        assert!(kinds(&events).contains(&"spell_countered"));
+        assert_eq!(state.combatants[2].hp, 60);
+    }
+
+    #[test]
+    fn per_day_entries_sharing_a_group_draw_on_one_pool() {
+        let shared = || Usage::PerDay { uses: 2, group: Some("magic".into()) };
+        let mut block = test_stat_block("mage", "Mage", 30, 12);
+        block.reactions.push(ability("ward", vec![], Some(shared())));
+        block.reactions.push(ability("counter", vec![], Some(shared())));
+        block.reactions.push(ability("alone", vec![], Some(Usage::PerDay { uses: 2, group: None })));
+        let mut state = test_encounter(vec![block.clone()], vec![test_combatant("mage", "mage", 30, "enemy")]);
+        spend_usage(&mut state, 0, "ward", block.reactions[0].usage.as_ref().unwrap()).unwrap();
+        assert!(ability_ready(&state, "mage", &block.reactions[1]));
+        spend_usage(&mut state, 0, "counter", block.reactions[1].usage.as_ref().unwrap()).unwrap();
+        assert_eq!(state.combatants[0].resources["mage:magic"], 2);
+        assert!(!ability_ready(&state, "mage", &block.reactions[0]));
+        assert!(!ability_ready(&state, "mage", &block.reactions[1]));
+        assert!(spend_usage(&mut state, 0, "ward", block.reactions[0].usage.as_ref().unwrap()).is_err());
+        assert!(ability_ready(&state, "mage", &block.reactions[2]), "an entry with no group keeps its own count");
+    }
+
+    #[test]
+    fn a_per_day_group_is_optional_and_left_out_when_absent() {
+        let plain: Usage = serde_json::from_str(r#"{"per_day": {"uses": 3}}"#).unwrap();
+        assert!(matches!(&plain, Usage::PerDay { uses: 3, group: None }));
+        assert_eq!(serde_json::to_string(&plain).unwrap(), r#"{"per_day":{"uses":3}}"#);
+        let grouped: Usage = serde_json::from_str(r#"{"per_day": {"uses": 3, "group": "magic"}}"#).unwrap();
+        assert!(matches!(&grouped, Usage::PerDay { group: Some(g), .. } if g == "magic"));
     }
 
     #[test]

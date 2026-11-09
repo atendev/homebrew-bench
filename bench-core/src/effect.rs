@@ -77,8 +77,13 @@ pub enum Usage {
         #[serde(skip_serializing_if = "Option::is_none")]
         group: Option<String>,
     },
-    /// Fixed uses per day.
-    PerDay { uses: u32 },
+    /// Fixed uses per day. Optional group id shared across abilities, which then
+    /// draw on one pool, such as the two halves of Protective Magic.
+    PerDay {
+        uses: u32,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        group: Option<String>,
+    },
     /// Uses per short or long rest.
     PerRest { rest: RestLength, uses: u32 },
     /// Recharges at the start of the creature's next turn.

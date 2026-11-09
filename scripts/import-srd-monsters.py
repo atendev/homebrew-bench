@@ -31,8 +31,9 @@ attack roll while holding a weapon ... adds N to its AC against that attack") be
 trigger with a triggering_attack AC modifier and a review note, the Reflexive Antennae sentence
 ("An attack roll hits the ... Response: The ... uses Antennae") becomes a hit trigger with a
 use_action, an agent clause for the unmodeled Antennae, the skipped default and a review note, and the Protective Magic sentence ("casts Counterspell or Shield in response
-to the spell's trigger") becomes a hit trigger with a cast of Shield, its Counterspell use an
-agent clause and a review note. See ADR 0008.
+to the spell's trigger") becomes a Shield entry on the hit trigger and a Counterspell entry on
+the spell-cast trigger sharing one usage group, a spellcasting block for the counter's DC and a
+review note. See ADR 0008 and ADR 0019.
 """
 
 import json
@@ -246,6 +247,19 @@ def hit_tail(sentence):
         start += lead.end()
     clause = sentence[start:].strip(" ,;.")
     return f"{clause[:1].upper()}{clause[1:]}." if clause else None
+
+
+def split_protective_magic(entry):
+    """Protective Magic becomes a Shield and a Counterspell entry on one usage pool (ADR 0019)."""
+    if not PROTECTIVE_MAGIC.match(entry["desc"]):
+        return [entry]
+    if "per_day" in entry.get("usage", {}):
+        entry["usage"]["per_day"]["group"] = entry["id"]
+    shield = {**entry, "id": f"{entry['id']}-shield", "name": f"{entry['name']} (Shield)"}
+    counterspell = {**entry, "id": f"{entry['id']}-counterspell", "name": f"{entry['name']} (Counterspell)",
+                    "trigger": {"spell_cast": {"caster": "enemy"}},
+                    "effects": [{"cast": {"spell_id": "counterspell", "slot_level": None, "upcast": False}}]}
+    return [shield, counterspell]
 
 
 class ActionIndex(set):
@@ -662,8 +676,7 @@ class Converter:
         if protective:
             entry["trigger"] = {"hit_by_attack_roll": {"attack": "any"}}
             effects = [{"cast": {"spell_id": "shield", "slot_level": None, "upcast": False}}]
-            clauses = [f"The {protective.group(1)} may instead cast Counterspell when a creature casts a spell; that use is agent judgment."]
-            self.rec("d", base, "Protective Magic pattern: hit trigger and a cast of Shield from the prose; Counterspell is an agent clause")
+            self.rec("d", base, "Protective Magic pattern: a Shield entry on the hit trigger and a Counterspell entry on the spell-cast trigger, one usage pool")
         if section == "traits":
             lit_effects, rest = lighting_modifiers(desc)
             if lit_effects:
@@ -691,9 +704,11 @@ class Converter:
         raw_sections = {sec: (self.mid_raw(key) or []) for sec, key in SECTIONS.items()}
         ids = {sec: assign_ids([a["name"] for a in raw_sections[sec]]) for sec in SECTIONS}
         action_ids = ActionIndex(ids["actions"], raw_sections["actions"])
-        return {sec: [self.ability(raw, sec, aid, action_ids)
-                      for raw, aid in zip(raw_sections[sec], ids[sec])]
-                for sec in SECTIONS}
+        converted = {sec: [self.ability(raw, sec, aid, action_ids)
+                           for raw, aid in zip(raw_sections[sec], ids[sec])]
+                     for sec in SECTIONS}
+        converted["reactions"] = [half for entry in converted["reactions"] for half in split_protective_magic(entry)]
+        return converted
 
     def mid_raw(self, key):
         return self.monster.get(key)
@@ -807,6 +822,13 @@ class Converter:
         for sec in SECTIONS:
             if sections[sec]:
                 block[sec] = sections[sec]
+        if any(PROTECTIVE_MAGIC.match(r["desc"]) for r in sections["reactions"]):
+            numbers = next((a["spellcasting"] for a in m["actions"] if "spellcasting" in a), None)
+            if numbers is None:
+                self.rec("b", "spellcasting", "Protective Magic without a Spellcasting action leaves the counter with no DC")
+            else:
+                block["spellcasting"] = {"ability": numbers["ability"]["index"], "save_dc": numbers["dc"], "attack_bonus": numbers["dc"] - 8}
+                self.rec("d", "spellcasting", "ability and save DC from the Spellcasting action, for the counter's DC; the attack bonus is the DC minus 8")
         if self.flags:
             block["intake_flags"] = self.flags
         if m.get("legendary_actions"):

@@ -127,6 +127,7 @@ Both modes ship in phase 1. Everything the engine can't model is labeled agent j
 - [Counterspell and the spell-cast trigger](closed/101-counterspell-and-the-spell-cast-trigger.md): a third reaction trigger, `spell_cast`, holds an enemy leveled cast in a window per reactor, and a `counter_spell` effect (Constitution save against the reactor's spell save DC) cancels it. A countered cast keeps its action and any usage but not its slot. Sight is unread and reaction casts open no window. Batch counters when the cast's value beats the reaction reserve plus cost. Protective Magic splits through a `group` key on `per_day` usage, the party caster gets no Counterspell, and a `spell_cast_windows` gate keeps old saves unchanged (ADR 0019). The builds are [110](closed/110-build-the-spell-cast-window-and-counter-spell-effect.md) and [111](tickets/111-build-batch-counterspell-and-the-protective-magic-split.md).
 - [Build the spell-cast window and counter_spell effect](closed/110-build-the-spell-cast-window-and-counter-spell-effect.md): the `spell_cast` trigger holds an enemy leveled cast in a window per reactor before its slot is counted, `counter_spell` makes the caster save with Constitution and cancels the cast on a failure, and `settings.spell_cast_windows` gates it for old saves. Batch passes every window until ticket 111. Engine 0.1.28, policy stays v4.
 - [Hit-triggered Reflexive Antennae and Protective Magic](closed/102-hit-triggered-reflexive-antennae-and-protective-magic.md): both import on the hit trigger with `attack: any`. Protective Magic casts Shield, keeps its usage and leaves Counterspell as an agent clause, so batch on the Mage, Archmage and Lich needs an `--assume` until ticket 111. Reflexive Antennae uses the unmodeled Antennae, carries an agent clause and keeps the skipped default, so it moves no batch number. The curve moves on the three casters. Engine 0.1.29, policy stays v4.
+- [Build batch Counterspell and the Protective Magic split](closed/111-build-batch-counterspell-and-the-protective-magic-split.md): batch counters a leveled enemy cast when its damage, healing and control beat the reaction reserve plus the resource cost, under policy v5. `per_day` gains a `group`, Protective Magic is a Shield entry and a Counterspell entry on one pool, and the three fixtures gain a `spellcasting` block for the DC. Only the Mage, Archmage and Lich move on the curve, and the Mage gets easier at levels 2 to 4.
 
 ## Not yet specified
 
@@ -143,6 +144,7 @@ Both modes ship in phase 1. Everything the engine can't model is labeled agent j
 - Conditions against modifiers: a condition scores once with no horizon, while a modifier with the same effect scores over the buff horizon, so Poisoned (0.25 × threat once) reads below a Disadvantage-on-attacks modifier (0.5 × threat per round). Moving conditions onto the horizon moves baseline cells and needs v5 ([Batch value of debuffs](closed/094-batch-value-of-debuffs.md)).
 - Downed bearers and the recast guard: a concentration modifier on a bearer that has dropped still blocks a new concentration cast, for Haste on an ally and for a modifier on an opponent. Changing it changes Haste play on curve inputs ([Batch value of debuffs](closed/094-batch-value-of-debuffs.md)).
 - Unscored modifiers: Speed, Reactions, See Invisible, damage-roll and ability-check modifiers score 0 on either side. Reactions, which would deny Opportunity Attacks and Shield, is the first to price ([Batch value of debuffs](closed/094-batch-value-of-debuffs.md)).
+- Counter pricing: a limited counter costs nothing at the default `resource_cost` of 0, so a 3/day creature can spend the pool it shares with Shield on low-value casts, and the Mage reads easier at levels 2 to 4. Buffs score zero and are never countered, and the value is not scaled by the chance the counter lands ([Build batch Counterspell and the Protective Magic split](closed/111-build-batch-counterspell-and-the-protective-magic-split.md)).
 
 ## Out of scope
 
@@ -156,7 +158,6 @@ Both modes ship in phase 1. Everything the engine can't model is labeled agent j
 
 ## Frontier
 
-- [111 Build batch Counterspell and the Protective Magic split](tickets/111-build-batch-counterspell-and-the-protective-magic-split.md): task, AFK.
 - [103 Build dice-valued roll bonuses](tickets/103-build-dice-valued-roll-bonuses.md): task, AFK. Unblocks [104 Build batch value of modifiers on an opponent](tickets/104-build-modifiers-on-an-opponent.md).
 - [106 Build plan-failure warnings by role](tickets/106-build-plan-failure-warnings-by-role.md): task, AFK.
 - [107 Build target teleport scoring](tickets/107-build-target-teleport-scoring.md): task, AFK.

@@ -2211,14 +2211,14 @@
       "class": "d",
       "path": "reactions.protective-magic",
       "status": "open",
-      "summary": "Protective Magic pattern: hit trigger and a cast of Shield from the prose; Counterspell is an agent clause"
+      "summary": "Protective Magic pattern: a Shield entry on the hit trigger and a Counterspell entry on the spell-cast trigger, one usage pool"
     },
     {
       "monster": "archmage",
       "class": "d",
       "path": "reactions.protective-magic",
       "status": "open",
-      "summary": "classified partly_modeled"
+      "summary": "classified modeled"
     },
     {
       "monster": "archmage",
@@ -2226,6 +2226,13 @@
       "path": "reactions.protective-magic",
       "status": "open",
       "summary": "spellcasting is not modeled; spells are absent from the stat block effects"
+    },
+    {
+      "monster": "archmage",
+      "class": "d",
+      "path": "spellcasting",
+      "status": "open",
+      "summary": "ability and save DC from the Spellcasting action, for the counter's DC; the attack bonus is the DC minus 8"
     },
     {
       "monster": "archmage",
@@ -6747,14 +6754,14 @@
       "class": "d",
       "path": "reactions.protective-magic",
       "status": "open",
-      "summary": "Protective Magic pattern: hit trigger and a cast of Shield from the prose; Counterspell is an agent clause"
+      "summary": "Protective Magic pattern: a Shield entry on the hit trigger and a Counterspell entry on the spell-cast trigger, one usage pool"
     },
     {
       "monster": "lich",
       "class": "d",
       "path": "reactions.protective-magic",
       "status": "open",
-      "summary": "classified partly_modeled"
+      "summary": "classified modeled"
     },
     {
       "monster": "lich",
@@ -6762,6 +6769,13 @@
       "path": "reactions.protective-magic",
       "status": "open",
       "summary": "spellcasting is not modeled; spells are absent from the stat block effects"
+    },
+    {
+      "monster": "lich",
+      "class": "d",
+      "path": "spellcasting",
+      "status": "open",
+      "summary": "ability and save DC from the Spellcasting action, for the counter's DC; the attack bonus is the DC minus 8"
     },
     {
       "monster": "lich",
@@ -6887,14 +6901,14 @@
       "class": "d",
       "path": "reactions.protective-magic",
       "status": "open",
-      "summary": "Protective Magic pattern: hit trigger and a cast of Shield from the prose; Counterspell is an agent clause"
+      "summary": "Protective Magic pattern: a Shield entry on the hit trigger and a Counterspell entry on the spell-cast trigger, one usage pool"
     },
     {
       "monster": "mage",
       "class": "d",
       "path": "reactions.protective-magic",
       "status": "open",
-      "summary": "classified partly_modeled"
+      "summary": "classified modeled"
     },
     {
       "monster": "mage",
@@ -6902,6 +6916,13 @@
       "path": "reactions.protective-magic",
       "status": "open",
       "summary": "spellcasting is not modeled; spells are absent from the stat block effects"
+    },
+    {
+      "monster": "mage",
+      "class": "d",
+      "path": "spellcasting",
+      "status": "open",
+      "summary": "ability and save DC from the Spellcasting action, for the counter's DC; the attack bonus is the DC minus 8"
     },
     {
       "monster": "magma-mephit",
