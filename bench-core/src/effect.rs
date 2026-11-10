@@ -391,6 +391,73 @@ pub enum ModifierChange {
     Advantage,
     Disadvantage,
     None,
+    /// An `NdM` die the bearer rolls and adds after the d20s (Bless). Only on `attack_rolls` and
+    /// `saving_throws`.
+    AddDice(#[serde(deserialize_with = "dice_expression")] String),
+    /// An `NdM` die the bearer rolls and subtracts after the d20s (Bane). Only on `attack_rolls`
+    /// and `saving_throws`.
+    SubtractDice(#[serde(deserialize_with = "dice_expression")] String),
+}
+
+impl ModifierChange {
+    /// The die of `add_dice` (+1) or `subtract_dice` (-1), with its sign.
+    pub fn die(&self) -> Option<(i32, &str)> {
+        match self {
+            ModifierChange::AddDice(dice) => Some((1, dice)),
+            ModifierChange::SubtractDice(dice) => Some((-1, dice)),
+            _ => None,
+        }
+    }
+
+    /// The bonus the change adds to a roll on average: `add` as is, a die as its signed mean
+    /// (1d4 is 2.5), anything else 0.
+    pub fn mean_bonus(&self) -> f64 {
+        match self {
+            ModifierChange::Add(n) => f64::from(*n),
+            other => other.die().map_or(0.0, |(sign, dice)| f64::from(sign) * dice_mean(dice)),
+        }
+    }
+}
+
+/// The mean of an `NdM` expression; 0 when it doesn't parse.
+pub fn dice_mean(expr: &str) -> f64 {
+    parse_dice(expr).map_or(0.0, |(count, sides)| f64::from(count) * (f64::from(sides) + 1.0) / 2.0)
+}
+
+fn dice_expression<'de, D: serde::Deserializer<'de>>(deserializer: D) -> Result<String, D::Error> {
+    let dice = String::deserialize(deserializer)?;
+    if parse_dice(&dice).is_none() {
+        return Err(serde::de::Error::custom(format!("{dice} is not an NdM dice expression")));
+    }
+    Ok(dice)
+}
+
+impl ModifierTarget {
+    /// Whether a die change may sit on this target: the d20 tests the engine rolls.
+    pub fn takes_dice(&self) -> bool {
+        matches!(self, ModifierTarget::AttackRolls | ModifierTarget::SavingThrows { .. })
+    }
+
+    /// The snake_case name used in state files and refusals.
+    pub fn name(&self) -> String {
+        match serde_json::to_value(self) {
+            Ok(serde_json::Value::String(name)) => name,
+            Ok(serde_json::Value::Object(map)) => map.keys().next().cloned().unwrap_or_default(),
+            _ => String::new(),
+        }
+    }
+}
+
+/// Refuses a die change on any target but attack rolls and saving throws.
+pub fn check_die_target(target: &ModifierTarget, change: &ModifierChange) -> Result<(), String> {
+    match change.die() {
+        Some((sign, dice)) if !target.takes_dice() => Err(format!(
+            "{} {dice} can only change attack_rolls or saving_throws, not {}",
+            if sign > 0 { "add_dice" } else { "subtract_dice" },
+            target.name()
+        )),
+        _ => Ok(()),
+    }
 }
 
 /// Roll modifier on a trait, applied to the bearer's matching rolls while the encounter's
@@ -591,6 +658,21 @@ impl Effect {
             Effect::SavingThrow(s) => s.on_failure.iter().any(Effect::holds_roll_modifier),
             Effect::Area(a) => a.effect.holds_roll_modifier(),
             _ => false,
+        }
+    }
+
+    /// Refuses a die change on a target the engine rolls no d20 for, here or nested in an
+    /// `on_hit`, `on_failure`, area or `on_end`.
+    pub fn check_dice(&self) -> Result<(), String> {
+        match self {
+            Effect::TimedModifier(m) => {
+                check_die_target(&m.target, &m.change)?;
+                m.on_end.iter().try_for_each(Effect::check_dice)
+            }
+            Effect::Attack(a) => a.on_hit.iter().try_for_each(Effect::check_dice),
+            Effect::SavingThrow(s) => s.on_failure.iter().try_for_each(Effect::check_dice),
+            Effect::Area(a) => a.effect.check_dice(),
+            _ => Ok(()),
         }
     }
 

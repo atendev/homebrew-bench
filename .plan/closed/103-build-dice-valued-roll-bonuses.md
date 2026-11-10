@@ -3,7 +3,7 @@ id: 103
 title: Build dice-valued roll bonuses
 type: task
 mode: AFK
-status: open
+status: closed
 blocked_by: [093]
 claimed: false
 ---
@@ -28,4 +28,12 @@ Build the decision in [Dice-valued roll bonuses](../closed/093-dice-valued-roll-
 
 ## Resolution
 
-<Filled in at close.>
+Built on 2026-11-10 in the `wayfinder-runner` skill's auto mode. A haiku auditor approved after three rounds, and the user chose commit and merge.
+
+`ModifierChange` gains `add_dice` and `subtract_dice`, each holding an `NdM` string. A string that `parse_dice` rejects fails at load, and `Effect::check_dice` refuses a die on any target but `attack_rolls` and `saving_throws`. It runs at three load sites: stat block entries, the spell effects file and a saved state's `active_modifiers`. The engine's `bonus_dice` rolls each applying die after the d20s, one per modifier in `active_modifiers` order, with the bearer as owner. It reaches attack rolls, saves, concentration saves and repeat saves, and death saves through dice on all saves. Natural 1 and 20 keep their meaning, and an automatic failure rolls no die. The note reads ` (+1d4 bless: 3)`, named by the stored `source_ability` as the Advantage notes are. The public view already shows every attack and save total, so it shows the note too. Potency counts in half-points (1d4 is 5, +2 is 4, +3 is 6).
+
+The policy reads every timed attack and save bonus at its mean (`mean_attack_bonus`, `mean_save_bonus`) in the hit and save chances. The hit chance read no timed attack bonus before, so it now reads flat ones too. No embedded data carries one, and decision 093 item 10 covers the version. `bearer_value` scores an attack die like a flat bonus, and a positive save bonus at `SAVE_POINT_VALUE` (0.05). Bless and Bane are in the effects file, and `scaffold-spells.py` emits both from the SRD text. The live-mode reference covers the note, the prompt and the aura override. Engine 0.1.31. Policy stays v5, since ticket 111 had already moved it past the 4 this ticket names. The regenerated curve differed only in `engine_version`.
+
+Departures from the notes:
+- The ticket assumed concentration and repeat saves already add flat save modifiers. They don't, so only the die reaches them, and the flat gap went to fog.
+- The engine caps targets only on Attack and Area effects. Bless and Bane take every target passed, and their `extra_targets` rule is documentary, as Charm Monster's is. The missing cap went to fog.

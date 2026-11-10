@@ -537,7 +537,9 @@ fn resolve_effect(
                     RollDisposition::Disadvantage => d20a.min(d20b),
                     RollDisposition::Normal => d20a,
                 };
-                let total = natural as i32 + attack.modifier + attack_modifier(state, &actor)?;
+                let (die, die_note) = bonus_dice(state, stream, actor_id, |t| *t == ModifierTarget::AttackRolls)?;
+                let note = note + &die_note;
+                let total = natural as i32 + attack.modifier + attack_modifier(state, &actor)? + die;
                 let base_ac = stat_block(state, &target)?.armor_class.first().map(|a| a.value).unwrap_or(10);
                 let ac = base_ac + ac_modifier(state, &target);
                 let natural_20 = natural == 20;
@@ -780,11 +782,13 @@ fn save_succeeds(
         return Ok(false);
     }
     let (roll, note) = save_d20(state, stream, target_id, ability)?;
+    let (die, die_note) = save_dice(state, stream, target_id, ability)?;
+    let modifier = modifier + die;
     let success = roll as i32 + modifier >= dc;
     let marked = state.player_dice.all_entered_since(target_id);
     events.push(EngineEvent {
         kind: "save".into(),
-        message: format!("{target_id} {} the save{note}", if success { "passes" } else { "fails" }),
+        message: format!("{target_id} {} the save{note}{die_note}", if success { "passes" } else { "fails" }),
         actor_id: Some(actor_id.into()),
         target_id: Some(target_id.into()),
         roll: Some(roll),
@@ -2074,25 +2078,30 @@ fn roll_death_saves(state: &mut EncounterState, combatant_id: &str, events: &mut
     }
     let mut stream = Stream::from_state(state.rng.clone());
     let roll = stream.roll_die(20);
-    state.rng = stream.state();
     let roll = player_roll(state, combatant_id, 20, roll);
+    // Only dice reach a death save: flat no-ability save modifiers stay off it so saves from
+    // before dice refold unchanged (ticket 093).
+    let (die, die_note) = bonus_dice(state, &mut stream, combatant_id, |t| matches!(t, ModifierTarget::SavingThrows { ability: None }))?;
+    state.rng = stream.state();
     let marked = state.player_dice.all_entered_since(combatant_id);
+    let total = roll as i32 + die;
     let message = if roll == 20 {
         state.combatants[i].hp = 1;
         state.combatants[i].end_state = EndState::Active;
         state.combatants[i].death_saves = DeathSaves::default();
-        format!("{combatant_id} rolls a natural 20 and regains consciousness")
+        format!("{combatant_id} rolls a natural 20 and regains consciousness{die_note}")
     } else if roll == 1 {
         state.combatants[i].death_saves.failures += 2;
-        format!("{combatant_id} rolls a natural 1: two failures")
-    } else if roll >= 10 {
+        format!("{combatant_id} rolls a natural 1: two failures{die_note}")
+    } else if total >= 10 {
         state.combatants[i].death_saves.successes += 1;
-        format!("{combatant_id} succeeds a death save")
+        format!("{combatant_id} succeeds a death save{die_note}")
     } else {
         state.combatants[i].death_saves.failures += 1;
-        format!("{combatant_id} fails a death save")
+        format!("{combatant_id} fails a death save{die_note}")
     };
-    events.push(EngineEvent { roll: Some(roll), player_dice: marked, ..event("death_save", message, combatant_id, combatant_id) });
+    let total = (!die_note.is_empty()).then_some(total);
+    events.push(EngineEvent { roll: Some(roll), total, player_dice: marked, ..event("death_save", message, combatant_id, combatant_id) });
     if state.combatants[i].death_saves.successes >= 3 {
         state.combatants[i].end_state = EndState::Stable;
         state.combatants[i].death_saves = DeathSaves::default();
@@ -2122,12 +2131,14 @@ fn process_repeat_saves(state: &mut EncounterState, combatant_id: &str, events: 
                 .copied()
                 .unwrap_or_else(|| block.ability_scores.modifier(ability));
             let (roll, note) = save_d20(state, &mut stream, combatant_id, ability)?;
+            let (die, die_note) = save_dice(state, &mut stream, combatant_id, ability)?;
+            let modifier = modifier + die;
             let dc = 10;
             let success = roll as i32 + modifier >= dc;
             let marked = state.player_dice.all_entered_since(combatant_id);
             events.push(EngineEvent {
                 kind: "repeat_save".into(),
-                message: format!("{combatant_id} {} repeat save DC {dc}{note}", if success { "passes" } else { "fails" }),
+                message: format!("{combatant_id} {} repeat save DC {dc}{note}{die_note}", if success { "passes" } else { "fails" }),
                 actor_id: Some(combatant_id.into()),
                 target_id: Some(combatant_id.into()),
                 roll: Some(roll),
@@ -2343,11 +2354,13 @@ fn apply_damage(
             .copied()
             .unwrap_or_else(|| block.ability_scores.modifier(Ability::Con));
         let (roll, note) = save_d20(state, stream, target_id, Ability::Con)?;
+        let (die, die_note) = save_dice(state, stream, target_id, Ability::Con)?;
+        let modifier = modifier + die;
         let success = roll as i32 + modifier >= dc;
         let marked = state.player_dice.all_entered_since(target_id);
         events.push(EngineEvent {
             kind: "concentration_save".into(),
-            message: format!("{target_id} {} concentration save DC {dc}{note}", if success { "passes" } else { "fails" }),
+            message: format!("{target_id} {} concentration save DC {dc}{note}{die_note}", if success { "passes" } else { "fails" }),
             actor_id: source_id.map(|s| s.into()),
             target_id: Some(target_id.into()),
             roll: Some(roll),
@@ -2767,6 +2780,48 @@ pub(crate) fn save_modifier(state: &EncounterState, target: &Combatant, ability:
 /// Compute AC modifier from timed modifiers.
 fn ac_modifier(state: &EncounterState, target: &Combatant) -> i32 {
     added(state, &target.id, |t| *t == ModifierTarget::ArmorClass)
+}
+
+/// Every flat and die bonus on `actor`'s attack rolls, with each die read as its mean, for the
+/// policy's hit chance.
+pub(crate) fn mean_attack_bonus(state: &EncounterState, actor: &Combatant) -> f64 {
+    mean_added(state, &actor.id, |t| *t == ModifierTarget::AttackRolls)
+}
+
+/// Every flat and die bonus on `target`'s saves of `ability`, with each die read as its mean, for
+/// the policy's save chance.
+pub(crate) fn mean_save_bonus(state: &EncounterState, target: &Combatant, ability: Ability) -> f64 {
+    mean_added(state, &target.id, |t| reaches(t, Roll::Save(ability)))
+}
+
+fn mean_added(state: &EncounterState, bearer: &str, on: impl Fn(&ModifierTarget) -> bool) -> f64 {
+    state.modifiers_on(bearer).filter(|m| on(&m.target)).map(|m| m.change.mean_bonus()).sum()
+}
+
+/// Rolls each die modifier on `bearer` whose target `on` accepts, one per modifier in
+/// `active_modifiers` order, for a roll whose d20s are already drawn. The bearer rolls, so a PC
+/// bearer in ask mode is prompted. Returns the signed total and the event note, as
+/// ` (+1d4 Bless: 3)`; nothing is drawn when no die applies.
+fn bonus_dice(state: &mut EncounterState, stream: &mut Stream, bearer: &str, on: impl Fn(&ModifierTarget) -> bool) -> Result<(i32, String), EngineError> {
+    let dice: Vec<(i32, String, String)> = state
+        .modifiers_on(bearer)
+        .filter(|m| !m.is_legacy() && on(&m.target))
+        .filter_map(|m| {
+            let (sign, dice) = m.change.die()?;
+            Some((sign, dice.to_string(), m.source_ability.clone().unwrap_or_else(|| "timed modifier".into())))
+        })
+        .collect();
+    let (mut total, mut note) = (0, String::new());
+    for (sign, dice, name) in dice {
+        let rolled = roll_dice(state, stream, bearer, &dice)? as i32;
+        total += sign * rolled;
+        note.push_str(&format!(" ({}{dice} {name}: {rolled})", if sign > 0 { '+' } else { '-' }));
+    }
+    Ok((total, note))
+}
+
+fn save_dice(state: &mut EncounterState, stream: &mut Stream, saver_id: &str, ability: Ability) -> Result<(i32, String), EngineError> {
+    bonus_dice(state, stream, saver_id, |t| reaches(t, Roll::Save(ability)))
 }
 
 fn added(state: &EncounterState, bearer: &str, on: impl Fn(&ModifierTarget) -> bool) -> i32 {
@@ -7042,5 +7097,272 @@ mod tests {
         assert_eq!(entry.trigger, Some(ReactionTrigger::SpellCast { caster: SpellCaster::Enemy }));
         let (effects, _) = bound_cast_effects(&counterer("warlock", 19), &cast("counterspell", Some(3))).unwrap();
         assert!(matches!(&effects[0], Effect::CounterSpell(c) if c.dc == 19));
+    }
+
+    fn dice(bearer: &str, ability: &str, target: ModifierTarget, change: ModifierChange) -> ActiveModifier {
+        borne(bearer, "cleric", Some(ability), target, change)
+    }
+
+    fn bless_on(bearer: &str, target: ModifierTarget) -> ActiveModifier {
+        dice(bearer, "bless", target, ModifierChange::AddDice("1d4".into()))
+    }
+
+    fn all_saves() -> ModifierTarget {
+        ModifierTarget::SavingThrows { ability: None }
+    }
+
+    /// The face a die note such as ` (+1d4 bless: 3)` names after `label`.
+    fn face_after(message: &str, label: &str) -> i32 {
+        let at = message.find(label).unwrap_or_else(|| panic!("{label} not in {message}")) + label.len();
+        message[at..].split(')').next().unwrap().trim().parse().unwrap()
+    }
+
+    fn fighter_swings(state: &mut EncounterState, seed: u64) -> (EngineEvent, RngState) {
+        let mut stream = Stream::from_seed(seed);
+        let mut events = vec![];
+        resolve_effect(state, &mut stream, "fighter", Effect::Attack(sword()), &["goblin".to_string()], &mut events).unwrap();
+        (events.into_iter().find(|e| e.kind == "attack").unwrap(), stream.state())
+    }
+
+    #[test]
+    fn a_die_on_attack_rolls_is_drawn_after_the_d20s_and_added() {
+        for seed in 0..8 {
+            let mut state = duel(|_, _| {});
+            state.active_modifiers.push(bless_on("fighter", ModifierTarget::AttackRolls));
+            let (event, after) = fighter_swings(&mut state, seed);
+            let mut probe = Stream::from_seed(seed);
+            let (d20, _, d4) = (probe.roll_die(20), probe.roll_die(20), probe.roll_die(4));
+            assert_eq!(after, probe.state());
+            assert_eq!((event.roll, event.total), (Some(d20), Some(d20 as i32 + d4 as i32)));
+            assert!(event.message.ends_with(&format!(" (+1d4 bless: {d4})")), "{}", event.message);
+        }
+    }
+
+    #[test]
+    fn an_attack_without_a_die_draws_only_its_d20s() {
+        let (event, after) = fighter_swings(&mut duel(|_, _| {}), 3);
+        let mut probe = Stream::from_seed(3);
+        let d20 = probe.roll_die(20);
+        probe.roll_die(20);
+        assert_eq!((after, event.total), (probe.state(), Some(d20 as i32)));
+        assert!(!event.message.contains("1d4"));
+    }
+
+    #[test]
+    fn a_natural_one_misses_and_a_natural_twenty_hits_whatever_the_die() {
+        for seed in 0..60 {
+            let mut state = duel(|_, _| {});
+            state.active_modifiers.push(dice("fighter", "boon", ModifierTarget::AttackRolls, ModifierChange::AddDice("10d10".into())));
+            state.active_modifiers.push(dice("fighter", "bane", ModifierTarget::AttackRolls, ModifierChange::SubtractDice("1d1".into())));
+            let (event, _) = fighter_swings(&mut state, seed);
+            match event.roll {
+                Some(1) => assert!(event.message.contains("(miss)"), "{}", event.message),
+                Some(20) => assert!(event.message.contains("(hit)"), "{}", event.message),
+                _ => {}
+            }
+        }
+    }
+
+    #[test]
+    fn bless_and_bane_on_one_creature_both_roll_in_modifier_order() {
+        let mut state = duel(|_, _| {});
+        state.active_modifiers.push(bless_on("fighter", ModifierTarget::AttackRolls));
+        state.active_modifiers.push(dice("fighter", "bane", ModifierTarget::AttackRolls, ModifierChange::SubtractDice("1d4".into())));
+        let (event, after) = fighter_swings(&mut state, 9);
+        let mut probe = Stream::from_seed(9);
+        let (d20, _, plus, minus) = (probe.roll_die(20), probe.roll_die(20), probe.roll_die(4), probe.roll_die(4));
+        assert_eq!(after, probe.state());
+        assert_eq!(event.total, Some(d20 as i32 + plus as i32 - minus as i32));
+        assert!(event.message.ends_with(&format!(" (+1d4 bless: {plus}) (-1d4 bane: {minus})")), "{}", event.message);
+    }
+
+    #[test]
+    fn two_blesses_on_one_creature_give_one_die() {
+        let mut state = duel(|_, _| {});
+        state.active_modifiers.push(bless_on("fighter", ModifierTarget::AttackRolls));
+        state.active_modifiers.push(borne("fighter", "priest", Some("bless"), ModifierTarget::AttackRolls, ModifierChange::AddDice("1d4".into())));
+        let (event, after) = fighter_swings(&mut state, 2);
+        let mut probe = Stream::from_seed(2);
+        (0..3).for_each(|_| { probe.roll_die(20); });
+        assert_eq!(after, probe.state(), "two d20s and one d4");
+        assert_eq!(event.message.matches("bless:").count(), 1, "{}", event.message);
+    }
+
+    #[test]
+    fn potency_reads_a_die_as_its_mean_against_flat_bonuses_from_one_source() {
+        let cases = [(ModifierChange::Add(3), "add"), (ModifierChange::Add(2), "dice"), (ModifierChange::Add(-3), "add"), (ModifierChange::Add(-2), "dice")];
+        for (flat, winner) in cases {
+            let mut state = duel(|_, _| {});
+            state.active_modifiers.push(bless_on("fighter", all_saves()));
+            state.active_modifiers.push(dice("fighter", "bless", all_saves(), flat.clone()));
+            let kept: Vec<_> = state.modifiers_on("fighter").collect();
+            assert_eq!(kept.len(), 1);
+            let dice_won = kept[0].change.die().is_some();
+            assert_eq!(dice_won, winner == "dice", "{flat:?} against 1d4");
+        }
+    }
+
+    #[test]
+    fn a_die_on_saves_reaches_every_save_the_saver_rolls() {
+        let mut state = saver_with(&[]);
+        state.active_modifiers.push(bless_on("saver", all_saves()));
+        let (event, _, after) = save_by(&mut state, save_on(Ability::Wis), 6);
+        let mut probe = Stream::from_seed(6);
+        let (d20, d4) = (probe.roll_die(20), probe.roll_die(4));
+        assert_eq!(after, probe.state());
+        assert_eq!(event.total, Some(d20 as i32 + d4 as i32));
+        assert!(event.message.ends_with(&format!(" (+1d4 bless: {d4})")), "{}", event.message);
+
+        let mut dex_only = saver_with(&[]);
+        dex_only.active_modifiers.push(bless_on("saver", ModifierTarget::SavingThrows { ability: Some(Ability::Dex) }));
+        let (wis, _, _) = save_by(&mut dex_only, save_on(Ability::Wis), 6);
+        assert_eq!(wis.total, Some(d20 as i32), "a Dexterity die stays off a Wisdom save");
+    }
+
+    #[test]
+    fn an_automatic_save_failure_rolls_no_die() {
+        let mut state = saver_with(&[Condition::Paralyzed]);
+        state.active_modifiers.push(bless_on("saver", all_saves()));
+        let (event, _, after) = save_by(&mut state, save_on(Ability::Dex), 5);
+        assert_eq!(after, Stream::from_seed(5).state());
+        assert!(!event.message.contains("1d4"), "{}", event.message);
+    }
+
+    #[test]
+    fn a_die_reaches_concentration_and_repeat_saves() {
+        let mut state = saver_with(&[]);
+        state.combatants[0].concentration = Some("bless".into());
+        state.active_modifiers.push(bless_on("saver", all_saves()));
+        let mut stream = Stream::from_seed(4);
+        let mut events = vec![];
+        resolve_effect(&mut state, &mut stream, "fighter", fx(serde_json::json!({"damage": {"dice": "1d1", "modifier": 1, "type": "fire"}})), &["saver".to_string()], &mut events).unwrap();
+        let save = events.iter().find(|e| e.kind == "concentration_save").expect("a concentration save");
+        assert_eq!(save.total, Some(save.roll.unwrap() as i32 + face_after(&save.message, "(+1d4 bless:")), "{}", save.message);
+
+        let mut state = saver_with(&[]);
+        state.active_modifiers.push(bless_on("saver", all_saves()));
+        state.combatants[0].conditions.push(ConditionInstance { condition: Condition::Restrained, duration: Duration::UntilSave { ability: Ability::Str }, source: None, ends_on_damage: false });
+        let mut events = vec![];
+        process_repeat_saves(&mut state, "saver", &mut events).unwrap();
+        let save = &events[0];
+        assert_eq!(save.total, Some(save.roll.unwrap() as i32 + face_after(&save.message, "(+1d4 bless:")), "{}", save.message);
+    }
+
+    fn downed_pc(modifier: Option<ActiveModifier>) -> (EngineEvent, RngState) {
+        let mut state = brute_vs_pc(20, smash(30, "1d6", 0), |pc| {
+            pc.hp = 0;
+            pc.end_state = EndState::Unconscious;
+        });
+        state.active_modifiers.extend(modifier);
+        let mut events = vec![];
+        roll_death_saves(&mut state, "pc", &mut events).unwrap();
+        (events.into_iter().find(|e| e.kind == "death_save").unwrap(), state.rng)
+    }
+
+    #[test]
+    fn a_no_ability_save_die_reaches_death_saves_but_a_flat_bonus_does_not() {
+        let (plain, plain_rng) = downed_pc(None);
+        let (flat, flat_rng) = downed_pc(Some(dice("pc", "aura", all_saves(), ModifierChange::Add(5))));
+        assert_eq!((flat.message.clone(), flat.total, flat_rng), (plain.message.clone(), None, plain_rng.clone()));
+        let (blessed, blessed_rng) = downed_pc(Some(bless_on("pc", all_saves())));
+        assert_eq!(blessed.roll, plain.roll);
+        assert_ne!(blessed_rng, plain_rng, "the die draws after the d20");
+        let roll = blessed.roll.unwrap();
+        if roll != 1 && roll != 20 {
+            let total = roll as i32 + face_after(&blessed.message, "(+1d4 bless:");
+            assert_eq!(blessed.total, Some(total));
+            assert_eq!(blessed.message.contains("succeeds"), total >= 10, "{}", blessed.message);
+        }
+        let (con_only, _) = downed_pc(Some(bless_on("pc", ModifierTarget::SavingThrows { ability: Some(Ability::Con) })));
+        assert_eq!(con_only.message, plain.message, "a die tied to one ability stays off death saves");
+    }
+
+    #[test]
+    fn an_ask_mode_pc_is_prompted_for_its_die_and_the_attack_is_marked() {
+        let mut state = duel(|blocks, _| blocks[0].class = Some("fighter".into()));
+        state.settings.pc_dice = PcDice::Ask;
+        state.active_modifiers.push(bless_on("fighter", ModifierTarget::AttackRolls));
+        state.player_dice.faces = [15].into_iter().collect();
+        fighter_swings(&mut state, 1);
+        assert_eq!(state.player_dice.next_prompt(), Some((4, "fighter".into(), 1)), "the d4 is asked for after the d20");
+
+        let mut state = duel(|blocks, _| blocks[0].class = Some("fighter".into()));
+        state.settings.pc_dice = PcDice::Ask;
+        state.active_modifiers.push(bless_on("fighter", ModifierTarget::AttackRolls));
+        state.player_dice.faces = [15, 3].into_iter().collect();
+        let (event, _) = fighter_swings(&mut state, 1);
+        assert_eq!(event.total, Some(18));
+        assert!(event.player_dice && event.message.ends_with(" (+1d4 bless: 3)"), "{event:?}");
+    }
+
+    fn bane_state(slot: u8, passer: Option<&str>) -> EncounterState {
+        let mut blocks = vec![sure_caster("mage", "bane")];
+        blocks[0].actions[0].effects = vec![Effect::Cast(cast("bane", Some(slot)))];
+        let mut combatants = vec![test_combatant("mage", "mage", 30, "ally")];
+        for id in ["a", "b", "c", "d"] {
+            let mut block = test_stat_block(id, id, 40, 12);
+            if passer == Some(id) {
+                block.saving_throws.insert(Ability::Cha, 100);
+            }
+            blocks.push(block);
+            combatants.push(test_combatant(id, id, 40, "enemy"));
+        }
+        test_encounter(blocks, combatants)
+    }
+
+    fn dice_bearers(state: &EncounterState, ability: &str) -> Vec<String> {
+        let mut ids: Vec<String> = state.active_modifiers.iter().filter(|m| m.source_ability.as_deref() == Some(ability)).filter_map(|m| m.bearer().map(str::to_string)).collect();
+        ids.sort();
+        ids.dedup();
+        ids
+    }
+
+    #[test]
+    fn bane_lands_only_on_targets_that_fail_its_charisma_save() {
+        let mut state = bane_state(1, Some("b"));
+        act(&mut state, "mage", "bane", &["a", "b", "c"]).unwrap();
+        assert_eq!(dice_bearers(&state, "bane"), ["a", "c"]);
+        assert!(state.active_modifiers.iter().all(|m| matches!(&m.change, ModifierChange::SubtractDice(d) if d == "1d4")));
+        assert_eq!(state.active_modifiers.len(), 4, "attack rolls and saves on each");
+    }
+
+    #[test]
+    fn an_upcast_bane_or_bless_takes_a_fourth_target() {
+        let mut state = bane_state(2, None);
+        act(&mut state, "mage", "bane", &["a", "b", "c", "d"]).unwrap();
+        assert_eq!(dice_bearers(&state, "bane"), ["a", "b", "c", "d"]);
+
+        let mut blocks = vec![sure_caster("mage", "bless")];
+        blocks[0].actions[0].effects = vec![Effect::Cast(cast("bless", Some(2)))];
+        let mut combatants = vec![test_combatant("mage", "mage", 30, "ally")];
+        for id in ["a", "b", "c", "d"] {
+            blocks.push(test_stat_block(id, id, 40, 12));
+            combatants.push(test_combatant(id, id, 40, "ally"));
+        }
+        let mut state = test_encounter(blocks, combatants);
+        act(&mut state, "mage", "bless", &["a", "b", "c", "d"]).unwrap();
+        assert_eq!(dice_bearers(&state, "bless"), ["a", "b", "c", "d"]);
+        assert!(state.active_modifiers.iter().all(|m| matches!(&m.change, ModifierChange::AddDice(d) if d == "1d4")));
+    }
+
+    #[test]
+    fn a_die_on_anything_but_attacks_or_saves_is_refused_at_load() {
+        let entry = |target: serde_json::Value, change: serde_json::Value| {
+            serde_json::json!({"id": "ward", "name": "Ward", "kind": "modeled", "effects": [{"timed_modifier": {"target": target, "change": change, "duration": "permanent"}}]})
+        };
+        let mut block = serde_json::to_value(test_stat_block("x", "X", 10, 10)).unwrap();
+        block["actions"] = serde_json::json!([entry(serde_json::json!({"armor_class": null}), serde_json::json!({"add_dice": "1d4"}))]);
+        let err = serde_json::from_value::<StatBlock>(block.clone()).unwrap_err().to_string();
+        assert!(err.contains("ward: add_dice 1d4 can only change attack_rolls or saving_throws, not armor_class"), "{err}");
+        block["actions"] = serde_json::json!([entry(serde_json::json!({"attack_rolls": null}), serde_json::json!({"subtract_dice": "d4"}))]);
+        let err = serde_json::from_value::<StatBlock>(block.clone()).unwrap_err().to_string();
+        assert!(err.contains("d4 is not an NdM dice expression"), "{err}");
+        block["actions"] = serde_json::json!([entry(serde_json::json!({"saving_throws": {"ability": "dex"}}), serde_json::json!({"subtract_dice": "1d4"}))]);
+        assert!(serde_json::from_value::<StatBlock>(block).is_ok());
+
+        let mut state = serde_json::to_value(duel(|_, _| {})).unwrap();
+        state["active_modifiers"] = serde_json::to_value([dice("fighter", "aura", ModifierTarget::Speed, ModifierChange::AddDice("1d4".into()))]).unwrap();
+        let err = serde_json::from_value::<EncounterState>(state).unwrap_err().to_string();
+        assert!(err.contains("not speed"), "{err}");
     }
 }
