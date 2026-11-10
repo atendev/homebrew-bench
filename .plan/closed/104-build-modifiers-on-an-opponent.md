@@ -3,7 +3,7 @@ id: 104
 title: Build batch value of modifiers on an opponent
 type: task
 mode: AFK
-status: open
+status: closed
 blocked_by: [103]
 claimed: false
 ---
@@ -26,4 +26,13 @@ Build the decision in [Batch value of debuffs](../closed/094-batch-value-of-debu
 
 ## Resolution
 
-<Filled in at close.>
+Built on 2026-11-10 in the `wayfinder-runner` skill's auto mode. A haiku auditor approved after two rounds, and the user chose commit and merge.
+
+`bearer_value` keys each term on the bearer's side through a new `modifier_term`, which returns one modifier's per-round value or `None`. On the actor's side the buff terms are unchanged. On an opponent, AC -n and a save penalty (flat or a die's mean) score as damage, and so does save Disadvantage. An attack penalty and attack Disadvantage (`ATTACK_DISADVANTAGE_POINTS`, 5) score as control. A change on the side it doesn't serve scores 0. An opponent bearer never gets a safe first round, and lethargy counts only on the actor's side. A modifier with no term and no lethargy now skips the horizon and keep calculation. `BearerValue` gains `control`.
+
+`rider_value` scores the `target` timed modifiers under an attack's `on_hit` or a save's `on_failure` in one `bearer_value` call, scaled by the hit or failure chance. It returns 0 past depth 3 and inside `nested`. The whole value is guarded, not only its threat part, because D and S come from `incoming_rolls`, which reaches riders again from depth 0. A top-level `target` modifier in a mixed ability still scores 0. `modifier_plan` adds living opponents after the actor and allies, sorted by id, only when the `target` modifiers score above 0 on them, and its score and plan count control. Notes are signed (`-2 AC against …`, `-1d4 on saves against …`), and attack terms name the threat, as in `withering-curse on brute (disadvantage on attack rolls against … threat)`.
+
+Engine 0.1.32. Policy stays v5, since ticket 111 had already moved it past the 4 this ticket names. The regenerated curve differed only in `engine_version`. Decision report: [104-implementation](../reports/104-implementation.md).
+
+Departures from the notes:
+- A debuff rider's value sits in `Value.damage`, so `threat`, `incoming_rolls` and the concentration-keep DCs count it as damage dealt. No curve input carries one, so this went to fog.
