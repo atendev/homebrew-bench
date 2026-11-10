@@ -132,6 +132,7 @@ Both modes ship in phase 1. Everything the engine can't model is labeled agent j
 - [Build batch value of modifiers on an opponent](closed/104-build-modifiers-on-an-opponent.md): `bearer_value` keys each term on the bearer's side, so AC and save penalties and save Disadvantage on an opponent score as damage and attack penalties and attack Disadvantage (5 points) as control, with no safe first round and no lethargy. Riders under `on_hit` and `on_failure` score on the target by the hit or failure chance, inside the nesting guard, and `modifier_plan` may cast a harmful `target` modifier on an opponent. Engine 0.1.32, policy stays v5, and the curve differs only in `engine_version`.
 - [Build plan-failure warnings by role](closed/106-build-plan-failure-warnings-by-role.md): a party member's plan failures key on its role when it alone names it, combatant ids in the error text become labels, and role rows list their levels, as `Striker (levels 3-5): Longbow failed 22 times ...`. `party::role_rank` is shared with `group_party`, logs and numbers are byte-identical on ogre at seed 7, and the engine stays 0.1.32.
 - [Build target teleport scoring](closed/107-build-target-teleport-scoring.md): a `target` teleport scores `SHORT_DISPLACEMENT_SHARE` (0.25, shared with the short push) of the target's threat as control, 0 on a target with no engagement on either list or with any attack that doesn't need one, scaled by the hit or failure chance under a rider. Engine 0.1.33, policy stays v5, and the curve differs only in `engine_version`.
+- [Leftover Engaged range after a teleport](closed/108-leftover-engaged-range-after-a-teleport.md): a teleport writes Near into the `ranges` entries of every pair it frees (state fix, not a read fix), behind a recorded setting so old saves refold unchanged. ADR 0005 is amended, ADR 0012's price is unchanged, and the missing-entry default stays out of scope. Build is ticket 112.
 
 ## Not yet specified
 
@@ -165,5 +166,5 @@ Both modes ship in phase 1. Everything the engine can't model is labeled agent j
 
 ## Frontier
 
-- [108 Leftover Engaged range after a teleport](tickets/108-leftover-engaged-range-after-a-teleport.md): grilling, HITL.
+- [112 Build Near after a teleport](tickets/112-build-near-after-teleport.md): task, AFK.
 - [109 Durations longer than a round](tickets/109-durations-longer-than-a-round.md): grilling, HITL.
