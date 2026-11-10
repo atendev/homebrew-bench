@@ -3,7 +3,7 @@ id: 107
 title: Build target teleport scoring
 type: task
 mode: AFK
-status: open
+status: closed
 blocked_by: [097]
 claimed: false
 ---
@@ -25,4 +25,6 @@ Build the decision in [Batch value of a target teleport](../closed/097-batch-val
 
 ## Resolution
 
-<Filled in at close: the decision and the reason for it.>
+Built as 097 decided. A `target` teleport in `effect_value` takes the shape of the push arm: a factor (0 past depth 3), the target's threat unless the factor is 0 or the nesting limit is reached, and the product as control. The factor is `SHORT_DISPLACEMENT_SHARE` (0.25), the module constant the push's short case now uses too. It is 0 when the target holds no engagement (no combatant lists it and it lists nobody) or when `melee_only` is false. `melee_only` is the actions-and-bonus-actions check `forced_move_factor` made inline, now shared. Under `on_hit` and `on_failure` the attack and save arms already scale it by the hit or failure chance.
+
+Engine 0.1.33. Policy stays v5, since ticket 111 had already moved it past the 4 this ticket names, and no file under `data/` carries `"subject": "target"`. The regenerated curve differed only in `engine_version`. The old test that a target teleport scores nothing became a test that a self teleport scores survival and no control. Decision report: [107-implementation](../reports/107-implementation.md).

@@ -324,6 +324,8 @@ struct Ctx<'a> {
 /// reaction reserve and the step-out penalty are valued at zero.
 const MAX_THREAT_NESTING: u8 = 2;
 
+const SHORT_DISPLACEMENT_SHARE: f64 = 0.25;
+
 /// What a combatant's best ready action puts out: damage alone, and damage plus healing.
 #[derive(Debug, Clone, Copy, Default)]
 struct ThreatParts {
@@ -1354,7 +1356,11 @@ impl<'a> Ctx<'a> {
                 Value { control: factor * target_threat, ..Default::default() }
             }
             Effect::Teleport(teleport) if teleport.subject == TeleportSubject::Actor => Value { survival: self.teleport_value(actor, footing), ..Default::default() },
-            Effect::Teleport(_) => Value::default(),
+            Effect::Teleport(_) => {
+                let factor = if depth > 3 { 0.0 } else { self.target_teleport_factor(target, target_block) };
+                let target_threat = if factor == 0.0 || self.threat_nesting.get() >= MAX_THREAT_NESTING { 0.0 } else { self.threat(target) };
+                Value { control: factor * target_threat, ..Default::default() }
+            }
             Effect::TempHp(_) | Effect::TimedModifier(_) | Effect::RollModifier(_) | Effect::NoProvoke | Effect::SeeInvisible | Effect::Disengage | Effect::CounterSpell(_) => Value::default(),
         };
         (value, vec![])
@@ -1405,14 +1411,22 @@ impl<'a> Ctx<'a> {
     /// to Far on a target slower than 35 feet, 0.25 for a push of 5 feet or more, and 0 for a
     /// pull or a target with any attack that doesn't need engagement.
     fn forced_move_factor(&self, target: &Combatant, target_block: &StatBlock, m: &crate::effect::ForcedMove) -> f64 {
-        let attacks: Vec<Effect> = target_block.actions.iter().chain(&target_block.bonus_actions).flat_map(|a| a.effects.iter().cloned()).collect();
-        if m.direction.eq_ignore_ascii_case("pull") || m.feet < 5 || !needs_engaged(target_block, &attacks, 0) {
+        if m.direction.eq_ignore_ascii_case("pull") || m.feet < 5 || !melee_only(target_block) {
             return 0.0;
         }
         if m.feet >= 35 && engine::walk_speed(self.state, target) < 35 {
             1.0
         } else {
-            0.25
+            SHORT_DISPLACEMENT_SHARE
+        }
+    }
+
+    fn target_teleport_factor(&self, target: &Combatant, target_block: &StatBlock) -> f64 {
+        let engaged = !target.engagement.is_empty() || self.state.combatants.iter().any(|c| c.engagement.contains(&target.id));
+        if engaged && melee_only(target_block) {
+            SHORT_DISPLACEMENT_SHARE
+        } else {
+            0.0
         }
     }
 
@@ -1890,6 +1904,11 @@ fn needs_engaged(block: &StatBlock, effects: &[Effect], depth: u8) -> bool {
         }
     });
     melee && !other
+}
+
+fn melee_only(block: &StatBlock) -> bool {
+    let effects: Vec<Effect> = block.actions.iter().chain(&block.bonus_actions).flat_map(|a| a.effects.iter().cloned()).collect();
+    needs_engaged(block, &effects, 0)
 }
 
 fn has_ranged_attack(block: &StatBlock, effects: &[Effect], depth: u8) -> bool {
@@ -3484,16 +3503,68 @@ mod tests {
         assert!(plan.reason.starts_with("teleports clear of "), "{}", plan.reason);
     }
 
+    fn send_away(range: u32) -> Effect {
+        serde_json::from_value(serde_json::json!({"teleport": {"range": range, "destination": "away", "subject": "target"}})).unwrap()
+    }
+
     #[test]
-    fn a_teleport_of_the_target_scores_nothing() {
+    fn a_teleport_of_an_engaged_melee_only_target_scores_a_quarter_of_its_threat_at_any_range() {
+        let mut state = duel(["1d8", "1d8"], [20, 20]);
+        engage(&mut state, "ogre", "a");
+        for range in [0, 30, 120] {
+            let (control, threat) = forced_move_control(&state, &send_away(range));
+            assert!(threat > 0.0);
+            assert_eq!(control, SHORT_DISPLACEMENT_SHARE * threat, "range {range}");
+        }
+        let constants = PolicyConstants::default();
+        let ctx = ctx(&state, &constants);
+        let (ogre, a) = (ctx.combatant("ogre").unwrap(), ctx.combatant("a").unwrap());
+        assert_eq!(ctx.effect_value(ogre, ctx.block(ogre).unwrap(), &send_away(30), a, 0, Footing::default()).0.survival, 0.0);
+    }
+
+    #[test]
+    fn a_teleport_of_a_target_engaged_on_either_list_alone_still_scores() {
+        for holder in ["a", "ogre"] {
+            let mut state = duel(["1d8", "1d8"], [20, 20]);
+            let other = if holder == "a" { "ogre" } else { "a" };
+            combatant(&mut state, holder).engagement.push(other.into());
+            let (control, threat) = forced_move_control(&state, &send_away(30));
+            assert_eq!(control, SHORT_DISPLACEMENT_SHARE * threat, "listed by {holder}");
+        }
+    }
+
+    #[test]
+    fn a_teleport_of_an_unengaged_or_ranged_target_scores_nothing() {
+        let mut state = duel(["1d8", "1d8"], [20, 20]);
+        let (control, threat) = forced_move_control(&state, &send_away(30));
+        assert!(threat > 0.0 && control == 0.0, "{control} {threat}");
+        engage(&mut state, "ogre", "a");
+        snapshot(&mut state, "a").bonus_actions = vec![ranged("dagger-throw", 5, "1d4")];
+        let (control, threat) = forced_move_control(&state, &send_away(30));
+        assert!(threat > 0.0 && control == 0.0, "{control} {threat}");
+    }
+
+    #[test]
+    fn a_teleport_of_the_target_on_hit_scales_by_the_hit_chance() {
+        let mut state = duel(["1d8", "1d8"], [20, 20]);
+        engage(&mut state, "ogre", "a");
+        let slam: Effect = serde_json::from_value(serde_json::json!({"attack": {"modifier": 5, "reach": 5, "target_count": 1, "damage": [],
+            "on_hit": [{"teleport": {"range": 30, "destination": "away", "subject": "target"}}]}}))
+        .unwrap();
+        let (control, threat) = forced_move_control(&state, &slam);
+        let p_hit = (21.0 - (12.0 - 5.0)) / 20.0;
+        assert!(threat > 0.0 && (control - p_hit * SHORT_DISPLACEMENT_SHARE * threat).abs() < 1e-9, "{control} {threat}");
+    }
+
+    #[test]
+    fn a_self_teleport_scores_no_control() {
         let state = skirmish();
         let constants = PolicyConstants::default();
         let ctx = ctx(&state, &constants);
         let archer = ctx.combatant("archer").unwrap();
-        let away = entry(serde_json::json!({"id": "away", "name": "Away", "kind": "modeled",
-            "effects": [{"teleport": {"range": 30, "destination": "away", "subject": "target"}}]})).effects.remove(0);
-        let value = ctx.effect_value(archer, ctx.block(archer).unwrap(), &away, ctx.combatant("brute").unwrap(), 0, Footing::default()).0;
-        assert_eq!(value.survival, 0.0);
+        let value = ctx.effect_value(archer, ctx.block(archer).unwrap(), &misty_step().effects.remove(0), ctx.combatant("brute").unwrap(), 0, Footing::default()).0;
+        assert_eq!(value.control, 0.0);
+        assert!(value.survival > 0.0);
     }
 
     #[test]
