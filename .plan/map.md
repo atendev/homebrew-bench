@@ -134,6 +134,7 @@ Both modes ship in phase 1. Everything the engine can't model is labeled agent j
 - [Build target teleport scoring](closed/107-build-target-teleport-scoring.md): a `target` teleport scores `SHORT_DISPLACEMENT_SHARE` (0.25, shared with the short push) of the target's threat as control, 0 on a target with no engagement on either list or with any attack that doesn't need one, scaled by the hit or failure chance under a rider. Engine 0.1.33, policy stays v5, and the curve differs only in `engine_version`.
 - [Leftover Engaged range after a teleport](closed/108-leftover-engaged-range-after-a-teleport.md): a teleport writes Near into the `ranges` entries of every pair it frees (state fix, not a read fix), behind a recorded setting so old saves refold unchanged. ADR 0005 is amended, ADR 0012's price is unchanged, and the missing-entry default stays out of scope. Build is [ticket 112](closed/112-build-near-after-teleport.md).
 - [Build Near after a teleport](closed/112-build-near-after-teleport.md): a teleport writes Near into both sides' existing `ranges` entries for every pair it frees, behind `settings.teleport_near`, which `bench start` and batch set and old saves leave off. Engine 0.1.34, policy stays v5, and the curve differs only in `engine_version`.
+- [Durations longer than a round](closed/109-durations-longer-than-a-round.md): minutes, hours and days count against the round clock (10, 600 and 14400 rounds) from a `started_round` stamp, behind a recorded `settings.long_durations` so old saves keep the per-turn decrement. `rounds` stays per-turn, and See Invisibility returns to `{"hours": 1}`. The build is [113 Build durations longer than a round](tickets/113-build-durations-longer-than-a-round.md).
 
 ## Not yet specified
 
@@ -154,6 +155,7 @@ Both modes ship in phase 1. Everything the engine can't model is labeled agent j
 - Flat save bonuses on concentration and repeat saves: those saves add a die but no flat timed save modifier, as before ticket 103. Reading flat ones would change refolds of old saves, so it needs a recorded-version gate like the death-save item above ([Build dice-valued roll bonuses](closed/103-build-dice-valued-roll-bonuses.md)).
 - Target caps on non-attack effects: Bless, Bane, Charm Monster and other spells whose effects aren't an Attack or Area take every target passed, so `extra_targets` on them is documentary and the agent enforces "up to three" ([Build dice-valued roll bonuses](closed/103-build-dice-valued-roll-bonuses.md)).
 - Rider value in threat and incoming sums: a debuff rider's value is policy damage, not damage dealt, yet `threat`, `incoming_rolls` and the concentration-keep DCs count it. No curve input carries one ([Build batch value of modifiers on an opponent](closed/104-build-modifiers-on-an-opponent.md)).
+- Rounds per round: `rounds` durations lose 1 at the end of every creature's turn, so a 1-round buff lasts one turn. Counting per round moves Shield and Haste play and batch cells, and needs a curve regeneration and probably a policy bump ([Durations longer than a round](closed/109-durations-longer-than-a-round.md)).
 
 ## Out of scope
 
@@ -167,4 +169,4 @@ Both modes ship in phase 1. Everything the engine can't model is labeled agent j
 
 ## Frontier
 
-- [109 Durations longer than a round](tickets/109-durations-longer-than-a-round.md): grilling, HITL.
+- [113 Build durations longer than a round](tickets/113-build-durations-longer-than-a-round.md): task, AFK.
