@@ -30,4 +30,4 @@ A teleport writes Near into the `ranges` entries of every pair it frees, and the
 - ADR 0012's price stays `threat(target) x 0.25`. It is a constant, not derived from re-engagement cost, so only the paragraph's wording changes.
 - A missing `ranges` entry (Engaged in `move`, Near in `band`) stays out of scope. Setup fills every cross-side pair, so it only arises for later additions.
 - `live.rs` is unaffected: it only prints starting bands before any teleport.
-- Build: [Build Near after a teleport](../tickets/112-build-near-after-teleport.md).
+- Build: [Build Near after a teleport](112-build-near-after-teleport.md).

@@ -715,6 +715,18 @@ fn resolve_effect(
             }
             for subject in subjects {
                 let i = index_of(state, &subject)?;
+                if state.settings.teleport_near {
+                    let mut freed = state.combatants[i].engagement.clone();
+                    freed.extend(state.combatants.iter().filter(|c| c.engagement.contains(&subject)).map(|c| c.id.clone()));
+                    for other in freed {
+                        if let Some(band) = state.combatants[i].ranges.get_mut(&other) {
+                            *band = RangeBand::Near;
+                        }
+                        if let Some(band) = state.combatants.iter_mut().find(|c| c.id == other).and_then(|c| c.ranges.get_mut(&subject)) {
+                            *band = RangeBand::Near;
+                        }
+                    }
+                }
                 state.combatants[i].engagement.clear();
                 for c in &mut state.combatants {
                     c.engagement.retain(|id| id != &subject);
@@ -6893,6 +6905,63 @@ mod tests {
         assert!(engaged_with(&state, "fighter").is_empty());
         assert_eq!(engaged_with(&state, "blinker"), vec!["paladin"]);
         assert!(engaged_with(&state, "cleric").is_empty());
+    }
+
+    fn ranged_blinker_state(effect: serde_json::Value, teleport_near: bool) -> EncounterState {
+        let mut state = blinker_state(effect);
+        state.settings.teleport_near = teleport_near;
+        for (a, b, band) in [("blinker", "fighter", RangeBand::Engaged), ("blinker", "paladin", RangeBand::Engaged), ("fighter", "cleric", RangeBand::Engaged), ("blinker", "cleric", RangeBand::Far), ("paladin", "cleric", RangeBand::Far)] {
+            state.combatants.iter_mut().find(|c| c.id == a).unwrap().ranges.insert(b.into(), band);
+            state.combatants.iter_mut().find(|c| c.id == b).unwrap().ranges.insert(a.into(), band);
+        }
+        state
+    }
+
+    fn range(state: &EncounterState, a: &str, b: &str) -> RangeBand {
+        state.combatants.iter().find(|c| c.id == a).unwrap().ranges[b]
+    }
+
+    #[test]
+    fn a_gated_self_teleport_leaves_the_freed_pairs_at_near_and_other_bands_alone() {
+        let mut state = ranged_blinker_state(serde_json::from_str(SELF_TELEPORT).unwrap(), true);
+        state.combatants.iter_mut().find(|c| c.id == "paladin").unwrap().engagement.clear();
+        state.combatants.iter_mut().find(|c| c.id == "blinker").unwrap().engagement.retain(|id| id != "fighter");
+        act(&mut state, "blinker", "blink", &[]).unwrap();
+        for other in ["fighter", "paladin"] {
+            assert_eq!(range(&state, "blinker", other), RangeBand::Near, "{other}");
+            assert_eq!(range(&state, other, "blinker"), RangeBand::Near, "{other}");
+        }
+        assert_eq!(range(&state, "blinker", "cleric"), RangeBand::Far);
+        assert_eq!(range(&state, "fighter", "cleric"), RangeBand::Engaged);
+        assert_eq!(range(&state, "cleric", "paladin"), RangeBand::Far);
+    }
+
+    #[test]
+    fn a_gated_target_teleport_leaves_the_target_near_its_freed_pairs() {
+        let mut state = ranged_blinker_state(serde_json::json!({"attack": {"modifier": 100, "reach": 5, "target_count": 1,
+            "damage": [], "on_hit": [{"teleport": {"range": 30, "destination": "away", "subject": "target"}}]}}), true);
+        act(&mut state, "blinker", "blink", &["fighter"]).unwrap();
+        for (a, b) in [("fighter", "blinker"), ("blinker", "fighter"), ("fighter", "cleric"), ("cleric", "fighter")] {
+            assert_eq!(range(&state, a, b), RangeBand::Near, "{a} to {b}");
+        }
+        assert_eq!(range(&state, "blinker", "paladin"), RangeBand::Engaged);
+    }
+
+    #[test]
+    fn an_ungated_teleport_leaves_every_band_as_it_was() {
+        let mut state = ranged_blinker_state(serde_json::from_str(SELF_TELEPORT).unwrap(), false);
+        let before: Vec<_> = state.combatants.iter().map(|c| c.ranges.clone()).collect();
+        act(&mut state, "blinker", "blink", &[]).unwrap();
+        assert!(engaged_with(&state, "blinker").is_empty());
+        assert_eq!(state.combatants.iter().map(|c| c.ranges.clone()).collect::<Vec<_>>(), before);
+    }
+
+    #[test]
+    fn a_gated_teleport_adds_no_missing_range_entry() {
+        let mut state = blinker_state(serde_json::from_str(SELF_TELEPORT).unwrap());
+        state.settings.teleport_near = true;
+        act(&mut state, "blinker", "blink", &[]).unwrap();
+        assert!(state.combatants.iter().all(|c| c.ranges.is_empty()));
     }
 
     #[test]

@@ -227,6 +227,8 @@ pub struct StartSpec {
     pub reaction_windows: bool,
     /// Open spell-cast windows (ADR 0019).
     pub spell_cast_windows: bool,
+    /// A teleport leaves the pairs it frees at Near (ADR 0005).
+    pub teleport_near: bool,
 }
 
 /// Result of `bench replay`.
@@ -357,7 +359,7 @@ pub fn start(spec: StartSpec) -> Result<(EncounterState, Outcome), LiveError> {
         pending: None,
         rng: RngState::new(spec.seed),
         initiative_rolls: HashMap::new(),
-        settings: EncounterSettings { pc_dice: spec.pc_dice, lighting: spec.lighting, reaction_windows: spec.reaction_windows, spell_cast_windows: spec.spell_cast_windows },
+        settings: EncounterSettings { pc_dice: spec.pc_dice, lighting: spec.lighting, reaction_windows: spec.reaction_windows, spell_cast_windows: spec.spell_cast_windows, teleport_near: spec.teleport_near },
         ended: None,
         initial_snapshot: None,
         log: vec![],
@@ -1343,6 +1345,7 @@ mod tests {
             lighting: Lighting::Unspecified,
             reaction_windows: true,
             spell_cast_windows: true,
+            teleport_near: true,
         }
     }
 
@@ -2906,6 +2909,15 @@ mod tests {
     fn an_old_state_leaves_spell_cast_windows_off() {
         let (_, state) = old_state();
         assert!(!state.settings.spell_cast_windows);
+    }
+
+    #[test]
+    fn an_old_state_leaves_teleport_near_off_and_a_new_one_records_it() {
+        let (_, state) = old_state();
+        assert!(!state.settings.teleport_near);
+        let (state, _) = start(spec(PcDice::Engine)).unwrap();
+        assert!(state.settings.teleport_near);
+        assert!(serde_json::to_string(&state.settings).unwrap().contains(r#""teleport_near":true"#));
     }
 
     #[test]

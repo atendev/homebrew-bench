@@ -673,6 +673,7 @@ fn fight(spec: &BatchSpec, constants: &PolicyConstants, level: u8, index: u64, w
         lighting: spec.lighting,
         reaction_windows: true,
         spell_cast_windows: true,
+        teleport_near: true,
     })
     .map_err(|e| BatchError::Invalid(e.to_string()))?;
     state.reactions.decider = ReactionDecider::Policy(constants.clone());
@@ -1957,6 +1958,7 @@ mod tests {
             lighting: s.lighting,
             reaction_windows: true,
             spell_cast_windows: true,
+            teleport_near: true,
         })
         .unwrap();
         let labels = failure_labels(&state);
@@ -2037,6 +2039,7 @@ mod tests {
             lighting: Lighting::Unspecified,
             reaction_windows: true,
             spell_cast_windows: true,
+            teleport_near: true,
         };
         let (mut state, _) = live::start(start).unwrap();
         state.reactions.decider = ReactionDecider::Policy(PolicyConstants::default());
@@ -2115,6 +2118,7 @@ mod tests {
             lighting: Lighting::Unspecified,
             reaction_windows: false,
             spell_cast_windows: false,
+            teleport_near: false,
         })
         .unwrap();
         let ogre = state.combatants.iter().find(|c| c.side_id != PARTY_SIDE).unwrap().id.clone();

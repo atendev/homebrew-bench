@@ -3,7 +3,7 @@ id: 112
 title: Build Near after a teleport
 type: task
 mode: AFK
-status: open
+status: closed
 blocked_by: [108]
 claimed: false
 ---
@@ -25,4 +25,6 @@ Build the decision in [Leftover Engaged range after a teleport](../closed/108-le
 
 ## Resolution
 
-<Filled in at close.>
+A teleport now writes Near into both sides' existing `ranges` entries for every pair it frees, gated on a new recorded setting, `settings.teleport_near`. It collects the pairs before engagements clear: the subject's list plus every list that holds the subject. Other bands stay, and a missing entry is not added. `bench start` and batch set the setting. Saves from earlier engines load it as false, keep their bands, and refold as recorded.
+
+Engine 0.1.34. The regenerated curve differs only in `engine_version`, so policy stays v5. ADR 0005 names the gate, calls Near a modeling choice, keeps the missing-entry caveat, and says the legacy branch stays until a saves-migration ticket drops it. ADR 0012 keeps the 0.25 price and changes only its wording. Commit bcb08e1. Decision report: [112-implementation](../reports/112-implementation.md).
