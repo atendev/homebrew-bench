@@ -47,6 +47,10 @@ pub struct ConditionInstance {
     pub source: Option<String>,
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub ends_on_damage: bool,
+    /// The round the condition was applied, read by `minutes`, `hours` and `days` durations
+    /// when `settings.long_durations` is true.
+    #[serde(default, skip_serializing_if = "is_zero")]
+    pub started_round: u32,
 }
 
 /// One active modifier from a timed effect.
@@ -70,6 +74,14 @@ pub struct ActiveModifier {
     /// Effects that land on the bearer when this instance ends, from its `source`.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub on_end: Vec<crate::effect::Effect>,
+    /// The round the modifier was applied, read by `minutes`, `hours` and `days` durations
+    /// when `settings.long_durations` is true.
+    #[serde(default, skip_serializing_if = "is_zero")]
+    pub started_round: u32,
+}
+
+fn is_zero(n: &u32) -> bool {
+    *n == 0
 }
 
 impl ActiveModifier {
@@ -227,6 +239,12 @@ pub struct EncounterSettings {
     /// it off, so their bands stay unchanged and their histories refold as recorded.
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub teleport_near: bool,
+    /// `minutes`, `hours` and `days` durations count against the round clock (ADR 0005): a
+    /// minute is 10 rounds, an hour 600, a day 14,400. `bench start` and batch encounters
+    /// set it; encounters saved before it existed leave it off and keep the per-turn
+    /// decrement, so their histories refold as recorded.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub long_durations: bool,
 }
 
 /// Record of an encounter ended early through `bench end`.

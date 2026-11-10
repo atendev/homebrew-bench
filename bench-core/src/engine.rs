@@ -636,6 +636,7 @@ fn resolve_effect(
                         duration: condition.duration.clone(),
                         source: Some(actor_id.into()),
                         ends_on_damage: condition.ends_on_damage,
+                        started_round: state.round,
                     });
                     events.push(event("condition", format!("{target_id} is {}", format!("{:?}", condition.condition).to_lowercase()), actor_id, target_id));
                     if incapacitates(condition.condition) {
@@ -664,6 +665,7 @@ fn resolve_effect(
                     source_ability: modifier.source_ability.clone(),
                     ends_on_damage: modifier.ends_on_damage,
                     on_end: modifier.on_end.clone(),
+                    started_round: state.round,
                 });
             }
         }
@@ -1966,6 +1968,12 @@ pub fn start_next_turn(state: &mut EncounterState) -> Result<Vec<EngineEvent>, E
     }
     if next_index <= current_index && (current_index != next_index || wrapped) {
         state.round += 1;
+        let ended = expire_long_durations(state, &mut events);
+        if ended.iter().any(|m| !m.on_end.is_empty()) {
+            let mut stream = Stream::from_state(state.rng.clone());
+            fire_on_end(state, &mut stream, ended, &mut events)?;
+            state.rng = stream.state();
+        }
     }
     state.active_turn = state.initiative_order.get(next_index).cloned();
     if let Some(next) = state.active_turn.clone() {
@@ -1983,6 +1991,7 @@ pub fn start_next_turn(state: &mut EncounterState) -> Result<Vec<EngineEvent>, E
 }
 
 fn decrement_durations(state: &mut EncounterState, events: &mut Vec<EngineEvent>) -> Vec<ActiveModifier> {
+    let long = state.settings.long_durations;
     let mut ended = Vec::new();
     state.active_modifiers.retain_mut(|modifier| {
         let keep = match &mut modifier.remaining {
@@ -1990,6 +1999,7 @@ fn decrement_durations(state: &mut EncounterState, events: &mut Vec<EngineEvent>
                 *n = n.saturating_sub(1);
                 *n > 0
             }
+            Duration::Minutes(_) | Duration::Hours(_) | Duration::Days(_) if long => true,
             Duration::Minutes(n) => {
                 *n = n.saturating_sub(1);
                 *n > 0
@@ -2019,6 +2029,7 @@ fn decrement_durations(state: &mut EncounterState, events: &mut Vec<EngineEvent>
                     *n = n.saturating_sub(1);
                     *n > 0
                 }
+                Duration::Minutes(_) | Duration::Hours(_) | Duration::Days(_) if long => true,
                 Duration::Minutes(n) => {
                     *n = n.saturating_sub(1);
                     *n > 0
@@ -2039,6 +2050,41 @@ fn decrement_durations(state: &mut EncounterState, events: &mut Vec<EngineEvent>
         }
         for idx in expired.into_iter().rev() {
             let condition = combatant.conditions.remove(idx);
+            events.push(event("condition_expire", format!("{} loses {}", combatant.name, format!("{:?}", condition.condition).to_lowercase()), &combatant.id, &combatant.id));
+        }
+    }
+    ended.extend(expire_long_durations(state, events));
+    ended
+}
+
+fn round_length(duration: &Duration) -> Option<u32> {
+    match duration {
+        Duration::Minutes(n) => Some(n.saturating_mul(10)),
+        Duration::Hours(n) => Some(n.saturating_mul(600)),
+        Duration::Days(n) => Some(n.saturating_mul(14_400)),
+        _ => None,
+    }
+}
+
+fn expire_long_durations(state: &mut EncounterState, events: &mut Vec<EngineEvent>) -> Vec<ActiveModifier> {
+    let mut ended = Vec::new();
+    if !state.settings.long_durations {
+        return ended;
+    }
+    let round = state.round;
+    let lapsed = |duration: &Duration, started: u32| round_length(duration).is_some_and(|len| round >= started.saturating_add(len));
+    state.active_modifiers.retain(|modifier| {
+        let keep = !lapsed(&modifier.remaining, modifier.started_round);
+        if !keep {
+            events.push(event("modifier_expire", "a timed modifier expired".into(), "engine", "engine"));
+            ended.push(modifier.clone());
+        }
+        keep
+    });
+    for combatant in &mut state.combatants {
+        let (gone, kept) = std::mem::take(&mut combatant.conditions).into_iter().partition::<Vec<_>, _>(|c| lapsed(&c.duration, c.started_round));
+        combatant.conditions = kept;
+        for condition in gone {
             events.push(event("condition_expire", format!("{} loses {}", combatant.name, format!("{:?}", condition.condition).to_lowercase()), &combatant.id, &combatant.id));
         }
     }
@@ -3387,6 +3433,7 @@ mod tests {
             source_ability: None,
             ends_on_damage: false,
             on_end: vec![],
+            started_round: 0,
         });
         let modifier = attack_modifier(&state, &state.combatants[0]).unwrap();
         assert_eq!(modifier, 5);
@@ -3401,6 +3448,7 @@ mod tests {
             duration: Duration::Rounds(1),
             source: None,
             ends_on_damage: false,
+            started_round: 0,
         });
         let state = test_encounter(
             vec![test_stat_block("fighter", "Fighter", 20, 16), test_stat_block("goblin", "Goblin", 7, 15)],
@@ -3458,7 +3506,7 @@ mod tests {
     }
 
     fn with_condition(mut combatant: Combatant, condition: Condition) -> Combatant {
-        combatant.conditions.push(ConditionInstance { condition, duration: Duration::Rounds(1), source: None, ends_on_damage: false });
+        combatant.conditions.push(ConditionInstance { condition, duration: Duration::Rounds(1), source: None, ends_on_damage: false, started_round: 0 });
         combatant
     }
 
@@ -3501,6 +3549,7 @@ mod tests {
             source_ability: None,
             ends_on_damage: false,
             on_end: vec![],
+            started_round: 0,
         });
         state.active_modifiers.push(ActiveModifier {
             target: ModifierTarget::AttackRolls,
@@ -3511,6 +3560,7 @@ mod tests {
             source_ability: None,
             ends_on_damage: false,
             on_end: vec![],
+            started_round: 0,
         });
         assert_eq!(disposition(&state, &state.combatants[0], &state.combatants[1], &sword()), RollDisposition::Normal);
     }
@@ -3854,7 +3904,7 @@ mod tests {
     }
 
     fn condition_from(condition: Condition, source: &str) -> ConditionInstance {
-        ConditionInstance { condition, duration: Duration::Permanent, source: Some(source.into()), ends_on_damage: false }
+        ConditionInstance { condition, duration: Duration::Permanent, source: Some(source.into()), ends_on_damage: false, started_round: 0 }
     }
 
     #[test]
@@ -4531,8 +4581,8 @@ mod tests {
     fn damage_ends_conditions_marked_ends_on_damage() {
         let blocks = vec![test_stat_block("a", "A", 20, 10), test_stat_block("b", "B", 20, 10)];
         let mut state = test_encounter(blocks, vec![test_combatant("a", "a", 20, "ally"), test_combatant("b", "b", 20, "enemy")]);
-        state.combatants[1].conditions.push(ConditionInstance { condition: Condition::Unconscious, duration: Duration::Concentration, source: Some("a".into()), ends_on_damage: true });
-        state.combatants[1].conditions.push(ConditionInstance { condition: Condition::Prone, duration: Duration::Permanent, source: None, ends_on_damage: false });
+        state.combatants[1].conditions.push(ConditionInstance { condition: Condition::Unconscious, duration: Duration::Concentration, source: Some("a".into()), ends_on_damage: true, started_round: 0 });
+        state.combatants[1].conditions.push(ConditionInstance { condition: Condition::Prone, duration: Duration::Permanent, source: None, ends_on_damage: false, started_round: 0 });
         let mut stream = Stream::from_seed(1);
         let mut events = Vec::new();
         apply_damage(&mut state, &mut stream, "b", 3, Some("a"), false, false, &mut events).unwrap();
@@ -4546,9 +4596,9 @@ mod tests {
         let blocks = vec![test_stat_block("a", "A", 20, 10), test_stat_block("b", "B", 20, 10)];
         let mut state = test_encounter(blocks, vec![test_combatant("a", "a", 20, "ally"), test_combatant("b", "b", 20, "enemy")]);
         state.combatants[0].concentration = Some("hold-person".into());
-        state.combatants[1].conditions.push(ConditionInstance { condition: Condition::Paralyzed, duration: Duration::Concentration, source: Some("a".into()), ends_on_damage: false });
-        state.combatants[1].conditions.push(ConditionInstance { condition: Condition::Prone, duration: Duration::Concentration, source: Some("b".into()), ends_on_damage: false });
-        state.active_modifiers.push(ActiveModifier { target: ModifierTarget::ArmorClass, change: ModifierChange::Add(2), remaining: Duration::Concentration, source: Some("a".into()), bearer: None, source_ability: None, ends_on_damage: false, on_end: vec![] });
+        state.combatants[1].conditions.push(ConditionInstance { condition: Condition::Paralyzed, duration: Duration::Concentration, source: Some("a".into()), ends_on_damage: false, started_round: 0 });
+        state.combatants[1].conditions.push(ConditionInstance { condition: Condition::Prone, duration: Duration::Concentration, source: Some("b".into()), ends_on_damage: false, started_round: 0 });
+        state.active_modifiers.push(ActiveModifier { target: ModifierTarget::ArmorClass, change: ModifierChange::Add(2), remaining: Duration::Concentration, source: Some("a".into()), bearer: None, source_ability: None, ends_on_damage: false, on_end: vec![], started_round: 0 });
         let mut events = Vec::new();
         break_concentration(&mut state, &mut Stream::from_state(RngState::new(1)), "a", &mut events).unwrap();
         assert_eq!(state.combatants[1].conditions.len(), 1);
@@ -4845,13 +4895,13 @@ mod tests {
         ally.combatants[1].side_id = "ally".into();
         refused(&mut ally, None, RangeBand::Far, &[oa("b", None)], "on a's side");
         let mut stunned = base.clone();
-        stunned.combatants[1].conditions.push(ConditionInstance { condition: Condition::Stunned, duration: Duration::Rounds(1), source: None, ends_on_damage: false });
+        stunned.combatants[1].conditions.push(ConditionInstance { condition: Condition::Stunned, duration: Duration::Rounds(1), source: None, ends_on_damage: false, started_round: 0 });
         refused(&mut stunned, None, RangeBand::Far, &[oa("b", None)], "cannot act");
         let mut slowed = base.clone();
-        slowed.active_modifiers.push(ActiveModifier { target: ModifierTarget::Reactions, change: ModifierChange::None, remaining: Duration::Rounds(1), source: Some("b".into()), bearer: None, source_ability: None, ends_on_damage: false, on_end: vec![] });
+        slowed.active_modifiers.push(ActiveModifier { target: ModifierTarget::Reactions, change: ModifierChange::None, remaining: Duration::Rounds(1), source: Some("b".into()), bearer: None, source_ability: None, ends_on_damage: false, on_end: vec![], started_round: 0 });
         refused(&mut slowed, None, RangeBand::Far, &[oa("b", None)], "cannot take reactions");
         let mut unseen = base.clone();
-        unseen.combatants[0].conditions.push(ConditionInstance { condition: Condition::Invisible, duration: Duration::Rounds(1), source: None, ends_on_damage: false });
+        unseen.combatants[0].conditions.push(ConditionInstance { condition: Condition::Invisible, duration: Duration::Rounds(1), source: None, ends_on_damage: false, started_round: 0 });
         refused(&mut unseen, None, RangeBand::Far, &[oa("b", None)], "who is invisible (assumption)");
         refused(&mut base.clone(), None, RangeBand::Far, &[oa("b", Some("bite"))], "action bite not found");
     }
@@ -4860,7 +4910,7 @@ mod tests {
     fn notices_name_only_eligible_reactors() {
         let mut state = provoking_encounter(0);
         state.combatants[1].action_economy.reaction_used = true;
-        state.combatants[2].conditions.push(ConditionInstance { condition: Condition::Blinded, duration: Duration::Rounds(1), source: None, ends_on_damage: false });
+        state.combatants[2].conditions.push(ConditionInstance { condition: Condition::Blinded, duration: Duration::Rounds(1), source: None, ends_on_damage: false, started_round: 0 });
         let events = move_combatant(&mut state, "a", None, RangeBand::Far, 35, &[], &[]).unwrap();
         assert!(events.iter().all(|e| e.kind != "opportunity_attack"), "{events:?}");
         let assumption = events.iter().find(|e| e.kind == "assumption").expect("sight assumption");
@@ -4998,7 +5048,7 @@ mod tests {
         assert!(err.contains("turn is ending"), "{err}");
 
         state.active_turn = Some("pc".into());
-        state.combatants[1].conditions.push(ConditionInstance { condition: Condition::Stunned, source: None, duration: Duration::Permanent, ends_on_damage: false });
+        state.combatants[1].conditions.push(ConditionInstance { condition: Condition::Stunned, source: None, duration: Duration::Permanent, ends_on_damage: false, started_round: 0 });
         let err = refused(&mut state, vec![lu("dragon", "tail", &["pc"])]);
         assert!(err.contains("dragon cannot act"), "{err}");
     }
@@ -5146,7 +5196,7 @@ mod tests {
     #[test]
     fn darkness_names_one_reason_after_invisible_and_blinded() {
         let mut state = dark(false);
-        let cond = |condition| ConditionInstance { condition, duration: Duration::Rounds(1), source: None, ends_on_damage: false };
+        let cond = |condition| ConditionInstance { condition, duration: Duration::Rounds(1), source: None, ends_on_damage: false, started_round: 0 };
         state.combatants[0].conditions.push(cond(Condition::Invisible));
         assert!(unseen_reason(&state, &state.combatants[1], &state.combatants[0]).unwrap().ends_with("who is invisible"));
         state.combatants[1].conditions.push(cond(Condition::Blinded));
@@ -5385,8 +5435,8 @@ mod tests {
             |s| {
                 s.combatants[1].resources.insert(format!("{CASTER}:slot:1"), 4);
             },
-            |s| s.combatants[1].conditions.push(ConditionInstance { condition: Condition::Incapacitated, duration: Duration::Permanent, source: None, ends_on_damage: false }),
-            |s| s.active_modifiers.push(ActiveModifier { target: ModifierTarget::Reactions, change: ModifierChange::None, remaining: Duration::Rounds(1), source: Some(CASTER.into()), bearer: None, source_ability: None, ends_on_damage: false, on_end: vec![] }),
+            |s| s.combatants[1].conditions.push(ConditionInstance { condition: Condition::Incapacitated, duration: Duration::Permanent, source: None, ends_on_damage: false, started_round: 0 }),
+            |s| s.active_modifiers.push(ActiveModifier { target: ModifierTarget::Reactions, change: ModifierChange::None, remaining: Duration::Rounds(1), source: Some(CASTER.into()), bearer: None, source_ability: None, ends_on_damage: false, on_end: vec![], started_round: 0 }),
         ];
         for setup in setups {
             let mut state = answering(&base, vec![]);
@@ -5750,6 +5800,7 @@ mod tests {
             source_ability: ability.map(Into::into),
             ends_on_damage: false,
             on_end: vec![],
+            started_round: 0,
         }
     }
 
@@ -5924,7 +5975,7 @@ mod tests {
             assert_eq!(speed_of(&state, "other"), feet, "{:?}", state.active_modifiers);
         }
         state.active_modifiers = vec![speed("a", ModifierChange::Double)];
-        state.combatants[1].conditions.push(ConditionInstance { condition: Condition::Grappled, duration: Duration::Permanent, source: None, ends_on_damage: false });
+        state.combatants[1].conditions.push(ConditionInstance { condition: Condition::Grappled, duration: Duration::Permanent, source: None, ends_on_damage: false, started_round: 0 });
         assert_eq!(speed_of(&state, "other"), 0);
     }
 
@@ -6153,7 +6204,7 @@ mod tests {
     }
 
     fn sourced(condition: Condition, source: Option<&str>) -> ConditionInstance {
-        ConditionInstance { condition, duration: Duration::Permanent, source: source.map(Into::into), ends_on_damage: false }
+        ConditionInstance { condition, duration: Duration::Permanent, source: source.map(Into::into), ends_on_damage: false, started_round: 0 }
     }
 
     #[test]
@@ -6277,15 +6328,16 @@ mod tests {
     }
 
     #[test]
-    fn see_invisibility_is_cast_on_the_caster_without_concentration_and_held_for_the_encounter() {
+    fn see_invisibility_is_cast_on_the_caster_without_concentration_and_lasts_an_hour_of_rounds() {
         let mut state = duel(|_, c| c[1].conditions.push(sourced(Condition::Invisible, None)));
+        state.settings.long_durations = true;
         state.active_turn = Some("fighter".into());
         let cast = Effect::Cast(crate::effect::Cast { spell_id: "see-invisibility".into(), slot_level: None, upcast: false });
         resolve_effect(&mut state, &mut Stream::from_state(RngState::new(1)), "fighter", cast, &[], &mut vec![]).unwrap();
         assert!(state.combatants[0].concentration.is_none());
         assert!(sees(&state, &state.combatants[0], &state.combatants[1]));
         finish_turn(&mut state).unwrap();
-        assert!(sees(&state, &state.combatants[0], &state.combatants[1]), "held as permanent, because a timed duration ticks once per creature's turn");
+        assert!(sees(&state, &state.combatants[0], &state.combatants[1]), "an hour is 600 rounds, so one turn does not end it");
     }
 
     #[test]
@@ -6793,6 +6845,7 @@ mod tests {
             duration: Duration::UntilSave { ability: Ability::Str },
             source: None,
             ends_on_damage: false,
+            started_round: 0,
         });
         let before = state.rng.clone();
         let mut events = vec![];
@@ -7310,7 +7363,7 @@ mod tests {
 
         let mut state = saver_with(&[]);
         state.active_modifiers.push(bless_on("saver", all_saves()));
-        state.combatants[0].conditions.push(ConditionInstance { condition: Condition::Restrained, duration: Duration::UntilSave { ability: Ability::Str }, source: None, ends_on_damage: false });
+        state.combatants[0].conditions.push(ConditionInstance { condition: Condition::Restrained, duration: Duration::UntilSave { ability: Ability::Str }, source: None, ends_on_damage: false, started_round: 0 });
         let mut events = vec![];
         process_repeat_saves(&mut state, "saver", &mut events).unwrap();
         let save = &events[0];
@@ -7433,5 +7486,108 @@ mod tests {
         state["active_modifiers"] = serde_json::to_value([dice("fighter", "aura", ModifierTarget::Speed, ModifierChange::AddDice("1d4".into()))]).unwrap();
         let err = serde_json::from_value::<EncounterState>(state).unwrap_err().to_string();
         assert!(err.contains("not speed"), "{err}");
+    }
+
+    fn long_state(long_durations: bool) -> EncounterState {
+        let mut state = test_encounter(
+            vec![test_stat_block("fighter", "Fighter", 20, 16), test_stat_block("goblin", "Goblin", 7, 15)],
+            vec![test_combatant("fighter", "fighter", 20, "ally"), test_combatant("goblin", "goblin", 7, "enemy")],
+        );
+        state.settings.long_durations = long_durations;
+        state
+    }
+
+    fn long_condition(state: &mut EncounterState, duration: Duration) {
+        state.combatants[1].conditions.push(ConditionInstance { condition: Condition::Blinded, duration, source: None, ends_on_damage: false, started_round: state.round });
+    }
+
+    fn long_modifier(state: &mut EncounterState, duration: Duration) {
+        state.active_modifiers.push(ActiveModifier { target: ModifierTarget::ArmorClass, change: ModifierChange::Add(1), remaining: duration, source: Some("fighter".into()), bearer: Some("goblin".into()), source_ability: None, ends_on_damage: false, on_end: vec![], started_round: state.round });
+    }
+
+    #[test]
+    fn with_long_durations_an_hours_modifier_and_condition_survive_many_turns() {
+        let mut state = long_state(true);
+        long_condition(&mut state, Duration::Hours(1));
+        long_modifier(&mut state, Duration::Hours(1));
+        for _ in 0..20 {
+            end_turn(&mut state);
+        }
+        assert_eq!(state.combatants[1].conditions.len(), 1);
+        assert_eq!(state.active_modifiers.len(), 1);
+        assert!(matches!(state.active_modifiers[0].remaining, Duration::Hours(1)));
+    }
+
+    #[test]
+    fn with_long_durations_a_minute_clears_after_ten_rounds_and_not_before() {
+        let mut state = long_state(true);
+        long_condition(&mut state, Duration::Minutes(1));
+        long_modifier(&mut state, Duration::Minutes(1));
+        for _ in 0..19 {
+            end_turn(&mut state);
+        }
+        assert_eq!(state.round, 10);
+        assert_eq!(state.combatants[1].conditions.len(), 1);
+        assert_eq!(state.active_modifiers.len(), 1);
+        end_turn(&mut state);
+        assert_eq!(state.round, 11);
+        assert!(state.combatants[1].conditions.is_empty());
+        assert!(state.active_modifiers.is_empty());
+    }
+
+    #[test]
+    fn a_long_duration_counts_from_the_round_it_was_applied() {
+        let mut state = long_state(true);
+        for _ in 0..6 {
+            end_turn(&mut state);
+        }
+        assert_eq!(state.round, 4);
+        long_condition(&mut state, Duration::Minutes(1));
+        for _ in 0..19 {
+            end_turn(&mut state);
+        }
+        assert_eq!(state.round, 13);
+        assert_eq!(state.combatants[1].conditions.len(), 1);
+        end_turn(&mut state);
+        assert!(state.combatants[1].conditions.is_empty());
+    }
+
+    #[test]
+    fn without_long_durations_minutes_hours_and_days_decrement_each_turn_as_before() {
+        let mut state = long_state(false);
+        long_condition(&mut state, Duration::Minutes(1));
+        long_condition(&mut state, Duration::Hours(2));
+        long_modifier(&mut state, Duration::Days(2));
+        end_turn(&mut state);
+        assert_eq!(state.combatants[1].conditions.len(), 1);
+        assert!(matches!(state.combatants[1].conditions[0].duration, Duration::Hours(1)));
+        assert!(matches!(state.active_modifiers[0].remaining, Duration::Days(1)));
+        end_turn(&mut state);
+        assert!(state.combatants[1].conditions.is_empty());
+        assert!(state.active_modifiers.is_empty());
+    }
+
+    #[test]
+    fn applying_a_condition_or_modifier_records_the_round_and_a_zero_stays_out_of_the_save() {
+        let mut state = long_state(true);
+        let mut block = test_stat_block("fighter", "Fighter", 20, 16);
+        block.actions.push(ability("blind", vec![fx(serde_json::json!({"condition": {"condition": "blinded", "duration": {"minutes": 1}}}))], None));
+        block.actions.push(ability("ward", vec![fx(serde_json::json!({"timed_modifier": {"target": "armor_class", "change": {"add": 1}, "duration": {"hours": 1}, "bearer": "self"}}))], None));
+        state.stat_blocks[0] = StatBlockSnapshot::from_stat_block("fighter".into(), block);
+        for _ in 0..4 {
+            end_turn(&mut state);
+        }
+        assert_eq!(state.round, 3);
+        act(&mut state, "fighter", "blind", &["goblin"]).unwrap();
+        state.combatants[0].action_economy = ActionEconomy::default();
+        act(&mut state, "fighter", "ward", &[]).unwrap();
+        assert_eq!(state.combatants[1].conditions[0].started_round, 3);
+        assert_eq!(state.active_modifiers[0].started_round, 3);
+        let zero = ConditionInstance { condition: Condition::Blinded, duration: Duration::Permanent, source: None, ends_on_damage: false, started_round: 0 };
+        assert!(!serde_json::to_string(&zero).unwrap().contains("started_round"));
+        let old: ConditionInstance = serde_json::from_str(r#"{"condition":"blinded","duration":{"minutes":1}}"#).unwrap();
+        assert_eq!(old.started_round, 0);
+        let settings = serde_json::to_string(&long_state(false).settings).unwrap();
+        assert!(!settings.contains("long_durations"));
     }
 }
