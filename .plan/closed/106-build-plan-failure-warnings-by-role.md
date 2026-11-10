@@ -3,7 +3,7 @@ id: 106
 title: Build plan-failure warnings by role
 type: task
 mode: AFK
-status: open
+status: closed
 blocked_by: [096]
 claimed: false
 ---
@@ -23,4 +23,10 @@ Build the decision in [Plan-failure warnings split per level](../closed/096-plan
 
 ## Resolution
 
-<Filled in at close: the decision and the reason for it.>
+Built on 2026-11-10 in the `wayfinder-runner` skill's auto mode. A haiku auditor approved in one round, and the user chose commit and merge. No test CI exists: the only workflow is the `cargo-dist` release workflow.
+
+`party::role_rank` is the one role match, shared by `group_party` and the new `failure_labels`. `Log::plan_failed` labels every combatant through `failure_labels`: a party member whose stat block id names a role that no other party-side combatant names is the capitalized role, everyone else is its name. `PlanFailure` gains `role_keyed`, and `replace_ids` rewrites combatant ids in the error text to those labels, longest id first on whole tokens. The `plan failed` log lines still format the raw engine error. `plan_failure_warnings` keys on `role_keyed` as well, collects each row's levels from `FightResult.level`, and prints `Striker (levels 3-5): ...` through `level_list` for role rows only.
+
+Engine and policy versions unchanged. Release builds of master and this branch gave byte-identical output for ogre at seed 7. Seven tests were added, and the 474 core tests pass. Decision report: [106-implementation](../reports/106-implementation.md).
+
+Left alone, from the audit: a monster named like a role label reads the same as a role row, and a party-side summon naming a role would block that role's key. Neither exists in batch.
