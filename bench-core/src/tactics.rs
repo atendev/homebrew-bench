@@ -38,6 +38,9 @@ pub const SAVE_ADVANTAGE_VALUE: f64 = 0.3;
 /// `AC_POINT_VALUE`, since a successful save usually still takes half damage (ADR 0012).
 pub const SAVE_POINT_VALUE: f64 = 0.05;
 
+/// Attack-roll points that Disadvantage on an opponent's attack rolls is worth (ADR 0012).
+pub const ATTACK_DISADVANTAGE_POINTS: f64 = 5.0;
+
 /// Score weights. Resource cost is 0.0 because a batch fight is one encounter.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
 pub struct Weights {
@@ -390,6 +393,7 @@ enum Rolls {
 #[derive(Debug, Clone, Default)]
 struct BearerValue {
     damage: f64,
+    control: f64,
     survival: f64,
     /// Per-round value of an extra action, already counted in `damage`.
     extra_action: f64,
@@ -399,6 +403,14 @@ struct BearerValue {
     /// Lethargy cost, already taken off `damage`.
     lethargy: f64,
     notes: Vec<String>,
+}
+
+/// One modifier's value per round on a bearer, before the horizon and keep.
+struct Term {
+    value: Value,
+    /// The value is an extra action's.
+    extra_action: bool,
+    note: Option<String>,
 }
 
 /// What a buff's value reads from its caster alone, computed at most once per plan however many
@@ -418,6 +430,7 @@ impl<'c> BuffOutlook<'c> {
 impl BearerValue {
     fn add(&mut self, other: &BearerValue) {
         self.damage += other.damage;
+        self.control += other.control;
         self.survival += other.survival;
         self.extra_action += other.extra_action;
         self.horizon = self.horizon.or(other.horizon);
@@ -861,25 +874,28 @@ impl<'a> Ctx<'a> {
     }
 
     /// A plan for an ability whose effects are all timed modifiers. `self` modifiers are valued
-    /// on the actor; `target` ones on the actor or a living ally, whichever scores best (ties to
-    /// the actor, then the lower id), and the plan targets that bearer.
+    /// on the actor; `target` ones on the actor, a living ally, or a living opponent on which a
+    /// harmful change scores, whichever scores best (ties to the actor, then allies, then
+    /// opponents, each by lower id), and the plan targets that bearer.
     fn modifier_plan(&self, actor: &Combatant, block: &StatBlock, ability: &AbilityEntry, section: Section, resource: Option<String>, modifiers: &[TimedModifier]) -> Option<Plan> {
         let targeted = modifiers.iter().any(|m| m.bearer == ModifierBearer::Target);
-        let mut bearers = vec![actor];
-        if targeted {
-            let mut allies: Vec<&Combatant> = self.allies(actor).filter(|a| a.id != actor.id && a.end_state == EndState::Active).collect();
-            allies.sort_by(|a, b| a.id.cmp(&b.id));
-            bearers.extend(allies);
-        }
+        let living = |list: Vec<&'a Combatant>| {
+            let mut list: Vec<&Combatant> = list.into_iter().filter(|c| c.id != actor.id && c.end_state == EndState::Active).collect();
+            list.sort_by(|a, b| a.id.cmp(&b.id));
+            list
+        };
+        let (allies, opponents) = if targeted { (living(self.allies(actor).collect()), living(self.opponents(actor).collect())) } else { (vec![], vec![]) };
         let outlook = BuffOutlook::new(actor);
+        let on = |bearer: &Combatant| self.bearer_value(&outlook, bearer, modifiers.iter().filter(|m| m.bearer == ModifierBearer::Target));
+        let mut candidates: Vec<(&Combatant, BearerValue)> = std::iter::once(actor).chain(allies).map(|c| (c, on(c))).collect();
+        candidates.extend(opponents.into_iter().map(|c| (c, on(c))).filter(|(_, v)| v.damage + v.control > 0.0));
         let own = self.bearer_value(&outlook, actor, modifiers.iter().filter(|m| m.bearer == ModifierBearer::Actor));
         let w = &self.constants.weights;
         let cost = if is_limited(block, ability) { 1.0 } else { 0.0 };
         let mut best: Option<(f64, &Combatant, BearerValue)> = None;
-        for bearer in bearers {
-            let mut value = self.bearer_value(&outlook, bearer, modifiers.iter().filter(|m| m.bearer == ModifierBearer::Target));
+        for (bearer, mut value) in candidates {
             value.add(&own);
-            let score = w.expected_damage * value.damage + w.survival * value.survival - w.resource_cost * cost;
+            let score = w.expected_damage * value.damage + w.control * value.control + w.survival * value.survival - w.resource_cost * cost;
             if best.as_ref().map_or(true, |(b, _, _)| score > b + 1e-9) {
                 best = Some((score, bearer, value));
             }
@@ -903,7 +919,7 @@ impl<'a> Ctx<'a> {
             movement: vec![],
             picks: vec![],
             expected_damage: value.damage,
-            control: 0.0,
+            control: value.control,
             survival: value.survival,
             score,
             reason: format!("{} on {} ({})", ability.id, bearer.id, notes.join(", ")),
@@ -915,11 +931,14 @@ impl<'a> Ctx<'a> {
 
     /// What `actor`'s `modifiers` are worth on `bearer` over the buff horizon (ADR 0012), cut to
     /// the rounds the fight has left and, for concentration, weighted round by round by the
-    /// chance the actor keeps concentration. A concentration modifier whose `on_end` stops the
-    /// bearer acting costs its threat times the chance concentration breaks in the horizon. A
-    /// modifier scores 0 on a bearer that already has one from the same `source_ability`.
+    /// chance the actor keeps concentration. A modifier on an opponent of the actor takes the
+    /// mirrored debuff terms and never counts its first round as safe. A concentration modifier
+    /// whose `on_end` stops an allied bearer acting costs its threat times the chance
+    /// concentration breaks in the horizon. A modifier scores 0 on a bearer that already has one
+    /// from the same `source_ability`.
     fn bearer_value<'m>(&self, outlook: &BuffOutlook, bearer: &Combatant, modifiers: impl Iterator<Item = &'m TimedModifier>) -> BearerValue {
         let actor = outlook.actor;
+        let opposed = bearer.side_id != actor.side_id;
         let mut out = BearerValue::default();
         for m in modifiers {
             let held = m.source_ability.as_deref().is_some_and(|ability| {
@@ -929,54 +948,109 @@ impl<'a> Ctx<'a> {
             if held || cap == 0.0 {
                 continue;
             }
-            let h = cap.min(*outlook.rounds_left.get_or_init(|| self.rounds_left(actor)));
             let concentration = matches!(m.duration, Duration::Concentration);
+            let lethargic = !opposed
+                && concentration
+                && can_act(bearer)
+                && m.on_end.iter().any(|e| matches!(e, Effect::Condition(c) if engine::STOPS_ACTING.contains(&c.condition)));
+            let term = self.modifier_term(bearer, m, opposed);
+            if term.is_none() && !lethargic {
+                continue;
+            }
+            let h = cap.min(*outlook.rounds_left.get_or_init(|| self.rounds_left(actor)));
             let k = if concentration { *outlook.keep.get_or_init(|| self.concentration_keep(actor)) } else { 1.0 };
-            let rounds = weighted_rounds(h, k, self.acts_before_opponents(actor, bearer));
+            let rounds = weighted_rounds(h, k, !opposed && self.acts_before_opponents(actor, bearer));
             if (k < 1.0 || h < cap) && out.horizon.is_none() {
                 out.horizon = Some((rounds, h, k));
             }
-            let lethargic = m.on_end.iter().any(|e| matches!(e, Effect::Condition(c) if engine::STOPS_ACTING.contains(&c.condition)));
-            if concentration && lethargic && can_act(bearer) {
+            if lethargic {
                 let cost = self.threat(bearer) * (1.0 - k.powf(h));
                 out.damage -= cost;
                 out.lethargy += cost;
             }
-            match (&m.target, &m.change) {
-                (ModifierTarget::ArmorClass, ModifierChange::Add(n)) if *n > 0 => {
-                    let attacks = self.incoming_rolls(bearer, Rolls::Attacks(AttackFilter::Any)).0;
-                    out.survival += attacks * AC_POINT_VALUE * f64::from(*n) * rounds;
-                    out.notes.push(format!("+{n} AC against {attacks:.1} attack damage"));
-                }
-                (ModifierTarget::SavingThrows { ability }, ModifierChange::Advantage) => {
-                    let saves = self.incoming_rolls(bearer, Rolls::Saves(*ability)).0;
-                    out.survival += saves * SAVE_ADVANTAGE_VALUE * rounds;
-                    out.notes.push(match ability {
-                        Some(a) => format!("advantage on {0} saves against {saves:.1} {0} save damage", ability_word(*a)),
-                        None => format!("advantage on saves against {saves:.1} save damage"),
-                    });
-                }
-                (ModifierTarget::AttackRolls, change) if change.mean_bonus() > 0.0 => {
-                    out.damage += self.threat(bearer) * AC_POINT_VALUE * change.mean_bonus() * rounds;
-                    out.notes.push(format!("{} to attack rolls", bonus_word(change)));
-                }
-                (ModifierTarget::SavingThrows { ability }, change) if change.mean_bonus() > 0.0 => {
-                    let saves = self.incoming_rolls(bearer, Rolls::Saves(*ability)).0;
-                    out.survival += saves * SAVE_POINT_VALUE * change.mean_bonus() * rounds;
-                    out.notes.push(match ability {
-                        Some(a) => format!("{} on {} saves against {saves:.1} {} save damage", bonus_word(change), ability_word(*a), ability_word(*a)),
-                        None => format!("{} on saves against {saves:.1} save damage", bonus_word(change)),
-                    });
-                }
-                (ModifierTarget::ExtraAction { only }, _) => {
-                    let per_round = self.extra_action_value(bearer, only);
-                    out.damage += per_round * rounds;
-                    out.extra_action += per_round;
-                }
-                _ => {}
+            let Some(term) = term else { continue };
+            out.damage += term.value.damage * rounds;
+            out.control += term.value.control * rounds;
+            out.survival += term.value.survival * rounds;
+            if term.extra_action {
+                out.extra_action += term.value.damage;
             }
+            out.notes.extend(term.note);
         }
         out
+    }
+
+    /// What one modifier is worth per round on `bearer` (ADR 0012), or `None` when it scores
+    /// nothing there. A helpful change counts only on the actor's side and a harmful one only on
+    /// an `opposed` bearer.
+    fn modifier_term(&self, bearer: &Combatant, m: &TimedModifier, opposed: bool) -> Option<Term> {
+        let attacks = || self.incoming_rolls(bearer, Rolls::Attacks(AttackFilter::Any)).0;
+        let saves = |ability: Option<crate::stat_block::Ability>| self.incoming_rolls(bearer, Rolls::Saves(ability)).0;
+        let saves_note = |word: String, ability: &Option<crate::stat_block::Ability>, saves: f64| match ability {
+            Some(a) => format!("{word} on {0} saves against {saves:.1} {0} save damage", ability_word(*a)),
+            None => format!("{word} on saves against {saves:.1} save damage"),
+        };
+        let term = |value: Value, note: String| Some(Term { value, extra_action: false, note: Some(note) });
+        let bonus = m.change.mean_bonus();
+        match (&m.target, &m.change, opposed) {
+            (ModifierTarget::ArmorClass, ModifierChange::Add(n), false) if *n > 0 => {
+                let d = attacks();
+                term(Value { survival: d * AC_POINT_VALUE * f64::from(*n), ..Default::default() }, format!("+{n} AC against {d:.1} attack damage"))
+            }
+            (ModifierTarget::ArmorClass, ModifierChange::Add(n), true) if *n < 0 => {
+                let d = attacks();
+                term(Value { damage: d * AC_POINT_VALUE * f64::from(-n), ..Default::default() }, format!("{n} AC against {d:.1} attack damage"))
+            }
+            (ModifierTarget::SavingThrows { ability }, ModifierChange::Advantage, false) => {
+                let s = saves(*ability);
+                term(Value { survival: s * SAVE_ADVANTAGE_VALUE, ..Default::default() }, saves_note("advantage".into(), ability, s))
+            }
+            (ModifierTarget::SavingThrows { ability }, ModifierChange::Disadvantage, true) => {
+                let s = saves(*ability);
+                term(Value { damage: s * SAVE_ADVANTAGE_VALUE, ..Default::default() }, saves_note("disadvantage".into(), ability, s))
+            }
+            (ModifierTarget::SavingThrows { ability }, change, false) if bonus > 0.0 => {
+                let s = saves(*ability);
+                term(Value { survival: s * SAVE_POINT_VALUE * bonus, ..Default::default() }, saves_note(bonus_word(change), ability, s))
+            }
+            (ModifierTarget::SavingThrows { ability }, change, true) if bonus < 0.0 => {
+                let s = saves(*ability);
+                term(Value { damage: s * SAVE_POINT_VALUE * -bonus, ..Default::default() }, saves_note(bonus_word(change), ability, s))
+            }
+            (ModifierTarget::AttackRolls, change, false) if bonus > 0.0 => {
+                term(Value { damage: self.threat(bearer) * AC_POINT_VALUE * bonus, ..Default::default() }, format!("{} to attack rolls", bonus_word(change)))
+            }
+            (ModifierTarget::AttackRolls, change, true) if bonus < 0.0 => {
+                let threat = self.threat(bearer);
+                term(Value { control: threat * AC_POINT_VALUE * -bonus, ..Default::default() }, format!("{} to attack rolls against {threat:.1} threat", bonus_word(change)))
+            }
+            (ModifierTarget::AttackRolls, ModifierChange::Disadvantage, true) => {
+                let threat = self.threat(bearer);
+                term(Value { control: threat * AC_POINT_VALUE * ATTACK_DISADVANTAGE_POINTS, ..Default::default() }, format!("disadvantage on attack rolls against {threat:.1} threat"))
+            }
+            (ModifierTarget::ExtraAction { only }, _, false) => {
+                Some(Term { value: Value { damage: self.extra_action_value(bearer, only), ..Default::default() }, extra_action: true, note: None })
+            }
+            _ => None,
+        }
+    }
+
+    /// The timed modifiers among an attack's `on_hit` or a save's `on_failure` that land on the
+    /// target, valued there through `bearer_value` (ADR 0012). The caller scales them by the hit
+    /// or failure chance. Nothing past the depth or threat-nesting limit conditions use.
+    fn rider_value(&self, actor: &Combatant, riders: &[Effect], target: &Combatant, depth: u8) -> Value {
+        let modifiers: Vec<&TimedModifier> = riders
+            .iter()
+            .filter_map(|e| match e {
+                Effect::TimedModifier(m) if m.bearer == ModifierBearer::Target => Some(m),
+                _ => None,
+            })
+            .collect();
+        if modifiers.is_empty() || depth > 3 {
+            return Value::default();
+        }
+        let value = self.nested(|| self.bearer_value(&BuffOutlook::new(actor), target, modifiers.into_iter()));
+        Value { damage: value.damage, control: value.control, survival: value.survival, heal: 0.0 }
     }
 
     /// The bearer's best expected damage from one action its extra action allows, against its
@@ -1227,6 +1301,7 @@ impl<'a> Ctx<'a> {
                 for on_hit in &attack.on_hit {
                     v.add(self.effect_value(actor, block, on_hit, target, depth + 1, footing).0.scaled(p_hit));
                 }
+                v.add(self.rider_value(actor, &attack.on_hit, target, depth + 1).scaled(p_hit));
                 v
             }
             Effect::SavingThrow(save) => {
@@ -1243,6 +1318,7 @@ impl<'a> Ctx<'a> {
                 for fail in &save.on_failure {
                     v.add(self.effect_value(actor, block, fail, target, depth + 1, footing).0.scaled(p_fail));
                 }
+                v.add(self.rider_value(actor, &save.on_failure, target, depth + 1).scaled(p_fail));
                 v
             }
             Effect::Damage(d) => {
@@ -1970,8 +2046,8 @@ fn ability_word(ability: crate::stat_block::Ability) -> String {
 
 fn bonus_word(change: &ModifierChange) -> String {
     match change.die() {
-        Some((_, dice)) => format!("+{dice}"),
-        None => format!("+{}", change.mean_bonus()),
+        Some((sign, dice)) => format!("{}{dice}", if sign < 0 { '-' } else { '+' }),
+        None => format!("{:+}", change.mean_bonus()),
     }
 }
 
@@ -3702,5 +3778,183 @@ mod tests {
         assert!(save_two > save_none && hit_two > hit_none);
         let (save_bane, _) = chances(Some(serde_json::json!({"subtract_dice": "1d4"})));
         assert!((save_bane - (save_none - 0.125)).abs() < 1e-9, "{save_bane} {save_none}");
+    }
+
+    fn debuff(source: &str, target: serde_json::Value, change: serde_json::Value) -> TimedModifier {
+        serde_json::from_value(serde_json::json!({"change": change, "duration": {"concentration": null}, "source_ability": source, "target": target})).unwrap()
+    }
+
+    /// The spell's first effect from the effects file, unwrapped from its area, at DC `dc`.
+    fn spell_save(spell: &str, dc: i32) -> Effect {
+        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).parent().unwrap();
+        let file: serde_json::Value = serde_json::from_str(&std::fs::read_to_string(root.join("data/spells/effects.json")).unwrap()).unwrap();
+        let mut effect: Effect = serde_json::from_value(file[spell]["effects"][0].clone()).unwrap();
+        if let Effect::Area(area) = effect {
+            effect = *area.effect;
+        }
+        let Effect::SavingThrow(mut save) = effect else { panic!() };
+        save.dc = dc;
+        Effect::SavingThrow(save)
+    }
+
+    fn spell_modifiers(effect: &Effect) -> Vec<TimedModifier> {
+        let Effect::SavingThrow(save) = effect else { panic!() };
+        save.on_failure.iter().map(|e| match e {
+            Effect::TimedModifier(m) => m.clone(),
+            _ => panic!(),
+        }).collect()
+    }
+
+    /// `haste_fight` where the caster also scorches for a Dexterity save, so the brute takes
+    /// save damage from the party.
+    fn scorching_fight(brute_hp: i32) -> EncounterState {
+        let mut state = haste_fight(25, brute_hp);
+        snapshot(&mut state, "caster").actions.push(entry(serde_json::json!({"id": "scorch", "name": "scorch", "kind": "modeled", "effects": [{"saving_throw": {
+            "ability": "dex", "dc": 13, "half_on_success": true, "no_damage_on_success": false, "damage": [{"dice": "6d6", "type": "fire"}]}}]})));
+        state
+    }
+
+    fn rider_on(state: &EncounterState, effect: &Effect) -> Value {
+        let constants = PolicyConstants::default();
+        let ctx = ctx(state, &constants);
+        let caster = ctx.combatant("caster").unwrap();
+        ctx.effect_value(caster, ctx.block(caster).unwrap(), effect, ctx.combatant("brute").unwrap(), 0, Footing::default()).0
+    }
+
+    #[test]
+    fn slows_ac_and_dexterity_penalties_score_as_damage_on_a_failed_save() {
+        let state = scorching_fight(300);
+        let constants = PolicyConstants::default();
+        let ctx = ctx(&state, &constants);
+        let brute = ctx.combatant("brute").unwrap();
+        let (d, s) = (ctx.incoming_rolls(brute, Rolls::Attacks(AttackFilter::Any)).0, ctx.incoming_rolls(brute, Rolls::Saves(Some(crate::stat_block::Ability::Dex))).0);
+        assert!(d > 0.0 && s > 0.0, "{d} {s}");
+        let slow = spell_save("slow", 15);
+        let value = value_on(&state, "brute", &spell_modifiers(&slow));
+        let rounds = value.horizon.map_or(f64::from(BUFF_HORIZON), |(r, _, _)| r);
+        let expected = (d * AC_POINT_VALUE * 2.0 + s * SAVE_POINT_VALUE * 2.0) * rounds;
+        assert!((value.damage - expected).abs() < 1e-9 && value.control == 0.0 && value.survival == 0.0, "{value:?}");
+        assert_eq!(value.notes, [format!("-2 AC against {d:.1} attack damage"), format!("-2 on dex saves against {s:.1} dex save damage")]);
+        let p_fail = 1.0 - ctx.save_success(brute, crate::stat_block::Ability::Wis, 15);
+        let rider = rider_on(&state, &slow);
+        assert!(p_fail > 0.0 && (rider.damage - p_fail * expected).abs() < 1e-9 && rider.control == 0.0, "{rider:?}");
+    }
+
+    #[test]
+    fn banes_die_reads_as_its_mean_on_attacks_as_control_and_on_saves_as_damage() {
+        let state = scorching_fight(300);
+        let constants = PolicyConstants::default();
+        let ctx = ctx(&state, &constants);
+        let brute = ctx.combatant("brute").unwrap();
+        let (threat, s) = (ctx.threat(brute), ctx.incoming_rolls(brute, Rolls::Saves(None)).0);
+        let bane = spell_save("bane", 13);
+        let value = value_on(&state, "brute", &spell_modifiers(&bane));
+        let rounds = value.horizon.map_or(f64::from(BUFF_HORIZON), |(r, _, _)| r);
+        assert!((value.control - threat * AC_POINT_VALUE * 2.5 * rounds).abs() < 1e-9, "{value:?}");
+        assert!((value.damage - s * SAVE_POINT_VALUE * 2.5 * rounds).abs() < 1e-9, "{value:?}");
+        assert_eq!(value.notes, [format!("-1d4 to attack rolls against {threat:.1} threat"), format!("-1d4 on saves against {s:.1} save damage")]);
+        let p_fail = 1.0 - ctx.save_success(brute, crate::stat_block::Ability::Cha, 13);
+        let rider = rider_on(&state, &bane);
+        assert!((rider.control - p_fail * value.control).abs() < 1e-9 && (rider.damage - p_fail * value.damage).abs() < 1e-9, "{rider:?}");
+    }
+
+    #[test]
+    fn an_on_hit_disadvantage_rider_scores_the_bearers_threat_as_control_by_the_hit_chance() {
+        let state = haste_fight(25, 300);
+        let hex = entry(serde_json::json!({"id": "hex-blade", "name": "hex-blade", "kind": "modeled", "effects": [{"attack": {"modifier": 5, "reach": 5, "target_count": 1,
+            "damage": [{"dice": "1d8", "type": "slashing"}],
+            "on_hit": [{"timed_modifier": {"change": "disadvantage", "duration": {"rounds": 1}, "source_ability": "hex-blade", "target": "attack_rolls"}}]}}]}));
+        let constants = PolicyConstants::default();
+        let ctx = ctx(&state, &constants);
+        let threat = ctx.threat(ctx.combatant("brute").unwrap());
+        let rider = rider_on(&state, &hex.effects[0]);
+        let p_hit = (21.0 - (12.0 - 5.0)) / 20.0;
+        assert!(threat > 0.0 && (rider.control - threat * AC_POINT_VALUE * ATTACK_DISADVANTAGE_POINTS * p_hit).abs() < 1e-9, "{rider:?} {threat}");
+    }
+
+    #[test]
+    fn a_concentration_debuff_is_weighted_by_keep_with_no_safe_first_round_and_cut_to_the_rounds_left() {
+        let state = scorching_fight(60);
+        let (h, k) = (rounds_left(&state, "caster"), keep(&state));
+        assert!(h < f64::from(BUFF_HORIZON) && k < 1.0, "{h} {k}");
+        assert!(acts_before(&state, "caster", "brute"), "the brute's turn comes next, yet an opponent never gets a safe round");
+        let value = value_on(&state, "brute", &[debuff("slow", serde_json::json!("armor_class"), serde_json::json!({"add": -2}))]);
+        let rounds = weighted_rounds(h, k, false);
+        let (r, vh, vk) = value.horizon.unwrap();
+        assert!((r - rounds).abs() < 1e-9 && (vh - h).abs() < 1e-9 && (vk - k).abs() < 1e-9, "{value:?}");
+        assert!((value.damage - SWORD * AC_POINT_VALUE * 2.0 * rounds).abs() < 1e-9, "{value:?}");
+    }
+
+    #[test]
+    fn a_change_on_the_side_it_doesnt_serve_scores_zero() {
+        let state = scorching_fight(300);
+        let harmful = [
+            debuff("curse", serde_json::json!("armor_class"), serde_json::json!({"add": -2})),
+            debuff("curse", serde_json::json!("attack_rolls"), serde_json::json!("disadvantage")),
+            debuff("curse", serde_json::json!({"saving_throws": {"ability": null}}), serde_json::json!({"subtract_dice": "1d4"})),
+        ];
+        let on_ally = value_on(&state, "striker", &harmful);
+        assert_eq!((on_ally.damage, on_ally.control, on_ally.survival), (0.0, 0.0, 0.0), "{on_ally:?}");
+        let mut helpful = haste_modifiers();
+        helpful.push(bonus(serde_json::json!("attack_rolls"), serde_json::json!({"add_dice": "1d4"})));
+        let on_foe = value_on(&state, "brute", &helpful);
+        assert_eq!((on_foe.damage, on_foe.control, on_foe.survival, on_foe.extra_action, on_foe.lethargy), (0.0, 0.0, 0.0, 0.0, 0.0), "{on_foe:?}");
+        assert!(on_foe.notes.is_empty() && on_foe.horizon.is_none(), "{on_foe:?}");
+    }
+
+    #[test]
+    fn a_second_slow_on_a_slowed_foe_scores_zero_on_both_paths() {
+        let mut state = scorching_fight(300);
+        let slow = spell_save("slow", 15);
+        assert!(rider_on(&state, &slow).damage > 0.0);
+        let curse = entry(serde_json::json!({"id": "slow", "name": "slow", "kind": "modeled",
+            "effects": [{"timed_modifier": {"change": {"add": -2}, "duration": {"concentration": null}, "source_ability": "slow", "target": "armor_class"}}]}));
+        snapshot(&mut state, "caster").actions = vec![curse];
+        assert_eq!(choose_action(&state, "caster").targets, ["brute"]);
+        state.active_modifiers.push(serde_json::from_value(serde_json::json!({"target": "armor_class", "change": {"add": -2}, "remaining": {"concentration": null},
+            "source": "someone", "bearer": "brute", "source_ability": "slow"})).unwrap());
+        let rider = rider_on(&state, &slow);
+        assert_eq!((rider.damage, rider.control), (0.0, 0.0), "{rider:?}");
+        assert!(choose(&state, "caster", Section::Action, &PolicyConstants::default()).is_none());
+    }
+
+    #[test]
+    fn riders_that_reach_each_other_through_incoming_damage_stop_at_the_nesting_limit() {
+        let rending = |id: &str| entry(serde_json::json!({"id": id, "name": id, "kind": "modeled", "effects": [{"attack": {"modifier": 5, "reach": 5, "target_count": 1,
+            "damage": [{"dice": "1d8", "type": "slashing"}],
+            "on_hit": [{"timed_modifier": {"change": {"add": -2}, "duration": {"rounds": 2}, "source_ability": id, "target": "armor_class"}}]}}]}));
+        let mut state = haste_fight(25, 300);
+        snapshot(&mut state, "striker").actions = vec![rending("rend")];
+        snapshot(&mut state, "brute").actions = vec![rending("maul")];
+        let constants = PolicyConstants::default();
+        let ctx = ctx(&state, &constants);
+        let (striker, brute) = (ctx.combatant("striker").unwrap(), ctx.combatant("brute").unwrap());
+        let block = ctx.block(striker).unwrap();
+        let top = ctx.effect_value(striker, block, &block.actions[0].effects[0], brute, 0, Footing::default()).0;
+        let plain = 0.7 * 4.5 + 0.05 * 4.5;
+        assert!(top.damage > plain, "the rider scores at the top level: {top:?}");
+        ctx.threat_nesting.set(MAX_THREAT_NESTING);
+        let capped = ctx.effect_value(striker, block, &block.actions[0].effects[0], brute, 0, Footing::default()).0;
+        assert!((capped.damage - plain).abs() < 1e-9, "only the hit itself at the limit: {capped:?}");
+    }
+
+    #[test]
+    fn a_no_save_harmful_modifier_is_cast_on_an_opponent_while_haste_never_picks_one() {
+        let mut state = scorching_fight(300);
+        let withering = entry(serde_json::json!({"id": "withering-curse", "name": "withering-curse", "kind": "modeled",
+            "effects": [{"timed_modifier": {"change": "disadvantage", "duration": {"concentration": null}, "source_ability": "withering-curse", "target": "attack_rolls"}}]}));
+        snapshot(&mut state, "caster").actions = vec![withering];
+        let value = value_on(&state, "brute", &[debuff("withering-curse", serde_json::json!("attack_rolls"), serde_json::json!("disadvantage"))]);
+        let plan = choose_action(&state, "caster");
+        assert_eq!(plan.targets, ["brute"], "{}", plan.reason);
+        assert!(value.control > 0.0 && (plan.control - value.control).abs() < 1e-9 && (plan.score - value.control).abs() < 1e-9, "{plan:?}");
+        assert!(plan.reason.starts_with("withering-curse on brute (disadvantage on attack rolls against "), "{}", plan.reason);
+        let haste = party_block("caster", 5).actions.into_iter().find(|a| a.id == "haste").unwrap();
+        let constants = PolicyConstants::default();
+        let ctx = ctx(&state, &constants);
+        let caster = ctx.combatant("caster").unwrap();
+        let plan = ctx.modifier_plan(caster, ctx.block(caster).unwrap(), &haste, Section::Action, None, &haste_modifiers()).unwrap();
+        assert_eq!(plan.targets, ["striker"], "{}", plan.reason);
+        assert_eq!(plan.control, 0.0);
     }
 }
