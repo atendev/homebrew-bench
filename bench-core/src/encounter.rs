@@ -222,6 +222,11 @@ pub struct EncounterSettings {
     /// `undo` and `replay` drop the prompts a window would add.
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub spell_cast_windows: bool,
+    /// A teleport writes Near into the range entries of every pair it frees (ADR 0005).
+    /// `bench start` and batch encounters set it; encounters saved before it existed leave
+    /// it off, so their bands stay unchanged and their histories refold as recorded.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub teleport_near: bool,
 }
 
 /// Record of an encounter ended early through `bench end`.
