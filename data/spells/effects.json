@@ -2007,8 +2007,7 @@
   },
   "see-invisibility": {
     "agent_clauses": [
-      "You can see into the Ethereal Plane, and creatures and objects there appear ghostly.",
-      "The spell lasts 1 hour. The engine holds it for the whole encounter."
+      "You can see into the Ethereal Plane, and creatures and objects there appear ghostly."
     ],
     "concentration": false,
     "effects": [
@@ -2017,7 +2016,7 @@
           "bearer": "self",
           "change": "none",
           "duration": {
-            "permanent": null
+            "hours": 1
           },
           "source_ability": "see-invisibility",
           "target": {

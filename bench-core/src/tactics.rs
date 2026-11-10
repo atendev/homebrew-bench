@@ -2550,7 +2550,7 @@ mod tests {
         let setups: [fn(&mut EncounterState); 5] = [
             |s| s.combatants[0].action_economy.disengaged = true,
             |s| snapshot(s, "archer").traits.push(AbilityEntry { effects: vec![Effect::NoProvoke], ..melee("flyby", 0, "1d1") }),
-            |s| s.combatants[1].conditions.push(crate::encounter::ConditionInstance { condition: Condition::Blinded, duration: crate::effect::Duration::Permanent, source: None, ends_on_damage: false }),
+            |s| s.combatants[1].conditions.push(crate::encounter::ConditionInstance { condition: Condition::Blinded, duration: crate::effect::Duration::Permanent, source: None, ends_on_damage: false, started_round: 0 }),
             |s| snapshot(s, "brute").actions = vec![ranged("sling", 5, "1d4")],
             |s| {
                 snapshot(s, "brute").actions = vec![melee("claw", 5, "1d4")];
@@ -2995,6 +2995,7 @@ mod tests {
                     source_ability: m.source_ability,
                     ends_on_damage: false,
                     on_end: m.on_end,
+                    started_round: 0,
                 }
             })
             .collect()
@@ -3112,6 +3113,7 @@ mod tests {
             duration: Duration::UntilEndOfNextTurn,
             source: Some("standard-caster-05".into()),
             ends_on_damage: false,
+            started_round: 0,
         });
         only_haste(&mut state);
         let plan = choose_action(&state, "standard-caster-05");
@@ -3319,6 +3321,7 @@ mod tests {
             source_ability: Some("haste".into()),
             ends_on_damage: false,
             on_end: vec![],
+            started_round: 0,
         };
         state.active_modifiers.push(hasted(Some("a")));
         state.combatants[1].action_economy.movement_used_feet = 5;
@@ -3331,7 +3334,7 @@ mod tests {
 
     fn afflict(state: &mut EncounterState, id: &str, condition: Condition) {
         let c = state.combatants.iter_mut().find(|c| c.id == id).unwrap();
-        c.conditions.push(crate::encounter::ConditionInstance { condition, duration: Duration::Concentration, source: None, ends_on_damage: false });
+        c.conditions.push(crate::encounter::ConditionInstance { condition, duration: Duration::Concentration, source: None, ends_on_damage: false, started_round: 0 });
     }
 
     fn expected_damage(state: &EncounterState, actor: &str, effect: &Effect, target: &str) -> f64 {
@@ -3767,6 +3770,7 @@ mod tests {
             source_ability: Some("ward".into()),
             ends_on_damage: false,
             on_end: vec![],
+            started_round: 0,
         });
         let k = keep(&state);
         let fail = 1.0 - KEEP_DC_10;

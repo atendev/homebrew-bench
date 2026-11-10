@@ -135,6 +135,7 @@ Both modes ship in phase 1. Everything the engine can't model is labeled agent j
 - [Leftover Engaged range after a teleport](closed/108-leftover-engaged-range-after-a-teleport.md): a teleport writes Near into the `ranges` entries of every pair it frees (state fix, not a read fix), behind a recorded setting so old saves refold unchanged. ADR 0005 is amended, ADR 0012's price is unchanged, and the missing-entry default stays out of scope. Build is [ticket 112](closed/112-build-near-after-teleport.md).
 - [Build Near after a teleport](closed/112-build-near-after-teleport.md): a teleport writes Near into both sides' existing `ranges` entries for every pair it frees, behind `settings.teleport_near`, which `bench start` and batch set and old saves leave off. Engine 0.1.34, policy stays v5, and the curve differs only in `engine_version`.
 - [Durations longer than a round](closed/109-durations-longer-than-a-round.md): minutes, hours and days count against the round clock (10, 600 and 14400 rounds) from a `started_round` stamp, behind a recorded `settings.long_durations` so old saves keep the per-turn decrement. `rounds` stays per-turn, and See Invisibility returns to `{"hours": 1}`. The build is [113 Build durations longer than a round](tickets/113-build-durations-longer-than-a-round.md).
+- [Build durations longer than a round](closed/113-build-durations-longer-than-a-round.md): `minutes`, `hours` and `days` count against the round clock behind `settings.long_durations`, which `bench start` and batch set and old saves leave off. A `started_round` stamp on modifiers and conditions, expiry at each end of turn and when the round advances. Engine 0.1.35, policy stays v5, and the curve differs only in `engine_version`.
 
 ## Not yet specified
 
@@ -169,4 +170,4 @@ Both modes ship in phase 1. Everything the engine can't model is labeled agent j
 
 ## Frontier
 
-- [113 Build durations longer than a round](tickets/113-build-durations-longer-than-a-round.md): task, AFK.
+None. Every ticket is closed.

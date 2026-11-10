@@ -571,6 +571,7 @@ fn run(command: Commands) -> Result<String, CodedError> {
                 reaction_windows: true,
                 spell_cast_windows: true,
                 teleport_near: true,
+                long_durations: true,
             };
             let (state, outcome) = live::start(spec).map_err(|e| coded(e, false))?;
             let (state_path, log_path) = store::files_for(&dir, &id);

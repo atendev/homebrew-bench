@@ -229,6 +229,8 @@ pub struct StartSpec {
     pub spell_cast_windows: bool,
     /// A teleport leaves the pairs it frees at Near (ADR 0005).
     pub teleport_near: bool,
+    /// Minutes, hours and days count against the round clock (ADR 0005).
+    pub long_durations: bool,
 }
 
 /// Result of `bench replay`.
@@ -359,7 +361,7 @@ pub fn start(spec: StartSpec) -> Result<(EncounterState, Outcome), LiveError> {
         pending: None,
         rng: RngState::new(spec.seed),
         initiative_rolls: HashMap::new(),
-        settings: EncounterSettings { pc_dice: spec.pc_dice, lighting: spec.lighting, reaction_windows: spec.reaction_windows, spell_cast_windows: spec.spell_cast_windows, teleport_near: spec.teleport_near },
+        settings: EncounterSettings { pc_dice: spec.pc_dice, lighting: spec.lighting, reaction_windows: spec.reaction_windows, spell_cast_windows: spec.spell_cast_windows, teleport_near: spec.teleport_near, long_durations: spec.long_durations },
         ended: None,
         initial_snapshot: None,
         log: vec![],
@@ -1346,6 +1348,7 @@ mod tests {
             reaction_windows: true,
             spell_cast_windows: true,
             teleport_near: true,
+            long_durations: true,
         }
     }
 
@@ -1966,6 +1969,7 @@ mod tests {
             duration: crate::effect::Duration::Concentration,
             source: Some("goblin-warrior".into()),
             ends_on_damage: false,
+            started_round: 0,
         });
         let outcome = set(&mut stunned, "goblin-warrior.conditions", serde_json::json!(["stunned"])).unwrap();
         assert_eq!(goblin(&stunned), None);
@@ -2024,6 +2028,7 @@ mod tests {
             duration: crate::effect::Duration::Concentration,
             source: Some("goblin-warrior".into()),
             ends_on_damage: false,
+            started_round: 0,
         });
         set(&mut holding, "goblin-warrior.end_state", Value::from("dead")).unwrap();
         assert!(holding.combatants.iter().find(|c| c.id == "standard-striker-03").unwrap().conditions.is_empty(), "what it held ends");
@@ -2918,6 +2923,15 @@ mod tests {
         let (state, _) = start(spec(PcDice::Engine)).unwrap();
         assert!(state.settings.teleport_near);
         assert!(serde_json::to_string(&state.settings).unwrap().contains(r#""teleport_near":true"#));
+    }
+
+    #[test]
+    fn an_old_state_leaves_long_durations_off_and_a_new_one_records_it() {
+        let (_, state) = old_state();
+        assert!(!state.settings.long_durations);
+        let (state, _) = start(spec(PcDice::Engine)).unwrap();
+        assert!(state.settings.long_durations);
+        assert!(serde_json::to_string(&state.settings).unwrap().contains(r#""long_durations":true"#));
     }
 
     #[test]
