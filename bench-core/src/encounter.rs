@@ -83,14 +83,28 @@ impl ActiveModifier {
         self.bearer.is_none()
     }
 
+    /// Twice the change's magnitude, so a die's mean compares in whole numbers: 1d4 (mean 2.5)
+    /// is 5, beating a +2 (4) and losing to a +3 (6).
     fn potency(&self, walk: u32) -> i64 {
         use crate::effect::{ModifierChange, ModifierTarget};
         match (&self.target, &self.change) {
-            (_, ModifierChange::Add(n)) => i64::from(*n).abs(),
-            (ModifierTarget::Speed, ModifierChange::Set(n)) => (i64::from(*n) - i64::from(walk)).abs(),
-            _ => 0,
+            (_, ModifierChange::Add(n)) => 2 * i64::from(*n).abs(),
+            (ModifierTarget::Speed, ModifierChange::Set(n)) => 2 * (i64::from(*n) - i64::from(walk)).abs(),
+            (_, change) => change
+                .die()
+                .and_then(|(_, dice)| crate::effect::parse_dice(dice))
+                .map_or(0, |(count, sides)| i64::from(count) * (i64::from(sides) + 1)),
         }
     }
+}
+
+fn checked_modifiers<'de, D: serde::Deserializer<'de>>(deserializer: D) -> Result<Vec<ActiveModifier>, D::Error> {
+    let modifiers = Vec::<ActiveModifier>::deserialize(deserializer)?;
+    for m in &modifiers {
+        crate::effect::check_die_target(&m.target, &m.change).map_err(serde::de::Error::custom)?;
+        m.on_end.iter().try_for_each(crate::effect::Effect::check_dice).map_err(serde::de::Error::custom)?;
+    }
+    Ok(modifiers)
 }
 
 /// Snapshot of a stat block stored in the encounter file, with a tamper hash.
@@ -256,7 +270,7 @@ pub struct EncounterState {
     pub active_turn: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub active_effects: Vec<ActiveEffect>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty", deserialize_with = "checked_modifiers")]
     pub active_modifiers: Vec<ActiveModifier>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub standing_assumptions: Vec<StandingAssumption>,

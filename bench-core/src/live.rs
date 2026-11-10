@@ -2907,4 +2907,30 @@ mod tests {
         let (_, state) = old_state();
         assert!(!state.settings.spell_cast_windows);
     }
+
+    #[test]
+    fn an_aura_die_added_by_override_rolls_and_replays_and_a_misplaced_one_is_refused() {
+        const STRIKER: &str = "standard-striker-03";
+        let (mut state, _) = start(spec(PcDice::Engine)).unwrap();
+        let aura = |target: Value| {
+            serde_json::json!([{"target": target, "change": {"add_dice": "1d4"}, "remaining": "permanent",
+                "source": "goblin-warrior", "bearer": STRIKER, "source_ability": "aura-of-luck"}])
+        };
+        let set = |state: &mut EncounterState, value: Value| {
+            execute(state, Command::Override { path: "active_modifiers".into(), value: Some(value), reason: "inside the aura".into(), rule: None, standing: false })
+        };
+        let refused = set(&mut state, aura(Value::from("armor_class"))).unwrap_err();
+        assert!(refused.to_string().contains("add_dice 1d4 can only change attack_rolls or saving_throws, not armor_class"), "{refused}");
+        assert!(state.active_modifiers.is_empty());
+        set(&mut state, aura(Value::from("attack_rolls"))).unwrap();
+        turn_of(&mut state, STRIKER);
+        let out = execute(&mut state, swing(STRIKER, "longbow", "goblin-warrior")).unwrap();
+        let attack = lines(&out).into_iter().find(|l| l.contains(" vs AC ")).unwrap();
+        assert!(attack.contains(" (+1d4 aura-of-luck: "), "{attack}");
+        assert!(crate::log::render_public(&state.log).contains(" (+1d4 aura-of-luck: "), "the die shows where the attack total does");
+        let clear = Command::Override { path: "active_modifiers.0".into(), value: None, reason: "left the aura".into(), rule: None, standing: false };
+        execute(&mut state, clear).unwrap();
+        assert!(state.active_modifiers.is_empty());
+        assert!(replay(&state).matches);
+    }
 }

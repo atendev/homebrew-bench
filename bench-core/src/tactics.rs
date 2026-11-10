@@ -34,6 +34,10 @@ pub const BUFF_HORIZON: u32 = 2;
 /// (ADR 0012).
 pub const SAVE_ADVANTAGE_VALUE: f64 = 0.3;
 
+/// Value of one point of save bonus against one round of incoming save damage: half of
+/// `AC_POINT_VALUE`, since a successful save usually still takes half damage (ADR 0012).
+pub const SAVE_POINT_VALUE: f64 = 0.05;
+
 /// Score weights. Resource cost is 0.0 because a batch fight is one encounter.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
 pub struct Weights {
@@ -952,9 +956,17 @@ impl<'a> Ctx<'a> {
                         None => format!("advantage on saves against {saves:.1} save damage"),
                     });
                 }
-                (ModifierTarget::AttackRolls, ModifierChange::Add(n)) if *n > 0 => {
-                    out.damage += self.threat(bearer) * AC_POINT_VALUE * f64::from(*n) * rounds;
-                    out.notes.push(format!("+{n} to attack rolls"));
+                (ModifierTarget::AttackRolls, change) if change.mean_bonus() > 0.0 => {
+                    out.damage += self.threat(bearer) * AC_POINT_VALUE * change.mean_bonus() * rounds;
+                    out.notes.push(format!("{} to attack rolls", bonus_word(change)));
+                }
+                (ModifierTarget::SavingThrows { ability }, change) if change.mean_bonus() > 0.0 => {
+                    let saves = self.incoming_rolls(bearer, Rolls::Saves(*ability)).0;
+                    out.survival += saves * SAVE_POINT_VALUE * change.mean_bonus() * rounds;
+                    out.notes.push(match ability {
+                        Some(a) => format!("{} on {} saves against {saves:.1} {} save damage", bonus_word(change), ability_word(*a), ability_word(*a)),
+                        None => format!("{} on saves against {saves:.1} save damage", bonus_word(change)),
+                    });
                 }
                 (ModifierTarget::ExtraAction { only }, _) => {
                     let per_round = self.extra_action_value(bearer, only);
@@ -1198,7 +1210,8 @@ impl<'a> Ctx<'a> {
                     Moves::Out => Within::Nobody,
                 };
                 let disposition = engine::disposition_with(self.state, actor, target, attack, within);
-                let base = (f64::from(21 - (ac - attack.modifier)) / 20.0).clamp(0.05, 0.95);
+                let bonus = engine::mean_attack_bonus(self.state, actor);
+                let base = ((f64::from(21 - (ac - attack.modifier)) + bonus) / 20.0).clamp(0.05, 0.95);
                 let (p_hit, p_crit) = match disposition {
                     RollDisposition::Advantage => (1.0 - (1.0 - base).powi(2), 1.0 - 0.95f64.powi(2)),
                     RollDisposition::Disadvantage => (base * base, 0.0025),
@@ -1279,9 +1292,9 @@ impl<'a> Ctx<'a> {
             return 0.0;
         }
         let Some(block) = self.block(saver) else { return 0.0 };
-        let modifier = block.saving_throws.get(&ability).copied().unwrap_or_else(|| block.ability_scores.modifier(ability))
-            + engine::save_modifier(self.state, saver, ability);
-        let p = (f64::from(21 - (dc - modifier)) / 20.0).clamp(0.0, 1.0);
+        let modifier = block.saving_throws.get(&ability).copied().unwrap_or_else(|| block.ability_scores.modifier(ability));
+        let bonus = engine::mean_save_bonus(self.state, saver, ability);
+        let p = ((f64::from(21 - (dc - modifier)) + bonus) / 20.0).clamp(0.0, 1.0);
         match engine::save_disposition(self.state, saver, ability) {
             RollDisposition::Advantage => 1.0 - (1.0 - p).powi(2),
             RollDisposition::Disadvantage => p * p,
@@ -1953,6 +1966,13 @@ fn horizon(duration: &Duration) -> u32 {
 
 fn ability_word(ability: crate::stat_block::Ability) -> String {
     serde_json::to_value(ability).ok().and_then(|v| v.as_str().map(str::to_string)).unwrap_or_default()
+}
+
+fn bonus_word(change: &ModifierChange) -> String {
+    match change.die() {
+        Some((_, dice)) => format!("+{dice}"),
+        None => format!("+{}", change.mean_bonus()),
+    }
 }
 
 /// A Nimble Escape-style ability: it does nothing but Disengage, so it is never planned alone.
@@ -3604,5 +3624,83 @@ mod tests {
         let k = keep(&state);
         let fail = 1.0 - KEEP_DC_10;
         assert!((k - (1.0 - fail * fail).powf(CLAW_HITS)).abs() < 1e-9, "{k}");
+    }
+
+    fn bonus(target: serde_json::Value, change: serde_json::Value) -> TimedModifier {
+        serde_json::from_value(serde_json::json!({"change": change, "duration": {"concentration": null}, "source_ability": "bless", "target": target})).unwrap()
+    }
+
+    fn active(bearer: &str, target: serde_json::Value, change: serde_json::Value) -> crate::encounter::ActiveModifier {
+        serde_json::from_value(serde_json::json!({"target": target, "change": change, "remaining": {"concentration": null},
+            "source": "caster", "bearer": bearer, "source_ability": "bless"}))
+        .unwrap()
+    }
+
+    /// `haste_fight` with a brute that also spits acid for a Dexterity save.
+    fn spitting_fight() -> EncounterState {
+        let mut state = haste_fight(25, 300);
+        let brute = state.stat_blocks.iter_mut().find(|s| s.id == "brute").unwrap();
+        brute.stat_block.actions = vec![entry(serde_json::json!({"id": "spit", "name": "spit", "kind": "modeled", "effects": [{"saving_throw": {
+            "ability": "dex", "dc": 13, "half_on_success": true, "no_damage_on_success": false, "damage": [{"dice": "6d6", "type": "acid"}]}}]}))];
+        state
+    }
+
+    #[test]
+    fn an_attack_die_scores_as_its_mean_like_a_flat_bonus() {
+        let state = haste_fight(25, 300);
+        let die = value_on(&state, "striker", &[bonus(serde_json::json!("attack_rolls"), serde_json::json!({"add_dice": "1d4"}))]);
+        let two = value_on(&state, "striker", &[bonus(serde_json::json!("attack_rolls"), serde_json::json!({"add": 2}))]);
+        assert!(two.damage > 0.0 && (die.damage / two.damage - 1.25).abs() < 1e-9, "{die:?} {two:?}");
+        assert_eq!(die.notes, ["+1d4 to attack rolls"]);
+    }
+
+    #[test]
+    fn a_positive_save_bonus_scores_save_point_value_per_point_of_incoming_save_damage() {
+        let state = spitting_fight();
+        let constants = PolicyConstants::default();
+        let ctx = ctx(&state, &constants);
+        let saves = ctx.incoming_rolls(ctx.combatant("striker").unwrap(), Rolls::Saves(None)).0;
+        assert!(saves > 0.0);
+        let saving = |change: serde_json::Value| value_on(&state, "striker", &[bonus(serde_json::json!({"saving_throws": {"ability": null}}), change)]);
+        let die = saving(serde_json::json!({"add_dice": "1d4"}));
+        let two = saving(serde_json::json!({"add": 2}));
+        let rounds = die.horizon.map_or(f64::from(BUFF_HORIZON), |(r, _, _)| r);
+        assert!((die.survival - saves * SAVE_POINT_VALUE * 2.5 * rounds).abs() < 1e-9, "{die:?}");
+        assert!((two.survival - saves * SAVE_POINT_VALUE * 2.0 * rounds).abs() < 1e-9, "{two:?}");
+        assert_eq!(die.notes, [format!("+1d4 on saves against {saves:.1} save damage")]);
+        for debuff in [serde_json::json!({"subtract_dice": "1d4"}), serde_json::json!({"add": -2})] {
+            let value = saving(debuff);
+            assert_eq!((value.damage, value.survival), (0.0, 0.0), "{value:?}");
+        }
+        let wis = value_on(&state, "striker", &[bonus(serde_json::json!({"saving_throws": {"ability": "wis"}}), serde_json::json!({"add_dice": "1d4"}))]);
+        assert_eq!(wis.survival, 0.0, "a Wisdom bonus doesn't help against a Dexterity save");
+    }
+
+    #[test]
+    fn save_and_hit_chances_read_a_die_as_its_mean() {
+        let constants = PolicyConstants::default();
+        let chances = |change: Option<serde_json::Value>| {
+            let mut state = spitting_fight();
+            let striker = state.stat_blocks.iter_mut().find(|s| s.id == "striker").unwrap();
+            striker.stat_block.actions = vec![melee("sword", 3, "2d6")];
+            if let Some(change) = change {
+                state.active_modifiers.push(active("striker", serde_json::json!({"saving_throws": {"ability": null}}), change.clone()));
+                state.active_modifiers.push(active("striker", serde_json::json!("attack_rolls"), change));
+            }
+            let ctx = ctx(&state, &constants);
+            let (striker, brute) = (ctx.combatant("striker").unwrap(), ctx.combatant("brute").unwrap());
+            let block = ctx.block(striker).unwrap();
+            let damage = ctx.ability_value(striker, block, &block.actions[0], brute, 0, Footing::default()).0.damage;
+            (ctx.save_success(striker, crate::stat_block::Ability::Dex, 13), damage)
+        };
+        let (save_die, hit_die) = chances(Some(serde_json::json!({"add_dice": "1d4"})));
+        let (save_two, hit_two) = chances(Some(serde_json::json!({"add": 2})));
+        let (save_three, hit_three) = chances(Some(serde_json::json!({"add": 3})));
+        let (save_none, hit_none) = chances(None);
+        assert!((save_die - (save_two + save_three) / 2.0).abs() < 1e-9, "{save_die} {save_two} {save_three}");
+        assert!((hit_die - (hit_two + hit_three) / 2.0).abs() < 1e-9, "{hit_die} {hit_two} {hit_three}");
+        assert!(save_two > save_none && hit_two > hit_none);
+        let (save_bane, _) = chances(Some(serde_json::json!({"subtract_dice": "1d4"})));
+        assert!((save_bane - (save_none - 0.125)).abs() < 1e-9, "{save_bane} {save_none}");
     }
 }

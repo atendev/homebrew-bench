@@ -50,6 +50,7 @@ pub struct SpellEffect {
     /// The spell's own level; 0 is a cantrip.
     pub level: u8,
     pub concentration: bool,
+    #[serde(deserialize_with = "checked_effects")]
     pub effects: Vec<Effect>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub scaling: Vec<ScalingRule>,
@@ -60,6 +61,12 @@ pub struct SpellEffect {
     pub upcast_clause: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub notes: Option<String>,
+}
+
+fn checked_effects<'de, D: serde::Deserializer<'de>>(deserializer: D) -> Result<Vec<Effect>, D::Error> {
+    let effects = Vec::<Effect>::deserialize(deserializer)?;
+    effects.iter().try_for_each(Effect::check_dice).map_err(serde::de::Error::custom)?;
+    Ok(effects)
 }
 
 /// The embedded spell effects file, parsed once and keyed by spell id.

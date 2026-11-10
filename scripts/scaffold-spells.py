@@ -543,10 +543,23 @@ def scaffold(spell: dict) -> dict:
             "duration": make_duration(dur),
             "source_ability": idx,
         }})
-    if re.search(r"adds?\s+(\d+d\d+)\s+to\s+(?:the\s+)?(?:attack roll|saving throw)", desc, re.IGNORECASE):
-        m = re.search(r"adds?\s+(\d+d\d+)\s+to\s+(?:the\s+)?(?:(attack roll|attack rolls)|(saving throw|saving throws))", desc, re.IGNORECASE)
-        if m:
-            agent_clauses.append(f"Adds {m.group(1)} to the roll; the closed vocabulary has no flat die-bonus modifier, so the agent resolves this.")
+    # Bless and Bane: a die added to or subtracted from attack rolls and saves; under a failed
+    # save's on_failure when the text says only targets that fail it are changed.
+    for verb, key in ((r"adds?", "add_dice"), (r"subtracts?", "subtract_dice")):
+        m = re.search(rf"\b{verb}\s+(\d+d\d+)\s+(?:to|from)\s+the attack roll or (?:the\s+)?save", desc, re.IGNORECASE)
+        if not m:
+            continue
+        dice_mods = [{"timed_modifier": {
+            "target": target,
+            "change": {key: m.group(1)},
+            "duration": {"concentration": None} if concentration else make_duration(dur),
+            "source_ability": idx,
+        }} for target in ({"attack_rolls": None}, {"saving_throws": {"ability": None}})]
+        saves = [e["saving_throw"] for e in effects if "saving_throw" in e]
+        if saves and re.search(r"fails this save", desc, re.IGNORECASE):
+            saves[0].setdefault("on_failure", []).extend(dice_mods)
+        else:
+            effects.extend(dice_mods)
     if re.search(r"Speed is doubled", desc, re.IGNORECASE):
         effects.append({"timed_modifier": {
             "target": {"speed": None},
@@ -603,11 +616,6 @@ def scaffold(spell: dict) -> dict:
         delayed = [{"delay": {"rounds": 1}, "effect": {"damage": {"dice": "2d4", "type": "acid", "magical": True}}}]
 
     upcast_clause = None
-
-    # Bless: flat 1d4 to attack rolls and saving throws; vocabulary has no die bonus, so leave as agent_clause.
-    if idx == "bless":
-        effects = []
-        agent_clauses.append("Targets add 1d4 to attack rolls and saving throws before the spell ends.")
 
     # Higher-slot text: rules on the first effect, the rest as an upcast_clause.
     if higher:

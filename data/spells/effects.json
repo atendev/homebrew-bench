@@ -115,6 +115,66 @@
     "name": "Aura of Life",
     "source": "SRD 5.2.1"
   },
+  "bane": {
+    "concentration": true,
+    "effects": [
+      {
+        "saving_throw": {
+          "ability": "cha",
+          "damage": [],
+          "dc": 0,
+          "half_on_success": false,
+          "no_damage_on_success": false,
+          "on_failure": [
+            {
+              "timed_modifier": {
+                "change": {
+                  "subtract_dice": "1d4"
+                },
+                "duration": {
+                  "concentration": null
+                },
+                "source_ability": "bane",
+                "target": {
+                  "attack_rolls": null
+                }
+              }
+            },
+            {
+              "timed_modifier": {
+                "change": {
+                  "subtract_dice": "1d4"
+                },
+                "duration": {
+                  "concentration": null
+                },
+                "source_ability": "bane",
+                "target": {
+                  "saving_throws": {
+                    "ability": null
+                  }
+                }
+              }
+            }
+          ]
+        }
+      }
+    ],
+    "id": "bane",
+    "level": 1,
+    "name": "Bane",
+    "scaling": [
+      {
+        "effect_index": 0,
+        "per_slot": {
+          "extra_targets": {
+            "count": 1
+          }
+        }
+      }
+    ],
+    "source": "SRD 5.2.1"
+  },
   "beacon-of-hope": {
     "agent_clauses": [
       "Targets have Advantage on Wisdom saving throws and Death Saving Throws.",
@@ -157,16 +217,53 @@
     "source": "SRD 5.2.1"
   },
   "bless": {
-    "agent_clauses": [
-      "Up to three targets add 1d4 to attack rolls and saving throws before the spell ends."
-    ],
     "concentration": true,
-    "effects": [],
+    "effects": [
+      {
+        "timed_modifier": {
+          "change": {
+            "add_dice": "1d4"
+          },
+          "duration": {
+            "concentration": null
+          },
+          "source_ability": "bless",
+          "target": {
+            "attack_rolls": null
+          }
+        }
+      },
+      {
+        "timed_modifier": {
+          "change": {
+            "add_dice": "1d4"
+          },
+          "duration": {
+            "concentration": null
+          },
+          "source_ability": "bless",
+          "target": {
+            "saving_throws": {
+              "ability": null
+            }
+          }
+        }
+      }
+    ],
     "id": "bless",
     "level": 1,
     "name": "Bless",
-    "source": "SRD 5.2.1",
-    "upcast_clause": "You can target one additional creature for each spell slot level above 1."
+    "scaling": [
+      {
+        "effect_index": 0,
+        "per_slot": {
+          "extra_targets": {
+            "count": 1
+          }
+        }
+      }
+    ],
+    "source": "SRD 5.2.1"
   },
   "burning-hands": {
     "concentration": false,

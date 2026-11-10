@@ -385,7 +385,7 @@ fn refuse_roll_modifier<E: serde::de::Error>(entry: &AbilityEntry, effect: &Effe
     if effect.holds_roll_modifier() {
         return Err(E::custom(format!("{}: a roll modifier is a trait effect", entry.id)));
     }
-    Ok(())
+    effect.check_dice().map_err(|e| E::custom(format!("{}: {e}", entry.id)))
 }
 
 impl StatBlock {
