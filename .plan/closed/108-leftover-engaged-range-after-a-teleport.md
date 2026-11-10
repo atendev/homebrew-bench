@@ -3,7 +3,7 @@ id: 108
 title: Leftover Engaged range after a teleport
 type: grilling
 mode: HITL
-status: open
+status: closed
 blocked_by: []
 claimed: false
 ---
@@ -23,4 +23,11 @@ A teleport clears engagements but leaves the pair's `ranges` entry at `Engaged`.
 
 ## Resolution
 
-<Filled in at close: the decision and the reason for it.>
+A teleport writes Near into the `ranges` entries of every pair it frees, and the engine state is the fix: `band`, `move`, saved JSON and logs then agree, and no reader gets a second rule. The pair set is captured before engagements clear, as the union of the subject's list and every list that holds the subject, and both sides' entries change. Other bands stay.
+
+- ADR 0005 is amended: gated, an engaged pair lands at Near (a modeling choice, since the engine doesn't model where the subject lands); legacy saves keep bands unchanged.
+- The change sits behind a recorded setting like `settings.reaction_windows`. New encounters record it on, saves without it refold as recorded. The build compares curve cells with the setting on, and regenerates and bumps the policy version only if they move.
+- ADR 0012's price stays `threat(target) x 0.25`. It is a constant, not derived from re-engagement cost, so only the paragraph's wording changes.
+- A missing `ranges` entry (Engaged in `move`, Near in `band`) stays out of scope. Setup fills every cross-side pair, so it only arises for later additions.
+- `live.rs` is unaffected: it only prints starting bands before any teleport.
+- Build: [Build Near after a teleport](../tickets/112-build-near-after-teleport.md).
