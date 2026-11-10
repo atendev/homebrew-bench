@@ -8,6 +8,11 @@
 /// The four standard party archetypes, in report order.
 pub const ARCHETYPES: [&str; 4] = ["defender", "striker", "healer", "caster"];
 
+/// Position in `ARCHETYPES` of the first role a stat block id names.
+pub fn role_rank(stat_block_id: &str) -> Option<usize> {
+    ARCHETYPES.iter().position(|a| stat_block_id.contains(a))
+}
+
 /// Lowest and highest standard party level.
 pub const LEVELS: std::ops::RangeInclusive<u8> = 1..=20;
 

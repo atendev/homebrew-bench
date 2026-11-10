@@ -5,7 +5,7 @@
 //! is order-independent and `--fight <index>` replays one fight bit for bit.
 //! The runner writes nothing itself; the caller saves the HTML and logs.
 
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 use std::path::Path;
 
 use serde::{Deserialize, Serialize};
@@ -117,7 +117,10 @@ pub struct FightResult {
 /// planned action, or a reaction another creature took while it resolved.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PlanFailure {
+    /// The blamed creature's role label when `role_keyed`, its name otherwise.
     pub combatant: String,
+    /// `combatant` is a party role shared by every level, not a name.
+    pub role_keyed: bool,
     pub action: String,
     pub error: String,
     /// What the refused plan would have spent: "action", "bonus action" or "legendary action".
@@ -508,18 +511,19 @@ pub fn run(spec: &BatchSpec) -> Result<BatchReport, BatchError> {
 /// One warning per distinct (combatant, action, error) a plan threw across the batch,
 /// most frequent first, so a fault that costs turns shows outside sampled logs.
 fn plan_failure_warnings(results: &[FightResult]) -> Vec<String> {
-    type Row<'a> = (&'a str, &'a str, &'a str, &'static str, bool);
-    let mut tally: BTreeMap<Row, (u32, u32)> = BTreeMap::new();
-    for f in results.iter().flat_map(|r| &r.plan_failures) {
-        let entry = tally.entry((&f.combatant, &f.action, &f.error, f.during, f.as_reaction)).or_default();
+    type Row<'a> = (&'a str, bool, &'a str, &'a str, &'static str, bool);
+    let mut tally: BTreeMap<Row, (u32, u32, BTreeSet<u8>)> = BTreeMap::new();
+    for (level, f) in results.iter().flat_map(|r| r.plan_failures.iter().map(|f| (r.level, f))) {
+        let entry = tally.entry((&f.combatant, f.role_keyed, &f.action, &f.error, f.during, f.as_reaction)).or_default();
         entry.0 += 1;
         entry.1 += u32::from(f.lost);
+        entry.2.insert(level);
     }
     let times = |n: u32| if n == 1 { "once".to_string() } else { format!("{n} times") };
     let mut rows: Vec<_> = tally.into_iter().collect();
     rows.sort_by_key(|row| std::cmp::Reverse(row.1 .0));
     rows.into_iter()
-        .map(|((combatant, action, error, during, as_reaction), (failed, lost))| {
+        .map(|((combatant, role_keyed, action, error, during, as_reaction), (failed, lost, levels))| {
             let ran = failed - lost;
             let cost = if ran == 0 {
                 format!("the {during} was lost each time")
@@ -531,9 +535,23 @@ fn plan_failure_warnings(results: &[FightResult]) -> Vec<String> {
                 format!("the {during} was lost {} and a recomputed plan ran the other {ran} times", times(lost))
             };
             let context = if as_reaction { format!(" as a reaction during another creature's {during}") } else { String::new() };
-            format!("{combatant}: {action} failed {}{context} ({error}); {cost}", times(failed))
+            let who = if role_keyed { format!("{combatant} ({})", level_list(&levels)) } else { combatant.to_string() };
+            format!("{who}: {action} failed {}{context} ({error}); {cost}", times(failed))
         })
         .collect()
+}
+
+/// Levels as compact ascending ranges: `level 5`, `levels 3-5`, `levels 1-4, 7, 9-10`.
+fn level_list(levels: &BTreeSet<u8>) -> String {
+    let mut runs: Vec<(u8, u8)> = Vec::new();
+    for &l in levels {
+        match runs.last_mut() {
+            Some((_, end)) if *end + 1 == l => *end = l,
+            _ => runs.push((l, l)),
+        }
+    }
+    let parts: Vec<String> = runs.iter().map(|&(a, b)| if a == b { a.to_string() } else { format!("{a}-{b}") }).collect();
+    format!("level{} {}", if levels.len() == 1 { "" } else { "s" }, parts.join(", "))
 }
 
 /// Play every fight without building a report or logs.
@@ -850,6 +868,50 @@ fn legendary_window(state: &mut EncounterState, constants: &PolicyConstants, log
     }
 }
 
+/// What each combatant is called in a plan-failure warning: (id, label, role-keyed). A
+/// party member whose stat block id names a role no other member names is its
+/// capitalized role; everyone else, the monster included, is its name.
+fn failure_labels(state: &EncounterState) -> Vec<(String, String, bool)> {
+    let role_of = |c: &crate::encounter::Combatant| (c.side_id == PARTY_SIDE).then(|| crate::party::role_rank(&c.stat_block_id)).flatten();
+    state
+        .combatants
+        .iter()
+        .map(|c| match role_of(c).filter(|&rank| state.combatants.iter().filter(|o| role_of(o) == Some(rank)).count() == 1) {
+            Some(rank) => {
+                let role = crate::party::ARCHETYPES[rank];
+                (c.id.clone(), format!("{}{}", role[..1].to_uppercase(), &role[1..]), true)
+            }
+            None => (c.id.clone(), c.name.clone(), false),
+        })
+        .collect()
+}
+
+/// Replace each combatant id in `text` with its label, longest id first, on whole
+/// tokens: the characters on either side are the text's edge or not a letter, digit or `-`.
+fn replace_ids(text: &str, labels: &[(String, String, bool)]) -> String {
+    let mut order: Vec<&(String, String, bool)> = labels.iter().filter(|(id, _, _)| !id.is_empty()).collect();
+    order.sort_by_key(|(id, _, _)| std::cmp::Reverse(id.len()));
+    let in_token = |c: char| c.is_alphanumeric() || c == '-';
+    let mut out = String::new();
+    let mut prev: Option<char> = None;
+    let mut i = 0;
+    while i < text.len() {
+        let rest = &text[i..];
+        let hit = order.iter().find(|(id, _, _)| rest.starts_with(id.as_str()) && !prev.is_some_and(in_token) && !rest[id.len()..].chars().next().is_some_and(in_token));
+        if let Some((id, label, _)) = hit {
+            out.push_str(label);
+            prev = id.chars().last();
+            i += id.len();
+        } else {
+            let c = rest.chars().next().unwrap();
+            out.push(c);
+            prev = Some(c);
+            i += c.len_utf8();
+        }
+    }
+    out
+}
+
 struct Log {
     lines: Option<Vec<String>>,
     failures: Vec<PlanFailure>,
@@ -873,10 +935,13 @@ impl Log {
         let action = block
             .and_then(|b| b.traits.iter().chain(&b.actions).chain(&b.bonus_actions).chain(&b.reactions).chain(&b.legendary_actions).find(|a| a.id == ability_id))
             .map_or_else(|| ability_id.to_string(), |a| a.name.clone());
+        let labels = failure_labels(state);
+        let (label, role_keyed) = labels.iter().find(|(id, _, _)| id == actor_id).map_or_else(|| (actor_id.to_string(), false), |(_, l, r)| (l.clone(), *r));
         self.failures.push(PlanFailure {
-            combatant: combatant.map_or_else(|| actor_id.to_string(), |c| c.name.clone()),
+            combatant: label,
+            role_keyed,
             action,
-            error: error.to_string(),
+            error: replace_ids(&error.to_string(), &labels),
             during,
             as_reaction: fault.is_some(),
             lost: false,
@@ -1103,7 +1168,7 @@ fn group_party(blocks: Vec<StatBlock>, origin: &str) -> Result<Party, BatchError
     }
     for members in party.values_mut() {
         members.sort_by_key(|b| {
-            let rank = crate::party::ARCHETYPES.iter().position(|a| b.id.contains(a)).unwrap_or(usize::MAX);
+            let rank = crate::party::role_rank(&b.id).unwrap_or(usize::MAX);
             (rank, b.id.clone())
         });
     }
@@ -1767,6 +1832,7 @@ mod tests {
     fn each_row_tail_says_what_followed_the_failures() {
         let failure = |action: &str, lost: bool, during: &'static str, reactor: bool| PlanFailure {
             combatant: "Ogre".into(),
+            role_keyed: false,
             action: action.into(),
             error: "boom".into(),
             during,
@@ -1798,6 +1864,108 @@ mod tests {
                 "Ogre: Shove failed once (boom); a recomputed plan ran instead each time",
             ]
         );
+    }
+
+    fn break_longbow(block: &mut StatBlock) {
+        let bow = block.actions.iter_mut().find(|a| a.id == "longbow").unwrap();
+        set_damage_dice(bow, "70");
+    }
+
+    fn broken_striker_rows(levels: Vec<u8>, edit: impl Fn(&mut Party)) -> Vec<String> {
+        let mut s = spec(fixture("ogre"), levels.clone(), 20);
+        for l in &levels {
+            s.party.get_mut(l).unwrap().iter_mut().filter(|b| b.id.contains("striker")).for_each(break_longbow);
+        }
+        edit(&mut s.party);
+        failure_rows(&run(&s).unwrap()).into_iter().cloned().collect()
+    }
+
+    #[test]
+    fn a_broken_party_role_is_one_row_across_levels() {
+        let rows = broken_striker_rows(vec![3, 4, 5], |_| {});
+        assert_eq!(rows.len(), 1, "{rows:?}");
+        assert!(rows[0].starts_with("Striker (levels 3-5): Longbow failed "), "{rows:?}");
+        assert!(rows[0].contains("(invalid dice expression 70)"), "{rows:?}");
+    }
+
+    #[test]
+    fn two_members_of_a_role_keep_their_names() {
+        let rows = broken_striker_rows(vec![3], |party| {
+            let mut extra = party[&3].iter().find(|b| b.id.contains("striker")).unwrap().clone();
+            extra.id = "extra-striker-03".into();
+            extra.name = "Extra Striker".into();
+            party.get_mut(&3).unwrap().push(extra);
+        });
+        assert_eq!(rows.len(), 2, "{rows:?}");
+        assert!(rows.iter().any(|r| r.starts_with("Standard Striker (Level 3): Longbow failed ")), "{rows:?}");
+        assert!(rows.iter().any(|r| r.starts_with("Extra Striker: Longbow failed ")), "{rows:?}");
+    }
+
+    #[test]
+    fn a_member_naming_no_role_keeps_its_name() {
+        let rows = broken_striker_rows(vec![3], |party| {
+            let members = party.get_mut(&3).unwrap();
+            let striker = members.iter_mut().find(|b| b.id.contains("striker")).unwrap();
+            striker.id = "archer-03".into();
+        });
+        assert_eq!(rows.len(), 1, "{rows:?}");
+        assert!(rows[0].starts_with("Standard Striker (Level 3): Longbow failed "), "{rows:?}");
+    }
+
+    #[test]
+    fn ids_in_error_text_become_labels_on_whole_tokens() {
+        let labels = |pairs: &[(&str, &str, bool)]| pairs.iter().map(|&(a, b, c)| (a.to_string(), b.to_string(), c)).collect::<Vec<_>>();
+        let l = labels(&[("standard-striker-05-1", "Striker", true), ("standard-striker-05-10", "Other", false), ("ogre", "Ogre", false)]);
+        assert_eq!(replace_ids("standard-striker-05-1 cannot act", &l), "Striker cannot act");
+        assert_eq!(replace_ids("standard-striker-05-10 cannot act", &l), "Other cannot act");
+        assert_eq!(replace_ids("(standard-striker-05-1, ogre)", &l), "(Striker, Ogre)");
+        assert_eq!(replace_ids("x-standard-striker-05-1 and standard-striker-05-1x and ogres", &l), "x-standard-striker-05-1 and standard-striker-05-1x and ogres");
+        assert_eq!(replace_ids("no ids here", &l), "no ids here");
+    }
+
+    #[test]
+    fn level_lists_are_compact_ascending_ranges() {
+        let list = |v: &[u8]| level_list(&v.iter().copied().collect());
+        assert_eq!(list(&[5]), "level 5");
+        assert_eq!(list(&[3, 4, 5]), "levels 3-5");
+        assert_eq!(list(&[10, 1, 2, 3, 4, 7, 9]), "levels 1-4, 7, 9-10");
+    }
+
+    #[test]
+    fn labels_resolve_roles_only_for_unique_party_members() {
+        let mut s = spec(fixture("ogre"), vec![3], 1);
+        let extra = {
+            let mut e = s.party[&3].iter().find(|b| b.id.contains("striker")).unwrap().clone();
+            e.id = "extra-striker-03".into();
+            e.name = "Extra Striker".into();
+            e
+        };
+        let party = s.party.get_mut(&3).unwrap();
+        party.push(extra);
+        let mut entrants = vec![Entrant { stat_block: s.monster.clone(), side: MONSTER_SIDE.into(), band: RangeBand::Near }];
+        for pc in &s.party[&3] {
+            entrants.push(Entrant { stat_block: pc.clone(), side: PARTY_SIDE.into(), band: RangeBand::Near });
+        }
+        let (state, _) = live::start(StartSpec {
+            id: "labels".into(),
+            origin_directory: String::new(),
+            entrants,
+            seed: 1,
+            surprised: vec![],
+            individual_initiative: true,
+            pc_dice: PcDice::Engine,
+            lighting: s.lighting,
+            reaction_windows: true,
+            spell_cast_windows: true,
+        })
+        .unwrap();
+        let labels = failure_labels(&state);
+        let label_of = |needle: &str| labels.iter().find(|(id, _, _)| id.contains(needle)).map(|(_, l, r)| (l.as_str(), *r)).unwrap();
+        assert_eq!(label_of("defender"), ("Defender", true));
+        assert_eq!(label_of("caster"), ("Caster", true));
+        assert_eq!(label_of("standard-striker"), ("Standard Striker (Level 3)", false));
+        assert_eq!(label_of("extra-striker"), ("Extra Striker", false));
+        assert_eq!(label_of("ogre"), ("Ogre", false));
     }
 
     #[test]

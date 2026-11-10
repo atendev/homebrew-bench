@@ -130,6 +130,7 @@ Both modes ship in phase 1. Everything the engine can't model is labeled agent j
 - [Build batch Counterspell and the Protective Magic split](closed/111-build-batch-counterspell-and-the-protective-magic-split.md): batch counters a leveled enemy cast when its damage, healing and control beat the reaction reserve plus the resource cost, under policy v5. `per_day` gains a `group`, Protective Magic is a Shield entry and a Counterspell entry on one pool, and the three fixtures gain a `spellcasting` block for the DC. Only the Mage, Archmage and Lich move on the curve, and the Mage gets easier at levels 2 to 4.
 - [Build dice-valued roll bonuses](closed/103-build-dice-valued-roll-bonuses.md): `add_dice` and `subtract_dice` hold an `NdM` die and load only on attack rolls and saves. The bearer rolls the die after the d20s on attacks and on every save, death saves included for dice on all saves, and the note reads ` (+1d4 bless: 3)`. Bless carries the die and Bane joins the effects file. The policy reads every timed attack and save bonus at its mean, which adds flat attack bonuses to the hit chance, and scores a positive save bonus at `SAVE_POINT_VALUE` 0.05. Engine 0.1.31, policy stays v5, and the curve differs only in `engine_version`.
 - [Build batch value of modifiers on an opponent](closed/104-build-modifiers-on-an-opponent.md): `bearer_value` keys each term on the bearer's side, so AC and save penalties and save Disadvantage on an opponent score as damage and attack penalties and attack Disadvantage (5 points) as control, with no safe first round and no lethargy. Riders under `on_hit` and `on_failure` score on the target by the hit or failure chance, inside the nesting guard, and `modifier_plan` may cast a harmful `target` modifier on an opponent. Engine 0.1.32, policy stays v5, and the curve differs only in `engine_version`.
+- [Build plan-failure warnings by role](closed/106-build-plan-failure-warnings-by-role.md): a party member's plan failures key on its role when it alone names it, combatant ids in the error text become labels, and role rows list their levels, as `Striker (levels 3-5): Longbow failed 22 times ...`. `party::role_rank` is shared with `group_party`, logs and numbers are byte-identical on ogre at seed 7, and the engine stays 0.1.32.
 
 ## Not yet specified
 
@@ -163,7 +164,6 @@ Both modes ship in phase 1. Everything the engine can't model is labeled agent j
 
 ## Frontier
 
-- [106 Build plan-failure warnings by role](tickets/106-build-plan-failure-warnings-by-role.md): task, AFK.
 - [107 Build target teleport scoring](tickets/107-build-target-teleport-scoring.md): task, AFK.
 - [108 Leftover Engaged range after a teleport](tickets/108-leftover-engaged-range-after-a-teleport.md): grilling, HITL.
 - [109 Durations longer than a round](tickets/109-durations-longer-than-a-round.md): grilling, HITL.
