@@ -357,6 +357,7 @@ pub fn start(spec: StartSpec) -> Result<(EncounterState, Outcome), LiveError> {
         active_effects: vec![],
         active_modifiers: vec![],
         standing_assumptions: vec![],
+        homebrew_spells: vec![],
         command_history: vec![],
         pending: None,
         rng: RngState::new(spec.seed),

@@ -108,7 +108,7 @@ fn modeled_spells_cast_and_missing_ones_are_named() {
     let curve = committed();
     for block in baseline::embedded_fixtures().unwrap() {
         let row = curve.fixtures.iter().find(|f| f.id == block.id).unwrap();
-        assert_eq!(row.missing_spells, engine::missing_spells(&block), "{} missing spells drifted from the curve", block.id);
+        assert_eq!(row.missing_spells, engine::missing_spells(&block, &bench_core::spell::SpellBook::srd().unwrap()), "{} missing spells drifted from the curve", block.id);
     }
     let giant = batch::run(&spec("cloud-giant", vec![5], 2)).unwrap();
     assert!(giant.summary.warnings.iter().any(|w| w.contains("fog-cloud") && w.contains("not in the spell effects file")));

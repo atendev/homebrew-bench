@@ -434,10 +434,11 @@ pub fn run(spec: &BatchSpec) -> Result<BatchReport, BatchError> {
         .filter(|f| f.kind == "skipped")
         .map(|f| format!("Skipped mechanic: {} ({}) is not modeled; results may change.", f.name, f.ability_id))
         .collect();
-    for spell in engine::missing_spells(&spec.monster) {
+    let book = crate::spell::SpellBook::srd().ok();
+    for spell in book.iter().flat_map(|b| engine::missing_spells(&spec.monster, b)) {
         warnings.push(format!("Spell `{spell}` is not in the spell effects file; a cast of it does nothing, so results may understate this monster."));
     }
-    for (spell, level, clause) in engine::unapplied_upcasts(&spec.monster) {
+    for (spell, level, clause) in book.iter().flat_map(|b| engine::unapplied_upcasts(&spec.monster, b)) {
         let clause = clause.trim_end_matches('.');
         warnings.push(format!("Spell `{spell}` at level {level}: {clause} is not applied; results may understate this monster."));
     }

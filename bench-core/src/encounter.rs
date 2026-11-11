@@ -297,6 +297,9 @@ pub struct EncounterState {
     pub active_modifiers: Vec<ActiveModifier>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub standing_assumptions: Vec<StandingAssumption>,
+    /// Homebrew spell entries copied in at creation, so replay and the tamper check don't read the file.
+    #[serde(default, skip_serializing_if = "Vec::is_empty", deserialize_with = "crate::spell::checked_homebrew")]
+    pub homebrew_spells: Vec<crate::spell::SpellEffect>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub command_history: Vec<CommandRecord>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -419,6 +422,11 @@ impl EncounterState {
             winner == Some(*i)
         })
         .map(|(_, m)| m)
+    }
+
+    /// The spell book for this encounter: its homebrew entries, then the SRD.
+    pub fn spell_book(&self) -> Result<crate::spell::SpellBook<'_>, &'static str> {
+        crate::spell::SpellBook::new(&self.homebrew_spells)
     }
 
     /// Compute the tamper hash for this encounter state. The hash excludes the
@@ -597,6 +605,7 @@ mod tests {
             active_effects: vec![],
             active_modifiers: vec![],
             standing_assumptions: vec![],
+            homebrew_spells: vec![],
             command_history: vec![],
             pending: None,
             rng: RngState::new(1),
