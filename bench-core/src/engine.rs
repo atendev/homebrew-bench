@@ -4129,6 +4129,65 @@ mod tests {
         assert!(matches!(&effects[0], Effect::SavingThrow(s) if s.damage[0].dice == "8d6"), "leveled spells do not scale");
     }
 
+    #[test]
+    fn srd_combat_cantrips_scale_their_damage_dice() {
+        let cantrips = [
+            ("acid-splash", "d6"),
+            ("chill-touch", "d10"),
+            ("poison-spray", "d12"),
+            ("ray-of-frost", "d8"),
+            ("sacred-flame", "d8"),
+            ("shocking-grasp", "d8"),
+            ("starry-wisp", "d8"),
+            ("vicious-mockery", "d6"),
+        ];
+        let book = SpellBook::srd().unwrap();
+        for (id, die) in cantrips {
+            let spell = book.get(id).unwrap_or_else(|| panic!("{id} is modeled"));
+            assert_eq!(spell.level, 0, "{id}");
+            for (level, count) in [(4, 1), (5, 2), (10, 2), (11, 3), (17, 4)] {
+                let (effects, _) = bound_cast_effects(&caster_block(level), &book, &cast(id, None)).unwrap();
+                assert_eq!(damage_dice(&effects[0]), vec![(format!("{count}{die}"), 0)], "{id} at level {level}");
+            }
+        }
+    }
+
+    #[test]
+    fn save_cantrips_deal_nothing_on_a_success() {
+        let book = SpellBook::srd().unwrap();
+        for id in ["acid-splash", "sacred-flame", "vicious-mockery"] {
+            let effect = &book.get(id).unwrap().effects[0];
+            let save = match effect {
+                Effect::Area(a) => match a.effect.as_ref() {
+                    Effect::SavingThrow(s) => s,
+                    _ => panic!("{id} wraps a save"),
+                },
+                Effect::SavingThrow(s) => s,
+                _ => panic!("{id} is a save"),
+            };
+            assert!(save.no_damage_on_success && !save.half_on_success, "{id}");
+        }
+        let Effect::Area(splash) = &book.get("acid-splash").unwrap().effects[0] else { panic!("acid splash is an area") };
+        assert!(matches!(splash.area, crate::effect::Area::Sphere { radius: 5 }) && matches!(splash.origin, crate::effect::AreaOrigin::TargetPoint));
+    }
+
+    #[test]
+    fn ray_of_frost_slows_the_target_through_its_next_turn() {
+        let book = SpellBook::srd().unwrap();
+        let Effect::Attack(ray) = &book.get("ray-of-frost").unwrap().effects[0] else { panic!("ray of frost is an attack") };
+        assert!(matches!(
+            &ray.on_hit[..],
+            [Effect::TimedModifier(m)] if m.target == ModifierTarget::Speed
+                && matches!(m.change, ModifierChange::Add(-10))
+                && matches!(m.duration, Duration::UntilEndOfNextTurn)
+                && m.bearer == crate::effect::ModifierBearer::Target
+        ));
+        for id in ["chill-touch", "shocking-grasp"] {
+            let Effect::Attack(touch) = &book.get(id).unwrap().effects[0] else { panic!("{id} is an attack") };
+            assert!(touch.reach == Some(5) && touch.range.is_none(), "{id} is a melee spell attack");
+        }
+    }
+
     fn damage_dice(effect: &Effect) -> Vec<(String, i32)> {
         let list = match effect {
             Effect::Attack(a) => a.damage.clone(),
