@@ -371,12 +371,7 @@ fn with_slot(
         let Some(spell) = spells.get(&cast.spell_id).filter(|s| s.level > 0) else {
             continue;
         };
-        if spell.is_homebrew() && level > spell.level && !cast.upcast {
-            return Err(EngineError::Invalid(format!(
-                "{}'s cast of homebrew spell {} has upcast false, so a level {level} slot does nothing more than a level {} slot; pass --slot {} or set upcast true on the cast",
-                action.id, spell.id, spell.level, spell.level
-            )));
-        }
+        check_homebrew_upcast(&action.id, spell, cast, level)?;
         cast.slot_level = Some(level);
         cast_level(spell, cast)?;
         leveled = true;
@@ -389,6 +384,17 @@ fn with_slot(
     }
     spend_slot(actor, block, level)?;
     Ok(effects)
+}
+
+/// A homebrew spell takes a slot above its own level only on a cast marked `upcast` (ADR 0022).
+pub fn check_homebrew_upcast(action_id: &str, spell: &crate::spell::SpellEffect, cast: &crate::effect::Cast, level: u8) -> Result<(), EngineError> {
+    if spell.is_homebrew() && level > spell.level && !cast.upcast {
+        return Err(EngineError::Invalid(format!(
+            "{action_id}'s cast of homebrew spell {} has upcast false, so a level {level} slot does nothing more than a level {} slot; pass --slot {} or set upcast true on the cast",
+            spell.id, spell.level, spell.level
+        )));
+    }
+    Ok(())
 }
 
 /// The Disengage action. The flag lasts until the actor's turn ends.
@@ -973,16 +979,12 @@ fn cast_spell(
         }
     };
     let level = cast_level(&spell, cast)?;
-    let effects = scaled_effects(&spell, level)?;
     let i = index_of(state, actor_id)?;
+    let effects = cast_effects(&spell, level, Some(stat_block(state, &state.combatants[i])?))?;
     if spell.level > 0 && state.settings.spell_cast_windows && !state.reactions.reacting && spell_cast_countered(state, stream, i, spell_id, level, target_ids, events)? {
         return Ok(());
     }
-    let ctx = {
-        let block = stat_block(state, &state.combatants[i])?;
-        spend_slot(&state.combatants[i], block, level)?;
-        cast_context(block, spell.level == 0)
-    };
+    spend_slot(&state.combatants[i], stat_block(state, &state.combatants[i])?, level)?;
     if level > 0
         && stat_block(state, &state.combatants[i])?
             .spell_slots
@@ -1018,10 +1020,6 @@ fn cast_spell(
         ));
     }
     for effect in effects {
-        let effect = match &ctx {
-            Some(ctx) => bind_effect(effect, ctx, spell.level == 0),
-            None => effect,
-        };
         resolve_effect(state, stream, actor_id, effect, target_ids, events)?;
     }
     Ok(())
@@ -1112,7 +1110,7 @@ fn spell_cast_windows(state: &EncounterState, caster: usize, spell_id: &str, lev
 }
 
 /// The level a cast resolves at: its slot level, or the spell's own level when it names none.
-fn cast_level(
+pub fn cast_level(
     spell: &crate::spell::SpellEffect,
     cast: &crate::effect::Cast,
 ) -> Result<u8, EngineError> {
@@ -1336,16 +1334,20 @@ pub fn unapplied_upcasts(block: &StatBlock, book: &SpellBook) -> Vec<(String, u8
 /// Effects of a cast with the caster's numbers bound in, and whether the spell needs concentration.
 pub fn bound_cast_effects(block: &StatBlock, book: &SpellBook, cast: &crate::effect::Cast) -> Option<(Vec<Effect>, bool)> {
     let spell = book.get(&cast.spell_id)?;
-    let cantrip = spell.level == 0;
-    let effects = scaled_effects(spell, cast_level(spell, cast).ok()?).ok()?;
-    let effects = match cast_context(block, cantrip) {
-        Some(ctx) => effects
-            .into_iter()
-            .map(|e| bind_effect(e, &ctx, cantrip))
-            .collect(),
-        None => effects,
-    };
+    let effects = cast_effects(spell, cast_level(spell, cast).ok()?, Some(block)).ok()?;
     Some((effects, spell.concentration))
+}
+
+/// The effects a spell resolves at `level`, as a cast runs them: scaled per level above its own,
+/// then bound to the caster's save DC, attack bonus and cantrip dice when `block` has a
+/// `spellcasting` block.
+pub fn cast_effects(spell: &crate::spell::SpellEffect, level: u8, block: Option<&StatBlock>) -> Result<Vec<Effect>, EngineError> {
+    let cantrip = spell.level == 0;
+    let effects = scaled_effects(spell, level)?;
+    Ok(match block.and_then(|b| cast_context(b, cantrip)) {
+        Some(ctx) => effects.into_iter().map(|e| bind_effect(e, &ctx, cantrip)).collect(),
+        None => effects,
+    })
 }
 
 /// Whether the ability can be used right now: its usage allows it and any spell slot is left.

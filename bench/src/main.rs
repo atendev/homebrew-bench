@@ -228,6 +228,23 @@ enum Commands {
         #[command(flatten)]
         at: At,
     },
+    /// Print a spell's cast card: level, casting time, effects at the cast level, how many target ids `bench action` takes, and every agent clause.
+    Spell {
+        /// Spell id, from the SRD effects file or a homebrew spell file.
+        spell_id: String,
+        /// Combatant in a running encounter whose save DC, attack bonus and slots the card reads. Homebrew spells then come from the encounter.
+        #[arg(long)]
+        caster: Option<String>,
+        /// Slot level to cast at; defaults to the level the caster's stat block casts it at, else the spell's own.
+        #[arg(long)]
+        slot: Option<u8>,
+        /// Encounter to read; defaults to the most recently started running encounter when --caster is given.
+        #[arg(long, short = 'e')]
+        encounter: Option<String>,
+        /// Homebrew spell file to read when no encounter is used. Repeatable.
+        #[arg(long = "spell")]
+        spell: Vec<String>,
+    },
     /// Print the encounter digest.
     State {
         /// Apply the public view filter.
@@ -642,6 +659,7 @@ fn run(command: Commands) -> Result<String, CodedError> {
         }
         Commands::Remove { id, reason, at } => step(&at, Command::Remove { id, reason }),
         Commands::Undo { at } => step(&at, Command::Undo),
+        Commands::Spell { spell_id, caster, slot, encounter, spell } => run_spell(&spell_id, caster, slot, encounter, spell),
         Commands::State { public, at } => {
             let (_, state) = open(&at, VersionCheck::Require)?;
             ok(serde_json::json!({
@@ -730,6 +748,43 @@ fn open(at: &At, version: VersionCheck) -> Result<(IndexEntry, EncounterState), 
     let entry = index.resolve(at.encounter.as_deref())?.clone();
     let state = store::load(&entry.state_path, version)?;
     Ok((entry, state))
+}
+
+/// The cast card. With --caster or --encounter it reads the encounter's spell book and the
+/// caster's numbers; otherwise the SRD and any --spell files.
+fn run_spell(spell_id: &str, caster: Option<String>, slot: Option<u8>, encounter: Option<String>, spell: Vec<String>) -> Result<String, CodedError> {
+    let invalid = |e: String| CodedError::new(ErrorCode::InvalidArgument, e);
+    if caster.is_none() && encounter.is_none() {
+        let homebrew = bench_core::spell::load_homebrew(&spell).map_err(invalid)?;
+        let book = bench_core::spell::SpellBook::new(&homebrew).map_err(|e| CodedError::new(ErrorCode::Internal, e.to_string()))?;
+        let entry = book.get(spell_id).ok_or_else(|| {
+            let files = if spell.is_empty() { "no --spell file was given".to_string() } else { format!("the --spell files read were {}", spell.join(", ")) };
+            CodedError::new(
+                ErrorCode::NotFound,
+                format!("spell `{spell_id}` is in neither data/spells/effects.json nor a --spell file ({files}); pass the homebrew spell's file with --spell"),
+            )
+        })?;
+        return ok(bench_core::cast_card::card(entry, None, slot).map_err(invalid)?);
+    }
+    let (_, state) = open(&At { encounter, spell }, VersionCheck::Require)?;
+    let book = state.spell_book().map_err(|e| CodedError::new(ErrorCode::Internal, e.to_string()))?;
+    let entry = book.get(spell_id).ok_or_else(|| {
+        CodedError::new(
+            ErrorCode::NotFound,
+            format!(
+                "spell `{spell_id}` is in neither data/spells/effects.json nor encounter {}'s homebrew spells, which come from the --spell files given to `bench start`",
+                state.id
+            ),
+        )
+    })?;
+    let caster = match caster.as_deref() {
+        Some(id) => Some(
+            bench_core::cast_card::CardCaster::find(&state, id)
+                .ok_or_else(|| CodedError::new(ErrorCode::NotFound, format!("combatant {id} is not in encounter {}", state.id)))?,
+        ),
+        None => None,
+    };
+    ok(bench_core::cast_card::card(entry, caster, slot).map_err(invalid)?)
 }
 
 fn step(at: &At, cmd: Command) -> Result<String, CodedError> {

@@ -33,12 +33,15 @@ A spell-testing spec. Each homebrew spell is converted into an effects entry, ch
 
 - [Live cast log for homebrew clauses](closed/008-live-cast-log-for-homebrew-clauses.md): a homebrew cast logs one `agent_clause` per clause after the window closes and before `upcast_clause`; a countered cast logs none; a monster's clause events are hidden in the public view (engine 0.1.39)
 
+- [Cast card](closed/009-cast-card.md): `bench spell` prints the entry at its cast level through the engine's own scaling, with caster numbers from a live encounter or homebrew from `--spell`; live `bench action` refuses a wrong cast target count with the card's sentence (engine 0.1.40)
+
 ## Not yet specified
 
 - Target caps on non-attack spells: Bless, Bane and similar spells take every target passed, so `extra_targets` on them is documentary. Decide whether a spell's target count is enforced by the engine or by the agent ([archived map](archive/homebrew-bench-map.md), Target caps on non-attack effects).
 - Counter pricing: a limited counter costs nothing at the default `resource_cost` of 0, so the Mage reads easier at levels 2 to 4. Decide how a counter is priced against Shield and against the spell it stops ([archived map](archive/homebrew-bench-map.md), Counter pricing).
 - Flat save bonuses on concentration and repeat saves: those saves add a die but no flat timed save modifier. Decide whether spell saves read flat bonuses, and how old saves are gated ([archived map](archive/homebrew-bench-map.md), Flat save bonuses on concentration and repeat saves).
 - Casts before an encounter: a spell with `casting_time: long` reads "not measured" in batch ([Homebrew spell intake rules](closed/002-homebrew-spell-intake-rules.md)). Live mode refuses a `long` spell at start (ADR 0022). Decide whether batch can cast one before initiative, and how that reads against the buff horizon.
+- Declared homebrew upcasts: a stat block cast may declare `slot_level` above a homebrew entry's level with `upcast: false`, and it runs scaled because only `--slot` checks the flag ([Cast card](closed/009-cast-card.md)). Decide whether `bench start` refuses it.
 - SRD agent clauses on cast: live mode logs a homebrew entry's agent clauses on cast but not an SRD spell's, which the agent reads from `effects.json`. Decide whether to emit SRD clauses too, given that it changes every replay fingerprint ([Live spell casting prompts](closed/003-live-spell-casting-prompts.md)).
 
 None of these blocks the destination. Each already has a defined reading, and none changes the committed spell baseline. Counter pricing and SRD agent clauses on cast are the next to ticket if the spell baseline review shows they matter.
@@ -51,7 +54,7 @@ None of these blocks the destination. Each already has a defined reading, and no
 
 ## Frontier
 
-- [Cast card](tickets/009-cast-card.md)
+- [Skill: homebrew spell intake and live casting](tickets/010-skill-homebrew-spell-intake-and-live-casting.md)
 - [Batch homebrew clause resolution](tickets/011-batch-homebrew-clause-resolution.md)
 - [Model more SRD cantrips](tickets/014-model-more-srd-cantrips.md)
 - [Control party and spell panel](tickets/012-control-party-and-spell-panel.md)
@@ -65,7 +68,7 @@ Blocking in brackets.
 - [Spell book](closed/006-spell-book.md) (closed)
 - [Live start with homebrew spells](closed/007-live-start-with-homebrew-spells.md) (closed)
 - [Live cast log for homebrew clauses](closed/008-live-cast-log-for-homebrew-clauses.md) (closed)
-- [Cast card](tickets/009-cast-card.md) [006]
+- [Cast card](closed/009-cast-card.md) (closed)
 - [Skill: homebrew spell intake and live casting](tickets/010-skill-homebrew-spell-intake-and-live-casting.md) [007, 008, 009]
 - [Batch homebrew clause resolution](tickets/011-batch-homebrew-clause-resolution.md) [006]
 - [Control party and spell panel](tickets/012-control-party-and-spell-panel.md)

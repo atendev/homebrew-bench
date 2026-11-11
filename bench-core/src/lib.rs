@@ -7,6 +7,7 @@
 
 pub mod baseline;
 pub mod batch;
+pub mod cast_card;
 pub mod config;
 pub mod digest;
 pub mod effect;

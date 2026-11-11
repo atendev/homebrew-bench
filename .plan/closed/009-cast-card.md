@@ -3,7 +3,7 @@ id: 009
 title: Cast card
 type: task
 mode: AFK
-status: open
+status: closed
 blocked_by: [006]
 claimed: false
 ---
@@ -25,4 +25,4 @@ Build the cast card from [Live spell casting prompts](../closed/003-live-spell-c
 
 ## Resolution
 
-<!-- Filled in at close. -->
+Built in engine 0.1.40. `bench spell <spell-id> [--caster <id>] [--slot N]` prints a cast card as JSON with a `text` rendering: level, cast level, casting time, concentration, save or attack, the effects at that level, the target count, every agent clause and the upcast clause. Effects come from `engine::cast_effects`, the function `cast_spell` and batch tactics now share. With `--caster` or `-e` it reads the running encounter's spell book and the caster's save DC, attack bonus, slots left and casting actions; otherwise the SRD and `--spell` files. An unknown id is `not_found` and names the files read. `TargetCount::of` gives the count, and live `bench action` refuses a cast with a wrong count using the same sentence. The check is live only, so batch numbers are unchanged. A self spell now refuses a target id, and the live-mode guide says so. Single-target save spells read "1 or more" until the target-cap fog is decided. With an explicit `--slot`, the card refuses a homebrew upcast that `bench action` would refuse. Decisions are in [the decision report](../reports/009-decisions.md). Haiku audit: APPROVE in round 3.
