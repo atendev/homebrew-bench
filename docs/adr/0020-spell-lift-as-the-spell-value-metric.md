@@ -1,0 +1,20 @@
+# Spell lift as the spell value metric
+
+The batch report compares a homebrew spell with the SRD spells of its level. Ticket 001 of the spell-testing map ([Spell value metric](../../.plan/closed/001-spell-value-metric.md)) chose what that comparison is measured in. The verdict is spell lift: how much the party's win rate and casualty rate change when the spell goes onto the caster role. It is not damage per cast.
+
+## Considered options
+
+- **Expected damage or healing per cast, per slot level.** Rejected as the verdict. It is cheap and needs no fights, but it gives no number for control or buff spells such as Hold Person, Bless or Haste, and damage and healing can't share one scale. It stays in the report as an ungraded diagnostic.
+- **Expected damage or healing per slot spent.** Rejected. It has the same gaps, and comparison across levels buys little because the report compares same-level spells only.
+- **Change in win rate with the spell added to a caster.** Adopted as spell lift. It puts every spell kind on one scale and reuses the monster baseline's engine, standard party and batch tactics policy (ADR 0011).
+
+## Consequences
+
+- **Swap, not add.** The caster role keeps its slot table, but every spell it knows of the tested spell's level is replaced by the tested spell. Every spell goes on the caster role whatever its class list, so all share one attack bonus and save DC. The control run removes that level's spells. The rest of the caster's list stays, so the tested spell competes for concentration as it would in play. The policy chooses when and on whom to cast. A spell the policy never casts in a row reads "never cast", not zero.
+- **Spell panel.** Each party level has a fixed, fingerprinted panel of baseline-curve fixtures. A fixture qualifies when the control party wins about 40 to 80% of fights against it, measured in the control run. The panel has a single-monster shape and a group shape (several copies of a lower-CR fixture), so area and multi-target spells show their worth. The single-monster shape includes a spellcasting fixture where the curve has one. Where it has none, the row says so and counter spells read "not measured".
+- **Rows.** The headline row is party level 2L-1, the first level with a slot of the spell's level L, cast at level L. A spell with an upcast rule also gets one row per cast level N above L, at party level 2N-1. Cantrips get rows at party levels 1, 5, 11 and 17. Each row is placed against the SRD spells of the same level run at the same row. An upcast clause the engine can't run is marked not measured.
+- **Placement, not pass/fail.** The report gives the spell's place among same-level SRD spells and names its nearest neighbours. Placement uses the mean lift across the panel, and the single-monster and group columns are shown too. A "reads like level N" line appears only when the spell falls outside its own level's SRD range. A row with fewer than three modeled SRD spells is thin data and gets no percentile.
+- **Noise.** Each panel fight runs a fixed number of times with paired seeds (ADR 0007): the control and every spell run share a seed per fight. The report gives an interval on the lift. SRD neighbours whose intervals overlap the homebrew's are "level with" it, not above or below.
+- **Party side only.** Batch measures the spell as a party tool. A monster that casts it is measured by monster testing, and live mode covers both sides in play. The report says this.
+- **Nothing to measure.** An entry that can't be modeled is refused at intake and never reaches batch. A modeled spell with no combat effect the engine runs reads "not measured" with the reason, never zero. Whether intake also refuses that kind of spell is ticket 002's question.
+- **Spell baseline.** The SRD lift numbers are a committed table under `data/baseline/`, regenerated on purpose. It records fingerprints of the effects file, party, panel, policy, engine and fight count. A homebrew run fights only its own spell and the control. A report computed against a stale table says so, as the monster curve does.
