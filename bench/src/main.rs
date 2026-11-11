@@ -43,6 +43,9 @@ struct At {
     /// Encounter id; defaults to the most recently started running encounter.
     #[arg(long, short = 'e')]
     encounter: Option<String>,
+    /// Refused: homebrew spells are fixed at `bench start`.
+    #[arg(long = "spell", hide = true)]
+    spell: Vec<String>,
 }
 
 #[derive(Args, Clone)]
@@ -146,6 +149,9 @@ enum Commands {
         /// Readable encounter id; derived from the first monster if omitted.
         #[arg(long)]
         id: Option<String>,
+        /// Homebrew spell file the combatants may cast, copied into the encounter. Repeatable.
+        #[arg(long = "spell")]
+        spell: Vec<String>,
     },
     /// Take an action, such as an attack, on the active combatant's turn.
     Action {
@@ -533,8 +539,10 @@ fn parse_entrant(spec: &str) -> Result<Entrant, CodedError> {
 
 fn run(command: Commands) -> Result<String, CodedError> {
     match command {
-        Commands::Start { combatants, surprised, seed, pc_dice, lighting, output, group_initiative, id } => {
+        Commands::Start { combatants, surprised, seed, pc_dice, lighting, output, group_initiative, id, spell } => {
             let entrants = combatants.iter().map(|c| parse_entrant(c)).collect::<Result<Vec<_>, _>>()?;
+            let homebrew_spells =
+                bench_core::spell::load_homebrew(&spell).map_err(|e| CodedError::new(ErrorCode::InvalidArgument, e))?;
             let cwd = cwd()?;
             let config = config()?;
             let output = match output {
@@ -578,6 +586,7 @@ fn run(command: Commands) -> Result<String, CodedError> {
                 spell_cast_windows: true,
                 teleport_near: true,
                 long_durations: true,
+                homebrew_spells,
             };
             let (state, outcome) = live::start(spec).map_err(|e| coded(e, false))?;
             let (state_path, log_path) = store::files_for(&dir, &id);
@@ -711,6 +720,12 @@ fn check_rule(rule: &Option<String>) -> Result<(), CodedError> {
 }
 
 fn open(at: &At, version: VersionCheck) -> Result<(IndexEntry, EncounterState), CodedError> {
+    if !at.spell.is_empty() {
+        return Err(CodedError::new(
+            ErrorCode::InvalidArgument,
+            "--spell only works on `bench start`: a running encounter's homebrew spells are fixed when it starts, so start a new encounter with --spell",
+        ));
+    }
     let index = Index::load()?;
     let entry = index.resolve(at.encounter.as_deref())?.clone();
     let state = store::load(&entry.state_path, version)?;
@@ -980,7 +995,7 @@ fn command_catalog() -> Value {
     fn describe(cmd: &clap::Command) -> Value {
         let args: Vec<Value> = cmd
             .get_arguments()
-            .filter(|a| !matches!(a.get_id().as_str(), "help" | "version"))
+            .filter(|a| !a.is_hide_set() && !matches!(a.get_id().as_str(), "help" | "version"))
             .map(|a| {
                 serde_json::json!({
                     "name": a.get_long().map(|l| format!("--{l}")).unwrap_or_else(|| a.get_id().to_string()),

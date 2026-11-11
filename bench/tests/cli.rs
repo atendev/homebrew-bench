@@ -619,3 +619,50 @@ fn schema_validate_reads_homebrew_spell_files() {
     std::fs::write(&clash, entry.to_string()).unwrap();
     assert_eq!(bench.err(&["schema", "validate", path, "--spell", clash.to_str().unwrap()]), "invalid_argument");
 }
+
+#[test]
+fn start_copies_spell_files_into_the_encounter_and_a_running_encounter_refuses_them() {
+    let bench = Bench::new();
+    let mut block: Value = serde_json::from_str(&std::fs::read_to_string(data("fixtures/goblin-warrior.json")).unwrap()).unwrap();
+    block["actions"].as_array_mut().unwrap().push(serde_json::json!({
+        "id": "spark-darts", "name": "Spark Darts", "desc": "Cast Spark Darts.", "kind": "modeled", "usage": "at_will",
+        "effects": [{"cast": {"slot_level": null, "spell_id": "spark-darts", "upcast": false}}]
+    }));
+    let goblin = bench.cwd.join("spark-goblin.json");
+    std::fs::write(&goblin, block.to_string()).unwrap();
+    let goblin = goblin.to_str().unwrap();
+    let pc = data("party/standard/standard-striker-03.json");
+    let dart = serde_json::json!({"damage": {"dice": "1d4", "modifier": 1, "type": "force", "magical": true}});
+    let spell = bench.cwd.join("spark-darts.json");
+    std::fs::write(&spell, serde_json::json!({
+        "id": "spark-darts", "name": "Spark Darts", "source": "homebrew", "pasted_source": "Spark Darts. 1st-level evocation...",
+        "level": 1, "casting_time": "action", "concentration": false, "effects": [dart, dart, dart]
+    }).to_string()).unwrap();
+    let spell = spell.to_str().unwrap();
+
+    let warned = bench.ok(&["start", &pc, goblin, "--seed", "11", "--id", "warned"]);
+    let warnings = warned["warnings"].as_array().unwrap();
+    assert!(warnings.iter().any(|w| w.as_str().unwrap().contains("spark-darts casts spark-darts")), "{warned:#}");
+
+    let started = bench.ok(&["start", &pc, goblin, "--seed", "11", "--id", "darts", "--spell", spell]);
+    assert!(started.get("warnings").is_none(), "{started:#}");
+    assert!(started["events"].as_array().unwrap().iter().any(|e| e["kind"] == "homebrew_spell"), "{started:#}");
+    std::fs::remove_file(spell).unwrap();
+
+    while bench.ok(&["state", "-e", "darts"])["digest"]["active_turn"] != "goblin-warrior" {
+        bench.ok(&["end-turn", "-e", "darts"]);
+    }
+    let cast = bench.ok(&["action", "goblin-warrior", "spark-darts", "standard-striker-03", "-e", "darts"]);
+    let kinds: Vec<&str> = cast["events"].as_array().unwrap().iter().map(|e| e["kind"].as_str().unwrap()).collect();
+    assert_eq!(kinds.iter().filter(|k| **k == "damage").count(), 3, "{cast:#}");
+    assert!(!kinds.contains(&"unmodeled_cast"), "{cast:#}");
+    assert_eq!(bench.ok(&["replay", "-e", "darts"])["matches"], true);
+
+    let (code, refused) = bench.run(&["state", "-e", "darts", "--spell", "spark-darts.json"]);
+    assert_ne!(code, 0);
+    assert_eq!(refused["error"]["code"], "invalid_argument");
+    assert!(refused["error"]["message"].as_str().unwrap().contains("bench start"), "{refused:#}");
+    assert_eq!(bench.err(&["end-turn", "-e", "darts", "--spell", "spark-darts.json"]), "invalid_argument");
+    assert_eq!(bench.err(&["replay", "-e", "darts", "--spell", "spark-darts.json"]), "invalid_argument");
+    assert_eq!(bench.err(&["start", &pc, goblin, "--spell", "missing.json"]), "invalid_argument");
+}

@@ -339,8 +339,10 @@ fn resolve_action(
 }
 
 /// The action's effects with every leveled Cast set to the chosen slot level. Refused
-/// unless the caster has spell slots, the action casts a leveled spell no higher than
-/// the slot, and a slot of that level is left.
+/// for a monster, which casts at its stat block's slot level (ADR 0022), and unless the
+/// caster has spell slots, the action casts a leveled spell no higher than the slot, and
+/// a slot of that level is left. A homebrew spell takes a higher slot only on a cast
+/// marked `upcast`.
 fn with_slot(
     state: &EncounterState,
     actor_index: usize,
@@ -349,6 +351,12 @@ fn with_slot(
 ) -> Result<Vec<Effect>, EngineError> {
     let actor = &state.combatants[actor_index];
     let block = stat_block(state, actor)?;
+    if block.class.is_none() {
+        return Err(EngineError::Invalid(format!(
+            "{} is a monster and casts at the slot level its stat block names, so --slot is for PCs only",
+            actor.id
+        )));
+    }
     if block.spell_slots.is_none() {
         return Err(EngineError::Invalid(format!(
             "{} has no spell slots to choose from",
@@ -363,6 +371,12 @@ fn with_slot(
         let Some(spell) = spells.get(&cast.spell_id).filter(|s| s.level > 0) else {
             continue;
         };
+        if spell.is_homebrew() && level > spell.level && !cast.upcast {
+            return Err(EngineError::Invalid(format!(
+                "{}'s cast of homebrew spell {} has upcast false, so a level {level} slot does nothing more than a level {} slot; pass --slot {} or set upcast true on the cast",
+                action.id, spell.id, spell.level, spell.level
+            )));
+        }
         cast.slot_level = Some(level);
         cast_level(spell, cast)?;
         leveled = true;
@@ -7115,6 +7129,39 @@ mod tests {
         assert_eq!(window.options, vec![ReactionOption { id: "counterspell".into(), name: "Counterspell".into() }]);
         assert_eq!(window.trigger, WindowTrigger::SpellCast { caster_id: "mage".into(), spell_id: "fireball".into(), level: 3, target_ids: vec!["other".into()] });
         assert!(!state.combatants[0].resources.contains_key("mage:slot:3"));
+    }
+
+    #[test]
+    fn a_homebrew_leveled_cast_opens_a_window_and_a_homebrew_cantrip_or_reaction_cast_does_not() {
+        let homebrew_caster = |spell: crate::spell::SpellEffect, slot: Option<u8>, as_reaction: bool| {
+            let mut block = slotted_caster(&spell.id, slot);
+            block.id = "mage".into();
+            if as_reaction {
+                let entry = block.actions.pop().unwrap();
+                block.reactions.push(entry);
+            }
+            let mut state = counter_encounter(40, true);
+            state.stat_blocks[0].stat_block = block;
+            state.homebrew_spells = vec![spell];
+            answering(&state, vec![])
+        };
+        let mut leveled = homebrew_caster(ember_bolt(), Some(1), false);
+        act(&mut leveled, "mage", "ember-bolt", &["other"]).unwrap();
+        let window = leveled.reactions.waiting.clone().expect("window");
+        assert_eq!(window.trigger, WindowTrigger::SpellCast { caster_id: "mage".into(), spell_id: "ember-bolt".into(), level: 1, target_ids: vec!["other".into()] });
+
+        let mut cantrip_entry = ember_bolt();
+        cantrip_entry.level = 0;
+        let mut cantrip = homebrew_caster(cantrip_entry, None, false);
+        act(&mut cantrip, "mage", "ember-bolt", &["other"]).unwrap();
+        assert!(cantrip.reactions.waiting.is_none());
+
+        let mut reaction_entry = ember_bolt();
+        reaction_entry.casting_time = crate::spell::CastingTime::Reaction;
+        let mut reaction = homebrew_caster(reaction_entry, Some(1), true);
+        act(&mut reaction, "mage", "ember-bolt", &["other"]).unwrap();
+        assert!(reaction.reactions.waiting.is_none());
+        assert!(reaction.combatants[0].action_economy.reaction_used);
     }
 
     #[test]

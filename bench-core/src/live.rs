@@ -201,6 +201,9 @@ pub struct Outcome {
     pub digest: Value,
     pub pending: Option<PendingPrompt>,
     pub log_entry: usize,
+    /// Notes for the agent that refuse nothing, such as a cast of a spell no loaded file supplies.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub warnings: Vec<String>,
 }
 
 /// One combatant entering at `bench start`.
@@ -231,6 +234,8 @@ pub struct StartSpec {
     pub teleport_near: bool,
     /// Minutes, hours and days count against the round clock (ADR 0005).
     pub long_durations: bool,
+    /// Homebrew spell entries from `--spell` files, copied into the encounter (ADR 0022).
+    pub homebrew_spells: Vec<crate::spell::SpellEffect>,
 }
 
 /// Result of `bench replay`.
@@ -287,6 +292,22 @@ impl Applied {
 pub fn start(spec: StartSpec) -> Result<(EncounterState, Outcome), LiveError> {
     if spec.entrants.is_empty() {
         return Err(LiveError::Invalid("an encounter needs at least one combatant".into()));
+    }
+    crate::spell::check_homebrew_list(&spec.homebrew_spells).map_err(LiveError::Invalid)?;
+    let book = crate::spell::SpellBook::new(&spec.homebrew_spells).map_err(|e| LiveError::Invalid(e.into()))?;
+    let mut warnings: Vec<String> = Vec::new();
+    for entrant in &spec.entrants {
+        let block = &entrant.stat_block;
+        crate::stat_block::check_live_casts(block, &book).map_err(LiveError::Invalid)?;
+        for (ability, spell_id) in crate::stat_block::unknown_casts(block, &book) {
+            let warning = format!(
+                "{}: {ability} casts {spell_id}, which neither the SRD nor a --spell file supplies, so a cast of it is an unmodeled_cast that does nothing",
+                block.id
+            );
+            if !warnings.contains(&warning) {
+                warnings.push(warning);
+            }
+        }
     }
     let mut snapshots: Vec<StatBlockSnapshot> = Vec::new();
     let mut counts: HashMap<String, usize> = HashMap::new();
@@ -357,7 +378,7 @@ pub fn start(spec: StartSpec) -> Result<(EncounterState, Outcome), LiveError> {
         active_effects: vec![],
         active_modifiers: vec![],
         standing_assumptions: vec![],
-        homebrew_spells: vec![],
+        homebrew_spells: spec.homebrew_spells.clone(),
         command_history: vec![],
         pending: None,
         rng: RngState::new(spec.seed),
@@ -384,6 +405,20 @@ pub fn start(spec: StartSpec) -> Result<(EncounterState, Outcome), LiveError> {
             format!("START encounter {} (pc dice {pc_dice}, lighting {lighting}, engine {ENGINE_VERSION})", spec.id),
         ),
     );
+    for spell in &state.homebrew_spells {
+        applied.push(
+            "homebrew_spell",
+            None,
+            LogLine::hidden(format!(
+                "SPELL {} ({}, homebrew level {}, casting time {}, fingerprint {})",
+                spell.id,
+                spell.name,
+                spell.level,
+                spell.casting_time.as_str(),
+                spell.fingerprint()
+            )),
+        );
+    }
     for c in &state.combatants {
         let band = state.combatants.iter().find_map(|o| c.ranges.get(&o.id)).copied().unwrap_or_default();
         let text = format!("{} ({}) on {}, {}", c.id, c.name, c.side_id, band_word(band));
@@ -406,7 +441,8 @@ pub fn start(spec: StartSpec) -> Result<(EncounterState, Outcome), LiveError> {
     )?;
     applied.items.extend(initiative.items);
     state.initial_snapshot = Some(Box::new(state.bare()));
-    let outcome = write_entry(&mut state, None, applied, 0, None);
+    let mut outcome = write_entry(&mut state, None, applied, 0, None);
+    outcome.warnings = warnings;
     Ok((state, outcome))
 }
 
@@ -600,6 +636,7 @@ fn write_entry(
         digest: digest::digest(state),
         pending: state.pending.clone(),
         log_entry: index,
+        warnings: vec![],
     }
 }
 
@@ -743,6 +780,8 @@ fn apply(state: &mut EncounterState, cmd: &Command) -> Result<Applied, LiveError
             Ok(applied)
         }
         Command::Add { stat_block, side: side_id, band, engaged_with } => {
+            let book = state.spell_book().map_err(|e| LiveError::Invalid(e.into()))?;
+            crate::stat_block::check_live_casts(stat_block, &book).map_err(LiveError::Invalid)?;
             if state.settings.pc_dice == PcDice::Ask && stat_block.class.is_some() {
                 let mut dry_run = state.clone();
                 add_combatant(&mut dry_run, stat_block, side_id, *band, engaged_with.as_deref(), Some(1))?;
@@ -1350,6 +1389,7 @@ mod tests {
             spell_cast_windows: true,
             teleport_near: true,
             long_durations: true,
+            homebrew_spells: vec![],
         }
     }
 
@@ -2959,5 +2999,201 @@ mod tests {
         execute(&mut state, clear).unwrap();
         assert!(state.active_modifiers.is_empty());
         assert!(replay(&state).matches);
+    }
+
+    fn homebrew(id: &str, casting_time: &str, effects: Value, scaling: Value) -> crate::spell::SpellEffect {
+        crate::spell::SpellEffect::parse(serde_json::json!({
+            "id": id, "name": id, "source": "homebrew", "pasted_source": format!("{id}, as pasted"),
+            "level": 1, "casting_time": casting_time, "concentration": false, "effects": effects, "scaling": scaling,
+        }))
+        .unwrap()
+    }
+
+    fn ember_bolt(casting_time: &str) -> crate::spell::SpellEffect {
+        homebrew("ember-bolt", casting_time, serde_json::json!([{"attack": {"modifier": 0, "target_count": 1, "damage": [{"dice": "1d6", "type": "fire"}]}}]), serde_json::json!([]))
+    }
+
+    fn spark_darts() -> crate::spell::SpellEffect {
+        let dart = serde_json::json!({"damage": {"dice": "1d4", "modifier": 1, "type": "force", "magical": true}});
+        homebrew("spark-darts", "action", serde_json::json!([dart, dart, dart]), serde_json::json!([{"effect_index": 0, "per_slot": {"extra_effects": {"count": 1}}}]))
+    }
+
+    fn cast_entry(id: &str, spell: &str, slot: Option<u8>, upcast: bool) -> crate::stat_block::AbilityEntry {
+        serde_json::from_value(serde_json::json!({"id": id, "name": id, "effects": [{"cast": {"spell_id": spell, "slot_level": slot, "upcast": upcast}}]})).unwrap()
+    }
+
+    const CASTER_ENTRANT: usize = 0;
+    const GOBLIN_ENTRANT: usize = 2;
+
+    /// The caster spec with `spells` loaded and `entry` added to one entrant's `section`.
+    fn homebrew_spec(spells: Vec<crate::spell::SpellEffect>, entrant: usize, section: &str, entry: crate::stat_block::AbilityEntry) -> StartSpec {
+        let mut spec = caster_spec();
+        let block = &mut spec.entrants[entrant].stat_block;
+        match section {
+            "traits" => block.traits.push(entry),
+            "actions" => block.actions.push(entry),
+            "bonus_actions" => block.bonus_actions.push(entry),
+            "reactions" => block.reactions.push(entry),
+            "legendary_actions" => block.legendary_actions.push(entry),
+            other => panic!("no section {other}"),
+        }
+        spec.homebrew_spells = spells;
+        spec
+    }
+
+    fn start_error(spec: StartSpec) -> String {
+        start(spec).unwrap_err().to_string()
+    }
+
+    fn give_spellcasting(spec: &mut StartSpec, entrant: usize) {
+        spec.entrants[entrant].stat_block.spellcasting =
+            Some(crate::stat_block::Spellcasting { ability: crate::stat_block::Ability::Int, save_dc: 12, attack_bonus: 4 });
+    }
+
+    fn hp(state: &mut EncounterState, id: &str, value: i64) {
+        let set = Command::Override { path: format!("{id}.hp"), value: Some(Value::from(value)), reason: "test".into(), rule: None, standing: false };
+        execute(state, set).unwrap();
+    }
+
+    #[test]
+    fn start_refuses_a_homebrew_cast_whose_section_does_not_match_its_casting_time() {
+        let err = start_error(homebrew_spec(vec![ember_bolt("action")], CASTER_ENTRANT, "bonus_actions", cast_entry("flare", "ember-bolt", Some(1), false)));
+        assert!(err.contains("flare in bonus_actions") && err.contains("casting time is action") && err.contains("move it to actions"), "{err}");
+        let err = start_error(homebrew_spec(vec![ember_bolt("bonus_action")], CASTER_ENTRANT, "actions", cast_entry("flare", "ember-bolt", Some(1), false)));
+        assert!(err.contains("flare in actions") && err.contains("casting time is bonus_action"), "{err}");
+        let err = start_error(homebrew_spec(vec![ember_bolt("reaction")], CASTER_ENTRANT, "actions", cast_entry("flare", "ember-bolt", Some(1), false)));
+        assert!(err.contains("flare in actions") && err.contains("casting time is reaction") && err.contains("move it to reactions"), "{err}");
+    }
+
+    #[test]
+    fn start_refuses_a_homebrew_cast_in_traits() {
+        let err = start_error(homebrew_spec(vec![ember_bolt("action")], CASTER_ENTRANT, "traits", cast_entry("flare", "ember-bolt", Some(1), false)));
+        assert!(err.contains("flare in traits") && err.contains("casting time is action"), "{err}");
+    }
+
+    #[test]
+    fn start_refuses_a_homebrew_cast_in_legendary_actions() {
+        let err = start_error(homebrew_spec(vec![ember_bolt("action")], GOBLIN_ENTRANT, "legendary_actions", cast_entry("flare", "ember-bolt", None, false)));
+        assert!(err.contains("flare in legendary_actions") && err.contains("casting time is action"), "{err}");
+    }
+
+    #[test]
+    fn start_refuses_a_long_homebrew_spell() {
+        let err = start_error(homebrew_spec(vec![ember_bolt("long")], CASTER_ENTRANT, "actions", cast_entry("flare", "ember-bolt", Some(1), false)));
+        assert!(err.contains("flare in actions") && err.contains("casting time is long"), "{err}");
+    }
+
+    #[test]
+    fn start_refuses_a_leveled_homebrew_attack_spell_without_a_spellcasting_block_and_allows_a_utility_spell() {
+        let err = start_error(homebrew_spec(vec![ember_bolt("action")], GOBLIN_ENTRANT, "actions", cast_entry("flare", "ember-bolt", None, false)));
+        assert!(err.contains("flare in actions") && err.contains("no spellcasting block") && err.contains("casting time action"), "{err}");
+        let mut spec = homebrew_spec(vec![ember_bolt("action")], GOBLIN_ENTRANT, "actions", cast_entry("flare", "ember-bolt", None, false));
+        give_spellcasting(&mut spec, GOBLIN_ENTRANT);
+        assert!(start(spec).is_ok());
+        assert!(start(homebrew_spec(vec![spark_darts()], GOBLIN_ENTRANT, "actions", cast_entry("darts", "spark-darts", None, false))).is_ok());
+    }
+
+    #[test]
+    fn start_refuses_a_leveled_homebrew_save_spell_without_a_spellcasting_block() {
+        let save = serde_json::json!([{"saving_throw": {
+            "ability": "dex", "dc": 0, "half_on_success": true, "no_damage_on_success": false, "damage": [{"dice": "2d6", "type": "fire"}]
+        }}]);
+        let cinders = homebrew("cinder-fan", "action", save, serde_json::json!([]));
+        let err = start_error(homebrew_spec(vec![cinders], GOBLIN_ENTRANT, "actions", cast_entry("fan", "cinder-fan", None, false)));
+        assert!(err.contains("fan in actions") && err.contains("no spellcasting block"), "{err}");
+    }
+
+    #[test]
+    fn start_refuses_a_homebrew_list_that_shadows_an_srd_spell() {
+        let mut shadow = ember_bolt("action");
+        shadow.id = "shield".into();
+        let mut spec = caster_spec();
+        spec.homebrew_spells = vec![shadow];
+        assert!(start_error(spec).contains("SRD"));
+    }
+
+    #[test]
+    fn start_warns_on_a_cast_no_loaded_file_supplies() {
+        let (_, out) = start(homebrew_spec(vec![], CASTER_ENTRANT, "actions", cast_entry("flare", "ember-bolt", Some(1), false))).unwrap();
+        assert!(out.warnings.iter().any(|w| w.contains("flare casts ember-bolt") && w.contains("unmodeled_cast")), "{:?}", out.warnings);
+        let (_, quiet) = start(caster_spec()).unwrap();
+        assert!(quiet.warnings.is_empty(), "{:?}", quiet.warnings);
+        assert!(serde_json::to_value(&quiet).unwrap().get("warnings").is_none());
+    }
+
+    fn duel() -> EncounterState {
+        let mut spec = homebrew_spec(vec![ember_bolt("action")], CASTER_ENTRANT, "actions", cast_entry("flare", "ember-bolt", Some(1), false));
+        give_spellcasting(&mut spec, GOBLIN_ENTRANT);
+        spec.entrants[GOBLIN_ENTRANT].stat_block.actions.push(cast_entry("hex-flare", "ember-bolt", None, false));
+        let (mut state, out) = start(spec).unwrap();
+        assert!(out.warnings.is_empty(), "{:?}", out.warnings);
+        hp(&mut state, GOBLIN, 500);
+        hp(&mut state, STRIKER, 500);
+        state
+    }
+
+    fn resolved_homebrew(out: &Outcome) -> bool {
+        out.events.iter().any(|e| e.event.kind == "attack") && out.events.iter().all(|e| e.event.kind != "unmodeled_cast")
+    }
+
+    #[test]
+    fn a_pc_and_a_monster_cast_a_homebrew_spell_and_a_saved_encounter_replays_without_the_file() {
+        let mut state = duel();
+        assert_eq!(state.homebrew_spells.len(), 1);
+        let line = state.log[0].lines.iter().find(|l| l.text.starts_with("SPELL ember-bolt")).expect("spell line");
+        assert!(line.text.contains(&ember_bolt("action").fingerprint()), "{}", line.text);
+        assert!(line.public_text().is_none());
+        turn_of(&mut state, CASTER);
+        let pc = execute(&mut state, cast_at(CASTER, "flare", None)).unwrap();
+        assert!(resolved_homebrew(&pc), "{:?}", lines(&pc));
+        let caster = state.combatants.iter().find(|c| c.id == CASTER).unwrap();
+        assert_eq!(caster.resources.get(&format!("{CASTER}:slot:1")), Some(&1));
+        turn_of(&mut state, GOBLIN);
+        let flare = Command::Action { actor: GOBLIN.into(), action: "hex-flare".into(), targets: vec![STRIKER.into()], slot: None, extra: false };
+        let monster = execute(&mut state, flare).unwrap();
+        assert!(resolved_homebrew(&monster), "{:?}", lines(&monster));
+        let saved: EncounterState = serde_json::from_str(&serde_json::to_string(&state).unwrap()).unwrap();
+        assert!(replay(&saved).matches);
+    }
+
+    #[test]
+    fn a_monster_slot_is_refused() {
+        let mut state = duel();
+        turn_of(&mut state, GOBLIN);
+        let flare = Command::Action { actor: GOBLIN.into(), action: "hex-flare".into(), targets: vec![STRIKER.into()], slot: Some(1), extra: false };
+        let err = execute(&mut state, flare).unwrap_err().to_string();
+        assert!(err.contains("monster") && err.contains("--slot is for PCs"), "{err}");
+    }
+
+    #[test]
+    fn a_pc_slot_above_a_homebrew_level_scales_only_on_an_upcast_cast() {
+        let darts = |upcast: bool| {
+            let (mut state, _) = start(homebrew_spec(vec![spark_darts()], CASTER_ENTRANT, "actions", cast_entry("darts", "spark-darts", Some(1), upcast))).unwrap();
+            hp(&mut state, GOBLIN, 500);
+            turn_of(&mut state, CASTER);
+            state
+        };
+        let mut upcast = darts(true);
+        let out = execute(&mut upcast, cast_at(CASTER, "darts", Some(2))).unwrap();
+        assert_eq!(out.events.iter().filter(|e| e.event.kind == "damage").count(), 4, "{:?}", lines(&out));
+        let caster = upcast.combatants.iter().find(|c| c.id == CASTER).unwrap();
+        assert_eq!(caster.resources.get(&format!("{CASTER}:slot:2")), Some(&1));
+
+        let mut flat = darts(false);
+        let err = execute(&mut flat, cast_at(CASTER, "darts", Some(2))).unwrap_err().to_string();
+        assert!(err.contains("upcast false") && err.contains("--slot 1"), "{err}");
+        let out = execute(&mut flat, cast_at(CASTER, "darts", Some(1))).unwrap();
+        assert_eq!(out.events.iter().filter(|e| e.event.kind == "damage").count(), 3, "{:?}", lines(&out));
+    }
+
+    #[test]
+    fn bench_add_holds_a_stat_block_to_the_encounters_homebrew_rules() {
+        let mut state = duel();
+        let mut late = block("fixtures/goblin-warrior.json");
+        late.id = "goblin-hexer".into();
+        late.bonus_actions.push(cast_entry("flare", "ember-bolt", None, false));
+        let add = Command::Add { stat_block: Box::new(late), side: "monsters".into(), band: None, engaged_with: None };
+        let err = execute(&mut state, add).unwrap_err().to_string();
+        assert!(err.contains("flare in bonus_actions"), "{err}");
     }
 }
