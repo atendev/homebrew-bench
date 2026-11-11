@@ -16,6 +16,7 @@ use crate::encounter::{
 };
 use crate::reaction::{ReactionAnswer, ReactionOption, ReactionWindow, WindowTrigger};
 use crate::rng::Stream;
+use crate::spell::SpellBook;
 use crate::stat_block::{Ability, Condition, DamageType, DeathSaves, StatBlock};
 
 #[derive(Debug, Clone, Serialize, Deserialize, schemars::JsonSchema)]
@@ -354,7 +355,7 @@ fn with_slot(
             actor.id
         )));
     }
-    let spells = load_spell_effects()?;
+    let spells = book_of(state)?;
     let mut effects = action.effects.clone();
     let mut leveled = false;
     for effect in &mut effects {
@@ -943,7 +944,7 @@ fn cast_spell(
     let spell_id = cast.spell_id.as_str();
     // In phase 1, spell effects are resolved from the spell effects file.
     // If the spell is not found, the cast is treated as unmodeled and logged only.
-    let spell_effects = match load_spell_effects() {
+    let spell_effects = match state.spell_book() {
         Ok(effects) => effects,
         Err(_) => {
             events.push(event("unmodeled_cast", format!("{} casts {} (spell effects file unavailable)", actor_id, spell_id), actor_id, actor_id));
@@ -1111,8 +1112,8 @@ fn cast_level(
 }
 
 /// Cast level of a cast the effects file may not hold; an unknown spell keeps its slot level.
-fn cast_level_of(cast: &crate::effect::Cast) -> Result<u8, EngineError> {
-    match load_spell_effects()?.get(&cast.spell_id) {
+fn cast_level_of(book: &SpellBook, cast: &crate::effect::Cast) -> Result<u8, EngineError> {
+    match book.get(&cast.spell_id) {
         Some(spell) => cast_level(spell, cast),
         None => Ok(cast.slot_level.unwrap_or(0)),
     }
@@ -1255,8 +1256,8 @@ fn blame_reaction<T>(state: &mut EncounterState, reactor_id: &str, ability_id: &
     result
 }
 
-fn load_spell_effects() -> Result<&'static HashMap<String, crate::spell::SpellEffect>, EngineError> {
-    crate::spell::catalog().map_err(|e| EngineError::Invalid(e.to_string()))
+fn book_of(state: &EncounterState) -> Result<SpellBook<'_>, EngineError> {
+    state.spell_book().map_err(|e| EngineError::Invalid(e.to_string()))
 }
 
 /// Batch fights let the remaining attacks of a multiattack move to a living opponent once the
@@ -1286,28 +1287,22 @@ fn casts_in(block: &StatBlock) -> Vec<crate::effect::Cast> {
 
 /// Spell ids a stat block casts that the spell effects file does not hold. A cast
 /// of one is logged but does nothing, so a batch names each one.
-pub fn missing_spells(block: &StatBlock) -> Vec<String> {
-    let Ok(known) = load_spell_effects() else {
-        return vec![];
-    };
+pub fn missing_spells(block: &StatBlock, book: &SpellBook) -> Vec<String> {
     let missing: std::collections::BTreeSet<String> = casts_in(block)
         .into_iter()
         .map(|c| c.spell_id)
-        .filter(|id| !known.contains_key(id))
+        .filter(|id| !book.contains(id))
         .collect();
     missing.into_iter().collect()
 }
 
 /// Upcasts in a stat block whose spell has an `upcast_clause` the engine does not
 /// apply: spell id, cast level and clause, once each.
-pub fn unapplied_upcasts(block: &StatBlock) -> Vec<(String, u8, String)> {
-    let Ok(known) = load_spell_effects() else {
-        return vec![];
-    };
+pub fn unapplied_upcasts(block: &StatBlock, book: &SpellBook) -> Vec<(String, u8, String)> {
     let found: std::collections::BTreeSet<(String, u8, String)> = casts_in(block)
         .into_iter()
         .filter_map(|cast| {
-            let spell = known.get(&cast.spell_id)?;
+            let spell = book.get(&cast.spell_id)?;
             let level = cast_level(spell, &cast).ok()?;
             let clause = spell
                 .upcast_clause
@@ -1320,8 +1315,8 @@ pub fn unapplied_upcasts(block: &StatBlock) -> Vec<(String, u8, String)> {
 }
 
 /// Effects of a cast with the caster's numbers bound in, and whether the spell needs concentration.
-pub fn bound_cast_effects(block: &StatBlock, cast: &crate::effect::Cast) -> Option<(Vec<Effect>, bool)> {
-    let spell = load_spell_effects().ok()?.get(&cast.spell_id)?;
+pub fn bound_cast_effects(block: &StatBlock, book: &SpellBook, cast: &crate::effect::Cast) -> Option<(Vec<Effect>, bool)> {
+    let spell = book.get(&cast.spell_id)?;
     let cantrip = spell.level == 0;
     let effects = scaled_effects(spell, cast_level(spell, cast).ok()?).ok()?;
     let effects = match cast_context(block, cantrip) {
@@ -1347,7 +1342,8 @@ pub fn ability_ready(state: &EncounterState, actor_id: &str, ability: &crate::st
     };
     ready
         && ability.effects.iter().all(|e| match e {
-            Effect::Cast(c) => cast_level_of(c)
+            Effect::Cast(c) => book_of(state)
+                .and_then(|book| cast_level_of(&book, c))
                 .and_then(|level| spend_slot(actor, block, level))
                 .is_ok(),
             _ => true,
@@ -3160,6 +3156,7 @@ mod tests {
             active_effects: vec![],
             active_modifiers: vec![],
             standing_assumptions: vec![],
+            homebrew_spells: vec![],
             command_history: vec![],
             pending: None,
             rng: RngState::new(1),
@@ -4088,26 +4085,26 @@ mod tests {
     #[test]
     fn casts_take_save_dc_and_attack_bonus_from_the_caster() {
         let block = caster_block(1);
-        let (effects, _) = bound_cast_effects(&block, &cast("fireball", Some(3))).unwrap();
+        let (effects, _) = bound_cast_effects(&block, &SpellBook::srd().unwrap(), &cast("fireball", Some(3))).unwrap();
         assert!(matches!(&effects[0], Effect::SavingThrow(s) if s.dc == 15));
-        let (effects, _) = bound_cast_effects(&block, &cast("fire-bolt", None)).unwrap();
+        let (effects, _) = bound_cast_effects(&block, &SpellBook::srd().unwrap(), &cast("fire-bolt", None)).unwrap();
         assert!(matches!(&effects[0], Effect::Attack(a) if a.modifier == 7));
     }
 
     #[test]
     fn heal_casts_add_the_spellcasting_modifier() {
-        let (effects, _) = bound_cast_effects(&caster_block(1), &cast("cure-wounds", Some(1))).unwrap();
+        let (effects, _) = bound_cast_effects(&caster_block(1), &SpellBook::srd().unwrap(), &cast("cure-wounds", Some(1))).unwrap();
         assert!(matches!(&effects[0], Effect::Heal(h) if h.modifier == 3));
     }
 
     #[test]
     fn cantrip_dice_scale_at_levels_5_11_and_17() {
         for (level, dice) in [(4, "1d10"), (5, "2d10"), (11, "3d10"), (17, "4d10")] {
-            let (effects, _) = bound_cast_effects(&caster_block(level), &cast("fire-bolt", None)).unwrap();
+            let (effects, _) = bound_cast_effects(&caster_block(level), &SpellBook::srd().unwrap(), &cast("fire-bolt", None)).unwrap();
             let Effect::Attack(a) = &effects[0] else { panic!("fire bolt is an attack") };
             assert_eq!(a.damage[0].dice, dice, "level {level}");
         }
-        let (effects, _) = bound_cast_effects(&caster_block(17), &cast("fireball", Some(3))).unwrap();
+        let (effects, _) = bound_cast_effects(&caster_block(17), &SpellBook::srd().unwrap(), &cast("fireball", Some(3))).unwrap();
         assert!(matches!(&effects[0], Effect::SavingThrow(s) if s.damage[0].dice == "8d6"), "leveled spells do not scale");
     }
 
@@ -4123,7 +4120,7 @@ mod tests {
     }
 
     fn bound(spell: &str, slot: Option<u8>) -> Vec<Effect> {
-        bound_cast_effects(&caster_block(1), &cast(spell, slot))
+        bound_cast_effects(&caster_block(1), &SpellBook::srd().unwrap(), &cast(spell, slot))
             .expect("bound")
             .0
     }
@@ -4208,6 +4205,46 @@ mod tests {
         assert_eq!(state.combatants[0].resources["mage:slot:7"], 1);
     }
 
+    fn ember_bolt() -> crate::spell::SpellEffect {
+        crate::spell::SpellEffect::parse(serde_json::json!({
+            "id": "ember-bolt", "name": "Ember Bolt", "source": "homebrew", "pasted_source": "Ember Bolt. 1st-level evocation...",
+            "level": 1, "casting_time": "action", "concentration": false,
+            "effects": [{"attack": {"modifier": 0, "target_count": 1, "damage": [{"dice": "1d6", "type": "fire"}]}}],
+        }))
+        .unwrap()
+    }
+
+    fn ember_duel(homebrew: Vec<crate::spell::SpellEffect>) -> Vec<EngineEvent> {
+        let mut state = test_encounter(
+            vec![slotted_caster("ember-bolt", Some(1)), test_stat_block("orc", "orc", 20, 10)],
+            vec![test_combatant("mage", "mage", 30, "ally"), test_combatant("orc", "orc", 20, "enemy")],
+        );
+        state.homebrew_spells = homebrew;
+        act(&mut state, "mage", "ember-bolt", &["orc"]).unwrap()
+    }
+
+    #[test]
+    fn a_homebrew_entry_in_state_resolves_a_cast_and_a_missing_id_stays_unmodeled() {
+        let with = ember_duel(vec![ember_bolt()]);
+        assert!(with.iter().all(|e| e.kind != "unmodeled_cast"), "{with:?}");
+        assert!(with.iter().any(|e| e.kind == "attack"), "{with:?}");
+        let without = ember_duel(vec![]);
+        assert!(without.iter().any(|e| e.kind == "unmodeled_cast"), "{without:?}");
+    }
+
+    #[test]
+    fn homebrew_spells_stay_out_of_a_state_that_has_none() {
+        let state = test_encounter(vec![pc_block("pc", 20)], vec![test_combatant("pc", "pc", 20, "ally")]);
+        let text = serde_json::to_string(&state).unwrap();
+        assert!(!text.contains("homebrew_spells"));
+        let loaded: EncounterState = serde_json::from_str(&text).unwrap();
+        assert!(loaded.homebrew_spells.is_empty());
+        assert_eq!(serde_json::to_string(&loaded).unwrap(), text);
+        let mut with = state.clone();
+        with.homebrew_spells = vec![ember_bolt()];
+        assert_ne!(with.game_hash(), state.game_hash());
+    }
+
     #[test]
     fn an_extra_targets_rule_raises_an_attack_target_count() {
         let spell: crate::spell::SpellEffect = serde_json::from_value(serde_json::json!({
@@ -4281,9 +4318,9 @@ mod tests {
 
     #[test]
     fn a_leveled_spell_with_no_slot_level_does_not_scale_with_caster_level() {
-        let (effects, _) = bound_cast_effects(&caster_block(17), &cast("fireball", None)).unwrap();
+        let (effects, _) = bound_cast_effects(&caster_block(17), &SpellBook::srd().unwrap(), &cast("fireball", None)).unwrap();
         assert_eq!(damage_dice(&effects[0]), [("8d6".to_string(), 0)]);
-        let (effects, _) = bound_cast_effects(&caster_block(17), &cast("fire-bolt", None)).unwrap();
+        let (effects, _) = bound_cast_effects(&caster_block(17), &SpellBook::srd().unwrap(), &cast("fire-bolt", None)).unwrap();
         assert_eq!(damage_dice(&effects[0]), [("4d10".to_string(), 0)]);
     }
 
@@ -7217,7 +7254,7 @@ mod tests {
         let on_action = r#"{"id":"x","name":"X","kind":"modeled","trigger":{"spell_cast":{"caster":"enemy"}}}"#;
         let entry: crate::stat_block::AbilityEntry = serde_json::from_str(on_action).unwrap();
         assert_eq!(entry.trigger, Some(ReactionTrigger::SpellCast { caster: SpellCaster::Enemy }));
-        let (effects, _) = bound_cast_effects(&counterer("warlock", 19), &cast("counterspell", Some(3))).unwrap();
+        let (effects, _) = bound_cast_effects(&counterer("warlock", 19), &SpellBook::srd().unwrap(), &cast("counterspell", Some(3))).unwrap();
         assert!(matches!(&effects[0], Effect::CounterSpell(c) if c.dc == 19));
     }
 

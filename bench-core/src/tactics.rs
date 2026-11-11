@@ -13,6 +13,7 @@ use crate::effect::{Area, AttackFilter, Duration, Effect, ExtraActionUse, Modifi
 use crate::encounter::{Combatant, EncounterState, EndState, RangeBand};
 use crate::engine::{self, can_act, Within};
 use crate::reaction::{ReactionAnswer, ReactionWindow, WindowTrigger};
+use crate::spell::SpellBook;
 use crate::stat_block::{AbilityEntry, Condition, StatBlock};
 
 /// Stable policy identifier written into logs, reports and fingerprints.
@@ -249,7 +250,7 @@ pub fn choose(state: &EncounterState, actor_id: &str, section: Section, constant
             candidates.push(plan);
         }
     }
-    pick_best(block, abilities, candidates)
+    pick_best(block, &ctx.book, abilities, candidates)
 }
 
 /// Defensive fallback for a turn where [`choose`] found no action plan.
@@ -292,8 +293,8 @@ pub fn decide_reaction(state: &EncounterState, window: &ReactionWindow, constant
 /// Highest score wins; ties keep stat-block order. A limited-use plan must beat
 /// the best at-will plan, and healing a living ally must beat the best attack
 /// or control plan. Revival is exempt and competes on score alone.
-fn pick_best(block: &StatBlock, abilities: &[AbilityEntry], candidates: Vec<Plan>) -> Option<Plan> {
-    let limited = |id: &str| abilities.iter().find(|a| a.id == id).is_some_and(|a| is_limited(block, a));
+fn pick_best(block: &StatBlock, book: &SpellBook, abilities: &[AbilityEntry], candidates: Vec<Plan>) -> Option<Plan> {
+    let limited = |id: &str| abilities.iter().find(|a| a.id == id).is_some_and(|a| is_limited(block, book, a));
     let heal = |p: &Plan| p.reason.starts_with("heals");
     let best_at_will = candidates.iter().filter(|p| !limited(&p.action_id)).map(|p| p.score).fold(f64::NEG_INFINITY, f64::max);
     let best_offense = candidates.iter().filter(|p| !heal(p) && !p.reason.starts_with("revives")).map(|p| p.score).fold(0.0, f64::max);
@@ -311,6 +312,7 @@ fn pick_best(block: &StatBlock, abilities: &[AbilityEntry], candidates: Vec<Plan
 
 struct Ctx<'a> {
     state: &'a EncounterState,
+    book: SpellBook<'a>,
     constants: &'a PolicyConstants,
     /// How many `threat` calls are open. A control effect values itself by the
     /// target's threat, so two combatants with control effects would recurse forever.
@@ -468,7 +470,8 @@ enum AreaClass {
 
 impl<'a> Ctx<'a> {
     fn new(state: &'a EncounterState, constants: &'a PolicyConstants, section: Option<Section>) -> Self {
-        Ctx { state, constants, threat_nesting: std::cell::Cell::new(0), section, disengages: Default::default() }
+        let book = state.spell_book().unwrap_or_else(|_| SpellBook::homebrew_only(&state.homebrew_spells));
+        Ctx { state, book, constants, threat_nesting: std::cell::Cell::new(0), section, disengages: Default::default() }
     }
 
     /// The cheapest ready Disengage an action plan could take before stepping out, and its cost
@@ -487,7 +490,7 @@ impl<'a> Ctx<'a> {
             .filter(|uses| uses.is_empty() || uses.contains(&ExtraActionUse::Disengage))
             .map(|_| (DisengageBy::Extra, best(Section::Extra)));
         let bonus = self.block(actor).filter(|_| !actor.action_economy.bonus_action_used).and_then(|block| {
-            let resource = |a: &AbilityEntry| if is_limited(block, a) { self.constants.weights.resource_cost } else { 0.0 };
+            let resource = |a: &AbilityEntry| if is_limited(block, &self.book, a) { self.constants.weights.resource_cost } else { 0.0 };
             let ability = block
                 .bonus_actions
                 .iter()
@@ -683,7 +686,7 @@ impl<'a> Ctx<'a> {
 
     fn heals_others(&self, block: &StatBlock, effects: &[Effect]) -> bool {
         effects.iter().any(|e| match e {
-            Effect::Cast(cast) => engine::bound_cast_effects(block, cast).is_some_and(|(fx, _)| self.heals(block, &fx)),
+            Effect::Cast(cast) => engine::bound_cast_effects(block, &self.book, cast).is_some_and(|(fx, _)| self.heals(block, &fx)),
             Effect::Area(area) => self.heals(block, std::slice::from_ref(&*area.effect)),
             _ => false,
         })
@@ -693,7 +696,7 @@ impl<'a> Ctx<'a> {
     /// or whose concentration modifiers are still on a combatant (a Haste on an ally).
     fn breaks_own_concentration(&self, actor: &Combatant, block: &StatBlock, ability: &AbilityEntry) -> bool {
         let concentration = ability.effects.iter().any(|e| match e {
-            Effect::Cast(c) => engine::bound_cast_effects(block, c).is_some_and(|(_, conc)| conc),
+            Effect::Cast(c) => engine::bound_cast_effects(block, &self.book, c).is_some_and(|(_, conc)| conc),
             _ => false,
         });
         let own = Some(actor.id.as_str());
@@ -710,7 +713,7 @@ impl<'a> Ctx<'a> {
     fn heals(&self, block: &StatBlock, effects: &[Effect]) -> bool {
         effects.iter().any(|e| match e {
             Effect::Heal(_) => true,
-            Effect::Cast(cast) => engine::bound_cast_effects(block, cast).is_some_and(|(fx, _)| self.heals(block, &fx)),
+            Effect::Cast(cast) => engine::bound_cast_effects(block, &self.book, cast).is_some_and(|(fx, _)| self.heals(block, &fx)),
             Effect::Area(area) => self.heals(block, std::slice::from_ref(&*area.effect)),
             _ => false,
         })
@@ -729,29 +732,29 @@ impl<'a> Ctx<'a> {
     }
 
     fn plan_for(&self, actor: &Combatant, block: &StatBlock, ability: &AbilityEntry, section: Section) -> Option<Plan> {
-        let resource = usage_word(block, ability);
+        let resource = usage_word(block, &self.book, ability);
         if self.breaks_own_concentration(actor, block, ability) || only_disengages(&ability.effects) {
             return None;
         }
         if self.heals(block, &ability.effects) {
             return self.heal_plan(actor, block, ability, section, resource);
         }
-        let (modifiers, only_modifiers) = top_modifiers(block, &ability.effects, 0);
+        let (modifiers, only_modifiers) = top_modifiers(block, &self.book, &ability.effects, 0);
         if !modifiers.is_empty() && only_modifiers {
             return self.modifier_plan(actor, block, ability, section, resource, &modifiers);
         }
-        if only_self_teleports(block, &ability.effects, 0) {
+        if only_self_teleports(block, &self.book, &ability.effects, 0) {
             return Some(self.teleport_plan(actor, block, ability, section, resource));
         }
         let own = self.bearer_value(&BuffOutlook::new(actor), actor, modifiers.iter().filter(|m| m.bearer == ModifierBearer::Actor));
-        if let Some((area, effect)) = area_of(block, &ability.effects) {
+        if let Some((area, effect)) = area_of(block, &self.book, &ability.effects) {
             return self.area_plan(actor, block, ability, section, resource, &area, &effect, false);
         }
         if let Some((area, effect)) = prose_area(ability) {
             return self.area_plan(actor, block, ability, section, resource, &area, &effect, true);
         }
-        let melee = needs_engaged(block, &ability.effects, 0);
-        let ranged = has_ranged_attack(block, &ability.effects, 0);
+        let melee = needs_engaged(block, &self.book, &ability.effects, 0);
+        let ranged = has_ranged_attack(block, &self.book, &ability.effects, 0);
         let immediate = |t: &Combatant| self.ability_value(actor, block, ability, t, 0, Footing::default()).0.damage;
         let ranked = self.ranked_opponents(actor, Some(&immediate));
         for target in ranked {
@@ -799,7 +802,7 @@ impl<'a> Ctx<'a> {
             let kill = if value.damage >= hit_points(target) { self.threat(target) } else { 0.0 };
             let survival = kill - penalty + value.survival + own.survival;
             let w = &self.constants.weights;
-            let cost = if is_limited(block, ability) { 1.0 } else { 0.0 };
+            let cost = if is_limited(block, &self.book, ability) { 1.0 } else { 0.0 };
             let disengage_cost = disengaged.as_ref().map_or(0.0, |d| d.2);
             let score = w.expected_damage * (value.damage + own.damage) + w.control * value.control + w.survival * survival - w.resource_cost * cost - disengage_cost;
             let mut reason = format!(
@@ -852,7 +855,7 @@ impl<'a> Ctx<'a> {
     fn teleport_plan(&self, actor: &Combatant, block: &StatBlock, ability: &AbilityEntry, section: Section, resource: Option<String>) -> Plan {
         let avoided = self.teleport_value(actor, Footing::default());
         let w = &self.constants.weights;
-        let cost = if is_limited(block, ability) { 1.0 } else { 0.0 };
+        let cost = if is_limited(block, &self.book, ability) { 1.0 } else { 0.0 };
         let mut reason = "teleports".to_string();
         if avoided > 0.0 {
             reason.push_str(&format!(" clear of {avoided:.1} opportunity damage"));
@@ -893,7 +896,7 @@ impl<'a> Ctx<'a> {
         candidates.extend(opponents.into_iter().map(|c| (c, on(c))).filter(|(_, v)| v.damage + v.control > 0.0));
         let own = self.bearer_value(&outlook, actor, modifiers.iter().filter(|m| m.bearer == ModifierBearer::Actor));
         let w = &self.constants.weights;
-        let cost = if is_limited(block, ability) { 1.0 } else { 0.0 };
+        let cost = if is_limited(block, &self.book, ability) { 1.0 } else { 0.0 };
         let mut best: Option<(f64, &Combatant, BearerValue)> = None;
         for (bearer, mut value) in candidates {
             value.add(&own);
@@ -1160,7 +1163,7 @@ impl<'a> Ctx<'a> {
             .iter()
             .map(|e| match e {
                 Effect::Heal(h) => h.dice.as_deref().map_or(0.0, dice_average) + f64::from(h.modifier),
-                Effect::Cast(cast) => engine::bound_cast_effects(block, cast).map_or(0.0, |(fx, _)| self.heal_amount(block, &fx)),
+                Effect::Cast(cast) => engine::bound_cast_effects(block, &self.book, cast).map_or(0.0, |(fx, _)| self.heal_amount(block, &fx)),
                 Effect::Area(area) => self.heal_amount(block, std::slice::from_ref(&*area.effect)),
                 _ => 0.0,
             })
@@ -1233,7 +1236,7 @@ impl<'a> Ctx<'a> {
         let w = &self.constants.weights;
         let survival = -harm_damage;
         let score = w.expected_damage * value.damage + w.control * value.control + w.survival * survival
-            - w.resource_cost * if is_limited(block, ability) { 1.0 } else { 0.0 };
+            - w.resource_cost * if is_limited(block, &self.book, ability) { 1.0 } else { 0.0 };
         Some(Plan {
             actor_id: actor.id.clone(),
             section,
@@ -1341,7 +1344,7 @@ impl<'a> Ctx<'a> {
             Effect::Heal(h) => Value { heal: h.dice.as_deref().map_or(0.0, dice_average) + f64::from(h.modifier), ..Default::default() },
             Effect::MoveThenAttack(m) => self.action_value(actor, block, &m.attack_id, target, depth, footing),
             Effect::UseAction(u) => self.action_value(actor, block, &u.action_id, target, depth, footing),
-            Effect::Cast(cast) => match engine::bound_cast_effects(block, cast) {
+            Effect::Cast(cast) => match engine::bound_cast_effects(block, &self.book, cast) {
                 Some((effects, _)) if depth < 4 => effects.iter().fold(Value::default(), |mut acc, e| {
                     acc.add(self.effect_value(actor, block, e, target, depth + 1, footing).0);
                     acc
@@ -1411,7 +1414,7 @@ impl<'a> Ctx<'a> {
     /// to Far on a target slower than 35 feet, 0.25 for a push of 5 feet or more, and 0 for a
     /// pull or a target with any attack that doesn't need engagement.
     fn forced_move_factor(&self, target: &Combatant, target_block: &StatBlock, m: &crate::effect::ForcedMove) -> f64 {
-        if m.direction.eq_ignore_ascii_case("pull") || m.feet < 5 || !melee_only(target_block) {
+        if m.direction.eq_ignore_ascii_case("pull") || m.feet < 5 || !melee_only(target_block, &self.book) {
             return 0.0;
         }
         if m.feet >= 35 && engine::walk_speed(self.state, target) < 35 {
@@ -1423,7 +1426,7 @@ impl<'a> Ctx<'a> {
 
     fn target_teleport_factor(&self, target: &Combatant, target_block: &StatBlock) -> f64 {
         let engaged = !target.engagement.is_empty() || self.state.combatants.iter().any(|c| c.engagement.contains(&target.id));
-        if engaged && melee_only(target_block) {
+        if engaged && melee_only(target_block, &self.book) {
             SHORT_DISPLACEMENT_SHARE
         } else {
             0.0
@@ -1540,7 +1543,7 @@ impl<'a> Ctx<'a> {
                 })
                 .filter(|(r, _)| engine::ability_ready(self.state, &reactor.id, r))
                 .map(|(r, filter)| {
-                    let n = ac_bonus(block, r);
+                    let n = ac_bonus(block, &self.book, r);
                     if n <= 0 {
                         return 0.0;
                     }
@@ -1602,7 +1605,7 @@ impl<'a> Ctx<'a> {
                 Effect::UseAction(u) => add(nested(&u.action_id), 1.0),
                 Effect::MoveThenAttack(m) => add(nested(&m.attack_id), 1.0),
                 Effect::Cast(c) => {
-                    if let Some((fx, _)) = engine::bound_cast_effects(block, c) {
+                    if let Some((fx, _)) = engine::bound_cast_effects(block, &self.book, c) {
                         add(self.roll_value(actor, block, &fx, target, kind, depth + 1), 1.0);
                     }
                 }
@@ -1668,7 +1671,7 @@ impl<'a> Ctx<'a> {
             .options
             .iter()
             .enumerate()
-            .filter_map(|(i, o)| block.reactions.iter().find(|r| r.id == o.id).map(|r| (i, r, ac_bonus(block, r))))
+            .filter_map(|(i, o)| block.reactions.iter().find(|r| r.id == o.id).map(|r| (i, r, ac_bonus(block, &self.book, r))))
             .collect();
         if critical {
             return hold(format!("{total} is a critical hit, which no reaction turns into a miss"));
@@ -1676,7 +1679,7 @@ impl<'a> Ctx<'a> {
         let cheapest = offered
             .iter()
             .filter(|(_, _, n)| *n > 0 && total < ac + n)
-            .min_by_key(|(i, r, _)| (u8::from(is_limited(block, r)), slot_level(block, r), *i));
+            .min_by_key(|(i, r, _)| (u8::from(is_limited(block, &self.book, r)), slot_level(block, &self.book, r), *i));
         if let Some((_, r, n)) = cheapest {
             return (ReactionAnswer::Take(r.id.clone()), format!("{reactor}: {} ({total} vs AC {ac}+{n} turns the hit into a miss)", r.name));
         }
@@ -1721,14 +1724,14 @@ impl<'a> Ctx<'a> {
             .iter()
             .enumerate()
             .filter_map(|(i, o)| block.reactions.iter().find(|r| r.id == o.id).map(|r| (i, r)))
-            .min_by_key(|(i, r)| (u8::from(is_limited(block, r)), slot_level(block, r), *i));
+            .min_by_key(|(i, r)| (u8::from(is_limited(block, &self.book, r)), slot_level(block, &self.book, r), *i));
         let Some((_, counter)) = cheapest else { return hold("no reaction offered".into()) };
         let value = self.cast_value(caster, spell_id, level, target_ids);
         if value <= 0.0 {
             return hold("no damage, healing or control to deny".into());
         }
         let reserve = self.reaction_reserve(reactor);
-        let cost = if is_limited(block, counter) { self.constants.weights.resource_cost } else { 0.0 };
+        let cost = if is_limited(block, &self.book, counter) { self.constants.weights.resource_cost } else { 0.0 };
         if value > reserve + cost {
             let line = format!("{reactor_id}: {} on {caster_id}'s {spell_id} (expected {value:.1} > reserve {reserve:.1} + cost {cost:.1})", counter.name);
             return (ReactionAnswer::Take(counter.id.clone()), line);
@@ -1742,7 +1745,7 @@ impl<'a> Ctx<'a> {
     fn cast_value(&self, caster: &Combatant, spell_id: &str, level: u8, target_ids: &[String]) -> f64 {
         let Some(block) = self.block(caster) else { return 0.0 };
         let cast = crate::effect::Cast { spell_id: spell_id.to_string(), slot_level: Some(level), upcast: false };
-        let Some((effects, _)) = engine::bound_cast_effects(block, &cast) else { return 0.0 };
+        let Some((effects, _)) = engine::bound_cast_effects(block, &self.book, &cast) else { return 0.0 };
         let w = &self.constants.weights;
         target_ids
             .iter()
@@ -1789,16 +1792,16 @@ fn is_consumable(block: &StatBlock, ability: &AbilityEntry) -> bool {
     block.gear.contains(&ability.id) && matches!(ability.usage, Some(Usage::PerDay { .. } | Usage::PerRest { .. }))
 }
 
-fn is_limited(block: &StatBlock, ability: &AbilityEntry) -> bool {
-    slot_level(block, ability) > 0 || !matches!(ability.usage, None | Some(Usage::AtWill))
+fn is_limited(block: &StatBlock, book: &SpellBook, ability: &AbilityEntry) -> bool {
+    slot_level(block, book, ability) > 0 || !matches!(ability.usage, None | Some(Usage::AtWill))
 }
 
 /// The slot a cast uses: its named slot level, or, when it names none and the caster has
 /// spell slots, the spell's own level, as the engine's `cast_level` and `spend_slot` read it.
-fn cast_slot(block: &StatBlock, cast: &crate::effect::Cast) -> Option<u8> {
+fn cast_slot(block: &StatBlock, book: &SpellBook, cast: &crate::effect::Cast) -> Option<u8> {
     let level = match cast.slot_level {
         Some(level) => level,
-        None if block.spell_slots.is_some() => crate::spell::catalog().ok()?.get(&cast.spell_id)?.level,
+        None if block.spell_slots.is_some() => book.get(&cast.spell_id)?.level,
         None => 0,
     };
     (level > 0).then_some(level)
@@ -1806,8 +1809,8 @@ fn cast_slot(block: &StatBlock, cast: &crate::effect::Cast) -> Option<u8> {
 
 /// The AC bonus n a hit-trigger reaction gives: its `armor_class` timed
 /// modifiers, read through a cast's bound effects. 0 when it gives none.
-pub(crate) fn ac_bonus(block: &StatBlock, reaction: &AbilityEntry) -> i32 {
-    fn walk(block: &StatBlock, effects: &[Effect], depth: u8) -> i32 {
+pub(crate) fn ac_bonus(block: &StatBlock, book: &SpellBook, reaction: &AbilityEntry) -> i32 {
+    fn walk(block: &StatBlock, book: &SpellBook, effects: &[Effect], depth: u8) -> i32 {
         if depth > 4 {
             return 0;
         }
@@ -1818,29 +1821,29 @@ pub(crate) fn ac_bonus(block: &StatBlock, reaction: &AbilityEntry) -> i32 {
                     ModifierChange::Add(n) => n,
                     _ => 0,
                 },
-                Effect::Cast(c) => engine::bound_cast_effects(block, c).map_or(0, |(fx, _)| walk(block, &fx, depth + 1)),
+                Effect::Cast(c) => engine::bound_cast_effects(block, book, c).map_or(0, |(fx, _)| walk(block, book, &fx, depth + 1)),
                 _ => 0,
             })
             .sum()
     }
-    walk(block, &reaction.effects, 0)
+    walk(block, book, &reaction.effects, 0)
 }
 
-fn slot_level(block: &StatBlock, ability: &AbilityEntry) -> u8 {
+fn slot_level(block: &StatBlock, book: &SpellBook, ability: &AbilityEntry) -> u8 {
     ability
         .effects
         .iter()
         .filter_map(|e| match e {
-            Effect::Cast(c) => cast_slot(block, c),
+            Effect::Cast(c) => cast_slot(block, book, c),
             _ => None,
         })
         .max()
         .unwrap_or(0)
 }
 
-fn usage_word(block: &StatBlock, ability: &AbilityEntry) -> Option<String> {
+fn usage_word(block: &StatBlock, book: &SpellBook, ability: &AbilityEntry) -> Option<String> {
     let slot = ability.effects.iter().find_map(|e| match e {
-        Effect::Cast(c) => cast_slot(block, c).map(|l| format!("level {l} slot")),
+        Effect::Cast(c) => cast_slot(block, book, c).map(|l| format!("level {l} slot")),
         _ => None,
     });
     let usage = match &ability.usage {
@@ -1857,10 +1860,10 @@ fn usage_word(block: &StatBlock, ability: &AbilityEntry) -> Option<String> {
 }
 
 /// The ability's top-level area effect, looking through casts.
-fn area_of(block: &StatBlock, effects: &[Effect]) -> Option<(Area, Effect)> {
+fn area_of(block: &StatBlock, book: &SpellBook, effects: &[Effect]) -> Option<(Area, Effect)> {
     effects.iter().find_map(|e| match e {
         Effect::Area(a) => Some((a.area.clone(), (*a.effect).clone())),
-        Effect::Cast(c) => engine::bound_cast_effects(block, c).and_then(|(fx, _)| area_of(block, &fx)),
+        Effect::Cast(c) => engine::bound_cast_effects(block, book, c).and_then(|(fx, _)| area_of(block, book, &fx)),
         _ => None,
     })
 }
@@ -1893,10 +1896,10 @@ fn prose_area(ability: &AbilityEntry) -> Option<(Area, Effect)> {
 }
 
 /// Whether the ability's attacks are all melee, so the actor must be engaged.
-fn needs_engaged(block: &StatBlock, effects: &[Effect], depth: u8) -> bool {
+fn needs_engaged(block: &StatBlock, book: &SpellBook, effects: &[Effect], depth: u8) -> bool {
     let mut melee = false;
     let mut other = false;
-    walk_attacks(block, effects, depth, &mut |a| {
+    walk_attacks(block, book, effects, depth, &mut |a| {
         if a.range.is_none() {
             melee = true;
         } else {
@@ -1906,18 +1909,18 @@ fn needs_engaged(block: &StatBlock, effects: &[Effect], depth: u8) -> bool {
     melee && !other
 }
 
-fn melee_only(block: &StatBlock) -> bool {
+fn melee_only(block: &StatBlock, book: &SpellBook) -> bool {
     let effects: Vec<Effect> = block.actions.iter().chain(&block.bonus_actions).flat_map(|a| a.effects.iter().cloned()).collect();
-    needs_engaged(block, &effects, 0)
+    needs_engaged(block, book, &effects, 0)
 }
 
-fn has_ranged_attack(block: &StatBlock, effects: &[Effect], depth: u8) -> bool {
+fn has_ranged_attack(block: &StatBlock, book: &SpellBook, effects: &[Effect], depth: u8) -> bool {
     let mut ranged = false;
-    walk_attacks(block, effects, depth, &mut |a| ranged |= a.range.is_some());
+    walk_attacks(block, book, effects, depth, &mut |a| ranged |= a.range.is_some());
     ranged
 }
 
-fn walk_attacks(block: &StatBlock, effects: &[Effect], depth: u8, f: &mut dyn FnMut(&crate::effect::Attack)) {
+fn walk_attacks(block: &StatBlock, book: &SpellBook, effects: &[Effect], depth: u8, f: &mut dyn FnMut(&crate::effect::Attack)) {
     if depth > 4 {
         return;
     }
@@ -1925,29 +1928,29 @@ fn walk_attacks(block: &StatBlock, effects: &[Effect], depth: u8, f: &mut dyn Fn
     for e in effects {
         match e {
             Effect::Attack(a) => f(a),
-            Effect::UseAction(u) => walk_attacks(block, &nested(&u.action_id), depth + 1, f),
-            Effect::MoveThenAttack(m) => walk_attacks(block, &nested(&m.attack_id), depth + 1, f),
+            Effect::UseAction(u) => walk_attacks(block, book, &nested(&u.action_id), depth + 1, f),
+            Effect::MoveThenAttack(m) => walk_attacks(block, book, &nested(&m.attack_id), depth + 1, f),
             Effect::Cast(c) => {
-                if let Some((fx, _)) = engine::bound_cast_effects(block, c) {
-                    walk_attacks(block, &fx, depth + 1, f);
+                if let Some((fx, _)) = engine::bound_cast_effects(block, book, c) {
+                    walk_attacks(block, book, &fx, depth + 1, f);
                 }
             }
             Effect::Multiattack(m) => {
                 for step in &m.steps {
                     match step {
-                        MultiattackStep::Action { action_id, cast: None, .. } => walk_attacks(block, &nested(action_id), depth + 1, f),
-                        MultiattackStep::Action { cast: Some(c), .. } => walk_attacks(block, &[Effect::Cast(c.clone())], depth + 1, f),
+                        MultiattackStep::Action { action_id, cast: None, .. } => walk_attacks(block, book, &nested(action_id), depth + 1, f),
+                        MultiattackStep::Action { cast: Some(c), .. } => walk_attacks(block, book, &[Effect::Cast(c.clone())], depth + 1, f),
                         MultiattackStep::Choice { options, .. } => {
                             for o in options {
                                 match &o.cast {
-                                    Some(c) => walk_attacks(block, &[Effect::Cast(c.clone())], depth + 1, f),
-                                    None => walk_attacks(block, &nested(&o.action_id), depth + 1, f),
+                                    Some(c) => walk_attacks(block, book, &[Effect::Cast(c.clone())], depth + 1, f),
+                                    None => walk_attacks(block, book, &nested(&o.action_id), depth + 1, f),
                                 }
                             }
                         }
                         MultiattackStep::Alternatives { sets } => {
                             for set in sets {
-                                walk_attacks(block, &[Effect::Multiattack(crate::effect::Multiattack { steps: set.clone() })], depth + 1, f);
+                                walk_attacks(block, book, &[Effect::Multiattack(crate::effect::Multiattack { steps: set.clone() })], depth + 1, f);
                             }
                         }
                     }
@@ -2077,11 +2080,11 @@ fn only_disengages(effects: &[Effect]) -> bool {
 
 /// True when every effect, read through a cast's bound effects, teleports the creature using
 /// the ability.
-fn only_self_teleports(block: &StatBlock, effects: &[Effect], depth: u8) -> bool {
+fn only_self_teleports(block: &StatBlock, book: &SpellBook, effects: &[Effect], depth: u8) -> bool {
     !effects.is_empty()
         && effects.iter().all(|e| match e {
             Effect::Teleport(t) => t.subject == TeleportSubject::Actor,
-            Effect::Cast(c) if depth < 4 => engine::bound_cast_effects(block, c).is_some_and(|(fx, _)| only_self_teleports(block, &fx, depth + 1)),
+            Effect::Cast(c) if depth < 4 => engine::bound_cast_effects(block, book, c).is_some_and(|(fx, _)| only_self_teleports(block, book, &fx, depth + 1)),
             _ => false,
         })
 }
@@ -2089,15 +2092,15 @@ fn only_self_teleports(block: &StatBlock, effects: &[Effect], depth: u8) -> bool
 /// The timed modifiers among an ability's top-level effects, read through a cast's bound
 /// effects, and whether those are all its effects. Modifiers under a save, attack or area
 /// land on that effect's targets and are left out.
-fn top_modifiers(block: &StatBlock, effects: &[Effect], depth: u8) -> (Vec<TimedModifier>, bool) {
+fn top_modifiers(block: &StatBlock, book: &SpellBook, effects: &[Effect], depth: u8) -> (Vec<TimedModifier>, bool) {
     let mut found = Vec::new();
     let mut only = true;
     for e in effects {
         match e {
             Effect::TimedModifier(m) => found.push(m.clone()),
-            Effect::Cast(c) if depth < 4 => match engine::bound_cast_effects(block, c) {
+            Effect::Cast(c) if depth < 4 => match engine::bound_cast_effects(block, book, c) {
                 Some((fx, _)) => {
-                    let (inner, inner_only) = top_modifiers(block, &fx, depth + 1);
+                    let (inner, inner_only) = top_modifiers(block, book, &fx, depth + 1);
                     found.extend(inner);
                     only &= inner_only;
                 }
@@ -2193,6 +2196,7 @@ mod tests {
             active_effects: vec![],
             active_modifiers: vec![],
             standing_assumptions: vec![],
+            homebrew_spells: vec![],
             command_history: vec![],
             pending: None,
             rng: RngState::new(1),
@@ -2342,6 +2346,7 @@ mod tests {
 
     #[test]
     fn a_slotless_leveled_cast_uses_a_slot_only_when_the_caster_has_slots() {
+        let book = &SpellBook::srd().unwrap();
         let cast = |spell: &str, slot_level: Option<u8>| AbilityEntry {
             effects: vec![Effect::Cast(crate::effect::Cast { spell_id: spell.into(), slot_level, upcast: false })],
             ..melee("cast", 0, "1d1")
@@ -2350,17 +2355,17 @@ mod tests {
         pc.spell_slots = Some(vec![2]);
         let monster = block("fey", 20, 10);
         let cure = cast("cure-wounds", None);
-        assert!(is_limited(&pc, &cure));
-        assert_eq!(slot_level(&pc, &cure), 1);
-        assert_eq!(usage_word(&pc, &cure).as_deref(), Some("level 1 slot"));
-        assert!(!is_limited(&monster, &cure));
-        assert_eq!(usage_word(&monster, &cure), None);
+        assert!(is_limited(&pc, book, &cure));
+        assert_eq!(slot_level(&pc, book, &cure), 1);
+        assert_eq!(usage_word(&pc, book, &cure).as_deref(), Some("level 1 slot"));
+        assert!(!is_limited(&monster, book, &cure));
+        assert_eq!(usage_word(&monster, book, &cure), None);
         let bolt = cast("fire-bolt", None);
-        assert!(!is_limited(&pc, &bolt));
-        assert_eq!(usage_word(&pc, &bolt), None);
+        assert!(!is_limited(&pc, book, &bolt));
+        assert_eq!(usage_word(&pc, book, &bolt), None);
         let upcast = cast("guiding-bolt", Some(2));
-        assert!(is_limited(&monster, &upcast));
-        assert_eq!(usage_word(&monster, &upcast).as_deref(), Some("level 2 slot"));
+        assert!(is_limited(&monster, book, &upcast));
+        assert_eq!(usage_word(&monster, book, &upcast).as_deref(), Some("level 2 slot"));
     }
 
     #[test]
@@ -2980,7 +2985,7 @@ mod tests {
         let caster = party_block("caster", 5);
         let haste = caster.actions.iter().find(|a| a.id == "haste").unwrap();
         let Effect::Cast(cast) = &haste.effects[0] else { panic!() };
-        engine::bound_cast_effects(&caster, cast)
+        engine::bound_cast_effects(&caster, &SpellBook::srd().unwrap(), cast)
             .unwrap()
             .0
             .into_iter()
@@ -3167,7 +3172,7 @@ mod tests {
         let caster = party_block("caster", 5);
         let haste = caster.actions.iter().find(|a| a.id == "haste").unwrap();
         let Effect::Cast(cast) = &haste.effects[0] else { panic!() };
-        engine::bound_cast_effects(&caster, cast)
+        engine::bound_cast_effects(&caster, &SpellBook::srd().unwrap(), cast)
             .unwrap()
             .0
             .into_iter()

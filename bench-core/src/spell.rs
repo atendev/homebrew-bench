@@ -109,7 +109,7 @@ fn checked_effects<'de, D: serde::Deserializer<'de>>(deserializer: D) -> Result<
 }
 
 /// The embedded spell effects file, parsed once and keyed by spell id.
-pub(crate) fn catalog() -> Result<&'static HashMap<String, SpellEffect>, &'static str> {
+fn catalog() -> Result<&'static HashMap<String, SpellEffect>, &'static str> {
     static CACHE: OnceLock<Result<HashMap<String, SpellEffect>, String>> = OnceLock::new();
     CACHE
         .get_or_init(|| {
@@ -125,6 +125,83 @@ pub(crate) fn catalog() -> Result<&'static HashMap<String, SpellEffect>, &'stati
         })
         .as_ref()
         .map_err(String::as_str)
+}
+
+/// Every spell lookup goes through a book: an encounter's homebrew entries first, then the SRD effects file.
+#[derive(Clone, Copy)]
+pub struct SpellBook<'a> {
+    srd: &'static HashMap<String, SpellEffect>,
+    homebrew: &'a [SpellEffect],
+}
+
+impl<'a> SpellBook<'a> {
+    /// A book over the SRD entries and `homebrew`. Fails when the embedded effects file is unusable.
+    pub fn new(homebrew: &'a [SpellEffect]) -> Result<Self, &'static str> {
+        Ok(Self { srd: catalog()?, homebrew })
+    }
+
+    /// A book of `homebrew` alone, for the unreachable case where the embedded SRD file is unusable.
+    pub fn homebrew_only(homebrew: &'a [SpellEffect]) -> Self {
+        static NONE: OnceLock<HashMap<String, SpellEffect>> = OnceLock::new();
+        Self { srd: NONE.get_or_init(HashMap::new), homebrew }
+    }
+
+    /// A book with no homebrew entries.
+    pub fn srd() -> Result<SpellBook<'static>, &'static str> {
+        SpellBook::new(&[])
+    }
+
+    pub fn get(&self, id: &str) -> Option<&'a SpellEffect> {
+        self.homebrew.iter().find(|s| s.id == id).or_else(|| self.srd.get(id))
+    }
+
+    pub fn contains(&self, id: &str) -> bool {
+        self.get(id).is_some()
+    }
+}
+
+/// Serde check for `EncounterState.homebrew_spells`, so a save can't shadow an SRD spell, repeat an id
+/// or carry an entry that is not homebrew.
+pub(crate) fn checked_homebrew<'de, D: serde::Deserializer<'de>>(deserializer: D) -> Result<Vec<SpellEffect>, D::Error> {
+    let spells = Vec::<SpellEffect>::deserialize(deserializer)?;
+    let srd = catalog().map_err(serde::de::Error::custom)?;
+    for (i, spell) in spells.iter().enumerate() {
+        spell.check_source().map_err(serde::de::Error::custom)?;
+        if spell.source != HOMEBREW_SOURCE {
+            return Err(serde::de::Error::custom(format!("spell {} has source {}, and a homebrew spell must be homebrew", spell.id, spell.source)));
+        }
+        if srd.contains_key(&spell.id) {
+            return Err(serde::de::Error::custom(format!("homebrew spell id {} is an SRD spell id", spell.id)));
+        }
+        if spells[..i].iter().any(|s| s.id == spell.id) {
+            return Err(serde::de::Error::custom(format!("homebrew spell id {} appears twice", spell.id)));
+        }
+    }
+    Ok(spells)
+}
+
+/// Reads homebrew spell files for `--spell`. A file that is not a homebrew entry, an id equal to an
+/// SRD id, and two files with one id are each an error naming the file and the id.
+pub fn load_homebrew<P: AsRef<std::path::Path>>(paths: &[P]) -> Result<Vec<SpellEffect>, String> {
+    let srd = catalog().map_err(str::to_string)?;
+    let mut loaded: Vec<(String, SpellEffect)> = Vec::new();
+    for path in paths {
+        let name = path.as_ref().display().to_string();
+        let text = std::fs::read_to_string(path).map_err(|e| format!("{name}: failed to read: {e}"))?;
+        let value: serde_json::Value = serde_json::from_str(&text).map_err(|e| format!("{name}: invalid json: {e}"))?;
+        let spell = SpellEffect::parse(value).map_err(|e| format!("{name}: {e}"))?;
+        if spell.source != HOMEBREW_SOURCE {
+            return Err(format!("{name}: spell {} has source {}, and a spell file must be homebrew", spell.id, spell.source));
+        }
+        if srd.contains_key(&spell.id) {
+            return Err(format!("{name}: homebrew id {} is an SRD spell id, so pick a different id", spell.id));
+        }
+        if let Some((first, _)) = loaded.iter().find(|(_, s)| s.id == spell.id) {
+            return Err(format!("{name}: homebrew id {} is already loaded from {first}", spell.id));
+        }
+        loaded.push((name, spell));
+    }
+    Ok(loaded.into_iter().map(|(_, s)| s).collect())
 }
 
 #[cfg(test)]
@@ -339,5 +416,84 @@ mod tests {
             assert!(props.contains_key(field), "schema lacks {field}");
         }
         assert_eq!(schema["additionalProperties"], serde_json::json!(false));
+    }
+
+    fn spell_file(dir: &str, name: &str, entry: &serde_json::Value) -> PathBuf {
+        let dir = std::env::temp_dir().join(format!("bench-spell-book-{}-{dir}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let path = dir.join(name);
+        std::fs::write(&path, serde_json::to_string(entry).unwrap()).unwrap();
+        path
+    }
+
+    #[test]
+    fn a_book_resolves_homebrew_first_and_falls_back_to_the_srd() {
+        let ward = SpellEffect::parse(homebrew_entry()).unwrap();
+        let book = SpellBook::new(std::slice::from_ref(&ward)).unwrap();
+        assert_eq!(book.get("ward-of-embers").map(|s| s.source.as_str()), Some("homebrew"));
+        assert!(book.get("shield").is_some_and(|s| s.source != "homebrew"));
+        assert!(book.get("no-such-spell").is_none());
+        assert!(SpellBook::srd().unwrap().get("ward-of-embers").is_none());
+    }
+
+    #[test]
+    fn a_homebrew_entry_wins_over_an_srd_entry_of_the_same_id_in_a_book() {
+        let mut entry = homebrew_entry();
+        entry["id"] = "shield".into();
+        let shadow = SpellEffect::parse(entry).unwrap();
+        let book = SpellBook::new(std::slice::from_ref(&shadow)).unwrap();
+        assert_eq!(book.get("shield").map(|s| s.source.as_str()), Some("homebrew"));
+    }
+
+    #[test]
+    fn a_saved_homebrew_list_is_held_to_the_loader_rules() {
+        #[derive(Debug, Deserialize)]
+        struct Saved {
+            #[serde(deserialize_with = "checked_homebrew")]
+            spells: Vec<SpellEffect>,
+        }
+        let load = |entries: Vec<serde_json::Value>| serde_json::from_value::<Saved>(serde_json::json!({ "spells": entries }));
+        assert_eq!(load(vec![homebrew_entry()]).unwrap().spells.len(), 1);
+        let mut clash = homebrew_entry();
+        clash["id"] = "shield".into();
+        assert!(load(vec![clash]).unwrap_err().to_string().contains("SRD"));
+        assert!(load(vec![homebrew_entry(), homebrew_entry()]).unwrap_err().to_string().contains("twice"));
+        let mut srd = srd_entry();
+        srd["id"] = "ward-of-embers".into();
+        assert!(load(vec![srd]).unwrap_err().to_string().contains("homebrew"));
+    }
+
+    #[test]
+    fn a_loaded_file_joins_the_book() {
+        let path = spell_file("ok", "ward.json", &homebrew_entry());
+        let loaded = load_homebrew(&[&path]).unwrap();
+        assert_eq!(loaded.len(), 1);
+        assert!(SpellBook::new(&loaded).unwrap().contains("ward-of-embers"));
+    }
+
+    #[test]
+    fn a_homebrew_id_equal_to_an_srd_id_is_refused_naming_file_and_id() {
+        let mut entry = homebrew_entry();
+        entry["id"] = "shield".into();
+        let path = spell_file("clash", "shield.json", &entry);
+        let err = load_homebrew(&[&path]).unwrap_err();
+        assert!(err.contains("shield.json") && err.contains("shield") && err.contains("SRD"), "{err}");
+    }
+
+    #[test]
+    fn two_files_with_one_id_are_an_error_naming_both() {
+        let one = spell_file("dup", "one.json", &homebrew_entry());
+        let two = spell_file("dup", "two.json", &homebrew_entry());
+        let err = load_homebrew(&[&one, &two]).unwrap_err();
+        assert!(err.contains("two.json") && err.contains("one.json") && err.contains("ward-of-embers"), "{err}");
+    }
+
+    #[test]
+    fn a_spell_file_that_is_not_homebrew_is_refused() {
+        let mut entry = srd_entry();
+        entry["id"] = "ward-of-embers".into();
+        let path = spell_file("srd", "ward.json", &entry);
+        let err = load_homebrew(&[&path]).unwrap_err();
+        assert!(err.contains("ward.json") && err.contains("homebrew"), "{err}");
     }
 }

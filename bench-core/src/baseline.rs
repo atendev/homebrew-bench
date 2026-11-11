@@ -427,7 +427,7 @@ fn run_fixture(spec: &GenerateSpec, block: &StatBlock) -> Result<Done, BatchErro
             }
         })
         .collect();
-    Ok(Done::Row(FixtureRow { id: block.id.clone(), cr, missing_spells: crate::engine::missing_spells(block), ignored_abilities, cells }))
+    Ok(Done::Row(FixtureRow { id: block.id.clone(), cr, missing_spells: crate::spell::SpellBook::srd().map(|b| crate::engine::missing_spells(block, &b)).unwrap_or_default(), ignored_abilities, cells }))
 }
 
 /// Run every fixture against the party and build the curve. `progress` gets

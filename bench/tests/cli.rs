@@ -588,3 +588,34 @@ fn schema_validate_warns_on_a_self_buff_with_no_bearer() {
     assert_eq!(warnings.len(), 1, "{data:#}");
     assert!(warnings[0].as_str().unwrap().contains("add \"bearer\": \"self\""));
 }
+
+#[test]
+fn schema_validate_reads_homebrew_spell_files() {
+    let bench = Bench::new();
+    let mut block: Value = serde_json::from_str(&std::fs::read_to_string(data("fixtures/knight.json")).unwrap()).unwrap();
+    block["actions"].as_array_mut().unwrap().push(serde_json::json!({
+        "id": "ember-bolt", "name": "Ember Bolt", "desc": "Cast Ember Bolt.", "kind": "modeled", "usage": "at_will",
+        "effects": [{"cast": {"slot_level": null, "spell_id": "ember-bolt", "upcast": false}}]
+    }));
+    let stat_block = bench.cwd.join("ember-knight.json");
+    std::fs::write(&stat_block, block.to_string()).unwrap();
+    let path = stat_block.to_str().unwrap();
+    let data = bench.ok(&["schema", "validate", path]);
+    let warnings = data["warnings"].as_array().unwrap();
+    assert!(warnings.iter().any(|w| w.as_str().unwrap().contains("`ember-bolt`")), "{data:#}");
+
+    let spell = bench.cwd.join("ember-bolt.json");
+    std::fs::write(&spell, serde_json::json!({
+        "id": "ember-bolt", "name": "Ember Bolt", "source": "homebrew", "pasted_source": "Ember Bolt. 1st-level evocation...",
+        "level": 1, "casting_time": "action", "concentration": false,
+        "effects": [{"attack": {"modifier": 0, "target_count": 1, "damage": [{"dice": "1d6", "type": "fire"}]}}]
+    }).to_string()).unwrap();
+    let data = bench.ok(&["schema", "validate", path, "--spell", spell.to_str().unwrap()]);
+    assert!(data.get("warnings").is_none(), "{data:#}");
+
+    let clash = bench.cwd.join("shield.json");
+    let mut entry: Value = serde_json::from_str(&std::fs::read_to_string(&spell).unwrap()).unwrap();
+    entry["id"] = "shield".into();
+    std::fs::write(&clash, entry.to_string()).unwrap();
+    assert_eq!(bench.err(&["schema", "validate", path, "--spell", clash.to_str().unwrap()]), "invalid_argument");
+}

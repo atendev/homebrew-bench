@@ -407,6 +407,9 @@ enum SchemaAction {
     Validate {
         /// Path to the stat block JSON file.
         path: String,
+        /// Homebrew spell file the stat block may cast. Repeatable.
+        #[arg(long = "spell")]
+        spell: Vec<String>,
     },
 }
 
@@ -944,14 +947,23 @@ fn run_schema(action: SchemaAction) -> Result<String, CodedError> {
             serde_json::from_str(&schema)
                 .map_err(|e| CodedError::new(ErrorCode::Internal, format!("generated schema is not valid json: {e}")))?
         }
-        SchemaAction::Validate { path } => {
-            read_stat_block(&path)?;
+        SchemaAction::Validate { path, spell } => {
+            let block = read_stat_block(&path)?;
+            let homebrew = bench_core::spell::load_homebrew(&spell)
+                .map_err(|e| CodedError::new(ErrorCode::InvalidArgument, e))?;
+            let book = bench_core::spell::SpellBook::new(&homebrew)
+                .map_err(|e| CodedError::new(ErrorCode::Internal, e.to_string()))?;
+            bench_core::stat_block::check_block_casts(&block, &book)
+                .map_err(|e| CodedError::new(ErrorCode::SchemaValidationFailed, format!("{path}: {e}")))?;
             let text = match std::fs::read_to_string(&path) {
                 Ok(text) => Some(text),
                 Err(_) => embedded::stat_block_json(&path).map(str::to_string),
             };
             let value: Value = text.and_then(|t| serde_json::from_str(&t).ok()).unwrap_or_default();
-            let warnings = bench_core::stat_block::bearer_warnings(&value);
+            let mut warnings = bench_core::stat_block::bearer_warnings(&value);
+            warnings.extend(bench_core::engine::missing_spells(&block, &book).into_iter().map(|id| {
+                format!("Spell `{id}` is in neither the SRD nor a --spell file, so a cast of it is an unmodeled ability.")
+            }));
             if warnings.is_empty() {
                 serde_json::json!({"valid": true, "path": path})
             } else {

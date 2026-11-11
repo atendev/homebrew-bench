@@ -347,24 +347,35 @@ fn checked_entries<'de, D: Deserializer<'de>>(deserializer: D, reactions: bool) 
     Ok(entries)
 }
 
-/// A cast whose slot is below its spell's level, or a cantrip cast that names any slot, is
-/// never ready, so the policy would silently never pick it. Spells the effects file lacks are
-/// left to the missing-spell warning.
+/// Refuses a cast whose slot is below its spell's level, or a cantrip cast that names a slot:
+/// the policy would never pick it. Spells the book lacks are left to the missing-spell warning.
 fn refuse_cast_below_spell_level<E: serde::de::Error>(entry: &AbilityEntry) -> Result<(), E> {
-    let (Ok(spells), Ok(value)) = (crate::spell::catalog(), serde_json::to_value(&entry.effects)) else { return Ok(()) };
+    let Ok(book) = crate::spell::SpellBook::srd() else { return Ok(()) };
+    check_cast_levels(entry, &book).map_err(E::custom)
+}
+
+/// [`check_cast_levels`] over every ability a stat block lists.
+pub fn check_block_casts(block: &StatBlock, book: &crate::spell::SpellBook) -> Result<(), String> {
+    let lists = [&block.traits, &block.actions, &block.bonus_actions, &block.reactions, &block.legendary_actions];
+    lists.into_iter().flatten().try_for_each(|entry| check_cast_levels(entry, book))
+}
+
+/// The cast-level check against `book`, so homebrew spells a `--spell` file supplies are held to it too.
+pub fn check_cast_levels(entry: &AbilityEntry, book: &crate::spell::SpellBook) -> Result<(), String> {
+    let Ok(value) = serde_json::to_value(&entry.effects) else { return Ok(()) };
     for cast in crate::effect::casts_in(&value) {
-        let (Some(slot), Some(spell)) = (cast.slot_level, spells.get(&cast.spell_id)) else { continue };
+        let (Some(slot), Some(spell)) = (cast.slot_level, book.get(&cast.spell_id)) else { continue };
         if spell.level == 0 {
-            return Err(E::custom(format!(
+            return Err(format!(
                 "{}: a cantrip's cast names a slot level ({} is a cantrip and takes no spell slot)",
                 entry.id, cast.spell_id
-            )));
+            ));
         }
         if slot < spell.level {
-            return Err(E::custom(format!(
+            return Err(format!(
                 "{}: a cast's slot level is below the spell's level ({} is level {}, cast with a level {slot} slot)",
                 entry.id, cast.spell_id, spell.level
-            )));
+            ));
         }
     }
     Ok(())
