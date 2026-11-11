@@ -346,6 +346,9 @@ enum Commands {
         /// Every fight's lighting; lighting traits are off when unspecified.
         #[arg(long, value_enum, default_value = "unspecified")]
         lighting: LightingArg,
+        /// Homebrew spell file a combatant may cast. Repeatable. Each clause needs an `--assume spells.<id>.agent_clauses.<n>=...` or `spells.<id>.upcast_clause=...`.
+        #[arg(long = "spell")]
+        spell: Vec<String>,
         /// Folder for `report.html` and `logs/`; defaults to `reports/<monster>-seed-<seed>/` under the output directory.
         #[arg(long)]
         out: Option<PathBuf>,
@@ -706,8 +709,8 @@ fn run(command: Commands) -> Result<String, CodedError> {
             let removed = prune(&mut index, config.delete_logs)?;
             ok(serde_json::json!({ "removed": removed, "logs_deleted": config.delete_logs }))
         }
-        Commands::Batch { monster, levels, fights, max_rounds, party, seed, fight, assume, assume_reason, assumptions, lighting, out, output } => {
-            run_batch(BatchArgs { monster, levels, fights, max_rounds, party, seed, fight, assume, assume_reason, assumptions, lighting, out, output })
+        Commands::Batch { monster, levels, fights, max_rounds, party, seed, fight, assume, assume_reason, assumptions, lighting, spell, out, output } => {
+            run_batch(BatchArgs { monster, levels, fights, max_rounds, party, seed, fight, assume, assume_reason, assumptions, lighting, spell, out, output })
         }
         Commands::Fixture { action } => run_fixture(action),
         Commands::Party { action } => run_party(action),
@@ -813,14 +816,21 @@ struct BatchArgs {
     assume_reason: String,
     assumptions: Option<String>,
     lighting: LightingArg,
+    spell: Vec<String>,
     out: Option<PathBuf>,
     output: Option<Output>,
 }
 
 fn batch_error(err: BatchError) -> CodedError {
     match &err {
-        BatchError::Unresolved(ids) => CodedError::new(ErrorCode::UnmodeledAbilityRefused, err.to_string())
-            .with_details(serde_json::json!({ "abilities": ids })),
+        BatchError::Unresolved(ids) => {
+            let (clauses, abilities): (Vec<&String>, Vec<&String>) = ids.iter().partition(|id| id.starts_with(batch::SPELL_PATH));
+            let mut details = serde_json::json!({ "abilities": abilities });
+            if !clauses.is_empty() {
+                details["spell_clauses"] = serde_json::json!(clauses);
+            }
+            CodedError::new(ErrorCode::UnmodeledAbilityRefused, err.to_string()).with_details(details)
+        }
         BatchError::Invalid(_) => CodedError::new(ErrorCode::InvalidArgument, err.to_string()),
         BatchError::NotFound(_) => CodedError::new(ErrorCode::NotFound, err.to_string()),
     }
@@ -857,6 +867,8 @@ fn run_batch(args: BatchArgs) -> Result<String, CodedError> {
         let value = serde_json::from_str(value).unwrap_or_else(|_| Value::String(value.to_string()));
         assumptions.push(StandingAssumption { path: path.to_string(), value, reason: args.assume_reason.clone() });
     }
+    let homebrew_spells =
+        bench_core::spell::load_homebrew(&args.spell).map_err(|e| CodedError::new(ErrorCode::InvalidArgument, e))?;
     let spec = BatchSpec {
         monster,
         party_name,
@@ -878,7 +890,9 @@ fn run_batch(args: BatchArgs) -> Result<String, CodedError> {
             assumptions_file: args.assumptions.clone(),
             assume: args.assume.clone(),
             assume_reason: (args.assume_reason != DEFAULT_ASSUME_REASON).then(|| args.assume_reason.clone()),
+            spells: args.spell.clone(),
         }),
+        homebrew_spells,
     };
     if let Some(index) = args.fight {
         let result = batch::replay_fight(&spec, index).map_err(batch_error)?;

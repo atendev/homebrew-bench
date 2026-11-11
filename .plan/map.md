@@ -36,6 +36,7 @@ A spell-testing spec. Each homebrew spell is converted into an effects entry, ch
 - [Cast card](closed/009-cast-card.md): `bench spell` prints the entry at its cast level through the engine's own scaling, with caster numbers from a live encounter or homebrew from `--spell`; live `bench action` refuses a wrong cast target count with the card's sentence (engine 0.1.40)
 
 - [Skill: homebrew spell intake and live casting](closed/010-skill-homebrew-spell-intake-and-live-casting.md): a new `spell-intake.md` reference writes, flags, refuses and reviews entries, with flags stored in `notes`; live mode adds the cast action, `--spell` at start, the cast card before a cast, and the clause source per spell
+- [Batch homebrew clause resolution](closed/011-batch-homebrew-clause-resolution.md): `bench batch --spell` refuses until each clause has a non-blank assumption at `spells.<id>.agent_clauses.<n>` or `spells.<id>.upcast_clause`, and fingerprints each entry in the report, log header and replay command (engine 0.1.41)
 
 ## Not yet specified
 
@@ -57,7 +58,6 @@ None of these blocks the destination. Each already has a defined reading, and no
 
 ## Frontier
 
-- [Batch homebrew clause resolution](tickets/011-batch-homebrew-clause-resolution.md)
 - [Model more SRD cantrips](tickets/014-model-more-srd-cantrips.md)
 - [Control party and spell panel](tickets/012-control-party-and-spell-panel.md)
 - [Rounds per round for spell durations](tickets/015-rounds-per-round-for-spell-durations.md)
@@ -72,7 +72,7 @@ Blocking in brackets.
 - [Live cast log for homebrew clauses](closed/008-live-cast-log-for-homebrew-clauses.md) (closed)
 - [Cast card](closed/009-cast-card.md) (closed)
 - [Skill: homebrew spell intake and live casting](closed/010-skill-homebrew-spell-intake-and-live-casting.md) (closed)
-- [Batch homebrew clause resolution](tickets/011-batch-homebrew-clause-resolution.md) [006]
+- [Batch homebrew clause resolution](closed/011-batch-homebrew-clause-resolution.md) (closed)
 - [Control party and spell panel](tickets/012-control-party-and-spell-panel.md)
 - [Spell lift runner](tickets/013-spell-lift-runner.md) [006, 011, 012]
 - [Model more SRD cantrips](tickets/014-model-more-srd-cantrips.md)

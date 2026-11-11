@@ -409,6 +409,7 @@ fn run_fixture(spec: &GenerateSpec, block: &StatBlock) -> Result<Done, BatchErro
         lighting: Lighting::Unspecified,
         baseline: None,
         invocation: None,
+        homebrew_spells: vec![],
     };
     let results = batch::run_fights(&run)?;
     let cells = run

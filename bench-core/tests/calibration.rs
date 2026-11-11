@@ -30,6 +30,7 @@ fn spec(id: &str, levels: Vec<u8>, fights: u32) -> BatchSpec {
         lighting: bench_core::effect::Lighting::Unspecified,
         baseline: None,
         invocation: None,
+        homebrew_spells: vec![],
     }
 }
 

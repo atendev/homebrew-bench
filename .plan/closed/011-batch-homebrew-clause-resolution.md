@@ -3,7 +3,7 @@ id: 011
 title: Batch homebrew clause resolution
 type: task
 mode: AFK
-status: open
+status: closed
 blocked_by: [006]
 claimed: false
 ---
@@ -23,4 +23,8 @@ Build the batch side of [Homebrew spell intake rules](../closed/002-homebrew-spe
 
 ## Resolution
 
-<!-- Filled in at close. -->
+`bench batch --spell <file>` (repeatable) loads entries through the spell book and copies them into every fight, so the start-time checks apply. A homebrew entry has no default: batch refuses until every `agent_clauses` item and the `upcast_clause` has a standing assumption at `spells.<id>.agent_clauses.<n>` (from 0, in file order) or `spells.<id>.upcast_clause`. The refusal names each path, in the message and in `details.spell_clauses`. A `spells.` path with a blank value, the wrong shape or no matching loaded clause is `invalid_argument`. The path is recorded in ADR 0021.
+
+Each resolved clause is a report finding. The summary gains `homebrew_spells` with each entry's fingerprint (omitted without `--spell`), the assumptions table and each log header name the entries, and a sample's replay command repeats the `--spell` paths, so replay reproduces the fight.
+
+Engine 0.1.41. The curve differs only in `engine_version`, so policy stays v5. Commit 2ab9111 (amended to the SHA at merge). The repo's only workflow is `release.yml`, which does not run on a branch push, so no CI ran. Decisions are in `.plan/reports/011-decisions.md`. Left open: a blank value on `abilities.<id>` still passes, and replay does not compare a spell file's fingerprint with the report's.
