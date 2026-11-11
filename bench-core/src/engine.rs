@@ -1000,6 +1000,11 @@ fn cast_spell(
         state.combatants[i].concentration = Some(spell_id.into());
         events.push(event("concentration", format!("{} begins concentrating on {}", actor_id, spell_id), actor_id, actor_id));
     }
+    if spell.is_homebrew() {
+        for clause in &spell.agent_clauses {
+            events.push(event("agent_clause", format!("{actor_id} {spell_id}, agent clause: {clause}"), actor_id, actor_id));
+        }
+    }
     if let Some(clause) = spell
         .upcast_clause
         .as_deref()
@@ -7181,6 +7186,71 @@ mod tests {
         assert!(warlock.action_economy.reaction_used);
         assert_eq!(warlock.resources["warlock:slot:3"], 1);
         assert!(state.reactions.waiting.is_none());
+    }
+
+    fn clause_bolt() -> crate::spell::SpellEffect {
+        let mut spell = ember_bolt();
+        spell.agent_clauses = vec!["The target smolders.".into(), "Light spreads.".into()];
+        spell.upcast_clause = Some("One more target per slot level.".into());
+        spell
+    }
+
+    fn clause_encounter(spell: crate::spell::SpellEffect, counter_dc: i32) -> EncounterState {
+        let mut state = counter_encounter(counter_dc, true);
+        let mut block = slotted_caster(&spell.id, Some(2));
+        block.id = "mage".into();
+        block.actions[0].effects = vec![Effect::Cast(crate::effect::Cast { spell_id: spell.id.clone(), slot_level: Some(2), upcast: true })];
+        state.stat_blocks[0].stat_block = block;
+        state.homebrew_spells = vec![spell];
+        state
+    }
+
+    #[test]
+    fn a_homebrew_cast_logs_its_clauses_after_the_window_closes_and_before_its_effects() {
+        let mut state = answering(&clause_encounter(clause_bolt(), -100), vec![ReactionAnswer::Take("counterspell".into())]);
+        let events = act(&mut state, "mage", "ember-bolt", &["other"]).unwrap();
+        let order = kinds(&events);
+        let at = |kind: &str| order.iter().position(|k| *k == kind).unwrap_or_else(|| panic!("{kind} in {order:?}"));
+        assert!(at("cast") < at("reaction") && at("reaction") < at("save") && at("save") < at("agent_clause"), "{order:?}");
+        let clauses: Vec<&str> = events.iter().filter(|e| e.kind == "agent_clause").map(|e| e.message.as_str()).collect();
+        assert_eq!(clauses, ["mage ember-bolt, agent clause: The target smolders.", "mage ember-bolt, agent clause: Light spreads."]);
+        assert!(at("agent_clause") < at("upcast_clause") && at("upcast_clause") < at("attack"), "{order:?}");
+        assert!(events[at("upcast_clause")].message.contains("at level 2; agent clause: One more target per slot level."));
+    }
+
+    #[test]
+    fn a_homebrew_save_spell_logs_its_clauses_before_its_own_save() {
+        let mut spell = clause_bolt();
+        spell.id = "cinder-fan".into();
+        spell.effects = serde_json::from_value(serde_json::json!([{"saving_throw": {
+            "ability": "dex", "dc": 0, "half_on_success": true, "no_damage_on_success": false, "damage": [{"dice": "2d6", "type": "fire"}]
+        }}])).unwrap();
+        let mut state = answering(&clause_encounter(spell, 40), vec![ReactionAnswer::Pass]);
+        let events = act(&mut state, "mage", "cinder-fan", &["other"]).unwrap();
+        assert_eq!(kinds(&events)[..4], ["cast", "agent_clause", "agent_clause", "upcast_clause"], "{:?}", kinds(&events));
+        let save = events.iter().position(|e| e.kind == "save").expect("the spell's own save");
+        assert!(save > 3 && events[save].target_id.as_deref() == Some("other"), "{:?}", kinds(&events));
+        assert!(events.iter().any(|e| e.kind == "damage"), "{:?}", kinds(&events));
+    }
+
+    #[test]
+    fn a_countered_homebrew_cast_emits_no_clauses() {
+        let mut state = answering(&clause_encounter(clause_bolt(), 40), vec![ReactionAnswer::Take("counterspell".into())]);
+        let events = act(&mut state, "mage", "ember-bolt", &["other"]).unwrap();
+        assert!(kinds(&events).contains(&"spell_countered"));
+        assert!(!kinds(&events).iter().any(|k| *k == "agent_clause" || *k == "upcast_clause"), "{events:?}");
+    }
+
+    #[test]
+    fn a_cast_at_the_entrys_own_level_has_no_upcast_clause_and_an_srd_cast_has_no_agent_clauses() {
+        let mut state = clause_encounter(clause_bolt(), -100);
+        state.stat_blocks[0].stat_block.actions[0].effects = vec![Effect::Cast(cast("ember-bolt", Some(1)))];
+        let mut state = answering(&state, vec![ReactionAnswer::Pass]);
+        let events = act(&mut state, "mage", "ember-bolt", &["other"]).unwrap();
+        assert_eq!(events.iter().filter(|e| e.kind == "agent_clause").count(), 2);
+        assert!(!kinds(&events).contains(&"upcast_clause"));
+        let srd = ember_duel(vec![]);
+        assert!(!kinds(&srd).contains(&"agent_clause"));
     }
 
     #[test]
