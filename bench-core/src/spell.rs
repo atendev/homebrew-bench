@@ -51,6 +51,27 @@ pub enum CastingTime {
     Long,
 }
 
+impl CastingTime {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            CastingTime::Action => "action",
+            CastingTime::BonusAction => "bonus_action",
+            CastingTime::Reaction => "reaction",
+            CastingTime::Long => "long",
+        }
+    }
+
+    /// The stat block section a cast of this length belongs in; `None` for `long`.
+    pub fn section(self) -> Option<&'static str> {
+        match self {
+            CastingTime::Action => Some("actions"),
+            CastingTime::BonusAction => Some("bonus_actions"),
+            CastingTime::Reaction => Some("reactions"),
+            CastingTime::Long => None,
+        }
+    }
+}
+
 /// The `source` value of an entry the user pasted.
 pub const HOMEBREW_SOURCE: &str = "homebrew";
 
@@ -99,6 +120,20 @@ impl SpellEffect {
             (false, Some(_)) => Err(format!("spell {} has pasted_source but its source is not homebrew", self.id)),
             _ => Ok(()),
         }
+    }
+
+    pub fn is_homebrew(&self) -> bool {
+        self.source == HOMEBREW_SOURCE
+    }
+
+    /// Hash of the entry as stored, so two versions of one homebrew file can be told apart.
+    pub fn fingerprint(&self) -> String {
+        crate::encounter::tamper_hash(&serde_json::to_value(self).unwrap_or_default())
+    }
+
+    /// Whether the spell makes an attack roll or forces a save, so the caster needs a save DC and attack bonus.
+    pub fn rolls_against_targets(&self) -> bool {
+        self.effects.iter().chain(self.delayed.iter().map(|d| &d.effect)).any(Effect::rolls_against_target)
     }
 }
 
@@ -164,20 +199,26 @@ impl<'a> SpellBook<'a> {
 /// or carry an entry that is not homebrew.
 pub(crate) fn checked_homebrew<'de, D: serde::Deserializer<'de>>(deserializer: D) -> Result<Vec<SpellEffect>, D::Error> {
     let spells = Vec::<SpellEffect>::deserialize(deserializer)?;
-    let srd = catalog().map_err(serde::de::Error::custom)?;
+    check_homebrew_list(&spells).map_err(serde::de::Error::custom)?;
+    Ok(spells)
+}
+
+/// The loader's rules for a list already parsed: every entry homebrew, no SRD id, no id twice.
+pub fn check_homebrew_list(spells: &[SpellEffect]) -> Result<(), String> {
+    let srd = catalog()?;
     for (i, spell) in spells.iter().enumerate() {
-        spell.check_source().map_err(serde::de::Error::custom)?;
-        if spell.source != HOMEBREW_SOURCE {
-            return Err(serde::de::Error::custom(format!("spell {} has source {}, and a homebrew spell must be homebrew", spell.id, spell.source)));
+        spell.check_source()?;
+        if !spell.is_homebrew() {
+            return Err(format!("spell {} has source {}, and a homebrew spell must be homebrew", spell.id, spell.source));
         }
         if srd.contains_key(&spell.id) {
-            return Err(serde::de::Error::custom(format!("homebrew spell id {} is an SRD spell id", spell.id)));
+            return Err(format!("homebrew spell id {} is an SRD spell id", spell.id));
         }
         if spells[..i].iter().any(|s| s.id == spell.id) {
-            return Err(serde::de::Error::custom(format!("homebrew spell id {} appears twice", spell.id)));
+            return Err(format!("homebrew spell id {} appears twice", spell.id));
         }
     }
-    Ok(spells)
+    Ok(())
 }
 
 /// Reads homebrew spell files for `--spell`. A file that is not a homebrew entry, an id equal to an

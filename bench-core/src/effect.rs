@@ -650,6 +650,16 @@ pub struct CounterSpell {
 }
 
 impl Effect {
+    /// Whether this effect is an attack roll or a save, here or inside an area or a timed modifier's `on_end`.
+    pub fn rolls_against_target(&self) -> bool {
+        match self {
+            Effect::Attack(_) | Effect::SavingThrow(_) | Effect::MoveThenAttack(_) | Effect::CounterSpell(_) => true,
+            Effect::Area(a) => a.effect.rolls_against_target(),
+            Effect::TimedModifier(m) => m.on_end.iter().any(Effect::rolls_against_target),
+            _ => false,
+        }
+    }
+
     /// Whether this effect is a roll modifier or holds one in an `on_hit`, `on_failure` or area.
     pub fn holds_roll_modifier(&self) -> bool {
         match self {

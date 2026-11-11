@@ -360,6 +360,69 @@ pub fn check_block_casts(block: &StatBlock, book: &crate::spell::SpellBook) -> R
     lists.into_iter().flatten().try_for_each(|entry| check_cast_levels(entry, book))
 }
 
+/// Each ability with the stat block section it sits in, as the section is named in the file.
+fn sections(block: &StatBlock) -> impl Iterator<Item = (&'static str, &AbilityEntry)> {
+    [
+        ("traits", &block.traits),
+        ("actions", &block.actions),
+        ("bonus_actions", &block.bonus_actions),
+        ("reactions", &block.reactions),
+        ("legendary_actions", &block.legendary_actions),
+    ]
+    .into_iter()
+    .flat_map(|(name, list)| list.iter().map(move |entry| (name, entry)))
+}
+
+fn casts_of(entry: &AbilityEntry) -> Vec<crate::effect::Cast> {
+    serde_json::to_value(&entry.effects).map(|v| crate::effect::casts_in(&v)).unwrap_or_default()
+}
+
+/// The live start rules for homebrew casts (ADR 0022), on top of [`check_block_casts`]: a homebrew
+/// cast sits in the section its `casting_time` names, never in `traits` or `legendary_actions`,
+/// is not a `long` spell, and a leveled save or attack spell needs a `spellcasting` block.
+pub fn check_live_casts(block: &StatBlock, book: &crate::spell::SpellBook) -> Result<(), String> {
+    check_block_casts(block, book)?;
+    for (section, entry) in sections(block) {
+        for cast in casts_of(entry) {
+            let Some(spell) = book.get(&cast.spell_id).filter(|s| s.is_homebrew()) else { continue };
+            let time = spell.casting_time.as_str();
+            let Some(home) = spell.casting_time.section() else {
+                return Err(format!(
+                    "{}: {} in {section} casts homebrew spell {}, whose casting time is long; live mode can't cast a spell of a minute or more",
+                    block.id, entry.id, spell.id
+                ));
+            };
+            if section != home {
+                return Err(format!(
+                    "{}: {} in {section} casts homebrew spell {}, whose casting time is {time}; move it to {home}",
+                    block.id, entry.id, spell.id
+                ));
+            }
+            if spell.level > 0 && spell.rolls_against_targets() && block.spellcasting.is_none() {
+                return Err(format!(
+                    "{}: {} in {section} casts homebrew spell {}, a level {} spell with an attack or save (casting time {time}), and the stat block has no spellcasting block for its save DC and attack bonus",
+                    block.id, entry.id, spell.id, spell.level
+                ));
+            }
+        }
+    }
+    Ok(())
+}
+
+/// Each ability and spell id it casts that `book` lacks, as `(ability id, spell id)`.
+pub fn unknown_casts(block: &StatBlock, book: &crate::spell::SpellBook) -> Vec<(String, String)> {
+    let mut found: Vec<(String, String)> = Vec::new();
+    for (_, entry) in sections(block) {
+        for cast in casts_of(entry) {
+            let pair = (entry.id.clone(), cast.spell_id);
+            if !book.contains(&pair.1) && !found.contains(&pair) {
+                found.push(pair);
+            }
+        }
+    }
+    found
+}
+
 /// The cast-level check against `book`, so homebrew spells a `--spell` file supplies are held to it too.
 pub fn check_cast_levels(entry: &AbilityEntry, book: &crate::spell::SpellBook) -> Result<(), String> {
     let Ok(value) = serde_json::to_value(&entry.effects) else { return Ok(()) };
