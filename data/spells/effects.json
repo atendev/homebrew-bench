@@ -54,6 +54,41 @@
     "source": "SRD 5.2.1",
     "upcast_clause": "The later damage increases by 1d4 for each spell slot level above 2."
   },
+  "acid-splash": {
+    "casting_time": "action",
+    "concentration": false,
+    "effects": [
+      {
+        "area": {
+          "area": {
+            "sphere": {
+              "radius": 5
+            }
+          },
+          "effect": {
+            "saving_throw": {
+              "ability": "dex",
+              "damage": [
+                {
+                  "dice": "1d6",
+                  "magical": true,
+                  "type": "acid"
+                }
+              ],
+              "dc": 0,
+              "half_on_success": false,
+              "no_damage_on_success": true
+            }
+          },
+          "origin": "target_point"
+        }
+      }
+    ],
+    "id": "acid-splash",
+    "level": 0,
+    "name": "Acid Splash",
+    "source": "SRD 5.2.1"
+  },
   "aid": {
     "agent_clauses": [
       "Up to three targets' Hit Point maximums and current Hit Points increase by 5."
@@ -433,6 +468,33 @@
         }
       }
     ],
+    "source": "SRD 5.2.1"
+  },
+  "chill-touch": {
+    "agent_clauses": [
+      "On a hit, the target can't regain Hit Points until the end of the caster's next turn."
+    ],
+    "casting_time": "action",
+    "concentration": false,
+    "effects": [
+      {
+        "attack": {
+          "damage": [
+            {
+              "dice": "1d10",
+              "magical": true,
+              "type": "necrotic"
+            }
+          ],
+          "modifier": 0,
+          "reach": 5,
+          "target_count": 1
+        }
+      }
+    ],
+    "id": "chill-touch",
+    "level": 0,
+    "name": "Chill Touch",
     "source": "SRD 5.2.1"
   },
   "command": {
@@ -1775,6 +1837,33 @@
     "name": "Misty Step",
     "source": "SRD 5.2.1"
   },
+  "poison-spray": {
+    "casting_time": "action",
+    "concentration": false,
+    "effects": [
+      {
+        "attack": {
+          "damage": [
+            {
+              "dice": "1d12",
+              "magical": true,
+              "type": "poison"
+            }
+          ],
+          "modifier": 0,
+          "range": [
+            30,
+            30
+          ],
+          "target_count": 1
+        }
+      }
+    ],
+    "id": "poison-spray",
+    "level": 0,
+    "name": "Poison Spray",
+    "source": "SRD 5.2.1"
+  },
   "polymorph": {
     "agent_clauses": [
       "Target transforms into a Beast of CR equal to or less than its own (or level) on a failed Wisdom save; game statistics are replaced by the Beast's.",
@@ -1921,6 +2010,50 @@
     "name": "Raise Dead",
     "source": "SRD 5.2.1"
   },
+  "ray-of-frost": {
+    "casting_time": "action",
+    "concentration": false,
+    "effects": [
+      {
+        "attack": {
+          "damage": [
+            {
+              "dice": "1d8",
+              "magical": true,
+              "type": "cold"
+            }
+          ],
+          "modifier": 0,
+          "on_hit": [
+            {
+              "timed_modifier": {
+                "change": {
+                  "add": -10
+                },
+                "duration": {
+                  "until_end_of_next_turn": null
+                },
+                "source_ability": "ray-of-frost",
+                "target": {
+                  "speed": null
+                }
+              }
+            }
+          ],
+          "range": [
+            60,
+            60
+          ],
+          "target_count": 1
+        }
+      }
+    ],
+    "id": "ray-of-frost",
+    "level": 0,
+    "name": "Ray of Frost",
+    "notes": "SRD ends the Speed reduction at the start of the caster's next turn; the engine ends it at the end of the target's next turn, which covers the same turn of the target.",
+    "source": "SRD 5.2.1"
+  },
   "regenerate": {
     "agent_clauses": [
       "Target regains 1 Hit Point at the start of each of its turns for the duration."
@@ -1987,6 +2120,34 @@
     "id": "revivify",
     "level": 3,
     "name": "Revivify",
+    "source": "SRD 5.2.1"
+  },
+  "sacred-flame": {
+    "agent_clauses": [
+      "The target gains no benefit from Half Cover or Three-Quarters Cover for this save."
+    ],
+    "casting_time": "action",
+    "concentration": false,
+    "effects": [
+      {
+        "saving_throw": {
+          "ability": "dex",
+          "damage": [
+            {
+              "dice": "1d8",
+              "magical": true,
+              "type": "radiant"
+            }
+          ],
+          "dc": 0,
+          "half_on_success": false,
+          "no_damage_on_success": true
+        }
+      }
+    ],
+    "id": "sacred-flame",
+    "level": 0,
+    "name": "Sacred Flame",
     "source": "SRD 5.2.1"
   },
   "sanctuary": {
@@ -2163,6 +2324,33 @@
     "id": "shield",
     "level": 1,
     "name": "Shield",
+    "source": "SRD 5.2.1"
+  },
+  "shocking-grasp": {
+    "agent_clauses": [
+      "On a hit, the target can't make Opportunity Attacks until the start of its next turn."
+    ],
+    "casting_time": "action",
+    "concentration": false,
+    "effects": [
+      {
+        "attack": {
+          "damage": [
+            {
+              "dice": "1d8",
+              "magical": true,
+              "type": "lightning"
+            }
+          ],
+          "modifier": 0,
+          "reach": 5,
+          "target_count": 1
+        }
+      }
+    ],
+    "id": "shocking-grasp",
+    "level": 0,
+    "name": "Shocking Grasp",
     "source": "SRD 5.2.1"
   },
   "sleep": {
@@ -2360,6 +2548,36 @@
     ],
     "source": "SRD 5.2.1"
   },
+  "starry-wisp": {
+    "agent_clauses": [
+      "On a hit, until the end of the caster's next turn, the target emits Dim Light in a 10-foot radius and can't benefit from the Invisible condition."
+    ],
+    "casting_time": "action",
+    "concentration": false,
+    "effects": [
+      {
+        "attack": {
+          "damage": [
+            {
+              "dice": "1d8",
+              "magical": true,
+              "type": "radiant"
+            }
+          ],
+          "modifier": 0,
+          "range": [
+            60,
+            60
+          ],
+          "target_count": 1
+        }
+      }
+    ],
+    "id": "starry-wisp",
+    "level": 0,
+    "name": "Starry Wisp",
+    "source": "SRD 5.2.1"
+  },
   "sunburst": {
     "agent_clauses": [
       "A Blinded creature repeats the save at the end of each of its turns, ending the condition on a success."
@@ -2444,6 +2662,34 @@
     "id": "true-resurrection",
     "level": 9,
     "name": "True Resurrection",
+    "source": "SRD 5.2.1"
+  },
+  "vicious-mockery": {
+    "agent_clauses": [
+      "On a failed save, the target has Disadvantage on the next attack roll it makes before the end of its next turn."
+    ],
+    "casting_time": "action",
+    "concentration": false,
+    "effects": [
+      {
+        "saving_throw": {
+          "ability": "wis",
+          "damage": [
+            {
+              "dice": "1d6",
+              "magical": true,
+              "type": "psychic"
+            }
+          ],
+          "dc": 0,
+          "half_on_success": false,
+          "no_damage_on_success": true
+        }
+      }
+    ],
+    "id": "vicious-mockery",
+    "level": 0,
+    "name": "Vicious Mockery",
     "source": "SRD 5.2.1"
   },
   "vitriolic-sphere": {

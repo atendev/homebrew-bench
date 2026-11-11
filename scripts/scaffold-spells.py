@@ -421,11 +421,12 @@ def scaffold(spell: dict) -> dict:
                     attack["range"] = (rng["distance"], rng["distance"])
                 effects.append({"attack": attack})
             elif save_ability:
+                # A damaging save that names no half damage deals nothing on a success.
                 save = {
                     "ability": save_ability,
                     "dc": 0,
                     "half_on_success": half,
-                    "no_damage_on_success": no_damage,
+                    "no_damage_on_success": no_damage or not half,
                     "damage": [dmg],
                 }
                 if conditions:
