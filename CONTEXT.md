@@ -5,7 +5,7 @@ A tool for testing D&D 5e homebrew by playing out combats and measuring the numb
 ## Language
 
 **Homebrew**:
-Custom content written by a user that is not in the published rules. Phase 1 covers monsters only.
+Custom content written by a user that is not in the published rules. It covers monsters and spells.
 _Avoid_: Custom content, mod
 
 **Engine**:
@@ -167,6 +167,14 @@ _Avoid_: Down, knockout
 **Correction**:
 A checked-in patch to an upstream SRD data fault, applied by the import instead of editing upstream data. Each correction names the monster, the field, the corrected value, and a citation. Every applied correction appears on the import review list.
 _Avoid_: Fix, patch, override of import data
+
+**Spell entry**:
+One spell's record of what the engine runs when it is cast: its level, cast time, effects, scaling and agent clauses. SRD and homebrew spells each have one, and a homebrew spell's entry is reviewed by the user before any run.
+_Avoid_: Spell definition, spell data
+
+**Intake flag**:
+A note the agent writes while converting homebrew, on a value it had to infer, a wording with no standard rules reading, or a number off its norm. Intake flags never block. The user sees every one at review.
+_Avoid_: Warning, lint
 
 **Import review list**:
 The generated list the import writes each run: mismatches between upstream structured fields and the prose or ruleset tables, plus one classification note per ability recording where it landed (modeled, partly modeled, inert, unmodeled, and its default resolution). Only mismatches block a stat block from becoming a fixture.
