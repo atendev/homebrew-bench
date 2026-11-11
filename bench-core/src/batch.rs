@@ -18,9 +18,13 @@ use crate::engine::{self, EngineEvent, StepRequest};
 use crate::live::{self, Entrant, StartSpec};
 use crate::reaction::ReactionDecider;
 use crate::rng::derive_fight_seed;
+use crate::spell::SpellEffect;
 use crate::stat_block::{AbilityEntry, AbilityKind, DefaultResolution, StatBlock};
 use crate::tactics::{self, PolicyConstants, Section};
 
+/// Assumption paths for a homebrew spell's clauses start with this: `spells.<id>.agent_clauses.<n>`
+/// (`n` from 0, in the entry's order) and `spells.<id>.upcast_clause`.
+pub const SPELL_PATH: &str = "spells.";
 pub const MONSTER_SIDE: &str = "monsters";
 pub const DEFAULT_FIGHTS: u32 = 100;
 pub const DEFAULT_MAX_ROUNDS: u32 = 20;
@@ -46,6 +50,8 @@ pub struct BatchSpec {
     /// The arguments the batch was named by, so each sample's replay command reruns it.
     /// `None` names the monster by id and the party by `party_name`.
     pub invocation: Option<Invocation>,
+    /// Homebrew spell entries from `--spell`, copied into every fight (ADR 0021).
+    pub homebrew_spells: Vec<SpellEffect>,
 }
 
 /// The `bench batch` arguments that `BatchSpec` holds only in parsed form.
@@ -61,6 +67,8 @@ pub struct Invocation {
     pub assume: Vec<String>,
     /// `--assume-reason`, when it differs from the default.
     pub assume_reason: Option<String>,
+    /// Each `--spell` file as passed, in order.
+    pub spells: Vec<String>,
 }
 
 /// Why a batch cannot run.
@@ -75,11 +83,24 @@ pub enum BatchError {
 impl std::fmt::Display for BatchError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::Unresolved(ids) => write!(
-                f,
-                "unresolved unmodeled abilities or agent clauses: {}; add `--assume abilities.<id>=ignored` or a standing assumption for each",
-                ids.join(", ")
-            ),
+            Self::Unresolved(ids) => {
+                let (clauses, abilities): (Vec<&String>, Vec<&String>) = ids.iter().partition(|id| id.starts_with(SPELL_PATH));
+                let join = |ids: Vec<&String>| ids.iter().map(|s| s.as_str()).collect::<Vec<_>>().join(", ");
+                let mut parts = Vec::new();
+                if !abilities.is_empty() {
+                    parts.push(format!(
+                        "unresolved unmodeled abilities or agent clauses: {}; add `--assume abilities.<id>=ignored` or a standing assumption for each",
+                        join(abilities)
+                    ));
+                }
+                if !clauses.is_empty() {
+                    parts.push(format!(
+                        "unresolved homebrew spell clauses: {}; a homebrew spell has no default, so add `--assume <path>=ignored` or a standing assumption that says how to play each",
+                        join(clauses)
+                    ));
+                }
+                f.write_str(&parts.join("; "))
+            }
             Self::Invalid(s) | Self::NotFound(s) => f.write_str(s),
         }
     }
@@ -226,6 +247,14 @@ pub struct Finding {
 }
 
 #[derive(Debug, Clone, Serialize)]
+pub struct HomebrewSpellRow {
+    pub id: String,
+    pub name: String,
+    pub level: u8,
+    pub fingerprint: String,
+}
+
+#[derive(Debug, Clone, Serialize)]
 pub struct Sample {
     pub selection: String,
     pub level: u8,
@@ -253,6 +282,9 @@ pub struct Summary {
     pub representative_level: Option<u8>,
     pub standing_assumptions: Vec<StandingAssumption>,
     pub findings: Vec<Finding>,
+    /// The homebrew spell entries this run cast from, fingerprinted so versions of a file can be told apart.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub homebrew_spells: Vec<HomebrewSpellRow>,
     pub warnings: Vec<String>,
     pub samples: Vec<Sample>,
     pub comparison: Option<Comparison>,
@@ -295,20 +327,64 @@ pub fn resolve_assumptions(assumptions: &[StandingAssumption]) -> Result<(Policy
         if constants.apply(&a.path, &a.value).map_err(BatchError::Invalid)? {
             continue;
         }
+        let value = a.value.as_str().map_or_else(|| a.value.to_string(), str::to_string);
+        if let Some(rest) = a.path.strip_prefix(SPELL_PATH) {
+            if spell_clause_path(rest).is_none() {
+                return Err(BatchError::Invalid(format!(
+                    "`{}` is not a spell clause path; use `spells.<id>.agent_clauses.<n>` or `spells.<id>.upcast_clause`",
+                    a.path
+                )));
+            }
+            if value.trim().is_empty() {
+                return Err(BatchError::Invalid(format!("`{}` has an empty value; say how to play the clause, or use `ignored`", a.path)));
+            }
+            abilities.insert(a.path.clone(), value);
+            continue;
+        }
         match a.path.strip_prefix("abilities.") {
             Some(id) if !id.is_empty() => {
-                let value = a.value.as_str().map_or_else(|| a.value.to_string(), str::to_string);
                 abilities.insert(id.to_string(), value);
             }
             _ => {
                 return Err(BatchError::Invalid(format!(
-                    "`{}` is not a batch assumption path; use `policy.<constant>` or `abilities.<id>`",
+                    "`{}` is not a batch assumption path; use `policy.<constant>`, `abilities.<id>`, `spells.<id>.agent_clauses.<n>` or `spells.<id>.upcast_clause`",
                     a.path
                 )))
             }
         }
     }
     Ok((constants, abilities))
+}
+
+/// Whether `rest` (a path after `spells.`) is `<id>.agent_clauses.<n>` or `<id>.upcast_clause`.
+fn spell_clause_path(rest: &str) -> Option<()> {
+    let (head, last) = rest.rsplit_once('.')?;
+    let id = if last == "upcast_clause" {
+        head
+    } else {
+        last.parse::<usize>().ok()?;
+        head.strip_suffix(".agent_clauses")?
+    };
+    (!id.is_empty()).then_some(())
+}
+
+/// Every clause of the loaded homebrew entries, as its assumption path and the clause text.
+fn spell_clauses(spells: &[SpellEffect]) -> Vec<(String, &str)> {
+    let mut out = Vec::new();
+    for spell in spells {
+        for (n, clause) in spell.agent_clauses.iter().enumerate() {
+            out.push((format!("{SPELL_PATH}{}.agent_clauses.{n}", spell.id), clause.as_str()));
+        }
+        if let Some(clause) = &spell.upcast_clause {
+            out.push((format!("{SPELL_PATH}{}.upcast_clause", spell.id), clause.as_str()));
+        }
+    }
+    out
+}
+
+/// Paths of homebrew clauses with no standing assumption. A homebrew entry never has a default (ADR 0021).
+pub fn unresolved_spell_clauses(spells: &[SpellEffect], resolutions: &BTreeMap<String, String>) -> Vec<String> {
+    spell_clauses(spells).into_iter().map(|(path, _)| path).filter(|path| !resolutions.contains_key(path)).collect()
 }
 
 fn all_abilities(block: &StatBlock) -> impl Iterator<Item = &AbilityEntry> {
@@ -428,13 +504,19 @@ pub fn run(spec: &BatchSpec) -> Result<BatchReport, BatchError> {
         });
         logs.push((file, replayed.log.unwrap_or_default()));
     }
-    let findings = findings(&spec.monster, &resolutions, spec.lighting);
+    let mut findings = findings(&spec.monster, &resolutions, spec.lighting);
+    for (path, clause) in spell_clauses(&spec.homebrew_spells) {
+        let value = &resolutions[&path];
+        let name = spec.homebrew_spells.iter().find(|s| path.starts_with(&format!("{SPELL_PATH}{}.", s.id))).map_or(String::new(), |s| s.name.clone());
+        let kind = if value == "ignored" { "ignored" } else { "assumed" };
+        findings.push(Finding { ability_id: path, name, kind: kind.into(), note: format!("Clause \"{clause}\" resolved by standing assumption: {value}.") });
+    }
     let mut warnings: Vec<String> = findings
         .iter()
         .filter(|f| f.kind == "skipped")
         .map(|f| format!("Skipped mechanic: {} ({}) is not modeled; results may change.", f.name, f.ability_id))
         .collect();
-    let book = crate::spell::SpellBook::srd().ok();
+    let book = crate::spell::SpellBook::new(&spec.homebrew_spells).ok();
     for spell in book.iter().flat_map(|b| engine::missing_spells(&spec.monster, b)) {
         warnings.push(format!("Spell `{spell}` is not in the spell effects file; a cast of it does nothing, so results may understate this monster."));
     }
@@ -500,6 +582,11 @@ pub fn run(spec: &BatchSpec) -> Result<BatchReport, BatchError> {
         representative_level,
         standing_assumptions: spec.assumptions.clone(),
         findings,
+        homebrew_spells: spec
+            .homebrew_spells
+            .iter()
+            .map(|s| HomebrewSpellRow { id: s.id.clone(), name: s.name.clone(), level: s.level, fingerprint: s.fingerprint() })
+            .collect(),
         warnings,
         samples,
         comparison,
@@ -587,7 +674,11 @@ fn prepare(spec: &BatchSpec) -> Result<(PolicyConstants, BTreeMap<String, String
         return Err(BatchError::Invalid("fights and max rounds must be at least 1".into()));
     }
     let (constants, resolutions) = resolve_assumptions(&spec.assumptions)?;
-    let refused = unresolved(&spec.monster, &resolutions);
+    if let Some(path) = resolutions.keys().find(|k| k.starts_with(SPELL_PATH) && !spell_clauses(&spec.homebrew_spells).iter().any(|(p, _)| p == *k)) {
+        return Err(BatchError::Invalid(format!("`{path}` names no clause of a loaded homebrew spell; pass the spell's file with `--spell`")));
+    }
+    let mut refused = unresolved(&spec.monster, &resolutions);
+    refused.extend(unresolved_spell_clauses(&spec.homebrew_spells, &resolutions));
     if !refused.is_empty() {
         return Err(BatchError::Unresolved(refused));
     }
@@ -635,6 +726,9 @@ pub fn replay_command(spec: &BatchSpec, index: u64) -> String {
         cmd.push_str(&format!(" --lighting {}", spec.lighting.as_str()));
     }
     let Some(inv) = inv else { return cmd };
+    for file in &inv.spells {
+        cmd.push_str(&format!(" --spell {}", shell_quote(file)));
+    }
     if let Some(file) = &inv.assumptions_file {
         cmd.push_str(&format!(" --assumptions {}", shell_quote(file)));
     }
@@ -676,7 +770,7 @@ fn fight(spec: &BatchSpec, constants: &PolicyConstants, level: u8, index: u64, w
         spell_cast_windows: true,
         teleport_near: true,
         long_durations: true,
-        homebrew_spells: vec![],
+        homebrew_spells: spec.homebrew_spells.clone(),
     })
     .map_err(|e| BatchError::Invalid(e.to_string()))?;
     state.reactions.decider = ReactionDecider::Policy(constants.clone());
@@ -970,6 +1064,9 @@ impl Log {
         self.line(format!("Fight seed: {seed}"));
         self.line(format!("Engine: {}", crate::ENGINE_VERSION));
         self.line(format!("Policy: {} v{} ({})", tactics::POLICY_ID, tactics::POLICY_VERSION, tactics::fingerprint(constants)));
+        for spell in &spec.homebrew_spells {
+            self.line(format!("Homebrew spell: {} ({}, level {}, fingerprint {})", spell.name, spell.id, spell.level, spell.fingerprint()));
+        }
         self.line("STANDING ASSUMPTIONS".into());
         self.line("  standard batch rules: one monster against the party, both sides start near, round cap counts as a stalemate".into());
         self.line(format!("  lighting = {}", spec.lighting.as_str()));
@@ -1370,6 +1467,12 @@ pub fn render_html(s: &Summary) -> String {
     for (k, v) in rows {
         h.push_str(&format!("        <tr><th scope=\"row\">{k}</th><td>{}</td></tr>\n", if matches!(k, "Tactics" | "Randomness" | "Lighting") { v } else { esc(&v) }));
     }
+    for spell in &s.homebrew_spells {
+        h.push_str(&format!(
+            "        <tr><th scope=\"row\">Homebrew spell <code>{}</code></th><td>{}, level {}; entry fingerprint <code>{}</code></td></tr>\n",
+            esc(&spell.id), esc(&spell.name), spell.level, esc(&spell.fingerprint)
+        ));
+    }
     if s.standing_assumptions.is_empty() {
         h.push_str("        <tr><th scope=\"row\">Overrides</th><td>None.</td></tr>\n");
     }
@@ -1482,6 +1585,7 @@ mod tests {
             lighting: Lighting::Unspecified,
             baseline: None,
             invocation: None,
+            homebrew_spells: vec![],
         }
     }
 
@@ -1657,6 +1761,7 @@ mod tests {
             assumptions_file: None,
             assume: vec![],
             assume_reason: None,
+            spells: vec![],
         });
         assert_eq!(replay_command(&s, 2), "bench batch ogre --seed 42 --fight 2 --fights 4 --party standard");
         s.invocation = Some(Invocation {
@@ -1665,6 +1770,7 @@ mod tests {
             assumptions_file: Some("a.json".into()),
             assume: vec!["abilities.x=ignored".into()],
             assume_reason: Some("the DM's call".into()),
+            spells: vec![],
         });
         s.party.retain(|&l, _| l == 3);
         s.party_name = "mine".into();

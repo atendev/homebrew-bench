@@ -460,6 +460,102 @@ fn sample_replay_commands_rerun_homebrew_files_with_their_assumptions() {
     assert!(html.contains("my brew.json"));
 }
 
+/// An ogre that casts the homebrew `spark-darts` (two agent clauses and an upcast clause), and the spell file.
+fn spark_ogre(bench: &Bench) {
+    let mut block: Value = serde_json::from_str(&std::fs::read_to_string(data("fixtures/ogre.json")).unwrap()).unwrap();
+    block["actions"].as_array_mut().unwrap().push(serde_json::json!({
+        "id": "spark-darts", "name": "Spark Darts", "desc": "Cast Spark Darts.", "kind": "modeled", "usage": "at_will",
+        "effects": [{"cast": {"slot_level": null, "spell_id": "spark-darts", "upcast": false}}]
+    }));
+    std::fs::write(bench.cwd.join("spark-ogre.json"), block.to_string()).unwrap();
+    let dart = serde_json::json!({"damage": {"dice": "1d4", "modifier": 1, "type": "force", "magical": true}});
+    std::fs::write(bench.cwd.join("spark-darts.json"), serde_json::json!({
+        "id": "spark-darts", "name": "Spark Darts", "source": "homebrew", "pasted_source": "Spark Darts. 1st-level evocation...",
+        "level": 1, "casting_time": "action", "concentration": false, "effects": [dart, dart, dart],
+        "agent_clauses": ["Each dart sheds light.", "The goblin glows."], "upcast_clause": "One more dart per level."
+    }).to_string()).unwrap();
+}
+
+#[test]
+fn batch_refuses_homebrew_spell_clauses_until_each_is_assumed_and_fingerprints_the_entry() {
+    let bench = Bench::new();
+    spark_ogre(&bench);
+    let base = ["batch", "spark-ogre.json", "--levels", "2", "--fights", "3", "--seed", "9", "--spell", "spark-darts.json"];
+    let (code, json) = bench.run(&base);
+    assert_ne!(code, 0);
+    assert_eq!(json["error"]["code"], "unmodeled_ability_refused");
+    let paths = ["spells.spark-darts.agent_clauses.0", "spells.spark-darts.agent_clauses.1", "spells.spark-darts.upcast_clause"];
+    let named: Vec<&str> = json["error"]["details"]["spell_clauses"].as_array().unwrap().iter().map(|p| p.as_str().unwrap()).collect();
+    assert_eq!(named, paths, "{json:#}");
+    let message = json["error"]["message"].as_str().unwrap();
+    assert!(paths.iter().all(|p| message.contains(p)), "{message}");
+
+    let (code, json) = bench.run(&[&base[..], &["--assume", "spells.spark-darts.agent_clauses.0=ignored"]].concat());
+    assert_ne!(code, 0);
+    assert!(json["error"]["message"].as_str().unwrap().contains("spells.spark-darts.agent_clauses.1"), "{json:#}");
+
+    let assumes: Vec<String> = paths.iter().map(|p| format!("{p}=ignored")).collect();
+    let mut args = base.to_vec();
+    for a in &assumes {
+        args.extend(["--assume", a.as_str()]);
+    }
+    args.extend(["--out", "r"]);
+    let out = bench.ok(&args);
+    let fingerprint = out["homebrew_spells"][0]["fingerprint"].as_str().unwrap().to_string();
+    assert_eq!(out["homebrew_spells"][0]["id"], "spark-darts");
+    let findings = out["findings"].as_array().unwrap();
+    assert_eq!(findings.iter().filter(|f| f["kind"] == "ignored" && f["ability_id"].as_str().unwrap().starts_with("spells.")).count(), 3, "{out:#}");
+    let html = std::fs::read_to_string(bench.cwd.join("r/report.html")).unwrap();
+    assert!(html.contains(&fingerprint), "report lacks the fingerprint");
+    let log = std::fs::read_to_string(bench.cwd.join("r").join(out["samples"][0]["file"].as_str().unwrap())).unwrap();
+    assert!(log.contains(&format!("fingerprint {fingerprint}")), "{log}");
+
+    let mut entry: Value = serde_json::from_str(&std::fs::read_to_string(bench.cwd.join("spark-darts.json")).unwrap()).unwrap();
+    entry["pasted_source"] = "Spark Darts, edited.".into();
+    std::fs::write(bench.cwd.join("spark-darts.json"), entry.to_string()).unwrap();
+    let again = bench.ok(&args);
+    assert_ne!(again["homebrew_spells"][0]["fingerprint"].as_str().unwrap(), fingerprint);
+
+    let mut stray = base.to_vec();
+    stray.extend(["--assume", "spells.other-spell.upcast_clause=ignored"]);
+    assert_eq!(bench.err(&stray), "invalid_argument");
+    assert_eq!(bench.err(&["batch", "spark-ogre.json", "--assume", "spells.spark-darts=ignored", "--seed", "1"]), "invalid_argument");
+    assert_eq!(bench.err(&["batch", "spark-ogre.json", "--seed", "1", "--spell", "missing.json"]), "invalid_argument");
+    let mut blank = base.to_vec();
+    blank.extend(["--assume", "spells.spark-darts.upcast_clause="]);
+    assert_eq!(bench.err(&blank), "invalid_argument");
+
+    let mut entry: Value = serde_json::from_str(&std::fs::read_to_string(bench.cwd.join("spark-darts.json")).unwrap()).unwrap();
+    let edited = bench.ok(&args)["homebrew_spells"][0]["fingerprint"].as_str().unwrap().to_string();
+    entry["effects"][0]["damage"]["dice"] = "1d6".into();
+    std::fs::write(bench.cwd.join("spark-darts.json"), entry.to_string()).unwrap();
+    assert_ne!(bench.ok(&args)["homebrew_spells"][0]["fingerprint"].as_str().unwrap(), edited);
+}
+
+#[test]
+fn sample_replay_commands_rerun_homebrew_spell_files() {
+    let bench = Bench::new();
+    spark_ogre(&bench);
+    let args = [
+        "batch", "spark-ogre.json", "--levels", "2", "--fights", "3", "--seed", "9", "--spell", "spark-darts.json",
+        "--assume", "spells.spark-darts.agent_clauses.0=ignored", "--assume", "spells.spark-darts.agent_clauses.1=glow is flavor",
+        "--assume", "spells.spark-darts.upcast_clause=ignored", "--out", "r",
+    ];
+    let out = bench.ok(&args);
+    assert!(!out["samples"].as_array().unwrap().is_empty());
+    for sample in out["samples"].as_array().unwrap() {
+        let replay = sample["replay"].as_str().unwrap();
+        assert!(replay.contains("--spell spark-darts.json"), "{replay}");
+        let words = shell_words(replay);
+        let argv: Vec<&str> = words[1..].iter().map(String::as_str).collect();
+        let fight = bench.ok(&argv);
+        let file = bench.cwd.join("r").join(sample["file"].as_str().unwrap());
+        assert_eq!(fight["log"].as_str().unwrap(), std::fs::read_to_string(file).unwrap(), "{replay}");
+    }
+    let assumed = out["findings"].as_array().unwrap().iter().find(|f| f["kind"] == "assumed").unwrap();
+    assert!(assumed["note"].as_str().unwrap().contains("glow is flavor"), "{out:#}");
+}
+
 #[test]
 fn sample_replay_commands_keep_a_local_party_that_shadows_the_standard_name() {
     let bench = Bench::new();
