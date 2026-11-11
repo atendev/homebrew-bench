@@ -3,7 +3,7 @@ id: 008
 title: Live cast log for homebrew clauses
 type: task
 mode: AFK
-status: open
+status: closed
 blocked_by: [007]
 claimed: false
 ---
@@ -24,4 +24,4 @@ Build the log rules from [Live spell casting prompts](../closed/003-live-spell-c
 
 ## Resolution
 
-<!-- Filled in at close. -->
+Built in engine 0.1.39. `cast_spell` logs one `agent_clause` event per clause of a homebrew entry after the spell-cast window closes, before the existing `upcast_clause` event and the spell's saves and effects. A countered cast returns before that point and emits none. SRD casts emit no new clauses. In the public view, every `agent_clause` and `upcast_clause` event with a monster actor is hidden and a PC's are shown, which also hides a monster's reaction clauses and an SRD monster's `upcast_clause`. The private log is unchanged. The `pc_dice = ask` path needed no change and a test pins it. Decisions are in [the decision report](../reports/008-decisions.md). Haiku audit: APPROVE in round 2.

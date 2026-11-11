@@ -35,7 +35,7 @@ Slices and blocking edges:
 - [Spell entry fields](../tickets/005-spell-entry-fields.md): `casting_time`, declared agent clauses, homebrew fields, schema export. Unblocked.
 - [Spell book](../tickets/006-spell-book.md): homebrew entries in encounter state, looked up before the SRD at the three `catalog()` call sites; load refusals; `--spell` on `bench schema validate`. Blocked by 005.
 - [Live start with homebrew spells](../tickets/007-live-start-with-homebrew-spells.md): `bench start --spell` and the start-time checks. Blocked by 006.
-- [Live cast log for homebrew clauses](../tickets/008-live-cast-log-for-homebrew-clauses.md): clause events after the window. Blocked by 007.
+- [Live cast log for homebrew clauses](008-live-cast-log-for-homebrew-clauses.md): clause events after the window. Blocked by 007.
 - [Cast card](../tickets/009-cast-card.md): `bench spell`. Blocked by 006.
 - [Skill: homebrew spell intake and live casting](../tickets/010-skill-homebrew-spell-intake-and-live-casting.md). Blocked by 007, 008, 009.
 - [Batch homebrew clause resolution](../tickets/011-batch-homebrew-clause-resolution.md): `bench batch --spell`, clause assumptions, entry fingerprints. Blocked by 006.

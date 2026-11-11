@@ -1062,6 +1062,7 @@ fn event_line(state: &EncounterState, e: &EngineEvent) -> LogLine {
         ("heal", true, Some(word)) => LogLine::replaced(text, format!("{target} regains HP ({word})")),
         ("temp_hp", true, Some(_)) => LogLine::replaced(text, format!("{target} gains temporary HP")),
         ("recharge", _, _) if !state.is_party(e.actor_id.as_deref().unwrap_or_default()) => LogLine::hidden(text),
+        ("agent_clause" | "upcast_clause", _, _) if !state.is_party(e.actor_id.as_deref().unwrap_or_default()) => LogLine::hidden(text),
         ("legendary", _, _) if !state.is_party(e.actor_id.as_deref().unwrap_or_default()) => {
             let public = text.rsplit_once(" (").map_or(text.as_str(), |(head, _)| head).to_string();
             LogLine::replaced(text, public)
@@ -3154,6 +3155,54 @@ mod tests {
         assert!(resolved_homebrew(&monster), "{:?}", lines(&monster));
         let saved: EncounterState = serde_json::from_str(&serde_json::to_string(&state).unwrap()).unwrap();
         assert!(replay(&saved).matches);
+    }
+
+    fn clause_duel() -> EncounterState {
+        let mut bolt = ember_bolt("action");
+        bolt.agent_clauses = vec!["The target smolders.".into()];
+        let mut spec = homebrew_spec(vec![bolt], CASTER_ENTRANT, "actions", cast_entry("flare", "ember-bolt", Some(1), false));
+        give_spellcasting(&mut spec, GOBLIN_ENTRANT);
+        spec.entrants[GOBLIN_ENTRANT].stat_block.actions.push(cast_entry("hex-flare", "ember-bolt", None, false));
+        let (mut state, _) = start(spec).unwrap();
+        hp(&mut state, GOBLIN, 500);
+        hp(&mut state, STRIKER, 500);
+        state
+    }
+
+    #[test]
+    fn the_public_view_hides_a_monsters_cast_clauses_and_shows_a_pcs() {
+        let mut state = clause_duel();
+        turn_of(&mut state, CASTER);
+        let pc = execute(&mut state, cast_at(CASTER, "flare", None)).unwrap();
+        assert!(lines(&pc).iter().any(|l| l == &format!("{CASTER} ember-bolt, agent clause: The target smolders.")), "{:?}", lines(&pc));
+        turn_of(&mut state, GOBLIN);
+        let flare = Command::Action { actor: GOBLIN.into(), action: "hex-flare".into(), targets: vec![STRIKER.into()], slot: None, extra: false };
+        execute(&mut state, flare).unwrap();
+        let private = crate::log::render(&state.log);
+        let public = crate::log::render_public(&state.log);
+        assert!(private.contains(&format!("{GOBLIN} ember-bolt, agent clause: The target smolders.")), "{private}");
+        assert!(!public.contains(&format!("{GOBLIN} ember-bolt, agent clause")), "{public}");
+        assert!(public.contains(&format!("{CASTER} ember-bolt, agent clause: The target smolders.")), "{public}");
+        assert!(replay(&state).matches);
+    }
+
+    #[test]
+    fn a_pcs_homebrew_attack_spell_asks_for_dice_under_pc_dice_ask() {
+        let mut spec = homebrew_spec(vec![ember_bolt("action")], CASTER_ENTRANT, "actions", cast_entry("flare", "ember-bolt", Some(1), false));
+        spec.pc_dice = PcDice::Ask;
+        let (mut state, _) = start(spec).unwrap();
+        while let Some(p) = state.pending.clone() {
+            execute(&mut state, Command::Respond { values: vec![10; p.remaining as usize], decline: false, take: None }).unwrap();
+        }
+        hp(&mut state, GOBLIN, 500);
+        turn_of(&mut state, CASTER);
+        let asked = execute(&mut state, cast_at(CASTER, "flare", None)).unwrap();
+        let prompt = asked.pending.clone().expect("dice prompt");
+        assert_eq!((prompt.kind.as_str(), prompt.actor_id.as_str(), prompt.sides), ("dice", CASTER, Some(20)));
+        while let Some(p) = state.pending.clone() {
+            execute(&mut state, Command::Respond { values: vec![p.sides.unwrap(); p.remaining as usize], decline: false, take: None }).unwrap();
+        }
+        assert!(replay(&state).matches);
     }
 
     #[test]
