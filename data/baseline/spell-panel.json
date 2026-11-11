@@ -1,0 +1,655 @@
+{
+  "version": 1,
+  "fingerprint": "5dddd7e5eced68f636d9f4975c01544b8ea15b8b7802fde90912bb0887563ad5",
+  "base_seed": 20261111,
+  "fights": 100,
+  "max_rounds": 20,
+  "band": [
+    0.4,
+    0.8
+  ],
+  "party": "standard",
+  "inputs": {
+    "fixture_set": "8db12dc050e0800d5d9fb3e828b0c5feb1aa0a80aa758d98f10ebe334ce0a068",
+    "party": "16bc06c84f4d64c900eee5af22bb492e8308976de7d36f286337c232bb3c7845",
+    "policy_id": "homebrew-bench.tactics",
+    "policy_version": 5,
+    "policy": "937c86436d2aa77e4e47a42268f990a0",
+    "engine_version": "0.1.43"
+  },
+  "effects": "9ac49e5c05ba3fb9edb144dc66603946ba30debabb9a6a7dbab49b3a117d0771",
+  "excluded": [],
+  "levels": [
+    {
+      "party_level": 1,
+      "control_spell_level": 1,
+      "single": [
+        {
+          "id": "will-o-wisp",
+          "cr": 2.0,
+          "copies": 1,
+          "seed": 16242922225024805815,
+          "fights": 100,
+          "wins": 61,
+          "deaths": 47,
+          "win_rate": 0.61
+        },
+        {
+          "id": "mummy",
+          "cr": 3.0,
+          "copies": 1,
+          "seed": 12297556157563160021,
+          "fights": 100,
+          "wins": 58,
+          "deaths": 75,
+          "win_rate": 0.58
+        },
+        {
+          "id": "giant-constrictor-snake",
+          "cr": 2.0,
+          "copies": 1,
+          "seed": 16963168742611963338,
+          "fights": 100,
+          "wins": 56,
+          "deaths": 74,
+          "win_rate": 0.56
+        }
+      ],
+      "group": [
+        {
+          "id": "sprite",
+          "cr": 0.25,
+          "copies": 4,
+          "seed": 6450945656457774421,
+          "fights": 100,
+          "wins": 60,
+          "deaths": 40,
+          "win_rate": 0.6
+        },
+        {
+          "id": "pseudodragon",
+          "cr": 0.25,
+          "copies": 4,
+          "seed": 8779780234072059611,
+          "fights": 100,
+          "wins": 61,
+          "deaths": 39,
+          "win_rate": 0.61
+        },
+        {
+          "id": "giant-lizard",
+          "cr": 0.25,
+          "copies": 4,
+          "seed": 532543383941377512,
+          "fights": 100,
+          "wins": 62,
+          "deaths": 38,
+          "win_rate": 0.62
+        }
+      ],
+      "spellcasting_fixture": null
+    },
+    {
+      "party_level": 3,
+      "control_spell_level": 2,
+      "single": [
+        {
+          "id": "salamander",
+          "cr": 5.0,
+          "copies": 1,
+          "seed": 10300547547617332820,
+          "fights": 100,
+          "wins": 61,
+          "deaths": 43,
+          "win_rate": 0.61
+        },
+        {
+          "id": "elephant",
+          "cr": 4.0,
+          "copies": 1,
+          "seed": 10486174630672299963,
+          "fights": 100,
+          "wins": 58,
+          "deaths": 42,
+          "win_rate": 0.58
+        },
+        {
+          "id": "mage",
+          "cr": 6.0,
+          "copies": 1,
+          "seed": 9523141246794186784,
+          "spellcaster": true,
+          "fights": 100,
+          "wins": 43,
+          "deaths": 61,
+          "win_rate": 0.43
+        }
+      ],
+      "group": [
+        {
+          "id": "brass-dragon-wyrmling",
+          "cr": 1.0,
+          "copies": 4,
+          "seed": 17739661535804197807,
+          "fights": 100,
+          "wins": 66,
+          "deaths": 34,
+          "win_rate": 0.66
+        },
+        {
+          "id": "giant-hyena",
+          "cr": 1.0,
+          "copies": 4,
+          "seed": 14963798463510863431,
+          "fights": 100,
+          "wins": 66,
+          "deaths": 34,
+          "win_rate": 0.66
+        },
+        {
+          "id": "animated-armor",
+          "cr": 1.0,
+          "copies": 4,
+          "seed": 16536345756398192455,
+          "fights": 100,
+          "wins": 67,
+          "deaths": 33,
+          "win_rate": 0.67
+        }
+      ],
+      "spellcasting_fixture": "mage"
+    },
+    {
+      "party_level": 5,
+      "control_spell_level": 3,
+      "single": [
+        {
+          "id": "bone-devil",
+          "cr": 9.0,
+          "copies": 1,
+          "seed": 10025925229705922614,
+          "fights": 100,
+          "wins": 59,
+          "deaths": 45,
+          "win_rate": 0.59
+        },
+        {
+          "id": "glabrezu",
+          "cr": 9.0,
+          "copies": 1,
+          "seed": 2863974916314734444,
+          "fights": 100,
+          "wins": 63,
+          "deaths": 33,
+          "win_rate": 0.63
+        },
+        {
+          "id": "roc",
+          "cr": 11.0,
+          "copies": 1,
+          "seed": 885830732112225434,
+          "fights": 100,
+          "wins": 57,
+          "deaths": 45,
+          "win_rate": 0.57
+        }
+      ],
+      "group": [
+        {
+          "id": "nightmare",
+          "cr": 3.0,
+          "copies": 4,
+          "seed": 7440896045271707826,
+          "fights": 100,
+          "wins": 62,
+          "deaths": 40,
+          "win_rate": 0.62
+        },
+        {
+          "id": "phase-spider",
+          "cr": 3.0,
+          "copies": 4,
+          "seed": 13142394896465364358,
+          "fights": 100,
+          "wins": 57,
+          "deaths": 43,
+          "win_rate": 0.57
+        },
+        {
+          "id": "werewolf-hybrid",
+          "cr": 3.0,
+          "copies": 4,
+          "seed": 15418689320964006479,
+          "fights": 100,
+          "wins": 63,
+          "deaths": 37,
+          "win_rate": 0.63
+        }
+      ],
+      "spellcasting_fixture": null
+    },
+    {
+      "party_level": 7,
+      "control_spell_level": 4,
+      "single": [
+        {
+          "id": "djinni",
+          "cr": 11.0,
+          "copies": 1,
+          "seed": 1461201940723412994,
+          "fights": 100,
+          "wins": 60,
+          "deaths": 40,
+          "win_rate": 0.6
+        },
+        {
+          "id": "young-green-dragon",
+          "cr": 8.0,
+          "copies": 1,
+          "seed": 18260424178985037809,
+          "fights": 100,
+          "wins": 60,
+          "deaths": 40,
+          "win_rate": 0.6
+        },
+        {
+          "id": "archmage",
+          "cr": 12.0,
+          "copies": 1,
+          "seed": 1035899713468670013,
+          "spellcaster": true,
+          "fights": 100,
+          "wins": 65,
+          "deaths": 36,
+          "win_rate": 0.65
+        }
+      ],
+      "group": [
+        {
+          "id": "winter-wolf",
+          "cr": 3.0,
+          "copies": 4,
+          "seed": 13623264513329987108,
+          "fights": 100,
+          "wins": 59,
+          "deaths": 41,
+          "win_rate": 0.59
+        },
+        {
+          "id": "wereboar-hybrid",
+          "cr": 4.0,
+          "copies": 4,
+          "seed": 948126595076923589,
+          "fights": 100,
+          "wins": 58,
+          "deaths": 40,
+          "win_rate": 0.58
+        },
+        {
+          "id": "owlbear",
+          "cr": 3.0,
+          "copies": 4,
+          "seed": 14873516452458081456,
+          "fights": 100,
+          "wins": 57,
+          "deaths": 43,
+          "win_rate": 0.57
+        }
+      ],
+      "spellcasting_fixture": "archmage"
+    },
+    {
+      "party_level": 9,
+      "control_spell_level": 5,
+      "single": [
+        {
+          "id": "archmage",
+          "cr": 12.0,
+          "copies": 1,
+          "seed": 1035899713468670013,
+          "spellcaster": true,
+          "fights": 100,
+          "wins": 64,
+          "deaths": 36,
+          "win_rate": 0.64
+        },
+        {
+          "id": "ice-devil",
+          "cr": 14.0,
+          "copies": 1,
+          "seed": 14734136416934454784,
+          "fights": 100,
+          "wins": 53,
+          "deaths": 47,
+          "win_rate": 0.53
+        },
+        {
+          "id": "adult-blue-dragon",
+          "cr": 16.0,
+          "copies": 1,
+          "seed": 8137879843165965840,
+          "spellcaster": true,
+          "fights": 100,
+          "wins": 69,
+          "deaths": 31,
+          "win_rate": 0.69
+        }
+      ],
+      "group": [
+        {
+          "id": "guard-captain",
+          "cr": 4.0,
+          "copies": 4,
+          "seed": 11168304672373176372,
+          "fights": 100,
+          "wins": 59,
+          "deaths": 41,
+          "win_rate": 0.59
+        },
+        {
+          "id": "ghost",
+          "cr": 4.0,
+          "copies": 4,
+          "seed": 1386904412770788664,
+          "fights": 100,
+          "wins": 58,
+          "deaths": 42,
+          "win_rate": 0.58
+        },
+        {
+          "id": "cloaker",
+          "cr": 8.0,
+          "copies": 4,
+          "seed": 7851829855648839678,
+          "fights": 100,
+          "wins": 57,
+          "deaths": 43,
+          "win_rate": 0.57
+        }
+      ],
+      "spellcasting_fixture": "archmage"
+    },
+    {
+      "party_level": 11,
+      "control_spell_level": 6,
+      "single": [
+        {
+          "id": "marilith",
+          "cr": 16.0,
+          "copies": 1,
+          "seed": 5775468412045909951,
+          "fights": 100,
+          "wins": 69,
+          "deaths": 31,
+          "win_rate": 0.69
+        },
+        {
+          "id": "iron-golem",
+          "cr": 16.0,
+          "copies": 1,
+          "seed": 18437959623454125229,
+          "fights": 100,
+          "wins": 71,
+          "deaths": 30,
+          "win_rate": 0.71
+        },
+        {
+          "id": "adult-copper-dragon",
+          "cr": 14.0,
+          "copies": 1,
+          "seed": 14566168461827565474,
+          "spellcaster": true,
+          "fights": 100,
+          "wins": 80,
+          "deaths": 20,
+          "win_rate": 0.8
+        }
+      ],
+      "group": [
+        {
+          "id": "air-elemental",
+          "cr": 5.0,
+          "copies": 4,
+          "seed": 17712356514977775350,
+          "fights": 100,
+          "wins": 61,
+          "deaths": 39,
+          "win_rate": 0.61
+        },
+        {
+          "id": "werebear-hybrid",
+          "cr": 5.0,
+          "copies": 4,
+          "seed": 7778202269657900499,
+          "fights": 100,
+          "wins": 62,
+          "deaths": 38,
+          "win_rate": 0.62
+        },
+        {
+          "id": "xorn",
+          "cr": 5.0,
+          "copies": 4,
+          "seed": 15116230886974556386,
+          "fights": 100,
+          "wins": 64,
+          "deaths": 36,
+          "win_rate": 0.64
+        }
+      ],
+      "spellcasting_fixture": "adult-copper-dragon"
+    },
+    {
+      "party_level": 13,
+      "control_spell_level": 7,
+      "single": [
+        {
+          "id": "adult-gold-dragon",
+          "cr": 17.0,
+          "copies": 1,
+          "seed": 18413660526724012385,
+          "spellcaster": true,
+          "fights": 100,
+          "wins": 63,
+          "deaths": 37,
+          "win_rate": 0.63
+        },
+        {
+          "id": "kraken",
+          "cr": 23.0,
+          "copies": 1,
+          "seed": 8731332738711075629,
+          "fights": 100,
+          "wins": 71,
+          "deaths": 29,
+          "win_rate": 0.71
+        },
+        {
+          "id": "adult-red-dragon",
+          "cr": 17.0,
+          "copies": 1,
+          "seed": 11281518879403729508,
+          "spellcaster": true,
+          "fights": 100,
+          "wins": 73,
+          "deaths": 27,
+          "win_rate": 0.73
+        }
+      ],
+      "group": [
+        {
+          "id": "wyvern",
+          "cr": 6.0,
+          "copies": 4,
+          "seed": 8875406975276888025,
+          "fights": 100,
+          "wins": 60,
+          "deaths": 40,
+          "win_rate": 0.6
+        },
+        {
+          "id": "pirate-captain",
+          "cr": 6.0,
+          "copies": 4,
+          "seed": 9318168900312139555,
+          "fights": 100,
+          "wins": 61,
+          "deaths": 39,
+          "win_rate": 0.61
+        },
+        {
+          "id": "drider",
+          "cr": 6.0,
+          "copies": 4,
+          "seed": 5676039429846398641,
+          "fights": 100,
+          "wins": 62,
+          "deaths": 38,
+          "win_rate": 0.62
+        }
+      ],
+      "spellcasting_fixture": "adult-gold-dragon"
+    },
+    {
+      "party_level": 15,
+      "control_spell_level": 8,
+      "single": [
+        {
+          "id": "pit-fiend",
+          "cr": 20.0,
+          "copies": 1,
+          "seed": 11533522875269294472,
+          "fights": 100,
+          "wins": 58,
+          "deaths": 42,
+          "win_rate": 0.58
+        },
+        {
+          "id": "dragon-turtle",
+          "cr": 17.0,
+          "copies": 1,
+          "seed": 13300084258898692679,
+          "fights": 100,
+          "wins": 53,
+          "deaths": 47,
+          "win_rate": 0.53
+        },
+        {
+          "id": "ancient-brass-dragon",
+          "cr": 20.0,
+          "copies": 1,
+          "seed": 2578211662179165961,
+          "spellcaster": true,
+          "fights": 100,
+          "wins": 52,
+          "deaths": 48,
+          "win_rate": 0.52
+        }
+      ],
+      "group": [
+        {
+          "id": "stone-giant",
+          "cr": 7.0,
+          "copies": 4,
+          "seed": 8669087673254423249,
+          "fights": 100,
+          "wins": 59,
+          "deaths": 41,
+          "win_rate": 0.59
+        },
+        {
+          "id": "young-copper-dragon",
+          "cr": 7.0,
+          "copies": 4,
+          "seed": 8575459460131121385,
+          "fights": 100,
+          "wins": 59,
+          "deaths": 41,
+          "win_rate": 0.59
+        },
+        {
+          "id": "mage",
+          "cr": 6.0,
+          "copies": 4,
+          "seed": 15538576491003418259,
+          "spellcaster": true,
+          "fights": 100,
+          "wins": 62,
+          "deaths": 38,
+          "win_rate": 0.62
+        }
+      ],
+      "spellcasting_fixture": "ancient-brass-dragon"
+    },
+    {
+      "party_level": 17,
+      "control_spell_level": 9,
+      "single": [
+        {
+          "id": "ancient-white-dragon",
+          "cr": 20.0,
+          "copies": 1,
+          "seed": 18439032135083752437,
+          "fights": 100,
+          "wins": 57,
+          "deaths": 43,
+          "win_rate": 0.57
+        },
+        {
+          "id": "solar",
+          "cr": 21.0,
+          "copies": 1,
+          "seed": 3198700342134678358,
+          "fights": 100,
+          "wins": 54,
+          "deaths": 46,
+          "win_rate": 0.54
+        },
+        {
+          "id": "ancient-blue-dragon",
+          "cr": 23.0,
+          "copies": 1,
+          "seed": 16710299450779291997,
+          "spellcaster": true,
+          "fights": 100,
+          "wins": 70,
+          "deaths": 30,
+          "win_rate": 0.7
+        }
+      ],
+      "group": [
+        {
+          "id": "frost-giant",
+          "cr": 8.0,
+          "copies": 4,
+          "seed": 7262092624394609919,
+          "fights": 100,
+          "wins": 61,
+          "deaths": 39,
+          "win_rate": 0.61
+        },
+        {
+          "id": "young-blue-dragon",
+          "cr": 9.0,
+          "copies": 4,
+          "seed": 9028395044367719861,
+          "fights": 100,
+          "wins": 57,
+          "deaths": 43,
+          "win_rate": 0.57
+        },
+        {
+          "id": "tyrannosaurus-rex",
+          "cr": 8.0,
+          "copies": 4,
+          "seed": 4614758125030637908,
+          "fights": 100,
+          "wins": 55,
+          "deaths": 45,
+          "win_rate": 0.55
+        }
+      ],
+      "spellcasting_fixture": "ancient-blue-dragon"
+    }
+  ]
+}

@@ -21,6 +21,7 @@ Build spell lift from [Spell value metric](../closed/001-spell-value-metric.md) 
 - "Never cast" when the policy never casts it in a row; "not measured" with a reason for a `long` spell, an unrunnable upcast clause, or a counter spell on a panel with no spellcasting fixture. Never zero.
 - CLI: `bench batch --test-spell <id> --spell <file>`, reusing batch's assumptions, seeds, sample replay and report path.
 - Paired seeds (ADR 0007) are fixed. This ticket picks the fight count and the interval method and records both in ADR 0020. The interval must be one the report can state in one plain sentence, because [Spell lift report](017-spell-lift-report.md) prints "level with" from it.
+- From [Control party and spell panel](../closed/012-control-party-and-spell-panel.md): build each row's control with `spell_panel::control_party(party, row_level, book)` and fight each member with its stored `seed` and `copies`. The panel's band holds only for the headline control, (P+1)/2. A cantrip or upcast row's control may win more or less often, so decide whether the row reports its own control win rate.
 - Tests: swap keeps the rest of the list; row set per spell kind; never cast; each not-measured reason; paired seeds give identical control fights across spells.
 
 ## Resolution

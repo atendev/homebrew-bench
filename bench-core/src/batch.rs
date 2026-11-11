@@ -36,6 +36,8 @@ pub type Party = BTreeMap<u8, Vec<StatBlock>>;
 #[derive(Debug, Clone)]
 pub struct BatchSpec {
     pub monster: StatBlock,
+    /// Copies of `monster` in every fight; the spell panel's group shape fields more than one.
+    pub monster_copies: u32,
     pub party_name: String,
     pub party: Party,
     pub levels: Vec<u8>,
@@ -670,8 +672,8 @@ pub fn replay_fight(spec: &BatchSpec, index: u64) -> Result<FightResult, BatchEr
 }
 
 fn prepare(spec: &BatchSpec) -> Result<(PolicyConstants, BTreeMap<String, String>), BatchError> {
-    if spec.fights == 0 || spec.max_rounds == 0 {
-        return Err(BatchError::Invalid("fights and max rounds must be at least 1".into()));
+    if spec.fights == 0 || spec.max_rounds == 0 || spec.monster_copies == 0 {
+        return Err(BatchError::Invalid("fights, max rounds and monster copies must be at least 1".into()));
     }
     let (constants, resolutions) = resolve_assumptions(&spec.assumptions)?;
     if let Some(path) = resolutions.keys().find(|k| k.starts_with(SPELL_PATH) && !spell_clauses(&spec.homebrew_spells).iter().any(|(p, _)| p == *k)) {
@@ -752,7 +754,9 @@ fn shell_quote(word: &str) -> String {
 
 fn fight(spec: &BatchSpec, constants: &PolicyConstants, level: u8, index: u64, with_log: bool) -> Result<FightResult, BatchError> {
     let seed = derive_fight_seed(spec.master_seed, index);
-    let mut entrants = vec![Entrant { stat_block: spec.monster.clone(), side: MONSTER_SIDE.into(), band: RangeBand::Near }];
+    let mut entrants: Vec<Entrant> = (0..spec.monster_copies)
+        .map(|_| Entrant { stat_block: spec.monster.clone(), side: MONSTER_SIDE.into(), band: RangeBand::Near })
+        .collect();
     for pc in &spec.party[&level] {
         entrants.push(Entrant { stat_block: pc.clone(), side: PARTY_SIDE.into(), band: RangeBand::Near });
     }
@@ -1575,6 +1579,7 @@ mod tests {
     fn spec(monster: StatBlock, levels: Vec<u8>, fights: u32) -> BatchSpec {
         BatchSpec {
             monster,
+            monster_copies: 1,
             party_name: "standard".into(),
             party: standard_party().unwrap(),
             levels,
@@ -1595,6 +1600,19 @@ mod tests {
         assert_eq!(party.len(), 20);
         let ids: Vec<&str> = party[&3].iter().map(|b| b.id.as_str()).collect();
         assert_eq!(ids, ["standard-defender-03", "standard-striker-03", "standard-healer-03", "standard-caster-03"]);
+    }
+
+    #[test]
+    fn a_group_fight_fields_every_copy_and_no_copies_is_refused() {
+        let mut s = spec(fixture("ogre"), vec![3], 1);
+        s.monster_copies = 3;
+        let log = replay_fight(&s, fight_index(3, 0, 1)).unwrap().log.unwrap();
+        let initiative = log.lines().find(|l| l.starts_with("INITIATIVE")).unwrap();
+        for n in 1..=3 {
+            assert!(initiative.contains(&format!("ogre-{n}")), "{initiative}");
+        }
+        s.monster_copies = 0;
+        assert!(matches!(run_fights(&s), Err(BatchError::Invalid(_))));
     }
 
     #[test]

@@ -20,6 +20,7 @@ fn spec(id: &str, levels: Vec<u8>, fights: u32) -> BatchSpec {
     let (_, assumptions) = baseline::ignoring_unresolved(&monster);
     BatchSpec {
         monster,
+        monster_copies: 1,
         party_name: "standard".into(),
         party: batch::standard_party().unwrap(),
         levels,
@@ -44,6 +45,54 @@ fn committed_curve_matches_the_inputs_it_was_generated_from() {
     assert_eq!(curve.fixtures.len() + curve.excluded.len(), embedded::FIXTURES.len());
     assert_eq!(serde_json::to_value(&curve.cells).unwrap(), serde_json::to_value(baseline::build_cells(&curve.fixtures)).unwrap());
     assert_eq!(curve.fights_per_cell, 100);
+}
+
+#[test]
+fn committed_spell_panel_matches_its_inputs_and_holds_to_the_band() {
+    use bench_core::spell_panel::{self, Shape};
+    let panel = spell_panel::embedded().expect("data/baseline/spell-panel.json is committed").expect("panel parses");
+    let party = batch::standard_party().unwrap();
+    let now = baseline::fingerprints_for(&party, &PolicyConstants::default());
+    let stale = panel.stale_reasons(&now);
+    assert!(stale.is_empty(), "regenerate with `bench baseline panel`: {stale:?}");
+    assert_eq!(panel.levels.iter().map(|l| l.party_level).collect::<Vec<_>>(), spell_panel::PANEL_LEVELS);
+    for level in &panel.levels {
+        assert!(level.single.len() <= spell_panel::PER_SHAPE && level.group.len() <= spell_panel::PER_SHAPE);
+        for (shape, members) in [(Shape::Single, &level.single), (Shape::Group, &level.group)] {
+            for m in members {
+                assert!((0.40..=0.80).contains(&m.win_rate), "level {} {}: {}", level.party_level, m.id, m.win_rate);
+                assert_eq!((m.copies, m.seed, m.fights), (shape.copies(), spell_panel::member_seed(panel.base_seed, &m.id, shape), panel.fights));
+            }
+        }
+        let lowest = level.single.iter().map(|m| m.cr).fold(f64::INFINITY, f64::min);
+        assert!(level.group.iter().all(|m| m.cr < lowest), "level {}: a group fixture is not below the single shape's CR", level.party_level);
+        let caster = level.single.iter().find(|m| m.spellcaster).map(|m| m.id.clone());
+        assert_eq!(level.spellcasting_fixture, caster, "level {}", level.party_level);
+    }
+}
+
+#[test]
+fn a_panel_member_regenerates_to_its_committed_numbers() {
+    use bench_core::spell_panel::{self, GenerateSpec};
+    let panel = spell_panel::embedded().unwrap().unwrap();
+    let level = panel.level(5).unwrap();
+    let committed = level.single.first().expect("the level 5 panel has a single-shape member");
+    let party = batch::standard_party().unwrap();
+    let again = spell_panel::generate(
+        &GenerateSpec {
+            fixtures: vec![fixture(&committed.id)],
+            party_name: "standard".into(),
+            party: &party,
+            levels: vec![5],
+            base_seed: panel.base_seed,
+            fights: panel.fights,
+            max_rounds: panel.max_rounds,
+            threads: 1,
+        },
+        &|_, _, _| {},
+    )
+    .unwrap();
+    assert_eq!(again.levels[0].single.first(), Some(committed));
 }
 
 #[test]

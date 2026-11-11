@@ -18,6 +18,7 @@ use bench_core::{
     log, paths,
     schema::{schema_json, validate_value},
     spell::SpellEffect,
+    spell_panel,
     stat_block::StatBlock,
     store::{self, Index, IndexEntry, VersionCheck},
     Envelope, ENGINE_VERSION,
@@ -416,6 +417,21 @@ enum BaselineAction {
         fights: u32,
         /// Base seed; each fixture derives its own from it and its id.
         #[arg(long, default_value_t = baseline::DEFAULT_BASE_SEED)]
+        seed: u64,
+        /// Worker threads; defaults to the available cores.
+        #[arg(long)]
+        threads: Option<usize>,
+    },
+    /// Fight every embedded fixture against the control party at each spell lift level and write the spell panel. Rebuild `bench` after changing `data/` first.
+    Panel {
+        /// Where to write the panel.
+        #[arg(long, default_value = "data/baseline/spell-panel.json")]
+        out: PathBuf,
+        /// Fights per fixture, shape and party level.
+        #[arg(long, default_value_t = batch::DEFAULT_FIGHTS)]
+        fights: u32,
+        /// Base seed; each member derives its own from it, its id and its shape.
+        #[arg(long, default_value_t = spell_panel::DEFAULT_BASE_SEED)]
         seed: u64,
         /// Worker threads; defaults to the available cores.
         #[arg(long)]
@@ -871,6 +887,7 @@ fn run_batch(args: BatchArgs) -> Result<String, CodedError> {
         bench_core::spell::load_homebrew(&args.spell).map_err(|e| CodedError::new(ErrorCode::InvalidArgument, e))?;
     let spec = BatchSpec {
         monster,
+        monster_copies: 1,
         party_name,
         party,
         levels: batch::parse_levels(&args.levels).map_err(batch_error)?,
@@ -965,13 +982,36 @@ fn run_party(action: PartyAction) -> Result<String, CodedError> {
     }
 }
 
+fn write_reference<T: Serialize>(out: &std::path::Path, value: &T, what: &str) -> Result<(), CodedError> {
+    if let Some(dir) = out.parent().filter(|d| !d.as_os_str().is_empty()) {
+        std::fs::create_dir_all(dir).map_err(|e| CodedError::new(ErrorCode::Internal, format!("cannot create {}: {e}", dir.display())))?;
+    }
+    let text = serde_json::to_string_pretty(value).map_err(|e| CodedError::new(ErrorCode::Internal, format!("cannot serialize the {what}: {e}")))?;
+    std::fs::write(out, text + "\n").map_err(|e| CodedError::new(ErrorCode::Internal, format!("cannot write {}: {e}", out.display())))
+}
+
 fn run_baseline(action: BaselineAction) -> Result<String, CodedError> {
     let party = batch::standard_party().map_err(batch_error)?;
     let current = baseline::fingerprints_for(&party, &Default::default());
+    let threads = |n: Option<usize>| n.unwrap_or_else(|| std::thread::available_parallelism().map_or(1, usize::from));
     match action {
         BaselineAction::Status => {
+            let panel = match spell_panel::embedded() {
+                None => serde_json::json!({ "embedded": false, "current": false, "reasons": ["no spell panel was embedded at build time"] }),
+                Some(loaded) => {
+                    let loaded = loaded.map_err(batch_error)?;
+                    let reasons = loaded.stale_reasons(&current);
+                    serde_json::json!({
+                        "embedded": true,
+                        "current": reasons.is_empty(),
+                        "reasons": reasons,
+                        "fingerprint": loaded.fingerprint,
+                        "levels": loaded.levels.iter().map(|l| l.party_level).collect::<Vec<_>>(),
+                    })
+                }
+            };
             let Some(loaded) = baseline::embedded() else {
-                return ok(serde_json::json!({ "embedded": false, "current": false, "reasons": ["no baseline was embedded at build time"] }));
+                return ok(serde_json::json!({ "embedded": false, "current": false, "reasons": ["no baseline was embedded at build time"], "spell_panel": panel }));
             };
             let loaded = loaded.map_err(batch_error)?;
             let reasons = loaded.stale_reasons(&current);
@@ -985,9 +1025,35 @@ fn run_baseline(action: BaselineAction) -> Result<String, CodedError> {
                 "cells": loaded.cells.len(),
                 "committed": loaded.fingerprints,
                 "computed_now": current,
+                "spell_panel": panel,
             }))
         }
-        BaselineAction::Generate { out, fights, seed, threads } => {
+        BaselineAction::Panel { out, fights, seed, threads: n } => {
+            let spec = spell_panel::GenerateSpec {
+                fixtures: baseline::embedded_fixtures().map_err(batch_error)?,
+                party_name: "standard".into(),
+                party: &party,
+                levels: spell_panel::PANEL_LEVELS.to_vec(),
+                base_seed: seed,
+                fights,
+                max_rounds: batch::DEFAULT_MAX_ROUNDS,
+                threads: threads(n),
+            };
+            let panel = spell_panel::generate(&spec, &|done, total, label| eprintln!("[{done}/{total}] {label}")).map_err(batch_error)?;
+            write_reference(&out, &panel, "spell panel")?;
+            let count = |f: fn(&spell_panel::PanelLevel) -> usize| panel.levels.iter().map(f).collect::<Vec<_>>();
+            ok(serde_json::json!({
+                "path": out.display().to_string(),
+                "fingerprint": panel.fingerprint,
+                "levels": panel.levels.iter().map(|l| l.party_level).collect::<Vec<_>>(),
+                "single": count(|l| l.single.len()),
+                "group": count(|l| l.group.len()),
+                "no_spellcasting_fixture": panel.levels.iter().filter(|l| l.spellcasting_fixture.is_none()).map(|l| l.party_level).collect::<Vec<_>>(),
+                "excluded": panel.excluded,
+                "inputs": panel.inputs,
+            }))
+        }
+        BaselineAction::Generate { out, fights, seed, threads: n } => {
             let spec = baseline::GenerateSpec {
                 fixtures: baseline::embedded_fixtures().map_err(batch_error)?,
                 party_name: "standard".into(),
@@ -995,16 +1061,10 @@ fn run_baseline(action: BaselineAction) -> Result<String, CodedError> {
                 base_seed: seed,
                 fights,
                 max_rounds: batch::DEFAULT_MAX_ROUNDS,
-                threads: threads.unwrap_or_else(|| std::thread::available_parallelism().map_or(1, usize::from)),
+                threads: threads(n),
             };
             let curve = baseline::generate(&spec, &|done, total, id| eprintln!("[{done}/{total}] {id}")).map_err(batch_error)?;
-            if let Some(dir) = out.parent().filter(|d| !d.as_os_str().is_empty()) {
-                std::fs::create_dir_all(dir).map_err(|e| CodedError::new(ErrorCode::Internal, format!("cannot create {}: {e}", dir.display())))?;
-            }
-            let text = serde_json::to_string_pretty(&curve)
-                .map_err(|e| CodedError::new(ErrorCode::Internal, format!("cannot serialize the curve: {e}")))?;
-            std::fs::write(&out, text + "\n")
-                .map_err(|e| CodedError::new(ErrorCode::Internal, format!("cannot write {}: {e}", out.display())))?;
+            write_reference(&out, &curve, "curve")?;
             ok(serde_json::json!({
                 "path": out.display().to_string(),
                 "fixtures": curve.fixtures.len(),

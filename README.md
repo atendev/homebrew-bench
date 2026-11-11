@@ -80,7 +80,7 @@ You can run `bench` without an agent. `bench help --json` lists every command an
 ## Repository
 
 - `bench-core/` is the engine library and `bench/` is the CLI.
-- `data/` holds the SRD import inputs, fixtures, spell effects, standard party and baseline curve. The `bench` binary embeds the last four at compile time.
+- `data/` holds the SRD import inputs, fixtures, spell effects, standard party, baseline curve and spell panel. The `bench` binary embeds all but the import inputs at compile time.
 - `docs/adr/` records design decisions and `CONTEXT.md` defines the domain terms.
 - `CHANGELOG.md` lists changes since the last release.
 
