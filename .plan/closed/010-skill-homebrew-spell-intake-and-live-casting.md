@@ -3,7 +3,7 @@ id: 010
 title: "Skill: homebrew spell intake and live casting"
 type: task
 mode: AFK
-status: open
+status: closed
 blocked_by: [007, 008, 009]
 claimed: false
 ---
@@ -23,4 +23,4 @@ Write the agent steps for [Homebrew spell intake rules](../closed/002-homebrew-s
 
 ## Resolution
 
-<!-- Filled in at close. -->
+The `homebrew-bench` skill gains `references/spell-intake.md`: refuse or accept with the four refusal messages, write `./.bench/spells/<id>.json`, flag, then validate with `bench spell <id> --spell <file>` and review until the user confirms. Spell entries have no `intake_flags` field and refuse unknown keys, so flags go in `notes`, one `<path>: <note>` per line. The DMG Spell Damage table is inlined for the damage flag. `live-mode.md` adds a set-up step for the cast action, `--spell` at start with its refusals, the cast card before a PC cast, the clause source per spell, out-of-turn homebrew reaction spells, and hidden monster clauses in the public view. `SKILL.md` links the reference and its description now covers pasted spells. No engine change. Commit 487b9aa. Decisions are in [the decision report](../reports/010-decisions.md). Haiku audit: APPROVE in round 2. No CI runs on a branch push.

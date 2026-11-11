@@ -35,6 +35,8 @@ A spell-testing spec. Each homebrew spell is converted into an effects entry, ch
 
 - [Cast card](closed/009-cast-card.md): `bench spell` prints the entry at its cast level through the engine's own scaling, with caster numbers from a live encounter or homebrew from `--spell`; live `bench action` refuses a wrong cast target count with the card's sentence (engine 0.1.40)
 
+- [Skill: homebrew spell intake and live casting](closed/010-skill-homebrew-spell-intake-and-live-casting.md): a new `spell-intake.md` reference writes, flags, refuses and reviews entries, with flags stored in `notes`; live mode adds the cast action, `--spell` at start, the cast card before a cast, and the clause source per spell
+
 ## Not yet specified
 
 - Target caps on non-attack spells: Bless, Bane and similar spells take every target passed, so `extra_targets` on them is documentary. Decide whether a spell's target count is enforced by the engine or by the agent ([archived map](archive/homebrew-bench-map.md), Target caps on non-attack effects).
@@ -43,6 +45,7 @@ A spell-testing spec. Each homebrew spell is converted into an effects entry, ch
 - Casts before an encounter: a spell with `casting_time: long` reads "not measured" in batch ([Homebrew spell intake rules](closed/002-homebrew-spell-intake-rules.md)). Live mode refuses a `long` spell at start (ADR 0022). Decide whether batch can cast one before initiative, and how that reads against the buff horizon.
 - Declared homebrew upcasts: a stat block cast may declare `slot_level` above a homebrew entry's level with `upcast: false`, and it runs scaled because only `--slot` checks the flag ([Cast card](closed/009-cast-card.md)). Decide whether `bench start` refuses it.
 - SRD agent clauses on cast: live mode logs a homebrew entry's agent clauses on cast but not an SRD spell's, which the agent reads from `effects.json`. Decide whether to emit SRD clauses too, given that it changes every replay fingerprint ([Live spell casting prompts](closed/003-live-spell-casting-prompts.md)).
+- Intake flags on spell entries: entries have no `intake_flags` field, so intake writes flags into `notes` as text ([Skill: homebrew spell intake and live casting](closed/010-skill-homebrew-spell-intake-and-live-casting.md)). Decide whether entries gain the field so reports can list the flags.
 
 None of these blocks the destination. Each already has a defined reading, and none changes the committed spell baseline. Counter pricing and SRD agent clauses on cast are the next to ticket if the spell baseline review shows they matter.
 
@@ -54,7 +57,6 @@ None of these blocks the destination. Each already has a defined reading, and no
 
 ## Frontier
 
-- [Skill: homebrew spell intake and live casting](tickets/010-skill-homebrew-spell-intake-and-live-casting.md)
 - [Batch homebrew clause resolution](tickets/011-batch-homebrew-clause-resolution.md)
 - [Model more SRD cantrips](tickets/014-model-more-srd-cantrips.md)
 - [Control party and spell panel](tickets/012-control-party-and-spell-panel.md)
@@ -69,7 +71,7 @@ Blocking in brackets.
 - [Live start with homebrew spells](closed/007-live-start-with-homebrew-spells.md) (closed)
 - [Live cast log for homebrew clauses](closed/008-live-cast-log-for-homebrew-clauses.md) (closed)
 - [Cast card](closed/009-cast-card.md) (closed)
-- [Skill: homebrew spell intake and live casting](tickets/010-skill-homebrew-spell-intake-and-live-casting.md) [007, 008, 009]
+- [Skill: homebrew spell intake and live casting](closed/010-skill-homebrew-spell-intake-and-live-casting.md) (closed)
 - [Batch homebrew clause resolution](tickets/011-batch-homebrew-clause-resolution.md) [006]
 - [Control party and spell panel](tickets/012-control-party-and-spell-panel.md)
 - [Spell lift runner](tickets/013-spell-lift-runner.md) [006, 011, 012]
@@ -77,4 +79,4 @@ Blocking in brackets.
 - [Rounds per round for spell durations](tickets/015-rounds-per-round-for-spell-durations.md) (grilling)
 - [Spell baseline](tickets/016-spell-baseline.md) [013, 014, 015]
 - [Spell lift report](tickets/017-spell-lift-report.md) [011, 016]
-- [Skill: batch spell testing](tickets/018-skill-batch-spell-testing.md) [010, 017]
+- [Skill: batch spell testing](tickets/018-skill-batch-spell-testing.md) [017]
