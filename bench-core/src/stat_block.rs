@@ -373,7 +373,7 @@ fn sections(block: &StatBlock) -> impl Iterator<Item = (&'static str, &AbilityEn
     .flat_map(|(name, list)| list.iter().map(move |entry| (name, entry)))
 }
 
-fn casts_of(entry: &AbilityEntry) -> Vec<crate::effect::Cast> {
+pub(crate) fn casts_of(entry: &AbilityEntry) -> Vec<crate::effect::Cast> {
     serde_json::to_value(&entry.effects).map(|v| crate::effect::casts_in(&v)).unwrap_or_default()
 }
 

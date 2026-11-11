@@ -152,6 +152,10 @@ _Avoid_: Missing data, interpolated data
 The change in the standard party's win rate and casualty rate, against a control run, when the caster role's spells of one level are replaced by one spell. It is the verdict number for a spell. Expected damage or healing per cast is reported beside it as a diagnostic and is not spell lift.
 _Avoid_: Spell value, spell power, DPR
 
+**Control party**:
+The standard party with every spell of one level taken off the caster role. Its spell slots and the rest of its spells stay. Spell lift is measured against it.
+_Avoid_: Baseline party, empty caster
+
 **Spell panel**:
 The fixed set of fights at one party level that spell lift is measured on: fixtures the control party wins about 40 to 80% of the time, fought alone and in groups.
 _Avoid_: Test fights, benchmark encounters

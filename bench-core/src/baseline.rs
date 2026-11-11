@@ -121,7 +121,7 @@ pub struct Baseline {
 
 /// Hex SHA-256 of a value's JSON. The value goes through `serde_json::Value`
 /// first so hash-map fields come out in key order and the hash is stable.
-fn hash_json<T: Serialize>(value: &T) -> String {
+pub(crate) fn hash_json<T: Serialize>(value: &T) -> String {
     let bytes = serde_json::to_value(value).and_then(|v| serde_json::to_vec(&v)).expect("stat blocks and parties serialize");
     hex::encode(Sha256::digest(bytes))
 }
@@ -197,27 +197,31 @@ impl Baseline {
 
     /// Ways the inputs of a run differ from the ones this baseline was computed from.
     pub fn stale_reasons(&self, run: &Fingerprints) -> Vec<String> {
-        let base = &self.fingerprints;
-        let mut out = Vec::new();
-        if base.fixture_set != run.fixture_set {
-            out.push("the embedded fixture set changed".to_string());
-        }
-        if base.party != run.party {
-            out.push(format!("the party differs from the `{}` party the curve was computed against", self.party));
-        }
-        if base.policy_id != run.policy_id || base.policy_version != run.policy_version {
-            out.push(format!(
-                "the tactics policy is {} v{} and the curve used {} v{}",
-                run.policy_id, run.policy_version, base.policy_id, base.policy_version
-            ));
-        } else if base.policy != run.policy {
-            out.push("the tactics policy constants differ from the curve's".to_string());
-        }
-        if base.engine_version != run.engine_version {
-            out.push(format!("the engine is {} and the curve used {}", run.engine_version, base.engine_version));
-        }
-        out
+        stale_reasons(&self.fingerprints, run, &self.party, "curve")
     }
+}
+
+/// Ways `run` differs from `base`, the inputs of committed reference data called `what`.
+pub(crate) fn stale_reasons(base: &Fingerprints, run: &Fingerprints, party: &str, what: &str) -> Vec<String> {
+    let mut out = Vec::new();
+    if base.fixture_set != run.fixture_set {
+        out.push("the embedded fixture set changed".to_string());
+    }
+    if base.party != run.party {
+        out.push(format!("the party differs from the `{party}` party the {what} was computed against"));
+    }
+    if base.policy_id != run.policy_id || base.policy_version != run.policy_version {
+        out.push(format!(
+            "the tactics policy is {} v{} and the {what} used {} v{}",
+            run.policy_id, run.policy_version, base.policy_id, base.policy_version
+        ));
+    } else if base.policy != run.policy {
+        out.push(format!("the tactics policy constants differ from the {what}'s"));
+    }
+    if base.engine_version != run.engine_version {
+        out.push(format!("the engine is {} and the {what} used {}", run.engine_version, base.engine_version));
+    }
+    out
 }
 
 /// How a run reads against the baseline, in four neutral parts plus the SRD facts kept in the summary.
@@ -368,7 +372,7 @@ pub struct GenerateSpec<'a> {
     pub threads: usize,
 }
 
-fn fixture_seed(base: u64, id: &str) -> u64 {
+pub(crate) fn fixture_seed(base: u64, id: &str) -> u64 {
     let digest = Sha256::digest(format!("{base}:{id}"));
     u64::from_le_bytes(digest[..8].try_into().expect("digest has 32 bytes"))
 }
@@ -399,6 +403,7 @@ fn run_fixture(spec: &GenerateSpec, block: &StatBlock) -> Result<Done, BatchErro
     let (ignored_abilities, assumptions) = ignoring_unresolved(block);
     let run = BatchSpec {
         monster: block.clone(),
+        monster_copies: 1,
         party_name: spec.party_name.clone(),
         party: spec.party.clone(),
         levels: (1..=20).collect(),
@@ -431,32 +436,38 @@ fn run_fixture(spec: &GenerateSpec, block: &StatBlock) -> Result<Done, BatchErro
     Ok(Done::Row(FixtureRow { id: block.id.clone(), cr, missing_spells: crate::spell::SpellBook::srd().map(|b| crate::engine::missing_spells(block, &b)).unwrap_or_default(), ignored_abilities, cells }))
 }
 
-/// Run every fixture against the party and build the curve. `progress` gets
-/// `(done, total, fixture id)` as each fixture finishes.
-pub fn generate(spec: &GenerateSpec, progress: &(dyn Fn(usize, usize, &str) + Sync)) -> Result<Baseline, BatchError> {
-    let total = spec.fixtures.len();
+/// `work` on every item across `threads` workers, stopping at the first error. Results come back in
+/// item order. `progress` gets `(done, total, label)` as each item finishes.
+pub(crate) fn run_parallel<T: Sync, R: Send>(
+    items: &[T],
+    threads: usize,
+    label: impl Fn(&T) -> &str + Sync,
+    work: impl Fn(&T) -> Result<R, BatchError> + Sync,
+    progress: &(dyn Fn(usize, usize, &str) + Sync),
+) -> Result<Vec<R>, BatchError> {
+    let total = items.len();
     let next = AtomicUsize::new(0);
     let finished = AtomicUsize::new(0);
-    let done: Mutex<Vec<Done>> = Mutex::new(Vec::new());
+    let done: Mutex<Vec<(usize, R)>> = Mutex::new(Vec::new());
     let failure: Mutex<Option<BatchError>> = Mutex::new(None);
     std::thread::scope(|scope| {
-        for _ in 0..spec.threads.max(1) {
+        for _ in 0..threads.max(1) {
             // Fights recurse deeply enough to overflow the 2 MiB default thread stack.
             let worker = std::thread::Builder::new().stack_size(256 << 20);
             let spawned = worker.spawn_scoped(scope, || loop {
                 let i = next.fetch_add(1, Ordering::SeqCst);
-                let Some(block) = spec.fixtures.get(i) else { break };
+                let Some(item) = items.get(i) else { break };
                 if failure.lock().expect("lock").is_some() {
                     break;
                 }
-                match run_fixture(spec, block) {
-                    Ok(d) => done.lock().expect("lock").push(d),
+                match work(item) {
+                    Ok(r) => done.lock().expect("lock").push((i, r)),
                     Err(e) => {
                         *failure.lock().expect("lock") = Some(e);
                         break;
                     }
                 }
-                progress(finished.fetch_add(1, Ordering::SeqCst) + 1, total, &block.id);
+                progress(finished.fetch_add(1, Ordering::SeqCst) + 1, total, label(item));
             });
             if let Err(e) = spawned {
                 *failure.lock().expect("lock") = Some(BatchError::Invalid(format!("cannot start a worker thread: {e}")));
@@ -467,9 +478,18 @@ pub fn generate(spec: &GenerateSpec, progress: &(dyn Fn(usize, usize, &str) + Sy
     if let Some(e) = failure.into_inner().expect("lock") {
         return Err(e);
     }
+    let mut done = done.into_inner().expect("lock");
+    done.sort_by_key(|(i, _)| *i);
+    Ok(done.into_iter().map(|(_, r)| r).collect())
+}
+
+/// Run every fixture against the party and build the curve. `progress` gets
+/// `(done, total, fixture id)` as each fixture finishes.
+pub fn generate(spec: &GenerateSpec, progress: &(dyn Fn(usize, usize, &str) + Sync)) -> Result<Baseline, BatchError> {
+    let done = run_parallel(&spec.fixtures, spec.threads, |b| &b.id, |b| run_fixture(spec, b), progress)?;
     let mut fixtures = Vec::new();
     let mut excluded = Vec::new();
-    for d in done.into_inner().expect("lock") {
+    for d in done {
         match d {
             Done::Row(r) => fixtures.push(r),
             Done::Excluded(e) => excluded.push(e),

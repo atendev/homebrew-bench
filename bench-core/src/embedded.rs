@@ -42,6 +42,11 @@ pub fn baseline_json() -> Option<&'static str> {
     find(BASELINE, "curve.json")
 }
 
+/// The committed spell panel, when `data/baseline/spell-panel.json` existed at build time.
+pub fn spell_panel_json() -> Option<&'static str> {
+    find(BASELINE, "spell-panel.json")
+}
+
 /// Standard party stat block files.
 pub fn standard_party_json() -> impl Iterator<Item = (&'static str, &'static str)> {
     PARTY.iter().filter(|(p, _)| p.starts_with("standard/")).map(|(p, t)| (*p, *t))
