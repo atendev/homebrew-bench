@@ -22,6 +22,7 @@ A spell-testing spec. Each homebrew spell is converted into an effects entry, ch
 
 - [Spell value metric](closed/001-spell-value-metric.md): spell lift (win-rate and casualty change from swapping the spell onto the caster role) is the verdict; damage per cast is a diagnostic; rows per cast level and cantrip tier (ADR 0020)
 - [Homebrew spell intake rules](closed/002-homebrew-spell-intake-rules.md): the agent writes each homebrew spell entry into its own `--spell` file, flags inferred values, refuses unmodelable or non-combat spells and SRD id clashes, and the user reviews and can edit it; entries gain `casting_time` (ADR 0021)
+- [Live spell casting prompts](closed/003-live-spell-casting-prompts.md): both sides cast through `bench action` on a stat block action, no new prompt; a read-only `bench spell` cast card shows the entry before the user picks target and slot; start-time checks tie cast section to `casting_time`; clauses logged after the counter window (ADR 0022)
 
 ## Not yet specified
 
@@ -29,7 +30,8 @@ A spell-testing spec. Each homebrew spell is converted into an effects entry, ch
 - Counter pricing: a limited counter costs nothing at the default `resource_cost` of 0, so the Mage reads easier at levels 2 to 4. Decide how a counter is priced against Shield and against the spell it stops ([archived map](archive/homebrew-bench-map.md), Counter pricing).
 - Rounds per round: `rounds` durations lose one per creature's turn, so Shield and Haste last one turn. Decide whether durations count per round for spells, and what that does to batch cells ([archived map](archive/homebrew-bench-map.md), Rounds per round).
 - Flat save bonuses on concentration and repeat saves: those saves add a die but no flat timed save modifier. Decide whether spell saves read flat bonuses, and how old saves are gated ([archived map](archive/homebrew-bench-map.md), Flat save bonuses on concentration and repeat saves).
-- Casts before an encounter: a spell with `casting_time: long` reads "not measured" in batch ([Homebrew spell intake rules](closed/002-homebrew-spell-intake-rules.md)). Decide whether batch or live mode can cast a spell before initiative, and how that reads against the buff horizon.
+- Casts before an encounter: a spell with `casting_time: long` reads "not measured" in batch ([Homebrew spell intake rules](closed/002-homebrew-spell-intake-rules.md)). Live mode refuses a `long` spell at start (ADR 0022). Decide whether batch can cast one before initiative, and how that reads against the buff horizon.
+- SRD agent clauses on cast: live mode logs a homebrew entry's agent clauses on cast but not an SRD spell's, which the agent reads from `effects.json`. Decide whether to emit SRD clauses too, given that it changes every replay fingerprint ([Live spell casting prompts](closed/003-live-spell-casting-prompts.md)).
 
 ## Out of scope
 
@@ -39,4 +41,4 @@ A spell-testing spec. Each homebrew spell is converted into an effects entry, ch
 
 ## Frontier
 
-- [Live spell casting prompts](tickets/003-live-spell-casting-prompts.md)
+- [Create build tickets and append them to the map](tickets/004-create-build-tickets.md)

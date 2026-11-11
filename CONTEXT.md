@@ -172,6 +172,10 @@ _Avoid_: Fix, patch, override of import data
 One spell's record of what the engine runs when it is cast: its level, cast time, effects, scaling and agent clauses. SRD and homebrew spells each have one, and a homebrew spell's entry is reviewed by the user before any run.
 _Avoid_: Spell definition, spell data
 
+**Cast card**:
+A read-only view of one spell entry that `bench spell` prints before a live cast: the entry resolved at a cast level, the caster's save DC, attack bonus and slots, every agent clause verbatim, and how many target ids the cast takes.
+_Avoid_: Spell preview, spell sheet
+
 **Intake flag**:
 A note the agent writes while converting homebrew, on a value it had to infer, a wording with no standard rules reading, or a number off its norm. Intake flags never block. The user sees every one at review.
 _Avoid_: Warning, lint
