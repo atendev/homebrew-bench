@@ -31,6 +31,8 @@ A spell-testing spec. Each homebrew spell is converted into an effects entry, ch
 
 - [Live start with homebrew spells](closed/007-live-start-with-homebrew-spells.md): `bench start --spell` copies entries into state with a fingerprint line, refuses misplaced, `long` and block-less attack or save casts, and warns on unknown ids; `--slot` is refused for monsters and needs `upcast: true` above a homebrew level (engine 0.1.38)
 
+- [Live cast log for homebrew clauses](closed/008-live-cast-log-for-homebrew-clauses.md): a homebrew cast logs one `agent_clause` per clause after the window closes and before `upcast_clause`; a countered cast logs none; a monster's clause events are hidden in the public view (engine 0.1.39)
+
 ## Not yet specified
 
 - Target caps on non-attack spells: Bless, Bane and similar spells take every target passed, so `extra_targets` on them is documentary. Decide whether a spell's target count is enforced by the engine or by the agent ([archived map](archive/homebrew-bench-map.md), Target caps on non-attack effects).
@@ -49,7 +51,6 @@ None of these blocks the destination. Each already has a defined reading, and no
 
 ## Frontier
 
-- [Live cast log for homebrew clauses](tickets/008-live-cast-log-for-homebrew-clauses.md)
 - [Cast card](tickets/009-cast-card.md)
 - [Batch homebrew clause resolution](tickets/011-batch-homebrew-clause-resolution.md)
 - [Model more SRD cantrips](tickets/014-model-more-srd-cantrips.md)
@@ -63,7 +64,7 @@ Blocking in brackets.
 - [Spell entry fields](closed/005-spell-entry-fields.md) (closed)
 - [Spell book](closed/006-spell-book.md) (closed)
 - [Live start with homebrew spells](closed/007-live-start-with-homebrew-spells.md) (closed)
-- [Live cast log for homebrew clauses](tickets/008-live-cast-log-for-homebrew-clauses.md) [007]
+- [Live cast log for homebrew clauses](closed/008-live-cast-log-for-homebrew-clauses.md) (closed)
 - [Cast card](tickets/009-cast-card.md) [006]
 - [Skill: homebrew spell intake and live casting](tickets/010-skill-homebrew-spell-intake-and-live-casting.md) [007, 008, 009]
 - [Batch homebrew clause resolution](tickets/011-batch-homebrew-clause-resolution.md) [006]
