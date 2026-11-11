@@ -3,7 +3,7 @@ id: 006
 title: Spell book
 type: task
 mode: AFK
-status: open
+status: closed
 blocked_by: []
 claimed: false
 ---
@@ -23,4 +23,8 @@ Build the loading rules from [Homebrew spell intake rules](../closed/002-homebre
 
 ## Resolution
 
-<!-- Filled in at close. -->
+Every spell lookup goes through a `SpellBook` (`bench-core/src/spell.rs`): the encounter's homebrew entries first, then the SRD effects file. `EncounterState.homebrew_spells` holds the entries, skipped when empty, so old saves load with none and replay unchanged. A save is held to the loader rules on load: an SRD id, a repeated id or a non-homebrew entry fails to parse. `load_homebrew` reads `--spell` files and refuses a non-homebrew file, an SRD id clash and a duplicate id, each naming the file and the id. `bench schema validate` takes a repeatable `--spell`, checks cast slot levels against loaded homebrew, and warns by id on a cast no source supplies.
+
+The three `catalog()` call sites are replaced. Engine and tactics take the book from state. The stat block's parse-time check and the batch and baseline warnings use an SRD-only book until [Live start with homebrew spells](../tickets/007-live-start-with-homebrew-spells.md) and [Batch homebrew clause resolution](../tickets/011-batch-homebrew-clause-resolution.md) pass loaded entries in.
+
+Engine 0.1.37. The curve differs only in `engine_version`, so policy stays v5. Commit 849964f. The repo has no CI that runs on a branch push. Decisions are in `.plan/reports/006-decisions.md`.

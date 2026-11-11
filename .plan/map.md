@@ -27,6 +27,8 @@ A spell-testing spec. Each homebrew spell is converted into an effects entry, ch
 
 - [Spell entry fields](closed/005-spell-entry-fields.md): entries require `casting_time`, declare `agent_clauses` and take `source: "homebrew"` with `pasted_source`; unknown keys fail to parse and `bench schema spell` exports the schema (engine 0.1.36)
 
+- [Spell book](closed/006-spell-book.md): every lookup goes through a spell book of encounter homebrew then SRD; the `--spell` loader refuses id clashes and duplicates; `bench schema validate` takes `--spell` (engine 0.1.37)
+
 ## Not yet specified
 
 - Target caps on non-attack spells: Bless, Bane and similar spells take every target passed, so `extra_targets` on them is documentary. Decide whether a spell's target count is enforced by the engine or by the agent ([archived map](archive/homebrew-bench-map.md), Target caps on non-attack effects).
@@ -45,7 +47,9 @@ None of these blocks the destination. Each already has a defined reading, and no
 
 ## Frontier
 
-- [Spell book](tickets/006-spell-book.md)
+- [Live start with homebrew spells](tickets/007-live-start-with-homebrew-spells.md)
+- [Cast card](tickets/009-cast-card.md)
+- [Batch homebrew clause resolution](tickets/011-batch-homebrew-clause-resolution.md)
 - [Model more SRD cantrips](tickets/014-model-more-srd-cantrips.md)
 - [Control party and spell panel](tickets/012-control-party-and-spell-panel.md)
 - [Rounds per round for spell durations](tickets/015-rounds-per-round-for-spell-durations.md)
@@ -55,7 +59,7 @@ None of these blocks the destination. Each already has a defined reading, and no
 Blocking in brackets.
 
 - [Spell entry fields](closed/005-spell-entry-fields.md) (closed)
-- [Spell book](tickets/006-spell-book.md)
+- [Spell book](closed/006-spell-book.md) (closed)
 - [Live start with homebrew spells](tickets/007-live-start-with-homebrew-spells.md) [006]
 - [Live cast log for homebrew clauses](tickets/008-live-cast-log-for-homebrew-clauses.md) [007]
 - [Cast card](tickets/009-cast-card.md) [006]
