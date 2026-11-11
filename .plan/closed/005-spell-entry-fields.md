@@ -3,7 +3,7 @@ id: 005
 title: Spell entry fields
 type: task
 mode: AFK
-status: open
+status: closed
 blocked_by: []
 claimed: false
 ---
@@ -24,4 +24,8 @@ Build the entry fields from [Homebrew spell intake rules](../closed/002-homebrew
 
 ## Resolution
 
-<!-- Filled in at close. -->
+Spell entries require `casting_time` (`action`, `bonus_action`, `reaction`, `long`) and declare `agent_clauses`. They accept `source: "homebrew"` with `pasted_source`, required with that source and refused otherwise by `SpellEffect::parse`. `SpellEffect` denies unknown keys. All 86 SRD entries carry `casting_time`, and `check-spell-effects.py` checks it against the SRD, raising on text it can't map. `scaffold-spells.py` emits it. `bench schema spell` prints the entry schema.
+
+Engine 0.1.36. The regenerated curve differs only in `engine_version`, so policy stays v5. Commit 7ea4cc2. The repo's only workflow runs on pull requests and tags, so no CI ran on the branch push.
+
+Follow-ups: nested effect types still accept unknown keys, and the `pasted_source` rule should move into serde when ticket 006 builds the `--spell` loader, so the exported schema shows it. Decisions are in `.plan/reports/005-decisions.md`.

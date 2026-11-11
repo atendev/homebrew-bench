@@ -25,6 +25,8 @@ A spell-testing spec. Each homebrew spell is converted into an effects entry, ch
 - [Live spell casting prompts](closed/003-live-spell-casting-prompts.md): both sides cast through `bench action` on a stat block action, no new prompt; a read-only `bench spell` cast card shows the entry before the user picks target and slot; start-time checks tie cast section to `casting_time`; clauses logged after the counter window (ADR 0022)
 - [Create build tickets and append them to the map](closed/004-create-build-tickets.md): 13 build tickets and 1 grilling ticket (005 to 018) in thin slices; Rounds per round becomes a grilling ticket that blocks the spell baseline; the other five fog items stay open
 
+- [Spell entry fields](closed/005-spell-entry-fields.md): entries require `casting_time`, declare `agent_clauses` and take `source: "homebrew"` with `pasted_source`; unknown keys fail to parse and `bench schema spell` exports the schema (engine 0.1.36)
+
 ## Not yet specified
 
 - Target caps on non-attack spells: Bless, Bane and similar spells take every target passed, so `extra_targets` on them is documentary. Decide whether a spell's target count is enforced by the engine or by the agent ([archived map](archive/homebrew-bench-map.md), Target caps on non-attack effects).
@@ -43,7 +45,8 @@ None of these blocks the destination. Each already has a defined reading, and no
 
 ## Frontier
 
-- [Spell entry fields](tickets/005-spell-entry-fields.md)
+- [Spell book](tickets/006-spell-book.md)
+- [Model more SRD cantrips](tickets/014-model-more-srd-cantrips.md)
 - [Control party and spell panel](tickets/012-control-party-and-spell-panel.md)
 - [Rounds per round for spell durations](tickets/015-rounds-per-round-for-spell-durations.md)
 
@@ -51,8 +54,8 @@ None of these blocks the destination. Each already has a defined reading, and no
 
 Blocking in brackets.
 
-- [Spell entry fields](tickets/005-spell-entry-fields.md)
-- [Spell book](tickets/006-spell-book.md) [005]
+- [Spell entry fields](closed/005-spell-entry-fields.md) (closed)
+- [Spell book](tickets/006-spell-book.md)
 - [Live start with homebrew spells](tickets/007-live-start-with-homebrew-spells.md) [006]
 - [Live cast log for homebrew clauses](tickets/008-live-cast-log-for-homebrew-clauses.md) [007]
 - [Cast card](tickets/009-cast-card.md) [006]
@@ -60,7 +63,7 @@ Blocking in brackets.
 - [Batch homebrew clause resolution](tickets/011-batch-homebrew-clause-resolution.md) [006]
 - [Control party and spell panel](tickets/012-control-party-and-spell-panel.md)
 - [Spell lift runner](tickets/013-spell-lift-runner.md) [006, 011, 012]
-- [Model more SRD cantrips](tickets/014-model-more-srd-cantrips.md) [005]
+- [Model more SRD cantrips](tickets/014-model-more-srd-cantrips.md)
 - [Rounds per round for spell durations](tickets/015-rounds-per-round-for-spell-durations.md) (grilling)
 - [Spell baseline](tickets/016-spell-baseline.md) [013, 014, 015]
 - [Spell lift report](tickets/017-spell-lift-report.md) [011, 016]

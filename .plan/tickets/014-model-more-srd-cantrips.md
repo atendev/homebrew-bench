@@ -4,7 +4,7 @@ title: Model more SRD cantrips
 type: task
 mode: AFK
 status: open
-blocked_by: [005]
+blocked_by: []
 claimed: false
 ---
 

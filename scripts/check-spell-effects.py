@@ -169,10 +169,31 @@ def check_bearers(entry: dict, spell: dict) -> list[str]:
     return mismatches
 
 
+def casting_time_key(text: str) -> str:
+    lowered = text.strip().lower()
+    if lowered.startswith("action"):
+        return "action"
+    if lowered.startswith("bonus action"):
+        return "bonus_action"
+    if lowered.startswith("reaction"):
+        return "reaction"
+    if re.match(r"\d+ (minute|hour)s?\b", lowered):
+        return "long"
+    raise ValueError(f"unrecognized casting time: {text!r}")
+
+
+def check_casting_time(entry: dict, spell: dict) -> list[str]:
+    expected = casting_time_key(spell.get("casting_time", ""))
+    actual = entry.get("casting_time")
+    if actual != expected:
+        return [f"casting_time {actual!r} does not match SRD {spell.get('casting_time')!r} (expected {expected!r})"]
+    return []
+
+
 def check_spell(idx: str, entry: dict, spell: dict) -> list[str]:
     """Return a list of mismatch notes for one spell."""
     text = gather_text(spell)
-    mismatches = []
+    mismatches = check_casting_time(entry, spell)
     facts = []
     for effect in entry.get("effects", []):
         facts.extend(render_effect_fact(effect))

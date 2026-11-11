@@ -1,0 +1,12 @@
+# Ticket 005 decisions
+
+1. **Which ticket.** The frontier held 005, 012 and 015. I took 005, the first and the only one with no further blockers worth weighing. Main thread.
+2. **`casting_time` shape.** Options: optional field with a default, or required. Choice: required enum with no default, so a missing value fails to parse for SRD and homebrew entries alike. This also meets "a homebrew entry without one fails to parse". Main thread. Auditor: pass.
+3. **SRD casting time mapping.** `Action` maps to `action`, `Bonus Action` to `bonus_action`, `Reaction, which you take...` to `reaction`, and a minute or more to `long`. Spells whose text starts with an action word keep that word, so `Action (Overgrowth) or 8 hours` reads `action`. Main thread. The first version defaulted anything else to `long`. The auditor objected, so it now raises on unknown text. Both scripts carry the same function.
+4. **Undeclared keys.** `deny_unknown_fields` on `SpellEffect`, plus declared `agent_clauses`. Options: also add it to `Effect` and nested types. Rejected for this ticket: it changes stat block, save and fixture parsing. Main thread. Auditor: accepted as a follow-up.
+5. **`pasted_source` rule.** Enforced in `SpellEffect::parse`, which `catalog()` and the schema test use. Options: serde `try_from` on a raw struct. Deferred to ticket 006, where the `--spell` loader is built, since schemars support is uncertain. The exported schema shows the field as optional until then. Main thread. Auditor: accepted as a follow-up for 006.
+6. **Schema export.** New `bench schema spell`, beside `bench schema monster`. Main thread. Auditor reworded its doc comment, which named a `--spell` flag that does not exist yet.
+7. **Version.** Engine 0.1.36, changelog entry added. The curve was regenerated with `bench baseline generate` and changed only in `engine_version`, so the policy stays v5. Main thread.
+8. **Tests.** Added: every SRD entry carries `casting_time`; a homebrew entry without it fails; `pasted_source` goes with homebrew only; an undeclared key fails; agent clauses round trip; the schema names every field. I dropped a hard-coded count of Reaction spells the auditor called brittle. One engine test built an entry by hand and gained `casting_time`. Main thread.
+9. **Audit.** One haiku auditor, two rounds. Round 1 raised six items. Four were fixed, and items 1 and 2 are the follow-ups above. Round 2: APPROVE.
+10. **Skipped gates.** No requirements or implementation confirmation was asked, per the runner's override. The thread rename was not tried.

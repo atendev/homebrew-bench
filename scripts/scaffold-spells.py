@@ -26,6 +26,21 @@ SPELLS_PATH = ROOT / "data/srd/2024/5e-SRD-Spells.json"
 PARTY_SPELLS_PATH = ROOT / "data/party/standard-spells.json"
 SOURCE = "SRD 5.2.1"
 
+
+def casting_time_key(text: str) -> str:
+    """Map an SRD casting time to the entry's `casting_time` value."""
+    lowered = text.strip().lower()
+    if lowered.startswith("action"):
+        return "action"
+    if lowered.startswith("bonus action"):
+        return "bonus_action"
+    if lowered.startswith("reaction"):
+        return "reaction"
+    if re.match(r"\d+ (minute|hour)s?\b", lowered):
+        return "long"
+    raise ValueError(f"unrecognized casting time: {text!r}")
+
+
 DAMAGE_TYPE_MAP = {
     "acid": "acid",
     "bludgeoning": "bludgeoning",
@@ -647,6 +662,7 @@ def scaffold(spell: dict) -> dict:
         "name": name,
         "source": SOURCE,
         "level": level,
+        "casting_time": casting_time_key(spell["casting_time"]),
         "concentration": concentration,
         "effects": effects,
     }

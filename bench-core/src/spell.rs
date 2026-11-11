@@ -41,14 +41,33 @@ pub struct DelayedEffect {
     pub effect: Effect,
 }
 
-/// One entry in `data/spells/effects.json`.
+/// What one cast costs in time; `Long` is a minute or more.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, schemars::JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum CastingTime {
+    Action,
+    BonusAction,
+    Reaction,
+    Long,
+}
+
+/// The `source` value of an entry the user pasted.
+pub const HOMEBREW_SOURCE: &str = "homebrew";
+
+/// One entry in `data/spells/effects.json`, or one homebrew spell file.
 #[derive(Debug, Clone, Serialize, Deserialize, schemars::JsonSchema)]
+#[serde(deny_unknown_fields)]
 pub struct SpellEffect {
     pub id: String,
     pub name: String,
+    /// `homebrew` for a pasted spell, else the SRD edition.
     pub source: String,
+    /// The user's text, verbatim. Required when `source` is `homebrew`, refused otherwise.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub pasted_source: Option<String>,
     /// The spell's own level; 0 is a cantrip.
     pub level: u8,
+    pub casting_time: CastingTime,
     pub concentration: bool,
     #[serde(deserialize_with = "checked_effects")]
     pub effects: Vec<Effect>,
@@ -56,11 +75,31 @@ pub struct SpellEffect {
     pub scaling: Vec<ScalingRule>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub delayed: Vec<DelayedEffect>,
+    /// Sentences the engine does not model, which the agent resolves.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub agent_clauses: Vec<String>,
     /// What a higher slot does that the engine does not apply, for the agent.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub upcast_clause: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub notes: Option<String>,
+}
+
+impl SpellEffect {
+    /// Parses one entry and applies the checks serde can't: `pasted_source` goes with `homebrew` only.
+    pub fn parse(value: serde_json::Value) -> Result<Self, String> {
+        let spell: Self = serde_json::from_value(value).map_err(|e| e.to_string())?;
+        spell.check_source()?;
+        Ok(spell)
+    }
+
+    fn check_source(&self) -> Result<(), String> {
+        match (self.source == HOMEBREW_SOURCE, &self.pasted_source) {
+            (true, None) => Err(format!("spell {} is homebrew and needs pasted_source", self.id)),
+            (false, Some(_)) => Err(format!("spell {} has pasted_source but its source is not homebrew", self.id)),
+            _ => Ok(()),
+        }
+    }
 }
 
 fn checked_effects<'de, D: serde::Deserializer<'de>>(deserializer: D) -> Result<Vec<Effect>, D::Error> {
@@ -78,7 +117,7 @@ pub(crate) fn catalog() -> Result<&'static HashMap<String, SpellEffect>, &'stati
             let mut map = HashMap::new();
             if let Some(obj) = value.as_object() {
                 for (key, entry_value) in obj {
-                    let spell: SpellEffect = serde_json::from_value(entry_value.clone()).map_err(|e| format!("spell {key} invalid: {e}"))?;
+                    let spell = SpellEffect::parse(entry_value.clone()).map_err(|e| format!("spell {key} invalid: {e}"))?;
                     map.insert(key.clone(), spell);
                 }
             }
@@ -218,7 +257,7 @@ mod tests {
         let map = value.as_object().expect("effects.json must be an object");
         let mut failures = Vec::new();
         for (key, entry_value) in map {
-            let result: Result<SpellEffect, _> = serde_json::from_value(entry_value.clone());
+            let result = SpellEffect::parse(entry_value.clone());
             if let Err(e) = result {
                 failures.push(format!("{key}: {e}"));
             }
@@ -230,5 +269,75 @@ mod tests {
                 failures.join("\n")
             );
         }
+    }
+
+    fn srd_entry() -> serde_json::Value {
+        effects_file()["shield"].clone()
+    }
+
+    fn homebrew_entry() -> serde_json::Value {
+        let mut entry = srd_entry();
+        entry["id"] = "ward-of-embers".into();
+        entry["source"] = "homebrew".into();
+        entry["pasted_source"] = "Ward of Embers. 1st-level abjuration...".into();
+        entry
+    }
+
+    #[test]
+    fn every_srd_entry_has_a_casting_time() {
+        for (key, value) in effects_file().as_object().expect("object") {
+            assert!(value.get("casting_time").is_some(), "{key} has no casting_time");
+        }
+    }
+
+    #[test]
+    fn a_homebrew_entry_without_a_casting_time_fails_to_parse() {
+        let mut entry = homebrew_entry();
+        entry.as_object_mut().unwrap().remove("casting_time");
+        let err = SpellEffect::parse(entry).unwrap_err();
+        assert!(err.contains("casting_time"), "{err}");
+    }
+
+    #[test]
+    fn pasted_source_goes_with_homebrew_only() {
+        assert!(SpellEffect::parse(homebrew_entry()).is_ok());
+        let mut missing = homebrew_entry();
+        missing.as_object_mut().unwrap().remove("pasted_source");
+        assert!(SpellEffect::parse(missing).unwrap_err().contains("needs pasted_source"));
+        let mut stray = srd_entry();
+        stray["pasted_source"] = "text".into();
+        assert!(SpellEffect::parse(stray).unwrap_err().contains("not homebrew"));
+    }
+
+    #[test]
+    fn an_undeclared_key_fails_to_parse() {
+        let mut entry = srd_entry();
+        entry["agent_clause"] = serde_json::json!(["typo"]);
+        assert!(SpellEffect::parse(entry).unwrap_err().contains("agent_clause"));
+    }
+
+    #[test]
+    fn agent_clauses_survive_a_round_trip() {
+        let mut entry = homebrew_entry();
+        entry["agent_clauses"] = serde_json::json!(["The target glows for a minute."]);
+        let spell = SpellEffect::parse(entry).expect("parses");
+        assert_eq!(spell.agent_clauses, vec!["The target glows for a minute."]);
+        let again = SpellEffect::parse(serde_json::to_value(&spell).unwrap()).expect("round trip");
+        assert_eq!(again.agent_clauses, spell.agent_clauses);
+        assert_eq!(again.pasted_source, spell.pasted_source);
+        assert_eq!(again.casting_time, spell.casting_time);
+    }
+
+    #[test]
+    fn the_schema_names_every_field() {
+        let schema = serde_json::to_value(crate::schema::schema_for::<SpellEffect>()).unwrap();
+        let props = schema["properties"].as_object().expect("properties");
+        for field in [
+            "id", "name", "source", "pasted_source", "level", "casting_time", "concentration",
+            "effects", "scaling", "delayed", "agent_clauses", "upcast_clause", "notes",
+        ] {
+            assert!(props.contains_key(field), "schema lacks {field}");
+        }
+        assert_eq!(schema["additionalProperties"], serde_json::json!(false));
     }
 }
