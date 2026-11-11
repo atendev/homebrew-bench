@@ -1,10 +1,10 @@
 ---
-id: 118
+id: 009
 title: Cast card
 type: task
 mode: AFK
 status: open
-blocked_by: [115]
+blocked_by: [006]
 claimed: false
 ---
 
