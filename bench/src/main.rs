@@ -17,6 +17,7 @@ use bench_core::{
     live::{self, Command, Entrant, LiveError, StartSpec},
     log, paths,
     schema::{schema_json, validate_value},
+    spell::SpellEffect,
     stat_block::StatBlock,
     store::{self, Index, IndexEntry, VersionCheck},
     Envelope, ENGINE_VERSION,
@@ -400,6 +401,8 @@ enum BaselineAction {
 enum SchemaAction {
     /// Print the JSON Schema for the monster stat block.
     Monster,
+    /// Print the JSON Schema for a spell entry, as in the spell effects file or a homebrew spell file.
+    Spell,
     /// Validate a stat block JSON file.
     Validate {
         /// Path to the stat block JSON file.
@@ -932,6 +935,12 @@ fn run_schema(action: SchemaAction) -> Result<String, CodedError> {
         SchemaAction::Monster => {
             let schema = schema_json::<StatBlock>()
                 .map_err(|e| CodedError::new(ErrorCode::Internal, format!("failed to generate monster schema: {e:#}")))?;
+            serde_json::from_str(&schema)
+                .map_err(|e| CodedError::new(ErrorCode::Internal, format!("generated schema is not valid json: {e}")))?
+        }
+        SchemaAction::Spell => {
+            let schema = schema_json::<SpellEffect>()
+                .map_err(|e| CodedError::new(ErrorCode::Internal, format!("failed to generate spell schema: {e:#}")))?;
             serde_json::from_str(&schema)
                 .map_err(|e| CodedError::new(ErrorCode::Internal, format!("generated schema is not valid json: {e}")))?
         }

@@ -3,6 +3,7 @@
     "agent_clauses": [
       "On a miss, the target takes half the initial damage only."
     ],
+    "casting_time": "action",
     "concentration": false,
     "delayed": [
       {
@@ -57,6 +58,7 @@
     "agent_clauses": [
       "Up to three targets' Hit Point maximums and current Hit Points increase by 5."
     ],
+    "casting_time": "action",
     "concentration": false,
     "effects": [],
     "id": "aid",
@@ -70,6 +72,7 @@
       "As a Bonus Action on later turns, the caster can move the hand 60 feet and repeat the attack (Clenched Fist) or grapple/push (Grasping Hand).",
       "The hand is an object with AC 20 and Hit Points equal to the caster's maximum."
     ],
+    "casting_time": "action",
     "concentration": true,
     "effects": [
       {
@@ -108,6 +111,7 @@
       "Allies in the 30-foot Emanation have Resistance to Necrotic damage and their Hit Point maximums cannot be reduced.",
       "An ally with 0 Hit Points that starts its turn in the aura regains 1 Hit Point."
     ],
+    "casting_time": "action",
     "concentration": true,
     "effects": [],
     "id": "aura-of-life",
@@ -116,6 +120,7 @@
     "source": "SRD 5.2.1"
   },
   "bane": {
+    "casting_time": "action",
     "concentration": true,
     "effects": [
       {
@@ -180,6 +185,7 @@
       "Targets have Advantage on Wisdom saving throws and Death Saving Throws.",
       "Targets regain the maximum number of Hit Points possible from any healing."
     ],
+    "casting_time": "action",
     "concentration": true,
     "effects": [],
     "id": "beacon-of-hope",
@@ -192,6 +198,7 @@
       "On a failed save, the target cannot cast spells or take the Magic action.",
       "The target repeats the save at the end of every 30 days; Greater Restoration, Heal, or Wish ends the effect."
     ],
+    "casting_time": "action",
     "concentration": false,
     "effects": [
       {
@@ -217,6 +224,7 @@
     "source": "SRD 5.2.1"
   },
   "bless": {
+    "casting_time": "action",
     "concentration": true,
     "effects": [
       {
@@ -266,6 +274,7 @@
     "source": "SRD 5.2.1"
   },
   "burning-hands": {
+    "casting_time": "action",
     "concentration": false,
     "effects": [
       {
@@ -303,6 +312,7 @@
     "agent_clauses": [
       "Three bolts leap from the first target to up to three other targets within 30 feet; each target can be hit only once."
     ],
+    "casting_time": "action",
     "concentration": false,
     "effects": [
       {
@@ -341,6 +351,7 @@
       "Target has Advantage on the save if the caster or its allies are fighting it.",
       "The condition ends if the caster or its allies damage the target."
     ],
+    "casting_time": "action",
     "concentration": false,
     "effects": [
       {
@@ -385,6 +396,7 @@
       "The condition ends if the caster or its allies damage the target.",
       "The target is Friendly to the caster while Charmed."
     ],
+    "casting_time": "action",
     "concentration": false,
     "effects": [
       {
@@ -428,6 +440,7 @@
       "On a failed save, the target follows a one-word command on its next turn: Approach, Drop, Flee, Grovel, or Halt.",
       "One additional creature per spell slot level above 1."
     ],
+    "casting_time": "action",
     "concentration": false,
     "effects": [
       {
@@ -467,6 +480,7 @@
     "source": "SRD 5.2.1"
   },
   "cone-of-cold": {
+    "casting_time": "action",
     "concentration": false,
     "effects": [
       {
@@ -511,6 +525,7 @@
     "source": "SRD 5.2.1"
   },
   "counterspell": {
+    "casting_time": "reaction",
     "concentration": false,
     "effects": [
       {
@@ -525,6 +540,7 @@
     "source": "SRD 5.2.1"
   },
   "cure-wounds": {
+    "casting_time": "action",
     "concentration": false,
     "effects": [
       {
@@ -555,6 +571,7 @@
       "Alternatively, Darkness fills a 15-foot Emanation from an object.",
       "Dispels light spells of level 2 or lower that overlap the area."
     ],
+    "casting_time": "action",
     "concentration": true,
     "effects": [],
     "id": "darkness",
@@ -567,6 +584,7 @@
       "The first time the target would drop to 0 Hit Points before the spell ends, it instead drops to 1 Hit Point and the spell ends.",
       "An instant-kill effect that does not deal damage is negated against the target and ends the spell."
     ],
+    "casting_time": "action",
     "concentration": false,
     "effects": [],
     "id": "death-ward",
@@ -578,6 +596,7 @@
     "agent_clauses": [
       "A creature reduced to 0 Hit Points by this spell is disintegrated, as is a 10-foot-Cube of nonmagical object."
     ],
+    "casting_time": "action",
     "concentration": false,
     "effects": [
       {
@@ -617,6 +636,7 @@
       "Target has Advantage on the save if the caster or its allies are fighting it.",
       "The target repeats the save whenever it takes damage, ending the spell on a success."
     ],
+    "casting_time": "action",
     "concentration": true,
     "effects": [
       {
@@ -652,6 +672,7 @@
       "The target repeats the save whenever it takes damage, ending the spell on a success.",
       "The caster has a telepathic link with the Charmed target."
     ],
+    "casting_time": "action",
     "concentration": true,
     "effects": [
       {
@@ -685,6 +706,7 @@
     "agent_clauses": [
       "Target enters the Border Ethereal for the duration and cannot interact with creatures on the Material Plane."
     ],
+    "casting_time": "action",
     "concentration": false,
     "effects": [],
     "id": "etherealness",
@@ -698,6 +720,7 @@
       "Creatures that fail the save are outlined in light and cannot benefit from the Invisible condition.",
       "Attack rolls against an affected creature have Advantage."
     ],
+    "casting_time": "action",
     "concentration": true,
     "effects": [
       {
@@ -731,6 +754,7 @@
       "Frightened creatures drop what they are holding and take the Dash action to move away by the safest route.",
       "At the end of its turn, a creature out of line of sight repeats the save, ending the spell on a success."
     ],
+    "casting_time": "action",
     "concentration": true,
     "effects": [
       {
@@ -773,6 +797,7 @@
     "agent_clauses": [
       "A Humanoid killed by this spell rises as a Zombie at the start of the caster's next turn."
     ],
+    "casting_time": "action",
     "concentration": false,
     "effects": [
       {
@@ -798,6 +823,7 @@
     "source": "SRD 5.2.1"
   },
   "fire-bolt": {
+    "casting_time": "action",
     "concentration": false,
     "effects": [
       {
@@ -824,6 +850,7 @@
     "source": "SRD 5.2.1"
   },
   "fireball": {
+    "casting_time": "action",
     "concentration": false,
     "effects": [
       {
@@ -861,6 +888,7 @@
     "agent_clauses": [
       "Target gains a Fly Speed of 60 feet and can hover for the duration."
     ],
+    "casting_time": "action",
     "concentration": true,
     "effects": [],
     "id": "fly",
@@ -874,6 +902,7 @@
       "Target has Advantage on D20 Tests, and other creatures have Disadvantage on attack rolls against it, for 8 hours.",
       "The spell ends early if the caster casts it again."
     ],
+    "casting_time": "long",
     "concentration": false,
     "effects": [],
     "id": "foresight",
@@ -885,6 +914,7 @@
     "agent_clauses": [
       "Spells of level 5 or lower cast from outside the 10-foot Emanation cannot affect creatures inside it."
     ],
+    "casting_time": "action",
     "concentration": true,
     "effects": [],
     "id": "globe-of-invulnerability",
@@ -897,6 +927,7 @@
     "agent_clauses": [
       "Creates ten berries; eating one as a Bonus Action restores 1 Hit Point and provides nourishment for one day."
     ],
+    "casting_time": "action",
     "concentration": false,
     "effects": [],
     "id": "goodberry",
@@ -908,6 +939,7 @@
     "agent_clauses": [
       "The spell does not end early when the target attacks or deals damage."
     ],
+    "casting_time": "action",
     "concentration": true,
     "effects": [
       {
@@ -929,6 +961,7 @@
     "agent_clauses": [
       "Removes one of: 1 Exhaustion level; Charmed or Petrified condition; a curse; ability score reduction; Hit Point maximum reduction."
     ],
+    "casting_time": "action",
     "concentration": false,
     "effects": [],
     "id": "greater-restoration",
@@ -940,6 +973,7 @@
     "agent_clauses": [
       "The next attack roll against the target before the end of the caster's next turn has Advantage."
     ],
+    "casting_time": "action",
     "concentration": false,
     "effects": [
       {
@@ -979,6 +1013,7 @@
     "agent_clauses": [
       "The extra action can also Dash, Hide or Utilize."
     ],
+    "casting_time": "action",
     "concentration": true,
     "effects": [
       {
@@ -1070,6 +1105,7 @@
     "source": "SRD 5.2.1"
   },
   "heal": {
+    "casting_time": "action",
     "concentration": false,
     "effects": [
       {
@@ -1095,6 +1131,7 @@
     "source": "SRD 5.2.1"
   },
   "healing-word": {
+    "casting_time": "bonus_action",
     "concentration": false,
     "effects": [
       {
@@ -1123,6 +1160,7 @@
     "agent_clauses": [
       "After a 1-hour feast, up to twelve creatures gain Resistance to Poison damage, immunity to the Frightened and Poisoned conditions, and advantage on Wisdom saving throws for 24 hours."
     ],
+    "casting_time": "long",
     "concentration": false,
     "effects": [],
     "id": "heroes-feast",
@@ -1134,6 +1172,7 @@
     "agent_clauses": [
       "Target repeats the save at the end of each of its turns, ending the spell on a success."
     ],
+    "casting_time": "action",
     "concentration": true,
     "effects": [
       {
@@ -1177,6 +1216,7 @@
       "Only Humanoids can be targeted.",
       "Target repeats the save at the end of each of its turns, ending the spell on a success."
     ],
+    "casting_time": "action",
     "concentration": true,
     "effects": [
       {
@@ -1220,6 +1260,7 @@
       "Only creatures that can see the pattern are affected.",
       "The spell ends on an affected creature if it takes damage or a creature uses an action to shake it awake."
     ],
+    "casting_time": "action",
     "concentration": true,
     "effects": [
       {
@@ -1288,6 +1329,7 @@
     "agent_clauses": [
       "On a hit or miss, the shard explodes in a 5-foot-radius Sphere around the target."
     ],
+    "casting_time": "action",
     "concentration": false,
     "delayed": [
       {
@@ -1350,6 +1392,7 @@
     "agent_clauses": [
       "Ground in the Cylinder becomes Difficult Terrain until the end of the caster's next turn."
     ],
+    "casting_time": "action",
     "concentration": false,
     "effects": [
       {
@@ -1404,6 +1447,7 @@
     "agent_clauses": [
       "The spell ends early immediately after the target makes an attack roll, deals damage, or casts a spell."
     ],
+    "casting_time": "action",
     "concentration": true,
     "effects": [
       {
@@ -1435,6 +1479,7 @@
     "agent_clauses": [
       "Ends one condition on a touched creature: Blinded, Deafened, Paralyzed, or Poisoned."
     ],
+    "casting_time": "bonus_action",
     "concentration": false,
     "effects": [],
     "id": "lesser-restoration",
@@ -1443,6 +1488,7 @@
     "source": "SRD 5.2.1"
   },
   "lightning-bolt": {
+    "casting_time": "action",
     "concentration": false,
     "effects": [
       {
@@ -1480,6 +1526,7 @@
     "agent_clauses": [
       "Each dart hits a visible target of the caster's choice; the engine treats them as auto-hit damage instances."
     ],
+    "casting_time": "action",
     "concentration": false,
     "effects": [
       {
@@ -1526,6 +1573,7 @@
     "agent_clauses": [
       "Heals up to six creatures in a 30-foot-radius Sphere."
     ],
+    "casting_time": "action",
     "concentration": false,
     "effects": [
       {
@@ -1555,6 +1603,7 @@
       "Distributes up to 700 Hit Points among any number of visible targets.",
       "Removes Blinded, Deafened, and Poisoned conditions from creatures healed."
     ],
+    "casting_time": "action",
     "concentration": false,
     "effects": [],
     "id": "mass-heal",
@@ -1566,6 +1615,7 @@
     "agent_clauses": [
       "Heals up to six visible creatures of the caster's choice."
     ],
+    "casting_time": "bonus_action",
     "concentration": false,
     "effects": [
       {
@@ -1594,6 +1644,7 @@
     "agent_clauses": [
       "On a failed Wisdom save, up to twelve targets follow a reasonable course of activity for the duration."
     ],
+    "casting_time": "action",
     "concentration": false,
     "effects": [],
     "id": "mass-suggestion",
@@ -1606,6 +1657,7 @@
     "agent_clauses": [
       "Four 40-foot-radius Spheres at chosen points within 1 mile; a creature in overlapping areas is affected only once."
     ],
+    "casting_time": "action",
     "concentration": false,
     "effects": [
       {
@@ -1648,6 +1700,7 @@
     "agent_clauses": [
       "Target has Immunity to Psychic damage and the Charmed condition, and is unaffected by mind-reading, divination, or remote observation for 24 hours."
     ],
+    "casting_time": "action",
     "concentration": false,
     "effects": [],
     "id": "mind-blank",
@@ -1659,6 +1712,7 @@
     "agent_clauses": [
       "On a failed save, the caster knows the target's location until the spell ends."
     ],
+    "casting_time": "action",
     "concentration": true,
     "effects": [
       {
@@ -1697,6 +1751,7 @@
       "Creates three illusory duplicates; attacks that would hit the caster may strike a duplicate instead.",
       "The duplicates disappear when destroyed or when the spell ends."
     ],
+    "casting_time": "action",
     "concentration": false,
     "effects": [],
     "id": "mirror-image",
@@ -1705,6 +1760,7 @@
     "source": "SRD 5.2.1"
   },
   "misty-step": {
+    "casting_time": "bonus_action",
     "concentration": false,
     "effects": [
       {
@@ -1724,6 +1780,7 @@
       "Target transforms into a Beast of CR equal to or less than its own (or level) on a failed Wisdom save; game statistics are replaced by the Beast's.",
       "Target repeats the save at the end of each of its turns, ending the spell on a success."
     ],
+    "casting_time": "action",
     "concentration": true,
     "effects": [],
     "id": "polymorph",
@@ -1736,6 +1793,7 @@
       "Restores all Hit Points to one visible creature.",
       "Ends Charmed, Frightened, Paralyzed, Poisoned, and Stunned; if Prone, the target can use its Reaction to stand."
     ],
+    "casting_time": "action",
     "concentration": false,
     "effects": [],
     "id": "power-word-heal",
@@ -1747,6 +1805,7 @@
     "agent_clauses": [
       "If the target has 100 Hit Points or fewer, it dies instantly; otherwise it takes 12d12 Psychic damage."
     ],
+    "casting_time": "action",
     "concentration": false,
     "effects": [],
     "id": "power-word-kill",
@@ -1759,6 +1818,7 @@
       "If the target has 150 Hit Points or fewer, it has the Stunned condition; otherwise its Speed is 0 until the start of the caster's next turn.",
       "The Stunned target repeats the save at the end of each of its turns, ending the condition on a success."
     ],
+    "casting_time": "action",
     "concentration": false,
     "effects": [],
     "id": "power-word-stun",
@@ -1771,6 +1831,7 @@
       "Targets gain the benefits of a Short Rest.",
       "A creature cannot be affected again until it finishes a Long Rest."
     ],
+    "casting_time": "long",
     "concentration": false,
     "effects": [
       {
@@ -1801,6 +1862,7 @@
       "Each target rolls 1d8 for ray color; damage type and rider vary by color.",
       "The closed effect uses Acid as a placeholder; the agent resolves the actual ray color and rider."
     ],
+    "casting_time": "action",
     "concentration": false,
     "effects": [
       {
@@ -1839,6 +1901,7 @@
       "Target is protected against aberrations, celestials, elementals, fey, fiends, and undead.",
       "Such creatures have Disadvantage on attack rolls against the target, and the target cannot be Charmed, Frightened, or possessed by them."
     ],
+    "casting_time": "action",
     "concentration": false,
     "effects": [],
     "id": "protection-from-evil-and-good",
@@ -1850,6 +1913,7 @@
     "agent_clauses": [
       "Restores life to a creature dead no longer than 10 days with 1 Hit Point; does not restore missing body parts."
     ],
+    "casting_time": "long",
     "concentration": false,
     "effects": [],
     "id": "raise-dead",
@@ -1861,6 +1925,7 @@
     "agent_clauses": [
       "Target regains 1 Hit Point at the start of each of its turns for the duration."
     ],
+    "casting_time": "long",
     "concentration": false,
     "effects": [
       {
@@ -1880,6 +1945,7 @@
     "agent_clauses": [
       "Ends one curse affecting a touched creature or object, including attunement to a cursed magic item."
     ],
+    "casting_time": "action",
     "concentration": false,
     "effects": [],
     "id": "remove-curse",
@@ -1891,6 +1957,7 @@
     "agent_clauses": [
       "When the target takes damage of a chosen type before the spell ends, it reduces the damage by 1d4 (once per turn)."
     ],
+    "casting_time": "action",
     "concentration": true,
     "effects": [],
     "id": "resistance",
@@ -1902,6 +1969,7 @@
     "agent_clauses": [
       "Restores life to a creature dead no longer than a century with all Hit Points; restores missing body parts."
     ],
+    "casting_time": "long",
     "concentration": false,
     "effects": [],
     "id": "resurrection",
@@ -1913,6 +1981,7 @@
     "agent_clauses": [
       "Restores 1 Hit Point to a creature that died within the last minute."
     ],
+    "casting_time": "action",
     "concentration": false,
     "effects": [],
     "id": "revivify",
@@ -1925,6 +1994,7 @@
       "Creatures that target the warded creature with a harmful spell or attack must succeed on a Wisdom save or choose a new target.",
       "The spell ends if the warded creature attacks, casts a harmful spell, or deals damage to another creature."
     ],
+    "casting_time": "bonus_action",
     "concentration": false,
     "effects": [],
     "id": "sanctuary",
@@ -1936,6 +2006,7 @@
     "agent_clauses": [
       "Distribute rays among targets as desired."
     ],
+    "casting_time": "action",
     "concentration": false,
     "effects": [
       {
@@ -2009,6 +2080,7 @@
     "agent_clauses": [
       "You can see into the Ethereal Plane, and creatures and objects there appear ghostly."
     ],
+    "casting_time": "action",
     "concentration": false,
     "effects": [
       {
@@ -2031,6 +2103,7 @@
     "source": "SRD 5.2.1"
   },
   "shatter": {
+    "casting_time": "action",
     "concentration": false,
     "effects": [
       {
@@ -2068,6 +2141,7 @@
     "agent_clauses": [
       "No damage from Magic Missile while the modifier lasts."
     ],
+    "casting_time": "reaction",
     "concentration": false,
     "effects": [
       {
@@ -2096,6 +2170,7 @@
       "Creatures that do not sleep or are immune to Exhaustion automatically succeed on saves.",
       "The spell ends on a target if it takes damage or a creature within 5 feet uses an action to shake it awake."
     ],
+    "casting_time": "action",
     "concentration": true,
     "effects": [
       {
@@ -2151,6 +2226,7 @@
       "Somatic spells have a 25% chance of failure.",
       "Each affected target repeats the Wisdom save at the end of each of its turns; on a success the spell ends for that target, so remove each of its Slow modifiers (bearer that target, source_ability slow) with `bench override active_modifiers.<index> --clear --reason \"<why>\"`, rechecking the indexes after each removal."
     ],
+    "casting_time": "action",
     "concentration": true,
     "effects": [
       {
@@ -2238,6 +2314,7 @@
     "agent_clauses": [
       "Stabilizes one creature within range that has 0 Hit Points and is not dead."
     ],
+    "casting_time": "action",
     "concentration": false,
     "effects": [],
     "id": "spare-the-dying",
@@ -2249,6 +2326,7 @@
     "agent_clauses": [
       "As a Bonus Action on later turns, the caster can move the force up to 20 feet and repeat the attack."
     ],
+    "casting_time": "bonus_action",
     "concentration": true,
     "effects": [
       {
@@ -2286,6 +2364,7 @@
     "agent_clauses": [
       "A Blinded creature repeats the save at the end of each of its turns, ending the condition on a success."
     ],
+    "casting_time": "action",
     "concentration": false,
     "effects": [
       {
@@ -2334,6 +2413,7 @@
     "agent_clauses": [
       "As a Magic action on later turns, the caster can move or manipulate one creature or object within 60 feet; Strength contest to move a held creature."
     ],
+    "casting_time": "action",
     "concentration": true,
     "effects": [],
     "id": "telekinesis",
@@ -2346,6 +2426,7 @@
       "Teleports the caster and up to eight willing creatures within 10 feet to a destination on the same plane.",
       "The spell may miss the destination depending on the caster's familiarity with it."
     ],
+    "casting_time": "action",
     "concentration": false,
     "effects": [],
     "id": "teleport",
@@ -2357,6 +2438,7 @@
     "agent_clauses": [
       "Restores life to a creature dead no longer than 200 years with all Hit Points, even if the body is destroyed."
     ],
+    "casting_time": "long",
     "concentration": false,
     "effects": [],
     "id": "true-resurrection",
@@ -2368,6 +2450,7 @@
     "agent_clauses": [
       "On a successful save, a creature takes half the initial damage only."
     ],
+    "casting_time": "action",
     "concentration": false,
     "delayed": [
       {
@@ -2430,6 +2513,7 @@
       "Creates a wall of fire up to 60 feet long, 20 feet high, and 1 foot thick, or a 20-foot-radius ring.",
       "Creatures within the wall or passing through take 5d8 Fire damage (or 8d8 on a failed Dexterity save if passing through)."
     ],
+    "casting_time": "action",
     "concentration": true,
     "effects": [],
     "id": "wall-of-fire",
@@ -2443,6 +2527,7 @@
       "Creates a wall of ice; creatures within its area take 10d6 Cold damage on a failed Dexterity save.",
       "Passing through a sheet of frigid air deals 5d6 Cold damage."
     ],
+    "casting_time": "action",
     "concentration": true,
     "effects": [],
     "id": "wall-of-ice",
@@ -2457,6 +2542,7 @@
       "A creature Restrained by the webs can take an action to make a Strength (Athletics) check against the spell save DC to escape.",
       "Fire destroys a 5-foot Cube of webs and deals 2d4 Fire damage to creatures starting their turn in the fire."
     ],
+    "casting_time": "action",
     "concentration": true,
     "effects": [
       {

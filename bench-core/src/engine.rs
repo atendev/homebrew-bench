@@ -4211,7 +4211,7 @@ mod tests {
     #[test]
     fn an_extra_targets_rule_raises_an_attack_target_count() {
         let spell: crate::spell::SpellEffect = serde_json::from_value(serde_json::json!({
-            "id": "test-bolts", "name": "Test Bolts", "source": "test", "level": 2, "concentration": false,
+            "id": "test-bolts", "name": "Test Bolts", "source": "test", "level": 2, "casting_time": "action", "concentration": false,
             "effects": [{"attack": {"modifier": 0, "target_count": 1, "damage": [{"dice": "1d6", "type": "fire"}]}}],
             "scaling": [{"effect_index": 0, "per_slot": {"extra_targets": {"count": 1}}}],
         }))
