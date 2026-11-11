@@ -1,10 +1,10 @@
 ---
-id: 116
+id: 007
 title: Live start with homebrew spells
 type: task
 mode: AFK
 status: open
-blocked_by: [115]
+blocked_by: [006]
 claimed: false
 ---
 
@@ -15,7 +15,7 @@ Build the start-time rules from [Live spell casting prompts](../closed/003-live-
 ## Notes
 
 - Skills: `tdd`, `codebase-design`, `domain-modeling`, `code-review`.
-- `bench start` takes repeatable `--spell <file>`, loads through the spell book from [Spell book](115-spell-book.md), and copies each entry into state with its fingerprint.
+- `bench start` takes repeatable `--spell <file>`, loads through the spell book from [Spell book](006-spell-book.md), and copies each entry into state with its fingerprint.
 - Refuse a stat block when a homebrew cast sits in a section that doesn't match its `casting_time` (`actions` = `action`, `bonus_actions` = `bonus_action`, `reactions` = `reaction`), sits in `traits`, `legendary_actions` or any other section, or names a `long` entry. The message names the action, its section and the casting time.
 - Refuse a leveled homebrew save or attack spell cast from a stat block with no `spellcasting` block. A utility spell needs none.
 - A cast naming an id no loaded file supplies keeps the ADR 0005 rule (`unmodeled_cast`), and `bench start` prints a warning naming the action and the id.

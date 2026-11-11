@@ -8,7 +8,7 @@ A spell-testing spec. Each homebrew spell is converted into an effects entry, ch
 
 - Domain: D&D 5e homebrew spell testing. Vocabulary lives in `CONTEXT.md`. Design decisions live in `docs/adr/`, especially 0005 (closed effect vocabulary), 0014 (spell effects file) and 0004 (pending prompts for live mode).
 - Skills every session should consult: `grilling` and `domain-modeling` for grilling tickets. Build tickets will call `tdd`, `codebase-design`, `domain-modeling` and `code-review`.
-- Planning tickets 001 to 004 wrote no engine code. Build tickets 114 to 127 do, each in one session, with the skills its Notes name.
+- Planning tickets 001 to 004 wrote no engine code. Build tickets 005 to 018 do, each in one session, with the skills its Notes name.
 - Settled while charting (not yet tickets):
   - Intake is included. A pasted homebrew spell is converted into an effects entry, then a human reviews it before any run. Homebrew never gets a default: an entry that can't be modeled is refused.
   - The report compares a homebrew spell with SRD spells of the same level. The monster CR guidance does not apply to spells.
@@ -23,7 +23,7 @@ A spell-testing spec. Each homebrew spell is converted into an effects entry, ch
 - [Spell value metric](closed/001-spell-value-metric.md): spell lift (win-rate and casualty change from swapping the spell onto the caster role) is the verdict; damage per cast is a diagnostic; rows per cast level and cantrip tier (ADR 0020)
 - [Homebrew spell intake rules](closed/002-homebrew-spell-intake-rules.md): the agent writes each homebrew spell entry into its own `--spell` file, flags inferred values, refuses unmodelable or non-combat spells and SRD id clashes, and the user reviews and can edit it; entries gain `casting_time` (ADR 0021)
 - [Live spell casting prompts](closed/003-live-spell-casting-prompts.md): both sides cast through `bench action` on a stat block action, no new prompt; a read-only `bench spell` cast card shows the entry before the user picks target and slot; start-time checks tie cast section to `casting_time`; clauses logged after the counter window (ADR 0022)
-- [Create build tickets and append them to the map](closed/004-create-build-tickets.md): 13 build tickets and 1 grilling ticket (114 to 127) in thin slices; Rounds per round becomes a grilling ticket that blocks the spell baseline; the other five fog items stay open
+- [Create build tickets and append them to the map](closed/004-create-build-tickets.md): 13 build tickets and 1 grilling ticket (005 to 018) in thin slices; Rounds per round becomes a grilling ticket that blocks the spell baseline; the other five fog items stay open
 
 ## Not yet specified
 
@@ -43,25 +43,25 @@ None of these blocks the destination. Each already has a defined reading, and no
 
 ## Frontier
 
-- [Spell entry fields](tickets/114-spell-entry-fields.md)
-- [Control party and spell panel](tickets/121-control-party-and-spell-panel.md)
-- [Rounds per round for spell durations](tickets/124-rounds-per-round-for-spell-durations.md)
+- [Spell entry fields](tickets/005-spell-entry-fields.md)
+- [Control party and spell panel](tickets/012-control-party-and-spell-panel.md)
+- [Rounds per round for spell durations](tickets/015-rounds-per-round-for-spell-durations.md)
 
 ## Build tickets
 
 Blocking in brackets.
 
-- [Spell entry fields](tickets/114-spell-entry-fields.md)
-- [Spell book](tickets/115-spell-book.md) [114]
-- [Live start with homebrew spells](tickets/116-live-start-with-homebrew-spells.md) [115]
-- [Live cast log for homebrew clauses](tickets/117-live-cast-log-for-homebrew-clauses.md) [116]
-- [Cast card](tickets/118-cast-card.md) [115]
-- [Skill: homebrew spell intake and live casting](tickets/119-skill-homebrew-spell-intake-and-live-casting.md) [116, 117, 118]
-- [Batch homebrew clause resolution](tickets/120-batch-homebrew-clause-resolution.md) [115]
-- [Control party and spell panel](tickets/121-control-party-and-spell-panel.md)
-- [Spell lift runner](tickets/122-spell-lift-runner.md) [115, 120, 121]
-- [Model more SRD cantrips](tickets/123-model-more-srd-cantrips.md) [114]
-- [Rounds per round for spell durations](tickets/124-rounds-per-round-for-spell-durations.md) (grilling)
-- [Spell baseline](tickets/125-spell-baseline.md) [122, 123, 124]
-- [Spell lift report](tickets/126-spell-lift-report.md) [120, 125]
-- [Skill: batch spell testing](tickets/127-skill-batch-spell-testing.md) [119, 126]
+- [Spell entry fields](tickets/005-spell-entry-fields.md)
+- [Spell book](tickets/006-spell-book.md) [005]
+- [Live start with homebrew spells](tickets/007-live-start-with-homebrew-spells.md) [006]
+- [Live cast log for homebrew clauses](tickets/008-live-cast-log-for-homebrew-clauses.md) [007]
+- [Cast card](tickets/009-cast-card.md) [006]
+- [Skill: homebrew spell intake and live casting](tickets/010-skill-homebrew-spell-intake-and-live-casting.md) [007, 008, 009]
+- [Batch homebrew clause resolution](tickets/011-batch-homebrew-clause-resolution.md) [006]
+- [Control party and spell panel](tickets/012-control-party-and-spell-panel.md)
+- [Spell lift runner](tickets/013-spell-lift-runner.md) [006, 011, 012]
+- [Model more SRD cantrips](tickets/014-model-more-srd-cantrips.md) [005]
+- [Rounds per round for spell durations](tickets/015-rounds-per-round-for-spell-durations.md) (grilling)
+- [Spell baseline](tickets/016-spell-baseline.md) [013, 014, 015]
+- [Spell lift report](tickets/017-spell-lift-report.md) [011, 016]
+- [Skill: batch spell testing](tickets/018-skill-batch-spell-testing.md) [010, 017]

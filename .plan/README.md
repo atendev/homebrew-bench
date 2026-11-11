@@ -15,7 +15,7 @@ This folder holds the Wayfinder map for the project. Commit it. It is the record
 
 - Load `map.md` and the one ticket being worked. Never read the whole folder.
 - Resolve one ticket per session. Research tickets are the exception.
-- Name tickets `NNN-short-slug.md` with a three digit number. The next number is the highest number in `tickets/` and `closed/`, plus one.
+- Name tickets `NNN-short-slug.md` with a three digit number. Numbers are per map: a new map starts at 001. The next number is the highest number among the current map's tickets (those its `map.md` links), plus one. `closed/` also holds archived maps' tickets, so ignore their numbers.
 - A ticket is on the frontier when its status is open, every ticket in `blocked_by` is closed, and `claimed` is false.
 
 ## Ticket types

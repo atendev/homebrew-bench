@@ -1,10 +1,10 @@
 ---
-id: 127
+id: 018
 title: "Skill: batch spell testing"
 type: task
 mode: AFK
 status: open
-blocked_by: [119, 126]
+blocked_by: [010, 017]
 claimed: false
 ---
 

@@ -1,10 +1,10 @@
 ---
-id: 125
+id: 016
 title: Spell baseline
 type: task
 mode: AFK
 status: open
-blocked_by: [122, 123, 124]
+blocked_by: [013, 014, 015]
 claimed: false
 ---
 

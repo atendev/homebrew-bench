@@ -1,5 +1,5 @@
 ---
-id: 124
+id: 015
 title: Rounds per round for spell durations
 type: grilling
 mode: HITL
@@ -17,7 +17,7 @@ claimed: false
 - Grill with `grilling` and `domain-modeling`.
 - Background: the archived map's Rounds per round entry ([archived map](../archive/homebrew-bench-map.md)) and [Durations longer than a round](../closed/109-durations-longer-than-a-round.md), which left the `Rounds` branch alone.
 - Decide before the spell baseline is committed. A change afterward moves Shield and Haste lift and forces a regenerate.
-- If the answer is a change, create its build ticket and make it block [Spell baseline](125-spell-baseline.md).
+- If the answer is a change, create its build ticket and make it block [Spell baseline](016-spell-baseline.md).
 
 ## Resolution
 

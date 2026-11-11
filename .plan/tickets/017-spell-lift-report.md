@@ -1,10 +1,10 @@
 ---
-id: 126
+id: 017
 title: Spell lift report
 type: task
 mode: AFK
 status: open
-blocked_by: [120, 125]
+blocked_by: [011, 016]
 claimed: false
 ---
 
@@ -20,7 +20,7 @@ Build the batch report for a tested spell from [Spell value metric](../closed/00
 - "Reads like level N" appears only when the spell falls outside its own level's SRD range.
 - Damage or healing per cast is shown ungraded.
 - The report says batch measures the spell as a party tool only, and that monster testing and live mode cover the other side.
-- Stale spell baseline flagged. Homebrew entry fingerprints and clause resolutions shown, as from [Batch homebrew clause resolution](120-batch-homebrew-clause-resolution.md).
+- Stale spell baseline flagged. Homebrew entry fingerprints and clause resolutions shown, as from [Batch homebrew clause resolution](011-batch-homebrew-clause-resolution.md).
 - Both the JSON envelope and the text report.
 
 ## Resolution

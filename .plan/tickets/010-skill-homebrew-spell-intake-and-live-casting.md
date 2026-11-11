@@ -1,10 +1,10 @@
 ---
-id: 119
+id: 010
 title: "Skill: homebrew spell intake and live casting"
 type: task
 mode: AFK
 status: open
-blocked_by: [116, 117, 118]
+blocked_by: [007, 008, 009]
 claimed: false
 ---
 
