@@ -145,8 +145,20 @@ The lowest whole party level at which a monster reads as a Low fight against the
 _Avoid_: True CR, recommended CR
 
 **Thin data**:
-A baseline cell with too few fixtures even after pooling the neighboring CRs. It is named in reports rather than silently smoothed.
+A baseline cell with too few fixtures even after pooling the neighboring CRs, or a spell baseline row with fewer than three modeled SRD spells. It is named in reports rather than silently smoothed.
 _Avoid_: Missing data, interpolated data
+
+**Spell lift**:
+The change in the standard party's win rate and casualty rate, against a control run, when the caster role's spells of one level are replaced by one spell. It is the verdict number for a spell. Expected damage or healing per cast is reported beside it as a diagnostic and is not spell lift.
+_Avoid_: Spell value, spell power, DPR
+
+**Spell panel**:
+The fixed set of fights at one party level that spell lift is measured on: fixtures the control party wins about 40 to 80% of the time, fought alone and in groups.
+_Avoid_: Test fights, benchmark encounters
+
+**Spell baseline**:
+The committed spell lift of every modeled SRD spell at each party level and cast level, which a homebrew spell is placed against. It is reference data, like the baseline curve.
+_Avoid_: Spell curve, spell table
 
 **Casualty**:
 A PC death during a batch encounter. A PC being downed but later saved is not a casualty for difficulty-band calibration.
