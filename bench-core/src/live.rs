@@ -648,16 +648,19 @@ fn apply(state: &mut EncounterState, cmd: &Command) -> Result<Applied, LiveError
             targets,
             slot,
             extra,
-        } => run_engine(
-            state,
-            Held::new(StepRequest::Action {
-                actor_id: actor.clone(),
-                action_id: action.clone(),
-                target_ids: targets.clone(),
-                slot_level: *slot,
-                extra: *extra,
-            }),
-        ),
+        } => {
+            crate::cast_card::check_action_targets(state, actor, action, *slot, targets.len()).map_err(LiveError::Invalid)?;
+            run_engine(
+                state,
+                Held::new(StepRequest::Action {
+                    actor_id: actor.clone(),
+                    action_id: action.clone(),
+                    target_ids: targets.clone(),
+                    slot_level: *slot,
+                    extra: *extra,
+                }),
+            )
+        }
         Command::Move { actor, target, band, feet, opportunity } => {
             let feet = match feet {
                 Some(f) => *f,
@@ -1444,6 +1447,28 @@ mod tests {
     }
 
     const CASTER: &str = "standard-caster-05";
+
+    #[test]
+    fn a_wrong_target_count_is_refused_with_the_cast_cards_sentence() {
+        let (mut state, _) = start(caster_spec()).unwrap();
+        turn_of(&mut state, CASTER);
+        let fire_bolt = crate::spell::SpellBook::srd().unwrap().get("fire-bolt").unwrap().clone();
+        let caster = crate::cast_card::CardCaster::find(&state, CASTER).unwrap();
+        let card = crate::cast_card::card(&fire_bolt, Some(caster), None).unwrap();
+        let mut two = cast_at(CASTER, "fire-bolt", None);
+        if let Command::Action { targets, .. } = &mut two {
+            targets.push(CASTER.into());
+        }
+        let err = execute(&mut state, two).unwrap_err().to_string();
+        assert!(err.contains(&card.targets.to_string()) && card.text.contains(&card.targets.to_string()), "{err}");
+        assert!(err.contains("takes 1 target id; 2 given"), "{err}");
+        let mut none = cast_at(CASTER, "fire-bolt", None);
+        if let Command::Action { targets, .. } = &mut none {
+            targets.clear();
+        }
+        assert!(execute(&mut state, none).unwrap_err().to_string().contains("0 given"));
+        execute(&mut state, cast_at(CASTER, "fire-bolt", None)).unwrap();
+    }
 
     #[test]
     fn slot_spends_the_named_slot_and_scales_the_spell() {

@@ -357,7 +357,7 @@ fn help_json_lists_every_command() {
     let names: Vec<&str> = catalog["commands"].as_array().unwrap().iter().map(|c| c["name"].as_str().unwrap()).collect();
     for name in [
         "start", "action", "move", "disengage", "respond", "end-turn", "end", "state", "list", "clean", "override", "roll", "add",
-        "remove", "undo", "replay", "log", "batch", "fixture", "party", "baseline",
+        "remove", "undo", "replay", "log", "batch", "fixture", "party", "baseline", "spell",
     ] {
         assert!(names.contains(&name), "{name} missing from {names:?}");
     }
@@ -665,4 +665,42 @@ fn start_copies_spell_files_into_the_encounter_and_a_running_encounter_refuses_t
     assert_eq!(bench.err(&["end-turn", "-e", "darts", "--spell", "spark-darts.json"]), "invalid_argument");
     assert_eq!(bench.err(&["replay", "-e", "darts", "--spell", "spark-darts.json"]), "invalid_argument");
     assert_eq!(bench.err(&["start", &pc, goblin, "--spell", "missing.json"]), "invalid_argument");
+}
+
+#[test]
+fn spell_prints_a_cast_card_from_files_or_an_encounter() {
+    let bench = Bench::new();
+    let path = bench.cwd.join("cinder-wave.json");
+    std::fs::write(&path, serde_json::json!({
+        "id": "cinder-wave", "name": "Cinder Wave", "source": "homebrew", "pasted_source": "Cinder Wave. 2nd-level evocation...",
+        "level": 2, "casting_time": "action", "concentration": false,
+        "effects": [{"saving_throw": {"ability": "dex", "dc": 0, "half_on_success": true, "no_damage_on_success": false, "damage": [{"dice": "3d6", "type": "fire"}]}}],
+        "scaling": [{"effect_index": 0, "per_slot": {"extra_dice": {"dice": "1d6"}}}],
+        "agent_clauses": ["Unattended flammable objects in the line ignite."],
+        "upcast_clause": "At level 4 or higher the line is 10 feet wide."
+    }).to_string()).unwrap();
+    let file = path.to_str().unwrap();
+
+    let card = bench.ok(&["spell", "cinder-wave", "--spell", file, "--slot", "3"]);
+    assert_eq!(card["cast_level"], 3);
+    assert_eq!(card["effects"][0]["saving_throw"]["damage"][0]["dice"], "4d6");
+    let text = card["text"].as_str().unwrap();
+    assert!(text.contains("Unattended flammable objects in the line ignite.") && text.contains("10 feet wide"), "{text}");
+    assert!(text.contains("takes 1 or more target ids"), "{text}");
+
+    let (code, missing) = bench.run(&["spell", "cinder-wave"]);
+    assert_ne!(code, 0);
+    assert_eq!(missing["error"]["code"], "not_found");
+    assert!(missing["error"]["message"].as_str().unwrap().contains("effects.json"), "{missing:#}");
+    assert_eq!(bench.err(&["spell", "cinder-wave", "--spell", "missing.json"]), "invalid_argument");
+
+    let caster = data("party/standard/standard-caster-05.json");
+    let goblin = data("fixtures/goblin-warrior.json");
+    bench.ok(&["start", &caster, &goblin, "--seed", "11", "--id", "card"]);
+    let bolt = bench.ok(&["spell", "fire-bolt", "--caster", "standard-caster-05", "-e", "card"]);
+    assert_eq!(bolt["effects"][0]["attack"]["damage"][0]["dice"], "2d10");
+    assert_eq!(bolt["caster"]["save_dc"], 15);
+    assert!(bolt["text"].as_str().unwrap().contains("`bench action standard-caster-05 fire-bolt` takes 1 target id"), "{bolt:#}");
+    assert_eq!(bench.err(&["spell", "fire-bolt", "--caster", "standard-caster-05", "-e", "card", "--spell", file]), "invalid_argument");
+    assert_eq!(bench.err(&["spell", "cinder-wave", "--caster", "standard-caster-05", "-e", "card"]), "not_found");
 }
