@@ -1,11 +1,11 @@
 ---
 name: homebrew-bench
-description: Test D&D 5e homebrew monsters with the `bench` combat engine. Use when the user pastes a homebrew stat block to test or compare against its CR (batch mode), asks you to DM a combat while they run the party (live mode), or wants to add or change a house rule.
+description: Test D&D 5e homebrew monsters and spells with the `bench` combat engine. Use when the user pastes a homebrew stat block to test or compare against its CR (batch mode), pastes a homebrew spell to cast in a fight (spell intake), asks you to DM a combat while they run the party (live mode), or wants to add or change a house rule.
 ---
 
 # Homebrew Bench
 
-`bench` is a one-shot CLI. It holds the true state of every fight and does the rules math. You read homebrew, drive `bench`, and make the calls it cannot. Vocabulary follows `CONTEXT.md` at the repo root when you have a checkout: encounter, combatant, stat block, modeled ability, agent clause, agent judgment, override, standing assumption.
+`bench` is a one-shot CLI. It holds the true state of every fight and does the rules math. You read homebrew, drive `bench`, and make the calls it cannot. Vocabulary follows `CONTEXT.md` at the repo root when you have a checkout: encounter, combatant, stat block, modeled ability, agent clause, agent judgment, override, standing assumption, spell entry, intake flag, cast card.
 
 ## Every session
 
@@ -19,6 +19,7 @@ description: Test D&D 5e homebrew monsters with the `bench` combat engine. Use w
 3. **Pick the mode** and read its reference in full before you start it.
    - A stat block to test, compare against CR, or tune: [references/batch-mode.md](references/batch-mode.md).
    - A fight to run turn by turn with the user's party: [references/live-mode.md](references/live-mode.md).
+   - A homebrew spell to turn into a spell entry before a fight casts it: [references/spell-intake.md](references/spell-intake.md).
 
 ## Reading responses
 
