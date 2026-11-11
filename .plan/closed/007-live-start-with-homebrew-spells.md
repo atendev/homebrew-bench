@@ -3,7 +3,7 @@ id: 007
 title: Live start with homebrew spells
 type: task
 mode: AFK
-status: open
+status: closed
 blocked_by: [006]
 claimed: false
 ---
@@ -26,4 +26,4 @@ Build the start-time rules from [Live spell casting prompts](../closed/003-live-
 
 ## Resolution
 
-<!-- Filled in at close. -->
+Built in engine 0.1.38. `bench start` takes repeatable `--spell <file>`, loads it through the spell book loader, copies each entry into state, and writes a hidden `SPELL` line with the entry's fingerprint into log entry 0. `stat_block::check_live_casts` refuses a homebrew cast whose section doesn't match its `casting_time`, a cast in `traits` or `legendary_actions`, a `long` entry, and a leveled attack or save spell on a stat block with no `spellcasting` block. Each message names the stat block, action, section and casting time. `bench add` runs the same checks. A cast of an id the book lacks starts with a `warnings` entry naming the action and the id. `--spell` on a running encounter is refused with a pointer to `bench start`. `--slot` is refused for a monster. On a PC's homebrew cast, a slot above the entry's level is refused unless the cast has `upcast: true`, and SRD casts keep their old rule. The spell-cast window needed no change. Decisions are in [the decision report](../reports/007-decisions.md). Haiku audit: APPROVE in round 2.
