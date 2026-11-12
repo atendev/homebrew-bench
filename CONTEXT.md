@@ -160,6 +160,10 @@ _Avoid_: Baseline party, empty caster
 The fixed set of fights at one party level that spell lift is measured on: fixtures the control party wins about 40 to 80% of the time, fought alone and in groups.
 _Avoid_: Test fights, benchmark encounters
 
+**Lift row**:
+One spell measured at one party level and cast level: the spell's lift over the row's own panel fights, with an interval, a single-monster and a group column, and the row's control win rate. A spell gets a headline row, a row per upcast level, or four cantrip rows. A row with no lift reads "never cast" or "not measured" and never zero.
+_Avoid_: Spell score, spell result
+
 **Spell baseline**:
 The committed spell lift of every modeled SRD spell at each party level and cast level, which a homebrew spell is placed against. It is reference data, like the baseline curve.
 _Avoid_: Spell curve, spell table

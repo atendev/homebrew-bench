@@ -39,6 +39,7 @@ A spell-testing spec. Each homebrew spell is converted into an effects entry, ch
 - [Batch homebrew clause resolution](closed/011-batch-homebrew-clause-resolution.md): `bench batch --spell` refuses until each clause has a non-blank assumption at `spells.<id>.agent_clauses.<n>` or `spells.<id>.upcast_clause`, and fingerprints each entry in the report, log header and replay command (engine 0.1.41)
 - [Model more SRD cantrips](closed/014-model-more-srd-cantrips.md): eight combat cantrips join Fire Bolt, so cantrip rows are not thin; Eldritch Blast and four others stay out; damaging saves without half-damage wording deal nothing on a success, which surfaced the Disintegrate ticket (engine 0.1.42)
 - [Control party and spell panel](closed/012-control-party-and-spell-panel.md): the control drops the caster's level-L spells and keeps slots; `bench baseline panel` commits a fingerprinted panel per odd party level 1 to 17, up to three single and three group fixtures at 40 to 80% control wins, with paired member seeds (engine 0.1.43)
+- [Spell lift runner](closed/013-spell-lift-runner.md): `bench batch --test-spell` swaps the spell onto the caster and fights the panel against each row's own control on paired seeds; lift is the mean paired win and casualty difference with a 95% interval (100 fights per member), plus single and group columns, the row's control win rate and a per-cast diagnostic (engine 0.1.44)
 
 ## Not yet specified
 
@@ -60,7 +61,6 @@ None of these blocks the destination. Each already has a defined reading, and no
 
 ## Frontier
 
-- [Spell lift runner](tickets/013-spell-lift-runner.md)
 - [Rounds per round for spell durations](tickets/015-rounds-per-round-for-spell-durations.md)
 - [Disintegrate damage on a successful save](tickets/019-disintegrate-damage-on-a-successful-save.md)
 
@@ -76,10 +76,10 @@ Blocking in brackets.
 - [Skill: homebrew spell intake and live casting](closed/010-skill-homebrew-spell-intake-and-live-casting.md) (closed)
 - [Batch homebrew clause resolution](closed/011-batch-homebrew-clause-resolution.md) (closed)
 - [Control party and spell panel](closed/012-control-party-and-spell-panel.md) (closed)
-- [Spell lift runner](tickets/013-spell-lift-runner.md)
+- [Spell lift runner](closed/013-spell-lift-runner.md) (closed)
 - [Model more SRD cantrips](closed/014-model-more-srd-cantrips.md) (closed)
 - [Rounds per round for spell durations](tickets/015-rounds-per-round-for-spell-durations.md) (grilling)
-- [Spell baseline](tickets/016-spell-baseline.md) [013, 014, 015, 019]
+- [Spell baseline](tickets/016-spell-baseline.md) [015, 019]
 - [Spell lift report](tickets/017-spell-lift-report.md) [011, 016]
 - [Skill: batch spell testing](tickets/018-skill-batch-spell-testing.md) [017]
 - [Disintegrate damage on a successful save](tickets/019-disintegrate-damage-on-a-successful-save.md)

@@ -134,6 +134,19 @@ pub struct FightResult {
     /// Every engine error a plan threw in this fight, in order.
     #[serde(skip)]
     pub plan_failures: Vec<PlanFailure>,
+    /// What the party's casts did in this fight, by spell id (the spell lift diagnostic).
+    #[serde(skip)]
+    pub party_casts: BTreeMap<String, CastTally>,
+}
+
+/// Casts of one spell by the party in one fight, and what resolved from them.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct CastTally {
+    pub casts: u32,
+    /// Damage the casts dealt, counted from the events the casts raised in their own plan.
+    pub damage: i32,
+    /// Hit points the casts restored, as rolled.
+    pub healing: i32,
 }
 
 /// One plan the engine refused, blamed on the ability that raised the error: the
@@ -371,7 +384,7 @@ fn spell_clause_path(rest: &str) -> Option<()> {
 }
 
 /// Every clause of the loaded homebrew entries, as its assumption path and the clause text.
-fn spell_clauses(spells: &[SpellEffect]) -> Vec<(String, &str)> {
+pub(crate) fn spell_clauses(spells: &[SpellEffect]) -> Vec<(String, &str)> {
     let mut out = Vec::new();
     for spell in spells {
         for (n, clause) in spell.agent_clauses.iter().enumerate() {
@@ -727,7 +740,15 @@ pub fn replay_command(spec: &BatchSpec, index: u64) -> String {
     if spec.lighting != Lighting::Unspecified {
         cmd.push_str(&format!(" --lighting {}", spec.lighting.as_str()));
     }
-    let Some(inv) = inv else { return cmd };
+    if let Some(inv) = inv {
+        cmd.push_str(&invocation_tail(inv));
+    }
+    cmd
+}
+
+/// The `--spell`, `--assumptions`, `--assume` and `--assume-reason` arguments of a batch invocation.
+pub(crate) fn invocation_tail(inv: &Invocation) -> String {
+    let mut cmd = String::new();
     for file in &inv.spells {
         cmd.push_str(&format!(" --spell {}", shell_quote(file)));
     }
@@ -810,7 +831,8 @@ fn fight(spec: &BatchSpec, constants: &PolicyConstants, level: u8, index: u64, w
         .count() as u32;
     log.result(outcome, rounds, monster_damage, pc_deaths, spec);
     let plan_failures = std::mem::take(&mut log.failures);
-    Ok(FightResult { level, index, seed, outcome, rounds, monster_damage, pc_deaths, log: log.finish(), plan_failures })
+    let party_casts = std::mem::take(&mut log.casts);
+    Ok(FightResult { level, index, seed, outcome, rounds, monster_damage, pc_deaths, log: log.finish(), plan_failures, party_casts })
 }
 
 fn decided(state: &EncounterState) -> Option<Outcome> {
@@ -1017,11 +1039,12 @@ fn replace_ids(text: &str, labels: &[(String, String, bool)]) -> String {
 struct Log {
     lines: Option<Vec<String>>,
     failures: Vec<PlanFailure>,
+    casts: BTreeMap<String, CastTally>,
 }
 
 impl Log {
     fn new(enabled: bool) -> Self {
-        Self { lines: enabled.then(Vec::new), failures: Vec::new() }
+        Self { lines: enabled.then(Vec::new), failures: Vec::new(), casts: BTreeMap::new() }
     }
 
     /// Record a refused plan against whichever ability raised the error. `lost` starts
@@ -1083,7 +1106,33 @@ impl Log {
         self.line(String::new());
     }
 
+    /// Count each party cast, and credit it with the damage and healing its caster's events show before the next cast.
+    fn tally_casts(&mut self, state: &EncounterState, events: &[EngineEvent]) {
+        let mut current: Option<(&str, &str)> = None;
+        for e in events {
+            let Some(actor) = e.actor_id.as_deref().filter(|id| state.combatants.iter().any(|c| c.id == *id && c.side_id == PARTY_SIDE)) else { continue };
+            if e.kind == "cast" {
+                current = e.message.rsplit_once(" casts ").map(|(_, spell)| (actor, spell));
+                if let Some((_, spell)) = current {
+                    self.casts.entry(spell.to_string()).or_default().casts += 1;
+                }
+                continue;
+            }
+            let Some((_, spell)) = current.filter(|(caster, _)| *caster == actor) else { continue };
+            let tally = self.casts.entry(spell.to_string()).or_default();
+            match e.kind.as_str() {
+                "damage" => tally.damage += e.damage.unwrap_or(0),
+                "heal" => {
+                    let amount = e.message.rsplit_once(" regains ").and_then(|(_, rest)| rest.strip_suffix(" HP")).and_then(|n| n.parse::<i32>().ok());
+                    tally.healing += amount.unwrap_or(0);
+                }
+                _ => {}
+            }
+        }
+    }
+
     fn events(&mut self, state: &EncounterState, events: &[EngineEvent], damage: &mut i32) {
+        self.tally_casts(state, events);
         for e in events {
             let monster_source = e
                 .actor_id
@@ -1983,6 +2032,7 @@ mod tests {
                 failure("Shove", false, "bonus action", false),
                 failure("Club", true, "action", true),
             ],
+            party_casts: BTreeMap::new(),
         };
         assert_eq!(
             plan_failure_warnings(&[result]),

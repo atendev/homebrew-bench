@@ -15,7 +15,7 @@
     "policy_id": "homebrew-bench.tactics",
     "policy_version": 5,
     "policy": "937c86436d2aa77e4e47a42268f990a0",
-    "engine_version": "0.1.43"
+    "engine_version": "0.1.44"
   },
   "effects": "9ac49e5c05ba3fb9edb144dc66603946ba30debabb9a6a7dbab49b3a117d0771",
   "excluded": [],

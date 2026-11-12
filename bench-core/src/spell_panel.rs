@@ -140,7 +140,7 @@ pub fn without_spell_level(block: &StatBlock, spell_level: u8, book: &SpellBook)
     out
 }
 
-fn is_caster(block: &StatBlock) -> bool {
+pub(crate) fn is_caster(block: &StatBlock) -> bool {
     crate::party::role_rank(&block.id).is_some_and(|rank| crate::party::ARCHETYPES[rank] == "caster")
 }
 
@@ -196,7 +196,7 @@ pub fn member_seed(base: u64, id: &str, shape: Shape) -> u64 {
     baseline::fixture_seed(base, &format!("{id}:{}", shape.word()))
 }
 
-fn in_band(win_rate: f64) -> bool {
+pub(crate) fn in_band(win_rate: f64) -> bool {
     (BAND.0 - 1e-9..=BAND.1 + 1e-9).contains(&win_rate)
 }
 
