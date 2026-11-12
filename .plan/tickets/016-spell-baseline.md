@@ -4,7 +4,7 @@ title: Spell baseline
 type: task
 mode: AFK
 status: open
-blocked_by: [013, 014, 015, 019]
+blocked_by: [015, 019]
 claimed: false
 ---
 
