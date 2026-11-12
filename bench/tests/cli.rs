@@ -584,6 +584,38 @@ fn batch_argument_errors() {
 }
 
 #[test]
+fn batch_test_spell_writes_the_lift_rows_and_replays_a_sample() {
+    let bench = Bench::new();
+    let run = || bench.ok(&["batch", "--test-spell", "shatter", "--fights", "3", "--threads", "2", "--out", "lift"]);
+    let first = run();
+    assert_eq!(first["spell"], "shatter");
+    let rows = first["rows"].as_array().unwrap();
+    assert_eq!(rows[0]["kind"], "headline");
+    assert_eq!(rows[0]["party_level"], 3);
+    assert!(rows[1..].iter().all(|r| r["kind"] == "upcast"));
+    assert_eq!(first["fights_per_member"], 3);
+    let written: Value = serde_json::from_str(&std::fs::read_to_string(bench.cwd.join("lift").join("lift.json")).unwrap()).unwrap();
+    assert_eq!(written["rows"], first["rows"]);
+    assert_eq!(run()["rows"], first["rows"], "paired fixed seeds make a rerun identical");
+    let sample = first["samples"].as_array().unwrap().first().expect("a three-fight run finds at least one swing");
+    let command = sample["replay"].as_str().unwrap();
+    let words: Vec<&str> = command.split(' ').skip(1).collect();
+    let replay = bench.ok(&words);
+    let file = bench.cwd.join("lift").join(sample["file"].as_str().unwrap());
+    assert_eq!(replay["log"].as_str().unwrap(), std::fs::read_to_string(file).unwrap());
+}
+
+#[test]
+fn batch_test_spell_argument_errors() {
+    let bench = Bench::new();
+    assert_eq!(bench.err(&["batch", "--test-spell", "no-such-spell", "--fights", "1"]), "not_found");
+    assert_eq!(bench.err(&["batch", "--test-spell", "shatter", "--seed", "1"]), "invalid_argument");
+    assert_eq!(bench.err(&["batch", "--test-spell", "shatter", "--levels", "3"]), "invalid_argument");
+    assert_eq!(bench.err(&["batch", "--test-spell", "shatter", "--fight", "3", "--row", "3", "--member", "ogre"]), "invalid_argument");
+    assert_eq!(bench.err(&["batch", "ogre", "--fight", "3"]), "invalid_argument");
+}
+
+#[test]
 fn fixture_and_party_commands_print_embedded_data() {
     let bench = Bench::new();
     let list = bench.ok(&["fixture", "list"]);

@@ -18,7 +18,7 @@ use bench_core::{
     log, paths,
     schema::{schema_json, validate_value},
     spell::SpellEffect,
-    spell_panel,
+    spell_lift, spell_panel,
     stat_block::StatBlock,
     store::{self, Index, IndexEntry, VersionCheck},
     Envelope, ENGINE_VERSION,
@@ -313,10 +313,24 @@ enum Commands {
         #[command(flatten)]
         at: At,
     },
-    /// Run a batch of fights for one monster against a party and write the report.
+    /// Run a batch of fights for one monster against a party and write the report, or with
+    /// `--test-spell`, measure one spell's lift against the spell panel.
     Batch {
-        /// Monster stat block path, or an SRD fixture id such as `ogre`.
-        monster: String,
+        /// Monster stat block path, or an SRD fixture id such as `ogre`. Omit with `--test-spell`.
+        #[arg(required_unless_present = "test_spell", conflicts_with = "test_spell")]
+        monster: Option<String>,
+        /// Measure this spell's lift instead of a monster: an SRD spell id, or the id in a `--spell` file.
+        #[arg(long)]
+        test_spell: Option<String>,
+        /// With `--test-spell --fight`, the party level of the row to replay.
+        #[arg(long, requires_all = ["test_spell", "fight"])]
+        row: Option<u8>,
+        /// With `--test-spell --fight`, the panel member to replay, as `<fixture id>:single` or `<fixture id>:group`.
+        #[arg(long, requires_all = ["test_spell", "fight"])]
+        member: Option<String>,
+        /// Worker threads for `--test-spell`; a monster batch ignores it.
+        #[arg(long, default_value_t = 4)]
+        threads: usize,
         /// Party level or range, such as `5` or `1-20`.
         #[arg(long, default_value = "1-20")]
         levels: String,
@@ -332,8 +346,8 @@ enum Commands {
         /// Master seed; fresh entropy if omitted. Always echoed in the output.
         #[arg(long)]
         seed: Option<u64>,
-        /// Replay one fight by its global index and print its full log. Needs `--seed`.
-        #[arg(long, requires = "seed")]
+        /// Replay one fight by its global index and print its full log. Needs `--seed`, or with `--test-spell`, `--row` and `--member`.
+        #[arg(long)]
         fight: Option<u64>,
         /// Standing assumption `path=value`, such as `abilities.swallow=ignored` or `policy.weights.control=0.5`. Repeatable.
         #[arg(long)]
@@ -725,8 +739,8 @@ fn run(command: Commands) -> Result<String, CodedError> {
             let removed = prune(&mut index, config.delete_logs)?;
             ok(serde_json::json!({ "removed": removed, "logs_deleted": config.delete_logs }))
         }
-        Commands::Batch { monster, levels, fights, max_rounds, party, seed, fight, assume, assume_reason, assumptions, lighting, spell, out, output } => {
-            run_batch(BatchArgs { monster, levels, fights, max_rounds, party, seed, fight, assume, assume_reason, assumptions, lighting, spell, out, output })
+        Commands::Batch { monster, test_spell, row, member, threads, levels, fights, max_rounds, party, seed, fight, assume, assume_reason, assumptions, lighting, spell, out, output } => {
+            run_batch(BatchArgs { monster, test_spell, row, member, threads, levels, fights, max_rounds, party, seed, fight, assume, assume_reason, assumptions, lighting, spell, out, output })
         }
         Commands::Fixture { action } => run_fixture(action),
         Commands::Party { action } => run_party(action),
@@ -821,7 +835,11 @@ fn step(at: &At, cmd: Command) -> Result<String, CodedError> {
 }
 
 struct BatchArgs {
-    monster: String,
+    monster: Option<String>,
+    test_spell: Option<String>,
+    row: Option<u8>,
+    member: Option<String>,
+    threads: usize,
     levels: String,
     fights: u32,
     max_rounds: u32,
@@ -852,22 +870,19 @@ fn batch_error(err: BatchError) -> CodedError {
     }
 }
 
-fn run_batch(args: BatchArgs) -> Result<String, CodedError> {
-    let cwd = cwd()?;
-    let monster = if std::path::Path::new(&args.monster).is_file() || embedded::stat_block_json(&args.monster).is_some() {
-        read_stat_block(&args.monster)?
-    } else {
-        return Err(CodedError::new(ErrorCode::NotFound, format!("`{}` is neither a stat block file nor an SRD fixture id", args.monster)));
-    };
-    let (party_name, party) = match &args.party {
-        None => ("standard".to_string(), batch::standard_party().map_err(batch_error)?),
+fn load_party(name: &Option<String>) -> Result<(String, batch::Party), CodedError> {
+    match name {
+        None => Ok(("standard".to_string(), batch::standard_party().map_err(batch_error)?)),
         Some(name) => {
-            let dir = paths::party_dirs(name, &cwd)?.into_iter().find(|d| d.is_dir()).ok_or_else(|| {
+            let dir = paths::party_dirs(name, &cwd()?)?.into_iter().find(|d| d.is_dir()).ok_or_else(|| {
                 CodedError::new(ErrorCode::NotFound, format!("party `{name}` not found in ./.bench/parties/ or ~/.bench/parties/"))
             })?;
-            (name.clone(), batch::load_party_dir(&dir).map_err(batch_error)?)
+            Ok((name.clone(), batch::load_party_dir(&dir).map_err(batch_error)?))
         }
-    };
+    }
+}
+
+fn load_assumptions(args: &BatchArgs) -> Result<Vec<StandingAssumption>, CodedError> {
     let mut assumptions: Vec<StandingAssumption> = Vec::new();
     if let Some(file) = &args.assumptions {
         let text = std::fs::read_to_string(file)
@@ -883,6 +898,112 @@ fn run_batch(args: BatchArgs) -> Result<String, CodedError> {
         let value = serde_json::from_str(value).unwrap_or_else(|_| Value::String(value.to_string()));
         assumptions.push(StandingAssumption { path: path.to_string(), value, reason: args.assume_reason.clone() });
     }
+    Ok(assumptions)
+}
+
+fn report_folder(args: &BatchArgs, name: &str) -> Result<PathBuf, CodedError> {
+    match &args.out {
+        Some(dir) => Ok(dir.clone()),
+        None => {
+            let output = match args.output {
+                Some(Output::Home) => OutputTarget::Home,
+                Some(Output::Workspace) => OutputTarget::Workspace,
+                None => config()?.output,
+            };
+            Ok(paths::reports_dir(output, &cwd()?)?.join(name))
+        }
+    }
+}
+
+fn write_text(path: &std::path::Path, text: &str) -> Result<(), CodedError> {
+    std::fs::write(path, text).map_err(|e| CodedError::new(ErrorCode::Internal, format!("cannot write {}: {e}", path.display())))
+}
+
+fn run_lift(args: BatchArgs) -> Result<String, CodedError> {
+    let invalid = |m: String| CodedError::new(ErrorCode::InvalidArgument, m);
+    if args.seed.is_some() {
+        return Err(invalid("--seed has no effect with --test-spell: the panel's paired seeds are fixed (ADR 0007)".into()));
+    }
+    if args.levels != "1-20" {
+        return Err(invalid("--levels has no effect with --test-spell: each row runs at its own party level".into()));
+    }
+    let spell_id = args.test_spell.clone().unwrap_or_default();
+    let (party_name, party) = load_party(&args.party)?;
+    let homebrew = bench_core::spell::load_homebrew(&args.spell).map_err(|e| CodedError::new(ErrorCode::InvalidArgument, e))?;
+    let panel = match spell_panel::embedded() {
+        Some(Ok(panel)) => panel,
+        Some(Err(e)) => return Err(batch_error(e)),
+        None => return Err(CodedError::new(ErrorCode::NotFound, "this build embeds no spell panel; generate one with `bench baseline panel`")),
+    };
+    let spec = spell_lift::LiftSpec {
+        spell_id: spell_id.clone(),
+        homebrew,
+        party_name,
+        party: &party,
+        panel: &panel,
+        fights: args.fights,
+        max_rounds: args.max_rounds,
+        assumptions: load_assumptions(&args)?,
+        lighting: args.lighting.into(),
+        threads: args.threads,
+        invocation: Some(batch::Invocation {
+            monster: String::new(),
+            party: args.party.clone(),
+            assumptions_file: args.assumptions.clone(),
+            assume: args.assume.clone(),
+            assume_reason: (args.assume_reason != DEFAULT_ASSUME_REASON).then(|| args.assume_reason.clone()),
+            spells: args.spell.clone(),
+        }),
+    };
+    if let Some(index) = args.fight {
+        let (Some(row), Some(member)) = (args.row, &args.member) else {
+            return Err(invalid("--fight with --test-spell needs --row <party level> and --member <fixture id>:single or :group".into()));
+        };
+        let (id, shape) = match member.rsplit_once(':') {
+            Some((id, "single")) => (id, spell_panel::Shape::Single),
+            Some((id, "group")) => (id, spell_panel::Shape::Group),
+            _ => return Err(invalid(format!("`{member}` is not `<fixture id>:single` or `<fixture id>:group`"))),
+        };
+        let result = spell_lift::replay_fight(&spec, row, id, shape, index).map_err(batch_error)?;
+        let mut out = serde_json::to_value(&result).unwrap_or_default();
+        out["replay"] = spell_lift::replay_command(&spec, row, id, shape, index).into();
+        out["log"] = result.log.unwrap_or_default().into();
+        return ok(out);
+    }
+    let report = spell_lift::run(&spec, &|done, total, label| eprintln!("[{done}/{total}] {label}")).map_err(batch_error)?;
+    let dir = report_folder(&args, &format!("{spell_id}-lift"))?;
+    let logs_dir = dir.join("logs");
+    std::fs::create_dir_all(&logs_dir)
+        .map_err(|e| CodedError::new(ErrorCode::Internal, format!("cannot create {}: {e}", logs_dir.display())))?;
+    let mut log_paths = Vec::new();
+    for (file, text) in &report.logs {
+        let path = logs_dir.join(file);
+        write_text(&path, text)?;
+        log_paths.push(path.display().to_string());
+    }
+    let mut out = serde_json::to_value(&report).unwrap_or_default();
+    let report_path = dir.join("lift.json");
+    write_text(&report_path, &serde_json::to_string_pretty(&out).unwrap_or_default())?;
+    out["report_path"] = report_path.display().to_string().into();
+    out["log_paths"] = log_paths.into();
+    ok(out)
+}
+
+fn run_batch(args: BatchArgs) -> Result<String, CodedError> {
+    if args.test_spell.is_some() {
+        return run_lift(args);
+    }
+    let monster_arg = args.monster.clone().unwrap_or_default();
+    if args.fight.is_some() && args.seed.is_none() {
+        return Err(CodedError::new(ErrorCode::InvalidArgument, "--fight needs --seed"));
+    }
+    let monster = if std::path::Path::new(&monster_arg).is_file() || embedded::stat_block_json(&monster_arg).is_some() {
+        read_stat_block(&monster_arg)?
+    } else {
+        return Err(CodedError::new(ErrorCode::NotFound, format!("`{monster_arg}` is neither a stat block file nor an SRD fixture id")));
+    };
+    let (party_name, party) = load_party(&args.party)?;
+    let assumptions = load_assumptions(&args)?;
     let homebrew_spells =
         bench_core::spell::load_homebrew(&args.spell).map_err(|e| CodedError::new(ErrorCode::InvalidArgument, e))?;
     let spec = BatchSpec {
@@ -902,7 +1023,7 @@ fn run_batch(args: BatchArgs) -> Result<String, CodedError> {
             None => None,
         },
         invocation: Some(batch::Invocation {
-            monster: args.monster.clone(),
+            monster: monster_arg.clone(),
             party: args.party.clone(),
             assumptions_file: args.assumptions.clone(),
             assume: args.assume.clone(),
@@ -920,17 +1041,7 @@ fn run_batch(args: BatchArgs) -> Result<String, CodedError> {
         return ok(out);
     }
     let report = batch::run(&spec).map_err(batch_error)?;
-    let dir = match args.out {
-        Some(dir) => dir,
-        None => {
-            let output = match args.output {
-                Some(Output::Home) => OutputTarget::Home,
-                Some(Output::Workspace) => OutputTarget::Workspace,
-                None => config()?.output,
-            };
-            paths::reports_dir(output, &cwd)?.join(format!("{}-seed-{}", spec.monster.id, spec.master_seed))
-        }
-    };
+    let dir = report_folder(&args, &format!("{}-seed-{}", spec.monster.id, spec.master_seed))?;
     let logs_dir = dir.join("logs");
     std::fs::create_dir_all(&logs_dir)
         .map_err(|e| CodedError::new(ErrorCode::Internal, format!("cannot create {}: {e}", logs_dir.display())))?;
