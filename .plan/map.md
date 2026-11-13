@@ -41,6 +41,7 @@ A spell-testing spec. Each homebrew spell is converted into an effects entry, ch
 - [Control party and spell panel](closed/012-control-party-and-spell-panel.md): the control drops the caster's level-L spells and keeps slots; `bench baseline panel` commits a fingerprinted panel per odd party level 1 to 17, up to three single and three group fixtures at 40 to 80% control wins, with paired member seeds (engine 0.1.43)
 - [Spell lift runner](closed/013-spell-lift-runner.md): `bench batch --test-spell` swaps the spell onto the caster and fights the panel against each row's own control on paired seeds; lift is the mean paired win and casualty difference with a 95% interval (100 fights per member), plus single and group columns, the row's control win rate and a per-cast diagnostic (engine 0.1.44)
 - [Rounds per round for spell durations](closed/015-rounds-per-round-for-spell-durations.md): behind `settings.round_durations`, a `rounds: N` duration ends when its source starts its Nth turn after it landed, falling back to the round clock without a source; Haste is unaffected; Sleep's Incapacitated becomes `until_end_of_next_turn`; the build regenerates the curve and panel and blocks the spell baseline
+- [Disintegrate damage on a successful save](closed/019-disintegrate-damage-on-a-successful-save.md): Disintegrate's save deals nothing on a success and a test now refuses any damaging save with neither success flag; the regenerated curve moves at levels 11 to 20 and the panel at 13, 15 and 17 (engine 0.1.45)
 
 ## Not yet specified
 
@@ -64,7 +65,6 @@ None of these blocks the destination. Each already has a defined reading, and no
 
 ## Frontier
 
-- [Disintegrate damage on a successful save](tickets/019-disintegrate-damage-on-a-successful-save.md)
 - [Build rounds per round](tickets/020-build-rounds-per-round.md)
 
 ## Build tickets
@@ -85,5 +85,5 @@ Blocking in brackets.
 - [Spell baseline](tickets/016-spell-baseline.md) [015, 019, 020]
 - [Spell lift report](tickets/017-spell-lift-report.md) [011, 016]
 - [Skill: batch spell testing](tickets/018-skill-batch-spell-testing.md) [017]
-- [Disintegrate damage on a successful save](tickets/019-disintegrate-damage-on-a-successful-save.md)
+- [Disintegrate damage on a successful save](closed/019-disintegrate-damage-on-a-successful-save.md) (closed)
 - [Build rounds per round](tickets/020-build-rounds-per-round.md)

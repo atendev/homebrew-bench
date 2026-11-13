@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "fingerprint": "5dddd7e5eced68f636d9f4975c01544b8ea15b8b7802fde90912bb0887563ad5",
+  "fingerprint": "dcb8c4fd899c9335f5036da8a68bb163bdebc30f5f41d9625c58f409b0761499",
   "base_seed": 20261111,
   "fights": 100,
   "max_rounds": 20,
@@ -15,9 +15,9 @@
     "policy_id": "homebrew-bench.tactics",
     "policy_version": 5,
     "policy": "937c86436d2aa77e4e47a42268f990a0",
-    "engine_version": "0.1.44"
+    "engine_version": "0.1.45"
   },
-  "effects": "9ac49e5c05ba3fb9edb144dc66603946ba30debabb9a6a7dbab49b3a117d0771",
+  "effects": "d216ec8c7d895b15cebba731f764279e0094b8f05db0e995401729b4852827a3",
   "excluded": [],
   "levels": [
     {
@@ -444,15 +444,15 @@
       "control_spell_level": 7,
       "single": [
         {
-          "id": "adult-gold-dragon",
+          "id": "adult-red-dragon",
           "cr": 17.0,
           "copies": 1,
-          "seed": 18413660526724012385,
+          "seed": 11281518879403729508,
           "spellcaster": true,
           "fights": 100,
-          "wins": 63,
-          "deaths": 37,
-          "win_rate": 0.63
+          "wins": 60,
+          "deaths": 40,
+          "win_rate": 0.6
         },
         {
           "id": "kraken",
@@ -460,9 +460,70 @@
           "copies": 1,
           "seed": 8731332738711075629,
           "fights": 100,
-          "wins": 71,
-          "deaths": 29,
-          "win_rate": 0.71
+          "wins": 61,
+          "deaths": 39,
+          "win_rate": 0.61
+        },
+        {
+          "id": "adult-silver-dragon",
+          "cr": 16.0,
+          "copies": 1,
+          "seed": 14576223225670609066,
+          "spellcaster": true,
+          "fights": 100,
+          "wins": 66,
+          "deaths": 34,
+          "win_rate": 0.66
+        }
+      ],
+      "group": [
+        {
+          "id": "vrock",
+          "cr": 6.0,
+          "copies": 4,
+          "seed": 6064993536568436392,
+          "fights": 100,
+          "wins": 64,
+          "deaths": 36,
+          "win_rate": 0.64
+        },
+        {
+          "id": "wyvern",
+          "cr": 6.0,
+          "copies": 4,
+          "seed": 8875406975276888025,
+          "fights": 100,
+          "wins": 55,
+          "deaths": 45,
+          "win_rate": 0.55
+        },
+        {
+          "id": "drider",
+          "cr": 6.0,
+          "copies": 4,
+          "seed": 5676039429846398641,
+          "fights": 100,
+          "wins": 67,
+          "deaths": 33,
+          "win_rate": 0.67
+        }
+      ],
+      "spellcasting_fixture": "adult-red-dragon"
+    },
+    {
+      "party_level": 15,
+      "control_spell_level": 8,
+      "single": [
+        {
+          "id": "adult-gold-dragon",
+          "cr": 17.0,
+          "copies": 1,
+          "seed": 18413660526724012385,
+          "spellcaster": true,
+          "fights": 100,
+          "wins": 51,
+          "deaths": 49,
+          "win_rate": 0.51
         },
         {
           "id": "adult-red-dragon",
@@ -471,102 +532,22 @@
           "seed": 11281518879403729508,
           "spellcaster": true,
           "fights": 100,
-          "wins": 73,
-          "deaths": 27,
-          "win_rate": 0.73
-        }
-      ],
-      "group": [
-        {
-          "id": "wyvern",
-          "cr": 6.0,
-          "copies": 4,
-          "seed": 8875406975276888025,
-          "fights": 100,
-          "wins": 60,
-          "deaths": 40,
-          "win_rate": 0.6
+          "wins": 69,
+          "deaths": 31,
+          "win_rate": 0.69
         },
-        {
-          "id": "pirate-captain",
-          "cr": 6.0,
-          "copies": 4,
-          "seed": 9318168900312139555,
-          "fights": 100,
-          "wins": 61,
-          "deaths": 39,
-          "win_rate": 0.61
-        },
-        {
-          "id": "drider",
-          "cr": 6.0,
-          "copies": 4,
-          "seed": 5676039429846398641,
-          "fights": 100,
-          "wins": 62,
-          "deaths": 38,
-          "win_rate": 0.62
-        }
-      ],
-      "spellcasting_fixture": "adult-gold-dragon"
-    },
-    {
-      "party_level": 15,
-      "control_spell_level": 8,
-      "single": [
         {
           "id": "pit-fiend",
           "cr": 20.0,
           "copies": 1,
           "seed": 11533522875269294472,
           "fights": 100,
-          "wins": 58,
-          "deaths": 42,
-          "win_rate": 0.58
-        },
-        {
-          "id": "dragon-turtle",
-          "cr": 17.0,
-          "copies": 1,
-          "seed": 13300084258898692679,
-          "fights": 100,
-          "wins": 53,
-          "deaths": 47,
-          "win_rate": 0.53
-        },
-        {
-          "id": "ancient-brass-dragon",
-          "cr": 20.0,
-          "copies": 1,
-          "seed": 2578211662179165961,
-          "spellcaster": true,
-          "fights": 100,
-          "wins": 52,
-          "deaths": 48,
-          "win_rate": 0.52
+          "wins": 45,
+          "deaths": 55,
+          "win_rate": 0.45
         }
       ],
       "group": [
-        {
-          "id": "stone-giant",
-          "cr": 7.0,
-          "copies": 4,
-          "seed": 8669087673254423249,
-          "fights": 100,
-          "wins": 59,
-          "deaths": 41,
-          "win_rate": 0.59
-        },
-        {
-          "id": "young-copper-dragon",
-          "cr": 7.0,
-          "copies": 4,
-          "seed": 8575459460131121385,
-          "fights": 100,
-          "wins": 59,
-          "deaths": 41,
-          "win_rate": 0.59
-        },
         {
           "id": "mage",
           "cr": 6.0,
@@ -574,36 +555,58 @@
           "seed": 15538576491003418259,
           "spellcaster": true,
           "fights": 100,
-          "wins": 62,
-          "deaths": 38,
-          "win_rate": 0.62
+          "wins": 58,
+          "deaths": 42,
+          "win_rate": 0.58
+        },
+        {
+          "id": "chimera",
+          "cr": 6.0,
+          "copies": 4,
+          "seed": 12694002481168861971,
+          "fights": 100,
+          "wins": 56,
+          "deaths": 44,
+          "win_rate": 0.56
+        },
+        {
+          "id": "stone-giant",
+          "cr": 7.0,
+          "copies": 4,
+          "seed": 8669087673254423249,
+          "fights": 100,
+          "wins": 52,
+          "deaths": 48,
+          "win_rate": 0.52
         }
       ],
-      "spellcasting_fixture": "ancient-brass-dragon"
+      "spellcasting_fixture": "adult-gold-dragon"
     },
     {
       "party_level": 17,
       "control_spell_level": 9,
       "single": [
         {
-          "id": "ancient-white-dragon",
-          "cr": 20.0,
+          "id": "ancient-copper-dragon",
+          "cr": 21.0,
           "copies": 1,
-          "seed": 18439032135083752437,
+          "seed": 8622625267692691441,
+          "spellcaster": true,
           "fights": 100,
           "wins": 57,
           "deaths": 43,
           "win_rate": 0.57
         },
         {
-          "id": "solar",
+          "id": "ancient-black-dragon",
           "cr": 21.0,
           "copies": 1,
-          "seed": 3198700342134678358,
+          "seed": 13069938784639745523,
+          "spellcaster": true,
           "fights": 100,
-          "wins": 54,
-          "deaths": 46,
-          "win_rate": 0.54
+          "wins": 55,
+          "deaths": 45,
+          "win_rate": 0.55
         },
         {
           "id": "ancient-blue-dragon",
@@ -612,9 +615,9 @@
           "seed": 16710299450779291997,
           "spellcaster": true,
           "fights": 100,
-          "wins": 70,
-          "deaths": 30,
-          "win_rate": 0.7
+          "wins": 55,
+          "deaths": 45,
+          "win_rate": 0.55
         }
       ],
       "group": [
@@ -629,27 +632,27 @@
           "win_rate": 0.61
         },
         {
-          "id": "young-blue-dragon",
-          "cr": 9.0,
-          "copies": 4,
-          "seed": 9028395044367719861,
-          "fights": 100,
-          "wins": 57,
-          "deaths": 43,
-          "win_rate": 0.57
-        },
-        {
           "id": "tyrannosaurus-rex",
           "cr": 8.0,
           "copies": 4,
           "seed": 4614758125030637908,
           "fights": 100,
-          "wins": 55,
-          "deaths": 45,
-          "win_rate": 0.55
+          "wins": 56,
+          "deaths": 44,
+          "win_rate": 0.56
+        },
+        {
+          "id": "young-white-dragon",
+          "cr": 6.0,
+          "copies": 4,
+          "seed": 4821016297792951790,
+          "fights": 100,
+          "wins": 67,
+          "deaths": 33,
+          "win_rate": 0.67
         }
       ],
-      "spellcasting_fixture": "ancient-blue-dragon"
+      "spellcasting_fixture": "ancient-copper-dragon"
     }
   ]
 }

@@ -4172,6 +4172,43 @@ mod tests {
     }
 
     #[test]
+    fn disintegrate_deals_nothing_on_a_success() {
+        let book = SpellBook::srd().unwrap();
+        let Effect::SavingThrow(save) = &book.get("disintegrate").unwrap().effects[0] else { panic!("disintegrate is a save") };
+        assert!(save.no_damage_on_success && !save.half_on_success);
+    }
+
+    #[test]
+    fn every_srd_damaging_save_says_what_a_success_does() {
+        fn walk(value: &serde_json::Value, path: String, out: &mut Vec<String>) {
+            match value {
+                serde_json::Value::Object(map) => {
+                    if let Some(save) = map.get("saving_throw") {
+                        let damages = save["damage"].as_array().is_some_and(|d| !d.is_empty());
+                        let flagged = save["half_on_success"] == true || save["no_damage_on_success"] == true;
+                        if damages && !flagged {
+                            out.push(path.clone());
+                        }
+                    }
+                    for (key, child) in map {
+                        walk(child, format!("{path}.{key}"), out);
+                    }
+                }
+                serde_json::Value::Array(items) => {
+                    for (i, child) in items.iter().enumerate() {
+                        walk(child, format!("{path}[{i}]"), out);
+                    }
+                }
+                _ => {}
+            }
+        }
+        let file: serde_json::Value = serde_json::from_str(crate::embedded::spell_effects_json()).unwrap();
+        let mut unflagged = Vec::new();
+        walk(&file, String::new(), &mut unflagged);
+        assert!(unflagged.is_empty(), "damaging saves with full damage on a success: {unflagged:?}");
+    }
+
+    #[test]
     fn ray_of_frost_slows_the_target_through_its_next_turn() {
         let book = SpellBook::srd().unwrap();
         let Effect::Attack(ray) = &book.get("ray-of-frost").unwrap().effects[0] else { panic!("ray of frost is an attack") };

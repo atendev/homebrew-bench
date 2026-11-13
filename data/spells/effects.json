@@ -674,7 +674,7 @@
           ],
           "dc": 0,
           "half_on_success": false,
-          "no_damage_on_success": false
+          "no_damage_on_success": true
         }
       }
     ],
