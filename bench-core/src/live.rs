@@ -234,6 +234,8 @@ pub struct StartSpec {
     pub teleport_near: bool,
     /// Minutes, hours and days count against the round clock (ADR 0005).
     pub long_durations: bool,
+    /// `rounds` durations end on their source's turn count (ADR 0005).
+    pub round_durations: bool,
     /// Homebrew spell entries from `--spell` files, copied into the encounter (ADR 0022).
     pub homebrew_spells: Vec<crate::spell::SpellEffect>,
 }
@@ -383,7 +385,7 @@ pub fn start(spec: StartSpec) -> Result<(EncounterState, Outcome), LiveError> {
         pending: None,
         rng: RngState::new(spec.seed),
         initiative_rolls: HashMap::new(),
-        settings: EncounterSettings { pc_dice: spec.pc_dice, lighting: spec.lighting, reaction_windows: spec.reaction_windows, spell_cast_windows: spec.spell_cast_windows, teleport_near: spec.teleport_near, long_durations: spec.long_durations },
+        settings: EncounterSettings { pc_dice: spec.pc_dice, lighting: spec.lighting, reaction_windows: spec.reaction_windows, spell_cast_windows: spec.spell_cast_windows, teleport_near: spec.teleport_near, long_durations: spec.long_durations, round_durations: spec.round_durations },
         ended: None,
         initial_snapshot: None,
         log: vec![],
@@ -1393,6 +1395,7 @@ mod tests {
             spell_cast_windows: true,
             teleport_near: true,
             long_durations: true,
+            round_durations: true,
             homebrew_spells: vec![],
         }
     }
@@ -2999,6 +3002,8 @@ mod tests {
         let (state, _) = start(spec(PcDice::Engine)).unwrap();
         assert!(state.settings.long_durations);
         assert!(serde_json::to_string(&state.settings).unwrap().contains(r#""long_durations":true"#));
+        assert!(state.settings.round_durations);
+        assert!(serde_json::to_string(&state.settings).unwrap().contains(r#""round_durations":true"#));
     }
 
     #[test]
@@ -3269,5 +3274,21 @@ mod tests {
         let add = Command::Add { stat_block: Box::new(late), side: "monsters".into(), band: None, engaged_with: None };
         let err = execute(&mut state, add).unwrap_err().to_string();
         assert!(err.contains("flare in bonus_actions"), "{err}");
+    }
+
+    #[test]
+    fn an_old_sleep_save_refolds_to_the_recorded_hit_points_and_end_states() {
+        let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/data/engine-0.1.45-sleep-state.json");
+        let state = crate::store::load(&path, crate::store::VersionCheck::Require).expect("an engine 0.1.45 state loads");
+        crate::store::check(&state, &path).unwrap();
+        assert!(!state.settings.round_durations);
+        let names: Vec<&str> = state.command_history.iter().map(|r| r.name.as_str()).collect();
+        assert_eq!(names, ["end-turn", "action", "end-turn", "action", "end-turn", "end-turn", "end-turn", "end-turn"]);
+        assert!(crate::log::render(&state.log).contains("loses incapacitated"), "recorded with Sleep's Incapacitated as `rounds: 1`");
+        let initial = state.initial_snapshot.as_deref().expect("initial snapshot");
+        let folded = fold(initial, &state.command_history).map_err(|(_, e)| e).expect("the history refolds").state;
+        let outcome = |s: &EncounterState| s.combatants.iter().map(|c| (c.id.clone(), c.hp, c.end_state)).collect::<Vec<_>>();
+        assert_eq!(outcome(&folded), outcome(&state), "Sleep's moved expiry event leaves hit points and end states as recorded");
+        assert!(outcome(&state).iter().any(|(id, hp, end)| id == "goblin-warrior" && *hp < 0 && *end == EndState::Dead));
     }
 }

@@ -96,6 +96,54 @@ fn a_panel_member_regenerates_to_its_committed_numbers() {
 }
 
 #[test]
+fn committed_spell_baseline_is_current_and_covers_every_srd_spell_row() {
+    use bench_core::spell::SpellBook;
+    use bench_core::spell_baseline;
+    use bench_core::spell_lift;
+    use bench_core::spell_panel;
+    let table = spell_baseline::embedded().expect("data/baseline/spell-lift.json is committed").expect("spell baseline parses");
+    let panel = spell_panel::embedded().unwrap().unwrap();
+    let party = batch::standard_party().unwrap();
+    let now = spell_baseline::fingerprints_for(&party, &PolicyConstants::default(), &panel, table.fights_per_member);
+    let stale = table.stale_reasons(&now);
+    assert!(stale.is_empty(), "regenerate with `bench baseline generate --spells`: {stale:?}");
+    let book = SpellBook::srd().unwrap();
+    let entries = book.srd_entries();
+    assert_eq!(table.spells.len(), entries.len());
+    for entry in entries {
+        let rows = table.spell(&entry.id).unwrap_or_else(|| panic!("no rows for {}", entry.id));
+        let plan: Vec<_> = spell_lift::plan_rows(entry).into_iter().map(|p| (p.party_level, p.cast_level)).collect();
+        let have: Vec<_> = rows.rows.iter().map(|r| (r.plan.party_level, r.plan.cast_level)).collect();
+        assert_eq!(have, plan, "{}", entry.id);
+        assert!(rows.rows.iter().all(|r| r.members.is_empty()));
+    }
+}
+
+#[test]
+fn a_spell_regenerates_to_its_committed_rows() {
+    use bench_core::spell_baseline::{self, GenerateSpec};
+    use bench_core::spell_panel;
+    let table = spell_baseline::embedded().unwrap().unwrap();
+    let panel = spell_panel::embedded().unwrap().unwrap();
+    let party = batch::standard_party().unwrap();
+    let again = spell_baseline::generate(
+        &GenerateSpec {
+            party_name: table.party.clone(),
+            party: &party,
+            panel: &panel,
+            fights: table.fights_per_member,
+            max_rounds: table.max_rounds,
+            threads: 1,
+            only: vec!["sleep".into()],
+        },
+        &|_, _, _| {},
+    )
+    .unwrap();
+    let committed = table.spell("sleep").expect("sleep is in the table");
+    assert_eq!(serde_json::to_value(&again.spells[0]).unwrap(), serde_json::to_value(committed).unwrap());
+}
+
+#[test]
 fn a_fixture_regenerates_to_its_committed_row() {
     let curve = committed();
     let party = batch::standard_party().unwrap();

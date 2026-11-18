@@ -3,7 +3,7 @@ id: 020
 title: Build rounds per round
 type: task
 mode: AFK
-status: open
+status: closed
 blocked_by: []
 claimed: false
 ---
@@ -28,4 +28,13 @@ Build the source-anchored `rounds` duration decided in [Rounds per round for spe
 
 ## Resolution
 
-<!-- Filled in at close. -->
+Built. With `settings.round_durations` on, a `rounds: N` modifier or condition loses one each time its source's initiative slot comes up, including a downed source's skipped slot, and ends at 0. One with no source in the initiative order ends on the round clock, N rounds after it landed. `bench start` and batch set the setting. Saves from before it keep the per-turn decrement.
+
+- **Sleep.** Its Incapacitated is `until_end_of_next_turn` in the effects file. A real 0.1.45 Sleep save, committed as a test fixture, refolds to the same hit points and end states.
+- **Regenerated.** The curve moves 38 of 6,820 fixture cells on nine fixtures (Archmage, Lich, Mage, Hydra, Ettin, Water, Air and Earth Elemental, Invisible Stalker), with no pooled band change. The spell panel re-picks its group fixtures at party levels 3, 5, 7, 9, 11, 13, 15 and 17.
+- **Version.** Engine 0.1.46, not 0.1.45, because 0.1.45 shipped with ticket 019.
+- **Policy.** Stays v5. Shield's +5 on later turns is still not scored.
+
+Council approved in round 1 (claude 8, gemini 10, gpt 9). Decisions are in [the decision report](../reports/020-decisions.md).
+
+Timing: wall 44m, active 43m, user 0s, wait 8s, blocked 0s | implement 41m, audit 2m (1 round) | tools 70 (2 subagent) | limits 0, compactions 0, handoffs 0 | ctx peak 156k | cost $2.35 sonnet-5-5 + $0.02 haiku-5-5

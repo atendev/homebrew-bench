@@ -24,6 +24,7 @@ pub mod reaction;
 pub mod rng;
 pub mod schema;
 pub mod spell;
+pub mod spell_baseline;
 pub mod spell_lift;
 pub mod spell_panel;
 pub mod store;

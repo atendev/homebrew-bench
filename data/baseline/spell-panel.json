@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "fingerprint": "dcb8c4fd899c9335f5036da8a68bb163bdebc30f5f41d9625c58f409b0761499",
+  "fingerprint": "fb2f16e2cfa26cd37495362c8e21a57e27c43552036e89db38c37dd305184a9b",
   "base_seed": 20261111,
   "fights": 100,
   "max_rounds": 20,
@@ -15,9 +15,9 @@
     "policy_id": "homebrew-bench.tactics",
     "policy_version": 5,
     "policy": "937c86436d2aa77e4e47a42268f990a0",
-    "engine_version": "0.1.45"
+    "engine_version": "0.1.47"
   },
-  "effects": "d216ec8c7d895b15cebba731f764279e0094b8f05db0e995401729b4852827a3",
+  "effects": "0f9f3d03e09dbdb4ede4f89e42e580465b6975bb005bebfe4be61d0a262570bc",
   "excluded": [],
   "levels": [
     {
@@ -120,21 +120,21 @@
           "seed": 9523141246794186784,
           "spellcaster": true,
           "fights": 100,
-          "wins": 43,
-          "deaths": 61,
-          "win_rate": 0.43
+          "wins": 42,
+          "deaths": 62,
+          "win_rate": 0.42
         }
       ],
       "group": [
         {
-          "id": "brass-dragon-wyrmling",
+          "id": "giant-spider",
           "cr": 1.0,
           "copies": 4,
-          "seed": 17739661535804197807,
+          "seed": 10222109149358881318,
           "fights": 100,
-          "wins": 66,
-          "deaths": 34,
-          "win_rate": 0.66
+          "wins": 55,
+          "deaths": 45,
+          "win_rate": 0.55
         },
         {
           "id": "giant-hyena",
@@ -142,9 +142,9 @@
           "copies": 4,
           "seed": 14963798463510863431,
           "fights": 100,
-          "wins": 66,
-          "deaths": 34,
-          "win_rate": 0.66
+          "wins": 67,
+          "deaths": 33,
+          "win_rate": 0.67
         },
         {
           "id": "animated-armor",
@@ -152,9 +152,9 @@
           "copies": 4,
           "seed": 16536345756398192455,
           "fights": 100,
-          "wins": 67,
-          "deaths": 33,
-          "win_rate": 0.67
+          "wins": 68,
+          "deaths": 32,
+          "win_rate": 0.68
         }
       ],
       "spellcasting_fixture": "mage"
@@ -196,6 +196,16 @@
       ],
       "group": [
         {
+          "id": "manticore",
+          "cr": 3.0,
+          "copies": 4,
+          "seed": 5991428178680452072,
+          "fights": 100,
+          "wins": 58,
+          "deaths": 42,
+          "win_rate": 0.58
+        },
+        {
           "id": "nightmare",
           "cr": 3.0,
           "copies": 4,
@@ -206,24 +216,14 @@
           "win_rate": 0.62
         },
         {
-          "id": "phase-spider",
+          "id": "werewolf-wolf",
           "cr": 3.0,
           "copies": 4,
-          "seed": 13142394896465364358,
+          "seed": 13266980389330906535,
           "fights": 100,
-          "wins": 57,
-          "deaths": 43,
-          "win_rate": 0.57
-        },
-        {
-          "id": "werewolf-hybrid",
-          "cr": 3.0,
-          "copies": 4,
-          "seed": 15418689320964006479,
-          "fights": 100,
-          "wins": 63,
-          "deaths": 37,
-          "win_rate": 0.63
+          "wins": 58,
+          "deaths": 42,
+          "win_rate": 0.58
         }
       ],
       "spellcasting_fixture": null
@@ -259,12 +259,32 @@
           "seed": 1035899713468670013,
           "spellcaster": true,
           "fights": 100,
-          "wins": 65,
-          "deaths": 36,
-          "win_rate": 0.65
+          "wins": 67,
+          "deaths": 35,
+          "win_rate": 0.67
         }
       ],
       "group": [
+        {
+          "id": "knight",
+          "cr": 3.0,
+          "copies": 4,
+          "seed": 4175748180259202226,
+          "fights": 100,
+          "wins": 61,
+          "deaths": 39,
+          "win_rate": 0.61
+        },
+        {
+          "id": "wereboar-hybrid",
+          "cr": 4.0,
+          "copies": 4,
+          "seed": 948126595076923589,
+          "fights": 100,
+          "wins": 59,
+          "deaths": 40,
+          "win_rate": 0.59
+        },
         {
           "id": "winter-wolf",
           "cr": 3.0,
@@ -274,26 +294,6 @@
           "wins": 59,
           "deaths": 41,
           "win_rate": 0.59
-        },
-        {
-          "id": "wereboar-hybrid",
-          "cr": 4.0,
-          "copies": 4,
-          "seed": 948126595076923589,
-          "fights": 100,
-          "wins": 58,
-          "deaths": 40,
-          "win_rate": 0.58
-        },
-        {
-          "id": "owlbear",
-          "cr": 3.0,
-          "copies": 4,
-          "seed": 14873516452458081456,
-          "fights": 100,
-          "wins": 57,
-          "deaths": 43,
-          "win_rate": 0.57
         }
       ],
       "spellcasting_fixture": "archmage"
@@ -309,9 +309,9 @@
           "seed": 1035899713468670013,
           "spellcaster": true,
           "fights": 100,
-          "wins": 64,
-          "deaths": 36,
-          "win_rate": 0.64
+          "wins": 57,
+          "deaths": 43,
+          "win_rate": 0.57
         },
         {
           "id": "ice-devil",
@@ -337,34 +337,34 @@
       ],
       "group": [
         {
-          "id": "guard-captain",
-          "cr": 4.0,
-          "copies": 4,
-          "seed": 11168304672373176372,
-          "fights": 100,
-          "wins": 59,
-          "deaths": 41,
-          "win_rate": 0.59
-        },
-        {
           "id": "ghost",
           "cr": 4.0,
           "copies": 4,
           "seed": 1386904412770788664,
           "fights": 100,
+          "wins": 60,
+          "deaths": 40,
+          "win_rate": 0.6
+        },
+        {
+          "id": "hippopotamus",
+          "cr": 4.0,
+          "copies": 4,
+          "seed": 4050423514664209375,
+          "fights": 100,
+          "wins": 62,
+          "deaths": 38,
+          "win_rate": 0.62
+        },
+        {
+          "id": "incubus",
+          "cr": 4.0,
+          "copies": 4,
+          "seed": 17453251570828212463,
+          "fights": 100,
           "wins": 58,
           "deaths": 42,
           "win_rate": 0.58
-        },
-        {
-          "id": "cloaker",
-          "cr": 8.0,
-          "copies": 4,
-          "seed": 7851829855648839678,
-          "fights": 100,
-          "wins": 57,
-          "deaths": 43,
-          "win_rate": 0.57
         }
       ],
       "spellcasting_fixture": "archmage"
@@ -407,34 +407,34 @@
       ],
       "group": [
         {
-          "id": "air-elemental",
-          "cr": 5.0,
+          "id": "medusa",
+          "cr": 6.0,
           "copies": 4,
-          "seed": 17712356514977775350,
+          "seed": 8302594572301325960,
           "fights": 100,
-          "wins": 61,
-          "deaths": 39,
-          "win_rate": 0.61
+          "wins": 57,
+          "deaths": 43,
+          "win_rate": 0.57
         },
         {
-          "id": "werebear-hybrid",
-          "cr": 5.0,
+          "id": "invisible-stalker",
+          "cr": 6.0,
           "copies": 4,
-          "seed": 7778202269657900499,
+          "seed": 11918734609008681399,
           "fights": 100,
-          "wins": 62,
-          "deaths": 38,
-          "win_rate": 0.62
+          "wins": 54,
+          "deaths": 46,
+          "win_rate": 0.54
         },
         {
-          "id": "xorn",
-          "cr": 5.0,
+          "id": "pirate-captain",
+          "cr": 6.0,
           "copies": 4,
-          "seed": 15116230886974556386,
+          "seed": 9318168900312139555,
           "fights": 100,
-          "wins": 64,
-          "deaths": 36,
-          "win_rate": 0.64
+          "wins": 54,
+          "deaths": 46,
+          "win_rate": 0.54
         }
       ],
       "spellcasting_fixture": "adult-copper-dragon"
@@ -478,34 +478,34 @@
       ],
       "group": [
         {
-          "id": "vrock",
-          "cr": 6.0,
-          "copies": 4,
-          "seed": 6064993536568436392,
-          "fights": 100,
-          "wins": 64,
-          "deaths": 36,
-          "win_rate": 0.64
-        },
-        {
           "id": "wyvern",
           "cr": 6.0,
           "copies": 4,
           "seed": 8875406975276888025,
           "fights": 100,
-          "wins": 55,
-          "deaths": 45,
-          "win_rate": 0.55
+          "wins": 58,
+          "deaths": 42,
+          "win_rate": 0.58
         },
         {
-          "id": "drider",
+          "id": "aboleth",
+          "cr": 10.0,
+          "copies": 4,
+          "seed": 9911787026937257600,
+          "fights": 100,
+          "wins": 56,
+          "deaths": 44,
+          "win_rate": 0.56
+        },
+        {
+          "id": "vrock",
           "cr": 6.0,
           "copies": 4,
-          "seed": 5676039429846398641,
+          "seed": 6064993536568436392,
           "fights": 100,
-          "wins": 67,
-          "deaths": 33,
-          "win_rate": 0.67
+          "wins": 69,
+          "deaths": 31,
+          "win_rate": 0.69
         }
       ],
       "spellcasting_fixture": "adult-red-dragon"
@@ -555,6 +555,16 @@
           "seed": 15538576491003418259,
           "spellcaster": true,
           "fights": 100,
+          "wins": 61,
+          "deaths": 39,
+          "win_rate": 0.61
+        },
+        {
+          "id": "stone-giant",
+          "cr": 7.0,
+          "copies": 4,
+          "seed": 8669087673254423249,
+          "fights": 100,
           "wins": 58,
           "deaths": 42,
           "win_rate": 0.58
@@ -565,19 +575,9 @@
           "copies": 4,
           "seed": 12694002481168861971,
           "fights": 100,
-          "wins": 56,
-          "deaths": 44,
-          "win_rate": 0.56
-        },
-        {
-          "id": "stone-giant",
-          "cr": 7.0,
-          "copies": 4,
-          "seed": 8669087673254423249,
-          "fights": 100,
-          "wins": 52,
-          "deaths": 48,
-          "win_rate": 0.52
+          "wins": 57,
+          "deaths": 43,
+          "win_rate": 0.57
         }
       ],
       "spellcasting_fixture": "adult-gold-dragon"
@@ -622,34 +622,34 @@
       ],
       "group": [
         {
-          "id": "frost-giant",
+          "id": "tyrannosaurus-rex",
           "cr": 8.0,
           "copies": 4,
-          "seed": 7262092624394609919,
+          "seed": 4614758125030637908,
           "fights": 100,
           "wins": 61,
           "deaths": 39,
           "win_rate": 0.61
         },
         {
-          "id": "tyrannosaurus-rex",
+          "id": "young-green-dragon",
           "cr": 8.0,
           "copies": 4,
-          "seed": 4614758125030637908,
+          "seed": 13492787606056011184,
           "fights": 100,
-          "wins": 56,
-          "deaths": 44,
-          "win_rate": 0.56
+          "wins": 55,
+          "deaths": 45,
+          "win_rate": 0.55
         },
         {
-          "id": "young-white-dragon",
+          "id": "mammoth",
           "cr": 6.0,
           "copies": 4,
-          "seed": 4821016297792951790,
+          "seed": 8672104458085138910,
           "fights": 100,
-          "wins": 67,
-          "deaths": 33,
-          "win_rate": 0.67
+          "wins": 53,
+          "deaths": 47,
+          "win_rate": 0.53
         }
       ],
       "spellcasting_fixture": "ancient-copper-dragon"

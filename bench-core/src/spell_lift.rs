@@ -6,7 +6,7 @@
 //! per-fight differences in winning and in losing a party member. Rows follow the spell: one
 //! headline row, one per upcast level, or four cantrip rows.
 
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 use crate::baseline;
 use crate::batch::{self, BatchError, BatchSpec, CastTally, FightResult, Outcome, Party};
@@ -24,7 +24,7 @@ pub const INTERVAL_Z: f64 = 1.96;
 pub const INTERVAL_METHOD: &str =
     "the mean lift plus and minus 1.96 standard errors of the per-fight paired differences, over every panel fight in the row";
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum RowKind {
     /// The spell cast at its own level, at party level 2L-1.
@@ -36,7 +36,7 @@ pub enum RowKind {
 }
 
 /// Where one row sits.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub struct RowPlan {
     pub kind: RowKind,
     pub party_level: u8,
@@ -157,7 +157,7 @@ fn record(result: &FightResult, spell_id: &str) -> FightRecord {
 }
 
 /// A mean difference with its 95% interval.
-#[derive(Debug, Clone, Copy, PartialEq, Serialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
 pub struct Estimate {
     pub mean: f64,
     pub low: f64,
@@ -182,7 +182,7 @@ pub fn estimate(diffs: &[f64]) -> Option<Estimate> {
 }
 
 /// One panel member's paired fights in one row.
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MemberLift {
     pub id: String,
     pub shape: Shape,
@@ -196,7 +196,7 @@ pub struct MemberLift {
     pub casualty_change: f64,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum RowStatus {
     Measured,
@@ -205,7 +205,7 @@ pub enum RowStatus {
     NotMeasured,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Row {
     #[serde(flatten)]
     pub plan: RowPlan,
@@ -237,7 +237,9 @@ pub struct Row {
     /// Diagnostic: hit points restored by the casts, per cast.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub healing_per_cast: Option<f64>,
+    #[serde(default)]
     pub members: Vec<MemberLift>,
+    #[serde(default)]
     pub notes: Vec<String>,
 }
 

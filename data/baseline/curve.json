@@ -10,7 +10,7 @@
     "policy_id": "homebrew-bench.tactics",
     "policy_version": 5,
     "policy": "937c86436d2aa77e4e47a42268f990a0",
-    "engine_version": "0.1.45"
+    "engine_version": "0.1.47"
   },
   "excluded": [],
   "fixtures": [
@@ -2101,34 +2101,34 @@
           "deaths": 100,
           "stalemates": 0,
           "rounds_median": 5.0,
-          "dpr_median": 16.0
+          "dpr_median": 15.1
         },
         {
           "level": 2,
           "fights": 100,
-          "wins": 0,
-          "deaths": 100,
+          "wins": 1,
+          "deaths": 99,
           "stalemates": 0,
           "rounds_median": 7.0,
-          "dpr_median": 17.56
+          "dpr_median": 16.23
         },
         {
           "level": 3,
           "fights": 100,
-          "wins": 2,
-          "deaths": 98,
+          "wins": 7,
+          "deaths": 93,
           "stalemates": 0,
           "rounds_median": 9.0,
-          "dpr_median": 17.28
+          "dpr_median": 16.55
         },
         {
           "level": 4,
           "fights": 100,
-          "wins": 23,
-          "deaths": 77,
+          "wins": 39,
+          "deaths": 61,
           "stalemates": 0,
           "rounds_median": 10.0,
-          "dpr_median": 17.71
+          "dpr_median": 15.33
         },
         {
           "level": 5,
@@ -2137,7 +2137,7 @@
           "deaths": 0,
           "stalemates": 0,
           "rounds_median": 4.0,
-          "dpr_median": 15.0
+          "dpr_median": 14.37
         },
         {
           "level": 6,
@@ -5685,11 +5685,11 @@
         {
           "level": 3,
           "fights": 100,
-          "wins": 1,
+          "wins": 0,
           "deaths": 100,
           "stalemates": 0,
           "rounds_median": 4.0,
-          "dpr_median": 51.67
+          "dpr_median": 51.83
         },
         {
           "level": 4,
@@ -5698,76 +5698,76 @@
           "deaths": 100,
           "stalemates": 0,
           "rounds_median": 4.0,
-          "dpr_median": 62.17
+          "dpr_median": 62.42
         },
         {
           "level": 5,
           "fights": 100,
-          "wins": 45,
-          "deaths": 56,
+          "wins": 48,
+          "deaths": 53,
           "stalemates": 0,
           "rounds_median": 6.0,
-          "dpr_median": 41.95
+          "dpr_median": 41.85
         },
         {
           "level": 6,
           "fights": 100,
-          "wins": 59,
-          "deaths": 45,
+          "wins": 56,
+          "deaths": 47,
           "stalemates": 0,
-          "rounds_median": 6.5,
-          "dpr_median": 41.08
+          "rounds_median": 6.0,
+          "dpr_median": 43.55
         },
         {
           "level": 7,
           "fights": 100,
-          "wins": 62,
-          "deaths": 39,
+          "wins": 60,
+          "deaths": 40,
           "stalemates": 0,
-          "rounds_median": 6.0,
-          "dpr_median": 41.67
+          "rounds_median": 6.5,
+          "dpr_median": 40.61
         },
         {
           "level": 8,
           "fights": 100,
           "wins": 87,
-          "deaths": 14,
+          "deaths": 15,
           "stalemates": 0,
           "rounds_median": 6.0,
-          "dpr_median": 38.82
+          "dpr_median": 40.63
         },
         {
           "level": 9,
           "fights": 100,
-          "wins": 93,
-          "deaths": 7,
+          "wins": 90,
+          "deaths": 10,
           "stalemates": 0,
           "rounds_median": 5.0,
-          "dpr_median": 43.7
+          "dpr_median": 44.47
         },
         {
           "level": 10,
           "fights": 100,
-          "wins": 96,
-          "deaths": 4,
+          "wins": 95,
+          "deaths": 5,
           "stalemates": 0,
           "rounds_median": 5.0,
-          "dpr_median": 45.4
+          "dpr_median": 46.98
         },
         {
           "level": 11,
           "fights": 100,
-          "wins": 84,
-          "deaths": 16,
+          "wins": 86,
+          "deaths": 14,
           "stalemates": 0,
           "rounds_median": 5.0,
-          "dpr_median": 49.42
+          "dpr_median": 48.39
         },
         {
           "level": 12,
           "fights": 100,
-          "wins": 98,
-          "deaths": 2,
+          "wins": 96,
+          "deaths": 4,
           "stalemates": 0,
           "rounds_median": 4.0,
           "dpr_median": 47.29
@@ -5779,7 +5779,7 @@
           "deaths": 2,
           "stalemates": 0,
           "rounds_median": 4.0,
-          "dpr_median": 47.3
+          "dpr_median": 47.8
         },
         {
           "level": 14,
@@ -5788,16 +5788,16 @@
           "deaths": 0,
           "stalemates": 0,
           "rounds_median": 4.0,
-          "dpr_median": 49.54
+          "dpr_median": 48.63
         },
         {
           "level": 15,
           "fights": 100,
-          "wins": 99,
-          "deaths": 1,
+          "wins": 100,
+          "deaths": 0,
           "stalemates": 0,
           "rounds_median": 4.0,
-          "dpr_median": 48.13
+          "dpr_median": 49.38
         },
         {
           "level": 16,
@@ -5806,7 +5806,7 @@
           "deaths": 0,
           "stalemates": 0,
           "rounds_median": 3.0,
-          "dpr_median": 51.38
+          "dpr_median": 51.88
         },
         {
           "level": 17,
@@ -5815,7 +5815,7 @@
           "deaths": 0,
           "stalemates": 0,
           "rounds_median": 2.0,
-          "dpr_median": 41.5
+          "dpr_median": 43.0
         },
         {
           "level": 18,
@@ -5824,7 +5824,7 @@
           "deaths": 0,
           "stalemates": 0,
           "rounds_median": 2.0,
-          "dpr_median": 40.25
+          "dpr_median": 40.5
         },
         {
           "level": 19,
@@ -5842,7 +5842,7 @@
           "deaths": 0,
           "stalemates": 0,
           "rounds_median": 2.0,
-          "dpr_median": 40.92
+          "dpr_median": 42.0
         }
       ]
     },
@@ -6251,7 +6251,7 @@
           "deaths": 0,
           "stalemates": 0,
           "rounds_median": 2.0,
-          "dpr_median": 6.0
+          "dpr_median": 5.75
         },
         {
           "level": 4,
@@ -15075,7 +15075,7 @@
           "deaths": 0,
           "stalemates": 0,
           "rounds_median": 2.0,
-          "dpr_median": 2.25
+          "dpr_median": 2.0
         },
         {
           "level": 4,
@@ -17673,8 +17673,8 @@
           "wins": 0,
           "deaths": 100,
           "stalemates": 0,
-          "rounds_median": 4.0,
-          "dpr_median": 16.33
+          "rounds_median": 5.0,
+          "dpr_median": 15.37
         },
         {
           "level": 2,
@@ -17682,26 +17682,26 @@
           "wins": 0,
           "deaths": 100,
           "stalemates": 0,
-          "rounds_median": 6.0,
-          "dpr_median": 17.67
+          "rounds_median": 7.0,
+          "dpr_median": 15.33
         },
         {
           "level": 3,
           "fights": 100,
-          "wins": 19,
-          "deaths": 81,
+          "wins": 28,
+          "deaths": 73,
           "stalemates": 0,
-          "rounds_median": 9.0,
-          "dpr_median": 17.37
+          "rounds_median": 10.0,
+          "dpr_median": 16.29
         },
         {
           "level": 4,
           "fights": 100,
-          "wins": 77,
-          "deaths": 23,
+          "wins": 81,
+          "deaths": 19,
           "stalemates": 0,
           "rounds_median": 7.0,
-          "dpr_median": 14.84
+          "dpr_median": 13.33
         },
         {
           "level": 5,
@@ -18802,38 +18802,38 @@
         {
           "level": 1,
           "fights": 100,
-          "wins": 5,
-          "deaths": 96,
+          "wins": 13,
+          "deaths": 89,
           "stalemates": 0,
-          "rounds_median": 4.0,
-          "dpr_median": 17.42
+          "rounds_median": 5.0,
+          "dpr_median": 14.78
         },
         {
           "level": 2,
           "fights": 100,
-          "wins": 42,
-          "deaths": 61,
+          "wins": 57,
+          "deaths": 46,
           "stalemates": 0,
           "rounds_median": 6.0,
-          "dpr_median": 14.55
+          "dpr_median": 11.85
         },
         {
           "level": 3,
           "fights": 100,
-          "wins": 89,
-          "deaths": 13,
+          "wins": 95,
+          "deaths": 6,
           "stalemates": 0,
           "rounds_median": 5.0,
-          "dpr_median": 13.1
+          "dpr_median": 11.6
         },
         {
           "level": 4,
           "fights": 100,
-          "wins": 99,
-          "deaths": 1,
+          "wins": 100,
+          "deaths": 0,
           "stalemates": 0,
           "rounds_median": 4.0,
-          "dpr_median": 12.67
+          "dpr_median": 10.79
         },
         {
           "level": 5,
@@ -32319,8 +32319,8 @@
           "wins": 0,
           "deaths": 100,
           "stalemates": 0,
-          "rounds_median": 3.0,
-          "dpr_median": 30.33
+          "rounds_median": 4.0,
+          "dpr_median": 25.0
         },
         {
           "level": 2,
@@ -32328,53 +32328,53 @@
           "wins": 0,
           "deaths": 100,
           "stalemates": 0,
-          "rounds_median": 4.0,
-          "dpr_median": 29.5
+          "rounds_median": 5.0,
+          "dpr_median": 26.53
         },
         {
           "level": 3,
           "fights": 100,
-          "wins": 23,
-          "deaths": 75,
-          "stalemates": 2,
+          "wins": 36,
+          "deaths": 63,
+          "stalemates": 1,
           "rounds_median": 6.0,
-          "dpr_median": 30.27
+          "dpr_median": 26.71
         },
         {
           "level": 4,
           "fights": 100,
-          "wins": 39,
-          "deaths": 61,
+          "wins": 56,
+          "deaths": 44,
           "stalemates": 0,
           "rounds_median": 7.0,
-          "dpr_median": 27.07
+          "dpr_median": 17.14
         },
         {
           "level": 5,
           "fights": 100,
-          "wins": 63,
-          "deaths": 37,
+          "wins": 67,
+          "deaths": 33,
           "stalemates": 0,
           "rounds_median": 7.0,
-          "dpr_median": 25.4
+          "dpr_median": 23.38
         },
         {
           "level": 6,
           "fights": 100,
-          "wins": 82,
-          "deaths": 18,
+          "wins": 87,
+          "deaths": 13,
           "stalemates": 0,
           "rounds_median": 6.0,
-          "dpr_median": 25.83
+          "dpr_median": 24.5
         },
         {
           "level": 7,
           "fights": 100,
-          "wins": 94,
-          "deaths": 6,
+          "wins": 97,
+          "deaths": 3,
           "stalemates": 0,
-          "rounds_median": 5.0,
-          "dpr_median": 25.67
+          "rounds_median": 6.0,
+          "dpr_median": 22.45
         },
         {
           "level": 8,
@@ -32383,7 +32383,7 @@
           "deaths": 0,
           "stalemates": 0,
           "rounds_median": 5.0,
-          "dpr_median": 24.9
+          "dpr_median": 22.1
         },
         {
           "level": 9,
@@ -32392,7 +32392,7 @@
           "deaths": 0,
           "stalemates": 0,
           "rounds_median": 4.0,
-          "dpr_median": 24.71
+          "dpr_median": 23.5
         },
         {
           "level": 10,
@@ -32401,7 +32401,7 @@
           "deaths": 0,
           "stalemates": 0,
           "rounds_median": 4.0,
-          "dpr_median": 25.5
+          "dpr_median": 25.25
         },
         {
           "level": 11,
@@ -32410,7 +32410,7 @@
           "deaths": 0,
           "stalemates": 0,
           "rounds_median": 3.0,
-          "dpr_median": 21.58
+          "dpr_median": 21.5
         },
         {
           "level": 12,
@@ -33445,8 +33445,8 @@
           "wins": 0,
           "deaths": 100,
           "stalemates": 0,
-          "rounds_median": 4.0,
-          "dpr_median": 18.25
+          "rounds_median": 5.0,
+          "dpr_median": 17.25
         },
         {
           "level": 2,
@@ -33455,25 +33455,25 @@
           "deaths": 100,
           "stalemates": 0,
           "rounds_median": 6.0,
-          "dpr_median": 18.06
+          "dpr_median": 17.5
         },
         {
           "level": 3,
           "fights": 100,
-          "wins": 4,
-          "deaths": 96,
+          "wins": 12,
+          "deaths": 88,
           "stalemates": 0,
-          "rounds_median": 8.0,
-          "dpr_median": 18.56
+          "rounds_median": 9.0,
+          "dpr_median": 17.42
         },
         {
           "level": 4,
           "fights": 100,
-          "wins": 18,
-          "deaths": 82,
+          "wins": 33,
+          "deaths": 67,
           "stalemates": 0,
           "rounds_median": 10.0,
-          "dpr_median": 18.32
+          "dpr_median": 16.77
         },
         {
           "level": 5,
@@ -33482,7 +33482,7 @@
           "deaths": 3,
           "stalemates": 0,
           "rounds_median": 5.0,
-          "dpr_median": 15.9
+          "dpr_median": 14.78
         },
         {
           "level": 6,
@@ -33491,7 +33491,7 @@
           "deaths": 0,
           "stalemates": 0,
           "rounds_median": 4.0,
-          "dpr_median": 15.42
+          "dpr_median": 15.33
         },
         {
           "level": 7,
@@ -35131,7 +35131,7 @@
           "deaths": 100,
           "stalemates": 0,
           "rounds_median": 2.0,
-          "dpr_median": 75.75
+          "dpr_median": 76.0
         },
         {
           "level": 2,
@@ -35149,7 +35149,7 @@
           "deaths": 100,
           "stalemates": 0,
           "rounds_median": 2.0,
-          "dpr_median": 81.0
+          "dpr_median": 80.75
         },
         {
           "level": 4,
@@ -35167,7 +35167,7 @@
           "deaths": 100,
           "stalemates": 0,
           "rounds_median": 3.0,
-          "dpr_median": 100.25
+          "dpr_median": 99.33
         },
         {
           "level": 6,
@@ -35176,7 +35176,7 @@
           "deaths": 100,
           "stalemates": 0,
           "rounds_median": 3.0,
-          "dpr_median": 99.83
+          "dpr_median": 99.67
         },
         {
           "level": 7,
@@ -35185,7 +35185,7 @@
           "deaths": 100,
           "stalemates": 0,
           "rounds_median": 3.0,
-          "dpr_median": 99.67
+          "dpr_median": 101.17
         },
         {
           "level": 8,
@@ -35194,7 +35194,7 @@
           "deaths": 100,
           "stalemates": 0,
           "rounds_median": 4.0,
-          "dpr_median": 107.75
+          "dpr_median": 107.38
         },
         {
           "level": 9,
@@ -35203,7 +35203,7 @@
           "deaths": 100,
           "stalemates": 0,
           "rounds_median": 4.0,
-          "dpr_median": 105.37
+          "dpr_median": 105.7
         },
         {
           "level": 10,
@@ -35212,7 +35212,7 @@
           "deaths": 100,
           "stalemates": 0,
           "rounds_median": 4.0,
-          "dpr_median": 99.9
+          "dpr_median": 100.25
         },
         {
           "level": 11,
@@ -35221,7 +35221,7 @@
           "deaths": 100,
           "stalemates": 0,
           "rounds_median": 4.0,
-          "dpr_median": 104.43
+          "dpr_median": 104.68
         },
         {
           "level": 12,
@@ -35230,7 +35230,7 @@
           "deaths": 100,
           "stalemates": 0,
           "rounds_median": 5.0,
-          "dpr_median": 106.57
+          "dpr_median": 107.75
         },
         {
           "level": 13,
@@ -35238,7 +35238,7 @@
           "wins": 0,
           "deaths": 100,
           "stalemates": 0,
-          "rounds_median": 5.0,
+          "rounds_median": 6.0,
           "dpr_median": 105.08
         },
         {
@@ -35248,61 +35248,61 @@
           "deaths": 100,
           "stalemates": 0,
           "rounds_median": 5.0,
-          "dpr_median": 108.7
+          "dpr_median": 110.43
         },
         {
           "level": 15,
           "fights": 100,
-          "wins": 2,
-          "deaths": 98,
+          "wins": 1,
+          "deaths": 99,
           "stalemates": 0,
           "rounds_median": 6.0,
-          "dpr_median": 111.73
+          "dpr_median": 109.65
         },
         {
           "level": 16,
           "fights": 100,
-          "wins": 4,
-          "deaths": 96,
+          "wins": 3,
+          "deaths": 97,
           "stalemates": 0,
           "rounds_median": 7.0,
-          "dpr_median": 112.46
+          "dpr_median": 110.58
         },
         {
           "level": 17,
           "fights": 100,
-          "wins": 42,
-          "deaths": 58,
+          "wins": 30,
+          "deaths": 70,
           "stalemates": 0,
-          "rounds_median": 6.5,
-          "dpr_median": 115.75
+          "rounds_median": 7.0,
+          "dpr_median": 115.85
         },
         {
           "level": 18,
           "fights": 100,
-          "wins": 39,
-          "deaths": 61,
+          "wins": 34,
+          "deaths": 66,
           "stalemates": 0,
           "rounds_median": 7.0,
-          "dpr_median": 115.33
+          "dpr_median": 116.71
         },
         {
           "level": 19,
           "fights": 100,
-          "wins": 58,
-          "deaths": 42,
+          "wins": 53,
+          "deaths": 47,
           "stalemates": 0,
-          "rounds_median": 6.0,
-          "dpr_median": 117.2
+          "rounds_median": 7.0,
+          "dpr_median": 117.75
         },
         {
           "level": 20,
           "fights": 100,
-          "wins": 78,
-          "deaths": 22,
+          "wins": 73,
+          "deaths": 27,
           "stalemates": 0,
-          "rounds_median": 5.0,
-          "dpr_median": 120.5
+          "rounds_median": 6.0,
+          "dpr_median": 120.18
         }
       ]
     },
@@ -35689,34 +35689,34 @@
           "deaths": 99,
           "stalemates": 0,
           "rounds_median": 4.0,
-          "dpr_median": 19.75
+          "dpr_median": 19.25
         },
         {
           "level": 2,
           "fights": 100,
-          "wins": 10,
-          "deaths": 94,
+          "wins": 8,
+          "deaths": 96,
           "stalemates": 0,
           "rounds_median": 5.0,
-          "dpr_median": 23.5
+          "dpr_median": 23.28
         },
         {
           "level": 3,
           "fights": 100,
-          "wins": 78,
-          "deaths": 27,
+          "wins": 73,
+          "deaths": 32,
           "stalemates": 0,
           "rounds_median": 5.0,
-          "dpr_median": 18.29
+          "dpr_median": 18.9
         },
         {
           "level": 4,
           "fights": 100,
-          "wins": 91,
-          "deaths": 12,
+          "wins": 93,
+          "deaths": 11,
           "stalemates": 0,
           "rounds_median": 5.0,
-          "dpr_median": 17.63
+          "dpr_median": 17.0
         },
         {
           "level": 5,
@@ -35725,7 +35725,7 @@
           "deaths": 0,
           "stalemates": 0,
           "rounds_median": 3.0,
-          "dpr_median": 16.0
+          "dpr_median": 16.5
         },
         {
           "level": 6,
@@ -35734,7 +35734,7 @@
           "deaths": 0,
           "stalemates": 0,
           "rounds_median": 3.0,
-          "dpr_median": 16.0
+          "dpr_median": 15.0
         },
         {
           "level": 7,
@@ -35743,7 +35743,7 @@
           "deaths": 0,
           "stalemates": 0,
           "rounds_median": 3.0,
-          "dpr_median": 16.0
+          "dpr_median": 15.67
         },
         {
           "level": 8,
@@ -35752,7 +35752,7 @@
           "deaths": 0,
           "stalemates": 0,
           "rounds_median": 3.0,
-          "dpr_median": 13.5
+          "dpr_median": 14.5
         },
         {
           "level": 9,
@@ -35761,7 +35761,7 @@
           "deaths": 0,
           "stalemates": 0,
           "rounds_median": 2.0,
-          "dpr_median": 13.83
+          "dpr_median": 14.0
         },
         {
           "level": 10,
@@ -35770,7 +35770,7 @@
           "deaths": 0,
           "stalemates": 0,
           "rounds_median": 2.0,
-          "dpr_median": 14.17
+          "dpr_median": 13.5
         },
         {
           "level": 11,
@@ -35779,7 +35779,7 @@
           "deaths": 0,
           "stalemates": 0,
           "rounds_median": 2.0,
-          "dpr_median": 14.75
+          "dpr_median": 16.25
         },
         {
           "level": 12,
@@ -35788,7 +35788,7 @@
           "deaths": 0,
           "stalemates": 0,
           "rounds_median": 2.0,
-          "dpr_median": 12.75
+          "dpr_median": 14.0
         },
         {
           "level": 13,
@@ -35797,7 +35797,7 @@
           "deaths": 0,
           "stalemates": 0,
           "rounds_median": 2.0,
-          "dpr_median": 15.5
+          "dpr_median": 15.75
         },
         {
           "level": 14,
@@ -35806,7 +35806,7 @@
           "deaths": 0,
           "stalemates": 0,
           "rounds_median": 2.0,
-          "dpr_median": 14.0
+          "dpr_median": 14.25
         },
         {
           "level": 15,
@@ -35824,7 +35824,7 @@
           "deaths": 0,
           "stalemates": 0,
           "rounds_median": 2.0,
-          "dpr_median": 16.0
+          "dpr_median": 15.5
         },
         {
           "level": 17,
@@ -35850,8 +35850,8 @@
           "wins": 100,
           "deaths": 0,
           "stalemates": 0,
-          "rounds_median": 1.0,
-          "dpr_median": 4.75
+          "rounds_median": 1.5,
+          "dpr_median": 6.17
         },
         {
           "level": 20,
@@ -57092,38 +57092,38 @@
         {
           "level": 1,
           "fights": 100,
-          "wins": 0,
-          "deaths": 100,
+          "wins": 1,
+          "deaths": 99,
           "stalemates": 0,
           "rounds_median": 5.0,
-          "dpr_median": 15.66
+          "dpr_median": 15.37
         },
         {
           "level": 2,
           "fights": 100,
-          "wins": 4,
-          "deaths": 96,
+          "wins": 10,
+          "deaths": 90,
           "stalemates": 0,
-          "rounds_median": 7.0,
-          "dpr_median": 15.65
+          "rounds_median": 7.5,
+          "dpr_median": 15.07
         },
         {
           "level": 3,
           "fights": 100,
-          "wins": 43,
-          "deaths": 57,
+          "wins": 62,
+          "deaths": 38,
           "stalemates": 0,
-          "rounds_median": 7.0,
-          "dpr_median": 15.59
+          "rounds_median": 7.5,
+          "dpr_median": 12.9
         },
         {
           "level": 4,
           "fights": 100,
-          "wins": 71,
-          "deaths": 29,
+          "wins": 89,
+          "deaths": 11,
           "stalemates": 0,
           "rounds_median": 7.0,
-          "dpr_median": 15.79
+          "dpr_median": 12.89
         },
         {
           "level": 5,
@@ -57132,7 +57132,7 @@
           "deaths": 0,
           "stalemates": 0,
           "rounds_median": 3.0,
-          "dpr_median": 13.33
+          "dpr_median": 13.17
         },
         {
           "level": 6,
@@ -67528,10 +67528,10 @@
       ],
       "thin": false,
       "fights": 2000,
-      "wins": 320,
-      "deaths": 1754,
-      "win_rate": 0.16,
-      "death_rate": 0.877,
+      "wins": 328,
+      "deaths": 1747,
+      "win_rate": 0.164,
+      "death_rate": 0.8735,
       "band": "high",
       "rounds": {
         "p10": 4.0,
@@ -67553,10 +67553,10 @@
       ],
       "thin": false,
       "fights": 2000,
-      "wins": 944,
-      "deaths": 1106,
-      "win_rate": 0.472,
-      "death_rate": 0.553,
+      "wins": 959,
+      "deaths": 1091,
+      "win_rate": 0.4795,
+      "death_rate": 0.5455,
       "band": "high",
       "rounds": {
         "p10": 4.0,
@@ -67565,7 +67565,7 @@
       },
       "dpr": {
         "p10": 7.17,
-        "median": 11.85,
+        "median": 11.24,
         "p90": 18.29
       }
     },
@@ -67578,10 +67578,10 @@
       ],
       "thin": false,
       "fights": 2000,
-      "wins": 1716,
-      "deaths": 307,
-      "win_rate": 0.858,
-      "death_rate": 0.1535,
+      "wins": 1722,
+      "deaths": 300,
+      "win_rate": 0.861,
+      "death_rate": 0.15,
       "band": "high",
       "rounds": {
         "p10": 4.0,
@@ -67590,7 +67590,7 @@
       },
       "dpr": {
         "p10": 6.0,
-        "median": 11.11,
+        "median": 10.75,
         "p90": 15.58
       }
     },
@@ -67603,10 +67603,10 @@
       ],
       "thin": false,
       "fights": 2000,
-      "wins": 1936,
-      "deaths": 68,
-      "win_rate": 0.968,
-      "death_rate": 0.034,
+      "wins": 1937,
+      "deaths": 67,
+      "win_rate": 0.9685,
+      "death_rate": 0.0335,
       "band": "moderate",
       "rounds": {
         "p10": 4.0,
@@ -68028,10 +68028,10 @@
       ],
       "thin": false,
       "fights": 2700,
-      "wins": 68,
-      "deaths": 2657,
-      "win_rate": 0.0252,
-      "death_rate": 0.9841,
+      "wins": 69,
+      "deaths": 2656,
+      "win_rate": 0.0256,
+      "death_rate": 0.9837,
       "band": "high",
       "rounds": {
         "p10": 4.0,
@@ -68053,19 +68053,19 @@
       ],
       "thin": false,
       "fights": 2700,
-      "wins": 397,
-      "deaths": 2334,
-      "win_rate": 0.147,
-      "death_rate": 0.8644,
+      "wins": 404,
+      "deaths": 2327,
+      "win_rate": 0.1496,
+      "death_rate": 0.8619,
       "band": "high",
       "rounds": {
         "p10": 5.0,
-        "median": 6.0,
+        "median": 7.0,
         "p90": 8.0
       },
       "dpr": {
         "p10": 10.55,
-        "median": 17.56,
+        "median": 16.83,
         "p90": 20.93
       }
     },
@@ -68078,10 +68078,10 @@
       ],
       "thin": false,
       "fights": 2700,
-      "wins": 1538,
-      "deaths": 1203,
-      "win_rate": 0.5696,
-      "death_rate": 0.4456,
+      "wins": 1571,
+      "deaths": 1171,
+      "win_rate": 0.5819,
+      "death_rate": 0.4337,
       "band": "high",
       "rounds": {
         "p10": 5.0,
@@ -68090,7 +68090,7 @@
       },
       "dpr": {
         "p10": 9.9,
-        "median": 15.59,
+        "median": 15.55,
         "p90": 19.46
       }
     },
@@ -68103,10 +68103,10 @@
       ],
       "thin": false,
       "fights": 2700,
-      "wins": 2186,
-      "deaths": 535,
-      "win_rate": 0.8096,
-      "death_rate": 0.1981,
+      "wins": 2224,
+      "deaths": 497,
+      "win_rate": 0.8237,
+      "death_rate": 0.1841,
       "band": "high",
       "rounds": {
         "p10": 4.0,
@@ -68115,7 +68115,7 @@
       },
       "dpr": {
         "p10": 9.92,
-        "median": 14.3,
+        "median": 13.8,
         "p90": 19.3
       }
     },
@@ -68539,8 +68539,8 @@
         "p90": 5.0
       },
       "dpr": {
-        "p10": 18.25,
-        "median": 19.75,
+        "p10": 17.25,
+        "median": 19.25,
         "p90": 34.35
       }
     },
@@ -68553,10 +68553,10 @@
       ],
       "thin": false,
       "fights": 1100,
-      "wins": 20,
-      "deaths": 1086,
-      "win_rate": 0.0182,
-      "death_rate": 0.9873,
+      "wins": 18,
+      "deaths": 1088,
+      "win_rate": 0.0164,
+      "death_rate": 0.9891,
       "band": "high",
       "rounds": {
         "p10": 4.0,
@@ -68564,7 +68564,7 @@
         "p90": 6.0
       },
       "dpr": {
-        "p10": 18.06,
+        "p10": 18.0,
         "median": 22.0,
         "p90": 36.5
       }
@@ -68578,10 +68578,10 @@
       ],
       "thin": false,
       "fights": 1100,
-      "wins": 285,
-      "deaths": 852,
-      "win_rate": 0.2591,
-      "death_rate": 0.7745,
+      "wins": 288,
+      "deaths": 849,
+      "win_rate": 0.2618,
+      "death_rate": 0.7718,
       "band": "high",
       "rounds": {
         "p10": 4.0,
@@ -68603,10 +68603,10 @@
       ],
       "thin": false,
       "fights": 1100,
-      "wins": 462,
-      "deaths": 663,
-      "win_rate": 0.42,
-      "death_rate": 0.6027,
+      "wins": 479,
+      "deaths": 647,
+      "win_rate": 0.4355,
+      "death_rate": 0.5882,
       "band": "high",
       "rounds": {
         "p10": 5.0,
@@ -68614,7 +68614,7 @@
         "p90": 8.0
       },
       "dpr": {
-        "p10": 18.32,
+        "p10": 17.0,
         "median": 20.01,
         "p90": 39.0
       }
@@ -68639,7 +68639,7 @@
         "p90": 5.0
       },
       "dpr": {
-        "p10": 15.9,
+        "p10": 15.83,
         "median": 18.72,
         "p90": 35.25
       }
@@ -68664,7 +68664,7 @@
         "p90": 5.0
       },
       "dpr": {
-        "p10": 15.42,
+        "p10": 15.27,
         "median": 18.0,
         "p90": 35.45
       }
@@ -68689,7 +68689,7 @@
         "p90": 5.0
       },
       "dpr": {
-        "p10": 16.0,
+        "p10": 15.67,
         "median": 18.42,
         "p90": 35.75
       }
@@ -68714,7 +68714,7 @@
         "p90": 4.0
       },
       "dpr": {
-        "p10": 14.25,
+        "p10": 14.5,
         "median": 16.67,
         "p90": 33.23
       }
@@ -68739,7 +68739,7 @@
         "p90": 3.0
       },
       "dpr": {
-        "p10": 13.83,
+        "p10": 14.0,
         "median": 15.92,
         "p90": 28.17
       }
@@ -68764,7 +68764,7 @@
         "p90": 3.0
       },
       "dpr": {
-        "p10": 13.83,
+        "p10": 13.5,
         "median": 15.67,
         "p90": 30.0
       }
@@ -68790,7 +68790,7 @@
       },
       "dpr": {
         "p10": 11.67,
-        "median": 14.75,
+        "median": 16.25,
         "p90": 25.08
       }
     },
@@ -68865,7 +68865,7 @@
       },
       "dpr": {
         "p10": 10.83,
-        "median": 14.0,
+        "median": 14.25,
         "p90": 23.5
       }
     },
@@ -69540,7 +69540,7 @@
       },
       "dpr": {
         "p10": 15.68,
-        "median": 30.08,
+        "median": 27.69,
         "p90": 37.48
       }
     },
@@ -69560,12 +69560,12 @@
       "band": "high",
       "rounds": {
         "p10": 3.0,
-        "median": 4.0,
+        "median": 4.5,
         "p90": 6.0
       },
       "dpr": {
         "p10": 16.46,
-        "median": 30.4,
+        "median": 28.92,
         "p90": 37.88
       }
     },
@@ -69578,10 +69578,10 @@
       ],
       "thin": false,
       "fights": 1000,
-      "wins": 179,
-      "deaths": 828,
-      "win_rate": 0.179,
-      "death_rate": 0.828,
+      "wins": 192,
+      "deaths": 816,
+      "win_rate": 0.192,
+      "death_rate": 0.816,
       "band": "high",
       "rounds": {
         "p10": 4.0,
@@ -69590,7 +69590,7 @@
       },
       "dpr": {
         "p10": 12.55,
-        "median": 32.58,
+        "median": 30.88,
         "p90": 39.15
       }
     },
@@ -69603,10 +69603,10 @@
       ],
       "thin": false,
       "fights": 1000,
-      "wins": 331,
-      "deaths": 675,
-      "win_rate": 0.331,
-      "death_rate": 0.675,
+      "wins": 348,
+      "deaths": 658,
+      "win_rate": 0.348,
+      "death_rate": 0.658,
       "band": "high",
       "rounds": {
         "p10": 4.0,
@@ -69615,7 +69615,7 @@
       },
       "dpr": {
         "p10": 11.57,
-        "median": 30.17,
+        "median": 30.02,
         "p90": 38.39
       }
     },
@@ -69628,10 +69628,10 @@
       ],
       "thin": false,
       "fights": 1000,
-      "wins": 780,
-      "deaths": 261,
-      "win_rate": 0.78,
-      "death_rate": 0.261,
+      "wins": 784,
+      "deaths": 257,
+      "win_rate": 0.784,
+      "death_rate": 0.257,
       "band": "high",
       "rounds": {
         "p10": 2.0,
@@ -69640,7 +69640,7 @@
       },
       "dpr": {
         "p10": 11.58,
-        "median": 27.85,
+        "median": 26.88,
         "p90": 35.4
       }
     },
@@ -69653,10 +69653,10 @@
       ],
       "thin": false,
       "fights": 1000,
-      "wins": 906,
-      "deaths": 122,
-      "win_rate": 0.906,
-      "death_rate": 0.122,
+      "wins": 911,
+      "deaths": 117,
+      "win_rate": 0.911,
+      "death_rate": 0.117,
       "band": "moderate",
       "rounds": {
         "p10": 2.0,
@@ -69665,7 +69665,7 @@
       },
       "dpr": {
         "p10": 9.83,
-        "median": 26.81,
+        "median": 26.15,
         "p90": 36.92
       }
     },
@@ -69678,10 +69678,10 @@
       ],
       "thin": false,
       "fights": 1000,
-      "wins": 938,
-      "deaths": 75,
-      "win_rate": 0.938,
-      "death_rate": 0.075,
+      "wins": 941,
+      "deaths": 72,
+      "win_rate": 0.941,
+      "death_rate": 0.072,
       "band": "moderate",
       "rounds": {
         "p10": 2.0,
@@ -69690,7 +69690,7 @@
       },
       "dpr": {
         "p10": 10.83,
-        "median": 27.0,
+        "median": 26.23,
         "p90": 36.08
       }
     },
@@ -69715,7 +69715,7 @@
       },
       "dpr": {
         "p10": 10.75,
-        "median": 25.77,
+        "median": 25.04,
         "p90": 35.67
       }
     },
@@ -69740,7 +69740,7 @@
       },
       "dpr": {
         "p10": 10.0,
-        "median": 23.62,
+        "median": 23.02,
         "p90": 35.17
       }
     },
@@ -69765,7 +69765,7 @@
       },
       "dpr": {
         "p10": 8.0,
-        "median": 24.67,
+        "median": 24.54,
         "p90": 37.67
       }
     },
@@ -69790,7 +69790,7 @@
       },
       "dpr": {
         "p10": 6.0,
-        "median": 22.04,
+        "median": 22.0,
         "p90": 30.58
       }
     },
@@ -71584,9 +71584,9 @@
       ],
       "thin": false,
       "fights": 1700,
-      "wins": 179,
+      "wins": 178,
       "deaths": 1526,
-      "win_rate": 0.1053,
+      "win_rate": 0.1047,
       "death_rate": 0.8976,
       "band": "high",
       "rounds": {
@@ -71638,10 +71638,10 @@
       ],
       "thin": false,
       "fights": 1700,
-      "wins": 644,
-      "deaths": 1082,
-      "win_rate": 0.3788,
-      "death_rate": 0.6365,
+      "wins": 647,
+      "deaths": 1079,
+      "win_rate": 0.3806,
+      "death_rate": 0.6347,
       "band": "high",
       "rounds": {
         "p10": 4.0,
@@ -71665,10 +71665,10 @@
       ],
       "thin": false,
       "fights": 1700,
-      "wins": 798,
-      "deaths": 925,
-      "win_rate": 0.4694,
-      "death_rate": 0.5441,
+      "wins": 795,
+      "deaths": 927,
+      "win_rate": 0.4676,
+      "death_rate": 0.5453,
       "band": "high",
       "rounds": {
         "p10": 4.0,
@@ -71677,7 +71677,7 @@
       },
       "dpr": {
         "p10": 12.38,
-        "median": 42.5,
+        "median": 43.55,
         "p90": 64.0
       }
     },
@@ -71692,10 +71692,10 @@
       ],
       "thin": false,
       "fights": 1700,
-      "wins": 944,
-      "deaths": 775,
-      "win_rate": 0.5553,
-      "death_rate": 0.4559,
+      "wins": 942,
+      "deaths": 776,
+      "win_rate": 0.5541,
+      "death_rate": 0.4565,
       "band": "high",
       "rounds": {
         "p10": 4.0,
@@ -71720,9 +71720,9 @@
       "thin": false,
       "fights": 1700,
       "wins": 1211,
-      "deaths": 505,
+      "deaths": 506,
       "win_rate": 0.7124,
-      "death_rate": 0.2971,
+      "death_rate": 0.2976,
       "band": "high",
       "rounds": {
         "p10": 4.0,
@@ -71746,10 +71746,10 @@
       ],
       "thin": false,
       "fights": 1700,
-      "wins": 1354,
-      "deaths": 347,
-      "win_rate": 0.7965,
-      "death_rate": 0.2041,
+      "wins": 1351,
+      "deaths": 350,
+      "win_rate": 0.7947,
+      "death_rate": 0.2059,
       "band": "high",
       "rounds": {
         "p10": 3.0,
@@ -71773,10 +71773,10 @@
       ],
       "thin": false,
       "fights": 1700,
-      "wins": 1415,
-      "deaths": 286,
-      "win_rate": 0.8324,
-      "death_rate": 0.1682,
+      "wins": 1414,
+      "deaths": 287,
+      "win_rate": 0.8318,
+      "death_rate": 0.1688,
       "band": "high",
       "rounds": {
         "p10": 3.0,
@@ -71800,10 +71800,10 @@
       ],
       "thin": false,
       "fights": 1700,
-      "wins": 1579,
-      "deaths": 122,
-      "win_rate": 0.9288,
-      "death_rate": 0.0718,
+      "wins": 1581,
+      "deaths": 120,
+      "win_rate": 0.93,
+      "death_rate": 0.0706,
       "band": "moderate",
       "rounds": {
         "p10": 3.0,
@@ -71827,10 +71827,10 @@
       ],
       "thin": false,
       "fights": 1700,
-      "wins": 1648,
-      "deaths": 52,
-      "win_rate": 0.9694,
-      "death_rate": 0.0306,
+      "wins": 1646,
+      "deaths": 54,
+      "win_rate": 0.9682,
+      "death_rate": 0.0318,
       "band": "moderate",
       "rounds": {
         "p10": 3.0,
@@ -71908,10 +71908,10 @@
       ],
       "thin": false,
       "fights": 1700,
-      "wins": 1698,
-      "deaths": 2,
-      "win_rate": 0.9988,
-      "death_rate": 0.0012,
+      "wins": 1699,
+      "deaths": 1,
+      "win_rate": 0.9994,
+      "death_rate": 0.0006,
       "band": "low",
       "rounds": {
         "p10": 2.0,
@@ -76120,7 +76120,7 @@
       },
       "dpr": {
         "p10": 57.25,
-        "median": 67.38,
+        "median": 67.5,
         "p90": 81.0
       }
     },
@@ -76170,7 +76170,7 @@
       },
       "dpr": {
         "p10": 67.5,
-        "median": 75.16,
+        "median": 75.04,
         "p90": 91.88
       }
     },
@@ -76221,7 +76221,7 @@
       "dpr": {
         "p10": 76.25,
         "median": 88.88,
-        "p90": 100.25
+        "p90": 99.33
       }
     },
     {
@@ -76246,7 +76246,7 @@
       "dpr": {
         "p10": 78.27,
         "median": 95.6,
-        "p90": 99.83
+        "p90": 99.67
       }
     },
     {
@@ -76271,7 +76271,7 @@
       "dpr": {
         "p10": 82.13,
         "median": 91.79,
-        "p90": 99.67
+        "p90": 101.17
       }
     },
     {
@@ -76296,7 +76296,7 @@
       "dpr": {
         "p10": 86.93,
         "median": 95.14,
-        "p90": 107.75
+        "p90": 107.38
       }
     },
     {
@@ -76321,7 +76321,7 @@
       "dpr": {
         "p10": 82.88,
         "median": 91.94,
-        "p90": 105.37
+        "p90": 105.7
       }
     },
     {
@@ -76346,7 +76346,7 @@
       "dpr": {
         "p10": 82.9,
         "median": 94.04,
-        "p90": 99.9
+        "p90": 100.25
       }
     },
     {
@@ -76371,7 +76371,7 @@
       "dpr": {
         "p10": 83.58,
         "median": 97.32,
-        "p90": 104.43
+        "p90": 104.68
       }
     },
     {
@@ -76396,7 +76396,7 @@
       "dpr": {
         "p10": 83.75,
         "median": 99.54,
-        "p90": 106.57
+        "p90": 107.75
       }
     },
     {
@@ -76415,7 +76415,7 @@
       "band": "high",
       "rounds": {
         "p10": 5.0,
-        "median": 5.5,
+        "median": 6.0,
         "p90": 6.0
       },
       "dpr": {
@@ -76446,7 +76446,7 @@
       "dpr": {
         "p10": 89.65,
         "median": 101.53,
-        "p90": 108.7
+        "p90": 110.43
       }
     },
     {
@@ -76458,10 +76458,10 @@
       ],
       "thin": false,
       "fights": 400,
-      "wins": 37,
-      "deaths": 363,
-      "win_rate": 0.0925,
-      "death_rate": 0.9075,
+      "wins": 36,
+      "deaths": 364,
+      "win_rate": 0.09,
+      "death_rate": 0.91,
       "band": "high",
       "rounds": {
         "p10": 6.0,
@@ -76470,8 +76470,8 @@
       },
       "dpr": {
         "p10": 89.0,
-        "median": 103.98,
-        "p90": 111.73
+        "median": 103.22,
+        "p90": 111.17
       }
     },
     {
@@ -76483,10 +76483,10 @@
       ],
       "thin": false,
       "fights": 400,
-      "wins": 85,
-      "deaths": 315,
-      "win_rate": 0.2125,
-      "death_rate": 0.7875,
+      "wins": 84,
+      "deaths": 316,
+      "win_rate": 0.21,
+      "death_rate": 0.79,
       "band": "high",
       "rounds": {
         "p10": 6.0,
@@ -76495,7 +76495,7 @@
       },
       "dpr": {
         "p10": 90.93,
-        "median": 102.1,
+        "median": 101.16,
         "p90": 116.83
       }
     },
@@ -76508,19 +76508,19 @@
       ],
       "thin": false,
       "fights": 400,
-      "wins": 256,
-      "deaths": 144,
-      "win_rate": 0.64,
-      "death_rate": 0.36,
+      "wins": 244,
+      "deaths": 156,
+      "win_rate": 0.61,
+      "death_rate": 0.39,
       "band": "high",
       "rounds": {
         "p10": 6.0,
         "median": 6.0,
-        "p90": 6.5
+        "p90": 7.0
       },
       "dpr": {
         "p10": 87.03,
-        "median": 103.91,
+        "median": 103.96,
         "p90": 117.0
       }
     },
@@ -76533,10 +76533,10 @@
       ],
       "thin": false,
       "fights": 400,
-      "wins": 258,
-      "deaths": 142,
-      "win_rate": 0.645,
-      "death_rate": 0.355,
+      "wins": 253,
+      "deaths": 147,
+      "win_rate": 0.6325,
+      "death_rate": 0.3675,
       "band": "high",
       "rounds": {
         "p10": 6.0,
@@ -76546,7 +76546,7 @@
       "dpr": {
         "p10": 87.88,
         "median": 101.99,
-        "p90": 115.33
+        "p90": 116.71
       }
     },
     {
@@ -76558,20 +76558,20 @@
       ],
       "thin": false,
       "fights": 400,
-      "wins": 307,
-      "deaths": 93,
-      "win_rate": 0.7675,
-      "death_rate": 0.2325,
+      "wins": 302,
+      "deaths": 98,
+      "win_rate": 0.755,
+      "death_rate": 0.245,
       "band": "high",
       "rounds": {
         "p10": 5.0,
-        "median": 6.0,
-        "p90": 6.5
+        "median": 6.25,
+        "p90": 7.0
       },
       "dpr": {
         "p10": 79.63,
         "median": 98.76,
-        "p90": 117.2
+        "p90": 117.75
       }
     },
     {
@@ -76583,20 +76583,20 @@
       ],
       "thin": false,
       "fights": 400,
-      "wins": 359,
-      "deaths": 41,
-      "win_rate": 0.8975,
-      "death_rate": 0.1025,
+      "wins": 354,
+      "deaths": 46,
+      "win_rate": 0.885,
+      "death_rate": 0.115,
       "band": "moderate",
       "rounds": {
         "p10": 4.0,
-        "median": 5.0,
+        "median": 5.5,
         "p90": 6.0
       },
       "dpr": {
         "p10": 84.0,
         "median": 97.68,
-        "p90": 120.5
+        "p90": 120.18
       }
     },
     {
@@ -76941,7 +76941,7 @@
       "band": "high",
       "rounds": {
         "p10": 4.0,
-        "median": 5.0,
+        "median": 6.0,
         "p90": 10.0
       },
       "dpr": {
@@ -76988,10 +76988,10 @@
       ],
       "thin": false,
       "fights": 900,
-      "wins": 154,
-      "deaths": 746,
-      "win_rate": 0.1711,
-      "death_rate": 0.8289,
+      "wins": 153,
+      "deaths": 747,
+      "win_rate": 0.17,
+      "death_rate": 0.83,
       "band": "high",
       "rounds": {
         "p10": 4.0,
@@ -77000,7 +77000,7 @@
       },
       "dpr": {
         "p10": 68.11,
-        "median": 111.17,
+        "median": 109.65,
         "p90": 165.2
       }
     },
@@ -77015,10 +77015,10 @@
       ],
       "thin": false,
       "fights": 900,
-      "wins": 202,
-      "deaths": 698,
-      "win_rate": 0.2244,
-      "death_rate": 0.7756,
+      "wins": 201,
+      "deaths": 699,
+      "win_rate": 0.2233,
+      "death_rate": 0.7767,
       "band": "high",
       "rounds": {
         "p10": 5.0,
@@ -77027,7 +77027,7 @@
       },
       "dpr": {
         "p10": 67.97,
-        "median": 112.46,
+        "median": 110.58,
         "p90": 160.98
       }
     },
@@ -77042,10 +77042,10 @@
       ],
       "thin": false,
       "fights": 900,
-      "wins": 467,
-      "deaths": 433,
-      "win_rate": 0.5189,
-      "death_rate": 0.4811,
+      "wins": 455,
+      "deaths": 445,
+      "win_rate": 0.5056,
+      "death_rate": 0.4944,
       "band": "high",
       "rounds": {
         "p10": 5.0,
@@ -77054,7 +77054,7 @@
       },
       "dpr": {
         "p10": 63.6,
-        "median": 115.75,
+        "median": 115.85,
         "p90": 164.48
       }
     },
@@ -77069,10 +77069,10 @@
       ],
       "thin": false,
       "fights": 900,
-      "wins": 483,
-      "deaths": 417,
-      "win_rate": 0.5367,
-      "death_rate": 0.4633,
+      "wins": 478,
+      "deaths": 422,
+      "win_rate": 0.5311,
+      "death_rate": 0.4689,
       "band": "high",
       "rounds": {
         "p10": 5.0,
@@ -77096,14 +77096,14 @@
       ],
       "thin": false,
       "fights": 900,
-      "wins": 574,
-      "deaths": 326,
-      "win_rate": 0.6378,
-      "death_rate": 0.3622,
+      "wins": 569,
+      "deaths": 331,
+      "win_rate": 0.6322,
+      "death_rate": 0.3678,
       "band": "high",
       "rounds": {
         "p10": 4.0,
-        "median": 6.0,
+        "median": 6.5,
         "p90": 7.0
       },
       "dpr": {
@@ -77123,10 +77123,10 @@
       ],
       "thin": false,
       "fights": 900,
-      "wins": 675,
-      "deaths": 225,
-      "win_rate": 0.75,
-      "death_rate": 0.25,
+      "wins": 670,
+      "deaths": 230,
+      "win_rate": 0.7444,
+      "death_rate": 0.2556,
       "band": "high",
       "rounds": {
         "p10": 4.0,
