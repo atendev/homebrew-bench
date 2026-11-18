@@ -23,4 +23,14 @@ Build the committed spell baseline from [Spell value metric](../closed/001-spell
 
 ## Resolution
 
-<!-- Filled in at close. -->
+Built. `bench baseline generate --spells` runs every modeled SRD spell through the lift runner against the committed spell panel and writes `data/baseline/spell-lift.json`, embedded in the binary as the curve is. `bench baseline status --spells` (also `check`) compares the table's fingerprints against the inputs now and names each one that moved. Plain `status` and `check` still report the curve and panel only.
+
+- **Table.** 94 spells and 355 rows: 206 measured, 81 `never_cast`, 68 `not_measured`. Per-member detail is left out, which keeps the file at 263 KB.
+- **Fingerprints.** Party, policy, engine, fixture set, effects file, panel and fight count. `generate --spells` refuses a stale panel and a `--seed`, since the panel fixes the seeds.
+- **Version.** Engine 0.1.47. The curve and panel differ from before only in `engine_version`.
+- **Tests.** Calibration tests check that the table is current, covers every SRD spell and `plan_rows` row, and that Sleep regenerates to its committed rows. `cargo test` passes 641 tests.
+- **Left for ticket 017.** The lift report does not yet warn when the table is stale, since nothing reads the table until then.
+
+Council approved in round 1 (claude 8, gemini 10, gpt 9). Decisions are in [the decision report](../reports/016-decisions.md).
+
+Timing: wall 45m, active 45m, user 0s, wait 3s, blocked 0s | implement 28m, audit 3m (1 round), implement-generate 9m, implement-tests 3m | tools 114 (3 subagent) | limits 0, compactions 0, handoffs 1 | ctx peak 156k | cost $3.69 sonnet-5-5 + $0.01 haiku-5-5

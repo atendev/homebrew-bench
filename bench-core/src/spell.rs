@@ -193,6 +193,13 @@ impl<'a> SpellBook<'a> {
     pub fn contains(&self, id: &str) -> bool {
         self.get(id).is_some()
     }
+
+    /// Every SRD entry in the effects file, in id order.
+    pub fn srd_entries(&self) -> Vec<&'static SpellEffect> {
+        let mut entries: Vec<&SpellEffect> = self.srd.values().collect();
+        entries.sort_by(|a, b| a.id.cmp(&b.id));
+        entries
+    }
 }
 
 /// Serde check for `EncounterState.homebrew_spells`, so a save can't shadow an SRD spell, repeat an id

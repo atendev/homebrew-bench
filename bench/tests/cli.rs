@@ -656,6 +656,26 @@ fn batch_compares_against_the_embedded_curve_outside_the_repo() {
 }
 
 #[test]
+fn baseline_check_with_spells_compares_the_embedded_spell_table() {
+    let bench = Bench::new();
+    let plain = bench.ok(&["baseline", "check"]);
+    assert_eq!(plain, bench.ok(&["baseline", "status"]), "`check` is `status`");
+    assert!(plain.get("spell_baseline").is_none(), "plain check reports the monster curve only");
+    let with = bench.ok(&["baseline", "check", "--spells"]);
+    let table = &with["spell_baseline"];
+    assert_eq!(table["embedded"], true);
+    assert!(table["reasons"].as_array().unwrap().is_empty(), "the embedded spell baseline is stale: {table:#}");
+    assert!(table["spells"].as_u64().unwrap() >= 94 && table["rows"].as_u64().unwrap() >= 355);
+    assert_eq!(table["committed"], table["computed_now"]);
+}
+
+#[test]
+fn baseline_generate_spells_refuses_a_seed_and_a_missing_panel_is_named() {
+    let bench = Bench::new();
+    assert_eq!(bench.err(&["baseline", "generate", "--spells", "--seed", "3"]), "invalid_argument");
+}
+
+#[test]
 fn lighting_is_a_start_flag_and_a_misplaced_roll_modifier_fails_at_load() {
     let bench = Bench::new();
     let out = bench.start(&["--lighting", "bright_light"]);
