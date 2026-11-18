@@ -636,6 +636,7 @@ fn run(command: Commands) -> Result<String, CodedError> {
                 spell_cast_windows: true,
                 teleport_near: true,
                 long_durations: true,
+                round_durations: true,
                 homebrew_spells,
             };
             let (state, outcome) = live::start(spec).map_err(|e| coded(e, false))?;

@@ -245,6 +245,13 @@ pub struct EncounterSettings {
     /// decrement, so their histories refold as recorded.
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub long_durations: bool,
+    /// A `rounds: N` modifier or condition ends when the creature that applied it starts its
+    /// Nth turn after it landed (ADR 0005); with no source in the initiative order it ends
+    /// on the round clock. `bench start` and batch encounters set it; encounters saved
+    /// before it existed leave it off and keep the per-turn decrement, so their histories
+    /// refold as recorded.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub round_durations: bool,
 }
 
 /// Record of an encounter ended early through `bench end`.

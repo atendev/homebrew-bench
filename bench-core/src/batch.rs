@@ -795,6 +795,7 @@ fn fight(spec: &BatchSpec, constants: &PolicyConstants, level: u8, index: u64, w
         spell_cast_windows: true,
         teleport_near: true,
         long_durations: true,
+        round_durations: true,
         homebrew_spells: spec.homebrew_spells.clone(),
     })
     .map_err(|e| BatchError::Invalid(e.to_string()))?;
@@ -2137,6 +2138,7 @@ mod tests {
             spell_cast_windows: true,
             teleport_near: true,
             long_durations: true,
+            round_durations: true,
             homebrew_spells: vec![],
         })
         .unwrap();
@@ -2220,6 +2222,7 @@ mod tests {
             spell_cast_windows: true,
             teleport_near: true,
             long_durations: true,
+            round_durations: true,
             homebrew_spells: vec![],
         };
         let (mut state, _) = live::start(start).unwrap();
@@ -2301,6 +2304,7 @@ mod tests {
             spell_cast_windows: false,
             teleport_near: false,
             long_durations: false,
+            round_durations: false,
             homebrew_spells: vec![],
         })
         .unwrap();

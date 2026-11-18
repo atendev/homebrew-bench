@@ -1967,12 +1967,15 @@ pub fn start_next_turn(state: &mut EncounterState) -> Result<Vec<EngineEvent>, E
     let order_len = state.initiative_order.len().max(1);
     let mut next_index = (current_index + 1) % order_len;
     let mut wrapped = false;
+    let mut passed: Vec<String> = Vec::new();
+    let mut stopped = false;
     for _ in 0..order_len {
         if let Some(id) = state.initiative_order.get(next_index) {
             if let Ok(i) = index_of(state, id) {
                 match state.combatants[i].end_state {
                     EndState::Dead | EndState::Unconscious | EndState::Stable => {
                         events.push(event("forfeit", format!("{id} is skipped"), id, id));
+                        passed.push(id.clone());
                         next_index = (next_index + 1) % order_len;
                         if next_index == 0 { wrapped = true; }
                         continue;
@@ -1981,11 +1984,26 @@ pub fn start_next_turn(state: &mut EncounterState) -> Result<Vec<EngineEvent>, E
                 }
             }
         }
+        stopped = true;
         break;
+    }
+    if stopped {
+        passed.extend(state.initiative_order.get(next_index).cloned());
     }
     if next_index <= current_index && (current_index != next_index || wrapped) {
         state.round += 1;
         let ended = expire_long_durations(state, &mut events);
+        if ended.iter().any(|m| !m.on_end.is_empty()) {
+            let mut stream = Stream::from_state(state.rng.clone());
+            fire_on_end(state, &mut stream, ended, &mut events)?;
+            state.rng = stream.state();
+        }
+    }
+    if state.settings.round_durations {
+        let mut ended = Vec::new();
+        for id in &passed {
+            ended.extend(tick_source_rounds(state, id, &mut events));
+        }
         if ended.iter().any(|m| !m.on_end.is_empty()) {
             let mut stream = Stream::from_state(state.rng.clone());
             fire_on_end(state, &mut stream, ended, &mut events)?;
@@ -2009,9 +2027,11 @@ pub fn start_next_turn(state: &mut EncounterState) -> Result<Vec<EngineEvent>, E
 
 fn decrement_durations(state: &mut EncounterState, events: &mut Vec<EngineEvent>) -> Vec<ActiveModifier> {
     let long = state.settings.long_durations;
+    let by_source = state.settings.round_durations;
     let mut ended = Vec::new();
     state.active_modifiers.retain_mut(|modifier| {
         let keep = match &mut modifier.remaining {
+            Duration::Rounds(_) if by_source => true,
             Duration::Rounds(n) => {
                 *n = n.saturating_sub(1);
                 *n > 0
@@ -2042,6 +2062,7 @@ fn decrement_durations(state: &mut EncounterState, events: &mut Vec<EngineEvent>
         let mut expired = Vec::new();
         for (idx, condition) in combatant.conditions.iter_mut().enumerate() {
             let keep = match &mut condition.duration {
+                Duration::Rounds(_) if by_source => true,
                 Duration::Rounds(n) => {
                     *n = n.saturating_sub(1);
                     *n > 0
@@ -2085,13 +2106,25 @@ fn round_length(duration: &Duration) -> Option<u32> {
 
 fn expire_long_durations(state: &mut EncounterState, events: &mut Vec<EngineEvent>) -> Vec<ActiveModifier> {
     let mut ended = Vec::new();
-    if !state.settings.long_durations {
+    let long = state.settings.long_durations;
+    let by_round = state.settings.round_durations;
+    if !long && !by_round {
         return ended;
     }
     let round = state.round;
-    let lapsed = |duration: &Duration, started: u32| round_length(duration).is_some_and(|len| round >= started.saturating_add(len));
+    let order = &state.initiative_order;
+    // A `rounds` duration with a source in the initiative order counts that source's turns
+    // instead (see `tick_source_rounds`); without one it runs on the round clock.
+    let lapsed = |duration: &Duration, started: u32, source: Option<&str>| {
+        let length = match duration {
+            Duration::Rounds(n) if by_round => source.is_none_or(|s| !order.iter().any(|id| id == s)).then_some(*n),
+            _ if long => round_length(duration),
+            _ => None,
+        };
+        length.is_some_and(|len| round >= started.saturating_add(len))
+    };
     state.active_modifiers.retain(|modifier| {
-        let keep = !lapsed(&modifier.remaining, modifier.started_round);
+        let keep = !lapsed(&modifier.remaining, modifier.started_round, modifier.source.as_deref());
         if !keep {
             events.push(event("modifier_expire", "a timed modifier expired".into(), "engine", "engine"));
             ended.push(modifier.clone());
@@ -2099,8 +2132,45 @@ fn expire_long_durations(state: &mut EncounterState, events: &mut Vec<EngineEven
         keep
     });
     for combatant in &mut state.combatants {
-        let (gone, kept) = std::mem::take(&mut combatant.conditions).into_iter().partition::<Vec<_>, _>(|c| lapsed(&c.duration, c.started_round));
+        let (gone, kept) = std::mem::take(&mut combatant.conditions).into_iter().partition::<Vec<_>, _>(|c| lapsed(&c.duration, c.started_round, c.source.as_deref()));
         combatant.conditions = kept;
+        for condition in gone {
+            events.push(event("condition_expire", format!("{} loses {}", combatant.name, format!("{:?}", condition.condition).to_lowercase()), &combatant.id, &combatant.id));
+        }
+    }
+    ended
+}
+
+/// With `settings.round_durations`, a `rounds` modifier or condition loses one each time its
+/// source's initiative slot comes up and ends at 0 (ADR 0005). Sourceless ones, and ones whose
+/// source is not in the order, are left to `expire_long_durations`.
+fn tick_source_rounds(state: &mut EncounterState, source: &str, events: &mut Vec<EngineEvent>) -> Vec<ActiveModifier> {
+    let mut ended = Vec::new();
+    state.active_modifiers.retain_mut(|modifier| {
+        let Duration::Rounds(n) = &mut modifier.remaining else { return true };
+        if modifier.source.as_deref() != Some(source) {
+            return true;
+        }
+        *n = n.saturating_sub(1);
+        let keep = *n > 0;
+        if !keep {
+            events.push(event("modifier_expire", "a timed modifier expired".into(), "engine", "engine"));
+            ended.push(modifier.clone());
+        }
+        keep
+    });
+    for combatant in &mut state.combatants {
+        let (gone, kept) = std::mem::take(&mut combatant.conditions).into_iter().partition::<Vec<_>, _>(|c| {
+            c.source.as_deref() == Some(source) && matches!(c.duration, Duration::Rounds(n) if n <= 1)
+        });
+        combatant.conditions = kept;
+        for condition in &mut combatant.conditions {
+            if let (Duration::Rounds(n), Some(s)) = (&mut condition.duration, condition.source.as_deref()) {
+                if s == source {
+                    *n -= 1;
+                }
+            }
+        }
         for condition in gone {
             events.push(event("condition_expire", format!("{} loses {}", combatant.name, format!("{:?}", condition.condition).to_lowercase()), &combatant.id, &combatant.id));
         }
@@ -7802,6 +7872,112 @@ mod tests {
         assert_eq!(state.combatants[1].conditions.len(), 1);
         end_turn(&mut state);
         assert!(state.combatants[1].conditions.is_empty());
+    }
+
+    fn round_state(round_durations: bool) -> EncounterState {
+        let mut state = test_encounter(
+            vec![test_stat_block("fighter", "Fighter", 20, 16), test_stat_block("goblin", "Goblin", 7, 15), test_stat_block("ogre", "Ogre", 59, 11)],
+            vec![test_combatant("fighter", "fighter", 20, "ally"), test_combatant("goblin", "goblin", 7, "enemy"), test_combatant("ogre", "ogre", 59, "enemy")],
+        );
+        state.settings.round_durations = round_durations;
+        state
+    }
+
+    fn rounds_modifier(state: &mut EncounterState, rounds: u32, source: Option<&str>) {
+        state.active_modifiers.push(ActiveModifier { target: ModifierTarget::ArmorClass, change: ModifierChange::Add(5), remaining: Duration::Rounds(rounds), source: source.map(Into::into), bearer: Some("ogre".into()), source_ability: Some("shield".into()), ends_on_damage: false, on_end: vec![], started_round: state.round });
+    }
+
+    fn rounds_condition(state: &mut EncounterState, rounds: u32, source: Option<&str>) {
+        state.combatants[1].conditions.push(ConditionInstance { condition: Condition::Blinded, duration: Duration::Rounds(rounds), source: source.map(Into::into), ends_on_damage: false, started_round: state.round });
+    }
+
+    #[test]
+    fn a_reaction_shield_lasts_through_later_enemy_turns_until_the_caster_turn_starts() {
+        let mut state = round_state(true);
+        end_turn(&mut state);
+        assert_eq!(state.active_turn.as_deref(), Some("goblin"));
+        rounds_modifier(&mut state, 1, Some("fighter"));
+        end_turn(&mut state);
+        assert_eq!(state.active_turn.as_deref(), Some("ogre"));
+        assert_eq!(state.active_modifiers.len(), 1, "the ogre's turn still sees the +5");
+        end_turn(&mut state);
+        assert_eq!((state.round, state.active_turn.as_deref()), (2, Some("fighter")));
+        assert!(state.active_modifiers.is_empty(), "it ends as the fighter's turn starts");
+    }
+
+    #[test]
+    fn a_self_applied_rounds_one_survives_the_casters_own_turn_end() {
+        let mut state = round_state(true);
+        rounds_modifier(&mut state, 1, Some("fighter"));
+        rounds_condition(&mut state, 1, Some("fighter"));
+        end_turn(&mut state);
+        end_turn(&mut state);
+        assert_eq!(state.round, 1);
+        assert_eq!(state.active_modifiers.len(), 1);
+        assert_eq!(state.combatants[1].conditions.len(), 1);
+        end_turn(&mut state);
+        assert_eq!((state.round, state.active_turn.as_deref()), (2, Some("fighter")));
+        assert!(state.active_modifiers.is_empty());
+        assert!(state.combatants[1].conditions.is_empty());
+    }
+
+    #[test]
+    fn rounds_two_ticks_on_each_source_turn_start() {
+        let mut state = round_state(true);
+        rounds_modifier(&mut state, 2, Some("goblin"));
+        for _ in 0..3 {
+            end_turn(&mut state);
+        }
+        assert_eq!((state.round, state.active_turn.as_deref()), (2, Some("fighter")));
+        assert!(matches!(state.active_modifiers[0].remaining, Duration::Rounds(1)), "one tick at the goblin's first turn start");
+        end_turn(&mut state);
+        assert!(state.active_modifiers.is_empty(), "the goblin's second turn start ends it");
+    }
+
+    #[test]
+    fn a_downed_sources_slot_still_ticks() {
+        let mut state = round_state(true);
+        rounds_modifier(&mut state, 1, Some("goblin"));
+        rounds_condition(&mut state, 1, Some("goblin"));
+        state.combatants[1].end_state = EndState::Unconscious;
+        let events = step_events(&mut state, StepRequest::end_turn()).unwrap();
+        assert!(events.iter().any(|e| e.kind == "forfeit"));
+        assert_eq!(state.active_turn.as_deref(), Some("ogre"));
+        assert!(state.active_modifiers.is_empty());
+        assert!(state.combatants[1].conditions.is_empty());
+    }
+
+    #[test]
+    fn a_source_that_is_none_or_outside_the_order_uses_the_round_clock() {
+        let mut state = round_state(true);
+        rounds_modifier(&mut state, 2, None);
+        rounds_modifier(&mut state, 2, Some("ghost"));
+        rounds_condition(&mut state, 2, None);
+        for _ in 0..3 {
+            end_turn(&mut state);
+        }
+        assert_eq!(state.round, 2);
+        assert_eq!((state.active_modifiers.len(), state.combatants[1].conditions.len()), (2, 1));
+        for _ in 0..3 {
+            end_turn(&mut state);
+        }
+        assert_eq!(state.round, 3);
+        assert!(state.active_modifiers.is_empty());
+        assert!(state.combatants[1].conditions.is_empty());
+    }
+
+    #[test]
+    fn without_round_durations_rounds_lose_one_at_every_turn_end() {
+        let mut state = round_state(false);
+        rounds_modifier(&mut state, 1, Some("ogre"));
+        rounds_condition(&mut state, 2, Some("ogre"));
+        end_turn(&mut state);
+        assert!(state.active_modifiers.is_empty());
+        assert_eq!(state.combatants[1].conditions.len(), 1);
+        end_turn(&mut state);
+        assert!(state.combatants[1].conditions.is_empty());
+        let settings = serde_json::to_string(&state.settings).unwrap();
+        assert!(!settings.contains("round_durations"));
     }
 
     #[test]
