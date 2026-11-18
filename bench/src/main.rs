@@ -18,7 +18,7 @@ use bench_core::{
     log, paths,
     schema::{schema_json, validate_value},
     spell::SpellEffect,
-    spell_lift, spell_panel,
+    spell_baseline, spell_lift, spell_panel,
     stat_block::StatBlock,
     store::{self, Index, IndexEntry, VersionCheck},
     Envelope, ENGINE_VERSION,
@@ -420,17 +420,25 @@ enum PartyAction {
 #[derive(Subcommand)]
 enum BaselineAction {
     /// Compare the embedded baseline's input fingerprints with the ones this binary computes now.
-    Status,
-    /// Fight every embedded fixture against the standard party and write the curve. Rebuild `bench` after changing `data/` first.
+    #[command(alias = "check")]
+    Status {
+        /// Also compare the embedded spell lift table's fingerprints.
+        #[arg(long)]
+        spells: bool,
+    },
+    /// Fight every embedded fixture against the standard party and write the curve, or with `--spells` fight every modeled SRD spell against the spell panel and write the spell lift table. Rebuild `bench` after changing `data/` first.
     Generate {
-        /// Where to write the curve.
-        #[arg(long, default_value = "data/baseline/curve.json")]
-        out: PathBuf,
-        /// Fights per fixture and party level.
+        /// Where to write it; defaults to `data/baseline/curve.json`, or `data/baseline/spell-lift.json` with `--spells`.
+        #[arg(long)]
+        out: Option<PathBuf>,
+        /// Write the spell lift table instead of the curve. It reads the embedded spell panel, so regenerate that first when it is stale.
+        #[arg(long)]
+        spells: bool,
+        /// Fights per fixture and party level, or per panel member with `--spells`.
         #[arg(long, default_value_t = batch::DEFAULT_FIGHTS)]
         fights: u32,
-        /// Base seed; each fixture derives its own from it and its id.
-        #[arg(long, default_value_t = baseline::DEFAULT_BASE_SEED)]
+        /// Base seed; each fixture derives its own from it and its id. The spell table takes its seeds from the panel.
+        #[arg(long, default_value_t = baseline::DEFAULT_BASE_SEED, conflicts_with = "spells")]
         seed: u64,
         /// Worker threads; defaults to the available cores.
         #[arg(long)]
@@ -1107,7 +1115,8 @@ fn run_baseline(action: BaselineAction) -> Result<String, CodedError> {
     let current = baseline::fingerprints_for(&party, &Default::default());
     let threads = |n: Option<usize>| n.unwrap_or_else(|| std::thread::available_parallelism().map_or(1, usize::from));
     match action {
-        BaselineAction::Status => {
+        BaselineAction::Status { spells } => {
+            let spell_baseline = spells.then(|| spell_baseline_status(&party)).transpose()?;
             let panel = match spell_panel::embedded() {
                 None => serde_json::json!({ "embedded": false, "current": false, "reasons": ["no spell panel was embedded at build time"] }),
                 Some(loaded) => {
@@ -1123,11 +1132,15 @@ fn run_baseline(action: BaselineAction) -> Result<String, CodedError> {
                 }
             };
             let Some(loaded) = baseline::embedded() else {
-                return ok(serde_json::json!({ "embedded": false, "current": false, "reasons": ["no baseline was embedded at build time"], "spell_panel": panel }));
+                let mut out = serde_json::json!({ "embedded": false, "current": false, "reasons": ["no baseline was embedded at build time"], "spell_panel": panel });
+                if let Some(table) = spell_baseline {
+                    out["spell_baseline"] = table;
+                }
+                return ok(out);
             };
             let loaded = loaded.map_err(batch_error)?;
             let reasons = loaded.stale_reasons(&current);
-            ok(serde_json::json!({
+            let mut out = serde_json::json!({
                 "embedded": true,
                 "current": reasons.is_empty(),
                 "reasons": reasons,
@@ -1138,7 +1151,11 @@ fn run_baseline(action: BaselineAction) -> Result<String, CodedError> {
                 "committed": loaded.fingerprints,
                 "computed_now": current,
                 "spell_panel": panel,
-            }))
+            });
+            if let Some(table) = spell_baseline {
+                out["spell_baseline"] = table;
+            }
+            ok(out)
         }
         BaselineAction::Panel { out, fights, seed, threads: n } => {
             let spec = spell_panel::GenerateSpec {
@@ -1165,7 +1182,36 @@ fn run_baseline(action: BaselineAction) -> Result<String, CodedError> {
                 "inputs": panel.inputs,
             }))
         }
-        BaselineAction::Generate { out, fights, seed, threads: n } => {
+        BaselineAction::Generate { out, spells: true, fights, threads: n, .. } => {
+            let out = out.unwrap_or_else(|| PathBuf::from("data/baseline/spell-lift.json"));
+            let panel = match spell_panel::embedded() {
+                Some(panel) => panel.map_err(batch_error)?,
+                None => return Err(CodedError::new(ErrorCode::NotFound, "this build embeds no spell panel; generate one with `bench baseline panel`")),
+            };
+            let spec = spell_baseline::GenerateSpec {
+                party_name: "standard".into(),
+                party: &party,
+                panel: &panel,
+                fights,
+                max_rounds: batch::DEFAULT_MAX_ROUNDS,
+                threads: threads(n),
+                only: vec![],
+            };
+            let table = spell_baseline::generate(&spec, &|done, total, id| eprintln!("[{done}/{total}] {id}")).map_err(batch_error)?;
+            write_reference(&out, &table, "spell baseline")?;
+            let rows = |status: spell_lift::RowStatus| table.spells.iter().flat_map(|s| &s.rows).filter(|r| r.status == status).count();
+            ok(serde_json::json!({
+                "path": out.display().to_string(),
+                "spells": table.spells.len(),
+                "rows": table.spells.iter().map(|s| s.rows.len()).sum::<usize>(),
+                "measured": rows(spell_lift::RowStatus::Measured),
+                "never_cast": rows(spell_lift::RowStatus::NeverCast),
+                "not_measured": rows(spell_lift::RowStatus::NotMeasured),
+                "fingerprints": table.fingerprints,
+            }))
+        }
+        BaselineAction::Generate { out, spells: false, fights, seed, threads: n } => {
+            let out = out.unwrap_or_else(|| PathBuf::from("data/baseline/curve.json"));
             let spec = baseline::GenerateSpec {
                 fixtures: baseline::embedded_fixtures().map_err(batch_error)?,
                 party_name: "standard".into(),
@@ -1187,6 +1233,30 @@ fn run_baseline(action: BaselineAction) -> Result<String, CodedError> {
             }))
         }
     }
+}
+
+/// The embedded spell lift table against the inputs this binary would generate it from now.
+fn spell_baseline_status(party: &batch::Party) -> Result<Value, CodedError> {
+    let Some(panel) = spell_panel::embedded() else {
+        return Ok(serde_json::json!({ "embedded": false, "current": false, "reasons": ["no spell panel was embedded at build time, so there is nothing to compute the spell baseline from"] }));
+    };
+    let panel = panel.map_err(batch_error)?;
+    let now = spell_baseline::fingerprints_for(party, &Default::default(), &panel, batch::DEFAULT_FIGHTS);
+    let Some(table) = spell_baseline::embedded() else {
+        return Ok(serde_json::json!({ "embedded": false, "current": false, "reasons": ["no spell baseline was embedded at build time"], "computed_now": now }));
+    };
+    let table = table.map_err(batch_error)?;
+    let reasons = table.stale_reasons(&now);
+    Ok(serde_json::json!({
+        "embedded": true,
+        "current": reasons.is_empty(),
+        "reasons": reasons,
+        "fights_per_member": table.fights_per_member,
+        "spells": table.spells.len(),
+        "rows": table.spells.iter().map(|s| s.rows.len()).sum::<usize>(),
+        "committed": table.fingerprints,
+        "computed_now": now,
+    }))
 }
 
 fn run_schema(action: SchemaAction) -> Result<String, CodedError> {

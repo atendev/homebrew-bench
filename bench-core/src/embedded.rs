@@ -47,6 +47,11 @@ pub fn spell_panel_json() -> Option<&'static str> {
     find(BASELINE, "spell-panel.json")
 }
 
+/// The committed spell lift table, when `data/baseline/spell-lift.json` existed at build time.
+pub fn spell_lift_json() -> Option<&'static str> {
+    find(BASELINE, "spell-lift.json")
+}
+
 /// Standard party stat block files.
 pub fn standard_party_json() -> impl Iterator<Item = (&'static str, &'static str)> {
     PARTY.iter().filter(|(p, _)| p.starts_with("standard/")).map(|(p, t)| (*p, *t))
