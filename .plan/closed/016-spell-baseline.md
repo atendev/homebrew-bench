@@ -3,9 +3,9 @@ id: 016
 title: Spell baseline
 type: task
 mode: AFK
-status: open
+status: closed
 blocked_by: [015, 019, 020]
-claimed: true
+claimed: false
 ---
 
 ## Question

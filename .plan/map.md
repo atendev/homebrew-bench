@@ -45,6 +45,8 @@ A spell-testing spec. Each homebrew spell is converted into an effects entry, ch
 
 - [Build rounds per round](closed/020-build-rounds-per-round.md): `rounds: N` now ends on its source's Nth turn start behind `settings.round_durations`, with a round-clock fallback and Sleep's Incapacitated moved to `until_end_of_next_turn`; the curve moved 38 of 6,820 fixture cells and the panel re-picked its group fixtures (engine 0.1.46)
 
+- [Spell baseline](closed/016-spell-baseline.md): `bench baseline generate --spells` writes `data/baseline/spell-lift.json` (94 spells, 355 rows: 206 measured, 81 never_cast, 68 not_measured), embedded with fingerprints; `bench baseline status --spells` (also `check`) names stale inputs; the lift report's stale-table warning is left for the report ticket (engine 0.1.47)
+
 ## Not yet specified
 
 - Target caps on non-attack spells: Bless, Bane and similar spells take every target passed, so `extra_targets` on them is documentary. Decide whether a spell's target count is enforced by the engine or by the agent ([archived map](archive/homebrew-bench-map.md), Target caps on non-attack effects).
@@ -67,7 +69,7 @@ None of these blocks the destination. Each already has a defined reading, and no
 
 ## Frontier
 
-- [Spell baseline](tickets/016-spell-baseline.md)
+- [Spell lift report](tickets/017-spell-lift-report.md)
 
 ## Build tickets
 
@@ -84,7 +86,7 @@ Blocking in brackets.
 - [Spell lift runner](closed/013-spell-lift-runner.md) (closed)
 - [Model more SRD cantrips](closed/014-model-more-srd-cantrips.md) (closed)
 - [Rounds per round for spell durations](closed/015-rounds-per-round-for-spell-durations.md) (closed)
-- [Spell baseline](tickets/016-spell-baseline.md) [015, 019, 020]
+- [Spell baseline](closed/016-spell-baseline.md) (closed)
 - [Spell lift report](tickets/017-spell-lift-report.md) [011, 016]
 - [Skill: batch spell testing](tickets/018-skill-batch-spell-testing.md) [017]
 - [Disintegrate damage on a successful save](closed/019-disintegrate-damage-on-a-successful-save.md) (closed)
