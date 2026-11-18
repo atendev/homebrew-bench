@@ -72,6 +72,10 @@ _Avoid_: Overcast, higher-level casting
 A timed change a modeled ability puts on a combatant's stats or rolls, such as halved Speed, no Reactions, or Disadvantage on Strength checks. It ends on a duration, a successful save, the end of its source's concentration, or, for some, when its bearer takes damage. When one spell puts its modifier on the same bearer more than once, only the most potent applies, or the most recent if they are equal; the others apply again when it ends. A modifier can grant an extra action, and can leave effects on its bearer when it ends, as Haste's lethargy does. A modifier can add or subtract a die on attack rolls or saving throws, as Bless and Bane do; the bearer rolls the die, and it is a bonus, not Advantage or Disadvantage, so Bless and Bane on one creature both apply. Conditions are separate: the ruleset defines them.
 _Avoid_: Buff, debuff, status
 
+**Round duration**:
+A `rounds: N` modifier or condition. With `settings.round_durations` on, it ends when the creature that applied it starts its Nth turn after it landed, so Shield lasts until its caster's next turn starts, however many enemies act first. A downed source's slot still counts. With no source in the initiative order it ends on the round clock instead, N rounds after it landed. Saves from before the setting keep the per-turn decrement.
+_Avoid_: Round count, duration tick
+
 **Bearer**:
 The combatant a modifier is on, whose stats or rolls it changes. A modifier lands on the target of the ability that made it unless the ability marks it as the user's own, as Shield does. The **source** is the combatant whose ability made it; when the source's concentration ends, the modifier ends. Haste cast on an ally has the ally as bearer and the caster as source.
 _Avoid_: Owner, holder (a legendary action holder is a different thing), recipient

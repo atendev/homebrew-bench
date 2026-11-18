@@ -2380,7 +2380,7 @@
                   "condition": {
                     "condition": "incapacitated",
                     "duration": {
-                      "rounds": 1
+                      "until_end_of_next_turn": null
                     },
                     "ends_on_damage": true,
                     "source_ability": "sleep"
