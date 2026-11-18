@@ -1,0 +1,6 @@
+# Keep builds and tests from saturating every core. Override per run if needed.
+[build]
+jobs = 6
+
+[env]
+RUST_TEST_THREADS = "4"
