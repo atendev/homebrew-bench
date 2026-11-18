@@ -438,8 +438,8 @@ enum BaselineAction {
         #[arg(long, default_value_t = batch::DEFAULT_FIGHTS)]
         fights: u32,
         /// Base seed; each fixture derives its own from it and its id. The spell table takes its seeds from the panel.
-        #[arg(long, default_value_t = baseline::DEFAULT_BASE_SEED, conflicts_with = "spells")]
-        seed: u64,
+        #[arg(long)]
+        seed: Option<u64>,
         /// Worker threads; defaults to the available cores.
         #[arg(long)]
         threads: Option<usize>,
@@ -1182,7 +1182,10 @@ fn run_baseline(action: BaselineAction) -> Result<String, CodedError> {
                 "inputs": panel.inputs,
             }))
         }
-        BaselineAction::Generate { out, spells: true, fights, threads: n, .. } => {
+        BaselineAction::Generate { out, spells: true, fights, seed, threads: n } => {
+            if seed.is_some() {
+                return Err(CodedError::new(ErrorCode::InvalidArgument, "--seed has no effect with --spells: the panel's seeds are fixed"));
+            }
             let out = out.unwrap_or_else(|| PathBuf::from("data/baseline/spell-lift.json"));
             let panel = match spell_panel::embedded() {
                 Some(panel) => panel.map_err(batch_error)?,
@@ -1216,7 +1219,7 @@ fn run_baseline(action: BaselineAction) -> Result<String, CodedError> {
                 fixtures: baseline::embedded_fixtures().map_err(batch_error)?,
                 party_name: "standard".into(),
                 party: &party,
-                base_seed: seed,
+                base_seed: seed.unwrap_or(baseline::DEFAULT_BASE_SEED),
                 fights,
                 max_rounds: batch::DEFAULT_MAX_ROUNDS,
                 threads: threads(n),
