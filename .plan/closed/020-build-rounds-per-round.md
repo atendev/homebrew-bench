@@ -3,9 +3,9 @@ id: 020
 title: Build rounds per round
 type: task
 mode: AFK
-status: open
+status: closed
 blocked_by: []
-claimed: true
+claimed: false
 ---
 
 ## Question
